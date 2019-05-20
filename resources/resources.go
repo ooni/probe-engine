@@ -107,7 +107,7 @@ func (c *Client) Ensure(ctx context.Context) error {
 			return fmt.Errorf("resources: %s sha256 mismatch", fullpath)
 		}
 		c.Logger.Debugf("resources: overwrite %s", fullpath)
-		err = ioutil.WriteFile(fullpath, data, 600)
+		err = ioutil.WriteFile(fullpath, data, 0600)
 		if err != nil {
 			return err
 		}
