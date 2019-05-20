@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/resources"

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/resources"
 )
 

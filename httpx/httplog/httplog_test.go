@@ -1,4 +1,4 @@
-package httpx_test
+package httplog_test
 
 import (
 	"context"
@@ -7,13 +7,21 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/httpx/httplog"
+	"github.com/ooni/probe-engine/httpx/httptracex"
 )
 
 func TestGet(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := httpx.NewTracingProxyingClient(log.Log, nil)
+	client := &http.Client{
+		Transport: &httptracex.Measurer{
+			RoundTripper: http.DefaultTransport,
+			Handler: &httplog.RoundTripLogger{
+				Logger: log.Log,
+			},
+		},
+	}
 	request, err := http.NewRequest("GET", "http://facebook.com", nil)
 	if err != nil {
 		t.Fatal(err)

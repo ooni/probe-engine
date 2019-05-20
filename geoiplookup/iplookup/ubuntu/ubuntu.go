@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/geoiplookup/constants"
-	"github.com/ooni/probe-engine/internal/fetch"
+	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/log"
 )
 

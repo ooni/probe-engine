@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/geoiplookup/constants"
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/httpx/jsonapi"
 	"github.com/ooni/probe-engine/log"
 )
 

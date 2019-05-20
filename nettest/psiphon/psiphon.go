@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
-	"github.com/ooni/probe-engine/internal/fetch"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/httpx/fetch"
+	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/nettest"

@@ -6,7 +6,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/httpx/httpx"
 )
 
 func TestIntegration(t *testing.T) {

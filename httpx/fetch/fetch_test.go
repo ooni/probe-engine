@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/fetch"
-	"github.com/ooni/probe-engine/internal/httplog"
-	"github.com/ooni/probe-engine/internal/httptracex"
+	"github.com/ooni/probe-engine/httpx/fetch"
+	"github.com/ooni/probe-engine/httpx/httplog"
+	"github.com/ooni/probe-engine/httpx/httptracex"
 )
 
 func TestFetchIntegration(t *testing.T) {
