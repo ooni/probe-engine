@@ -2,8 +2,11 @@
 package constants
 
 const (
-	// DefaultProbeASN is the default probe ASN.
-	DefaultProbeASN = "AS0"
+	// DefaultProbeASNString is the default probe ASN as string.
+	DefaultProbeASNString = "AS0"
+
+	// DefaultProbeASNNumber is the default probe ASN as number.
+	DefaultProbeASNNumber = 0
 
 	// DefaultProbeCC is the default probe CC.
 	DefaultProbeCC = "ZZ"

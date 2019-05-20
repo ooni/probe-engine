@@ -2,7 +2,6 @@
 package mmdblookup
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/ooni/probe-engine/geoiplookup/constants"
@@ -13,8 +12,8 @@ import (
 // MMDB database located at path, or returns an error. In case
 // the IP is not valid, this function will fail with an error
 // complaining that geoip2 was passed a nil IP.
-func LookupASN(path, ip string) (asn string, org string, err error) {
-	asn, org = constants.DefaultProbeASN, constants.DefaultProbeNetworkName
+func LookupASN(path, ip string) (asn uint, org string, err error) {
+	asn, org = constants.DefaultProbeASNNumber, constants.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return
@@ -24,7 +23,7 @@ func LookupASN(path, ip string) (asn string, org string, err error) {
 	if err != nil {
 		return
 	}
-	asn = fmt.Sprintf("AS%d", record.AutonomousSystemNumber)
+	asn = record.AutonomousSystemNumber
 	org = record.AutonomousSystemOrganization
 	return
 }

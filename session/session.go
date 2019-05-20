@@ -4,6 +4,7 @@ package session
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,7 +73,7 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 		),
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil),
 		Logger:            logger,
-		ProbeASN:          constants.DefaultProbeASN,
+		ProbeASN:          constants.DefaultProbeASNString,
 		ProbeCC:           constants.DefaultProbeCC,
 		ProbeIP:           constants.DefaultProbeIP,
 		ProbeNetworkName:  constants.DefaultProbeNetworkName,
@@ -178,10 +179,12 @@ func (s *Session) LookupProbeIP(ctx context.Context) (err error) {
 
 // LookupProbeASN discovers the probe ASN.
 func (s *Session) LookupProbeASN(databasePath string) (err error) {
-	if s.ProbeASN == constants.DefaultProbeASN {
-		s.ProbeASN, s.ProbeNetworkName, err = mmdblookup.LookupASN(
+	if s.ProbeASN == constants.DefaultProbeASNString {
+		var asn uint
+		asn, s.ProbeNetworkName, err = mmdblookup.LookupASN(
 			databasePath, s.ProbeIP,
 		)
+		s.ProbeASN = fmt.Sprintf("AS%d", asn)
 	}
 	s.Logger.Debugf("ProbeASN: %s", s.ProbeASN)
 	return
@@ -197,14 +200,10 @@ func (s *Session) LookupProbeCC(databasePath string) (err error) {
 }
 
 // LookupProbeNetworkName discovers the probe network name.
-func (s *Session) LookupProbeNetworkName(databasePath string) (err error) {
-	if s.ProbeNetworkName == constants.DefaultProbeNetworkName {
-		s.ProbeASN, s.ProbeNetworkName, err = mmdblookup.LookupASN(
-			databasePath, s.ProbeIP,
-		)
-	}
-	s.Logger.Debugf("ProbeNetworkName: %s", s.ProbeNetworkName)
-	return
+func (s *Session) LookupProbeNetworkName(databasePath string) error {
+	// Implementation note: let the ASN lookup completely dominate
+	// the behavior and side effects of this function.
+	return s.LookupProbeASN(databasePath)
 }
 
 // LookupResolverIP discovers the resolver IP.
