@@ -24,7 +24,9 @@ func LookupASN(path, ip string) (asn uint, org string, err error) {
 		return
 	}
 	asn = record.AutonomousSystemNumber
-	org = record.AutonomousSystemOrganization
+	if record.AutonomousSystemOrganization != "" {
+		org = record.AutonomousSystemOrganization
+	}
 	return
 }
 
@@ -39,6 +41,8 @@ func LookupCC(path, ip string) (cc string, err error) {
 	if err != nil {
 		return
 	}
-	cc = record.Country.IsoCode
+	if record.Country.IsoCode != "" {
+		cc = record.Country.IsoCode
+	}
 	return
 }
