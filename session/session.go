@@ -52,7 +52,7 @@ type Session struct {
 	WorkDir string
 }
 
-// New creates a new measurements session.
+// New creates a new experiments session.
 func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 	return &Session{
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
@@ -84,6 +84,24 @@ func (s *Session) ProbeCC() string {
 	return cc
 }
 
+// ProbeNetworkName returns the probe network name.
+func (s *Session) ProbeNetworkName() string {
+	nn := model.DefaultProbeNetworkName
+	if s.Location != nil {
+		nn = s.Location.NetworkName
+	}
+	return nn
+}
+
+// ProbeIP returns the probe IP.
+func (s *Session) ProbeIP() string {
+	ip := model.DefaultProbeIP
+	if s.Location != nil {
+		ip = s.Location.ProbeIP
+	}
+	return ip
+}
+
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
 		HTTPClient: s.HTTPDefaultClient, // proxy is OK
@@ -100,7 +118,7 @@ func (s *Session) ASNDatabasePath() string {
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.
-func (s *Session) CABundlePAth() string {
+func (s *Session) CABundlePath() string {
 	return filepath.Join(s.WorkDir, resources.CABundleName)
 }
 
