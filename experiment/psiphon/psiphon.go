@@ -16,7 +16,6 @@ import (
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/httpx/httpx"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -26,21 +25,10 @@ const (
 	testVersion = "0.3.0"
 )
 
-// NewReporter creates a new reporter.
-func NewReporter(cs *session.Session) *experiment.Reporter {
-	return experiment.NewReporter(cs, testName, testVersion)
-}
-
 // Config contains the experiment's configuration.
 type Config struct {
 	// ConfigFilePath is the path where Psiphon config file is located.
 	ConfigFilePath string
-
-	// Logger is the logger to use
-	Logger log.Logger
-
-	// UserAgent is the user agent to use
-	UserAgent string
 
 	// WorkDir is the directory where Psiphon should store
 	// its configuration database.
@@ -95,10 +83,11 @@ func processconfig(config Config) ([]byte, clientlib.Parameters, error) {
 // usetunnel is a mockable function that uses the tunnel
 var usetunnel = func(
 	ctx context.Context, t *clientlib.PsiphonTunnel, config Config,
+	sess *session.Session,
 ) error {
 	_, err := (&fetch.Client{
 		HTTPClient: httpx.NewTracingProxyingClient(
-			config.Logger,
+			sess.Logger,
 			func(req *http.Request) (*url.URL, error) {
 				return &url.URL{
 					Scheme: "socks5",
@@ -106,8 +95,8 @@ var usetunnel = func(
 				}, nil
 			},
 		),
-		Logger:    config.Logger,
-		UserAgent: config.UserAgent,
+		Logger:    sess.Logger,
+		UserAgent: sess.UserAgent(),
 	}).Fetch(ctx, "https://www.google.com/humans.txt")
 	return err
 }
@@ -115,9 +104,9 @@ var usetunnel = func(
 // clientlibStartTunnel is a mockable clientlib.StartTunnel
 var clientlibStartTunnel = clientlib.StartTunnel
 
-// Run runs a psiphon experiment
-func Run(
+func run(
 	ctx context.Context,
+	sess *session.Session,
 	measurement *model.Measurement,
 	config Config,
 ) error {
@@ -136,10 +125,21 @@ func Run(
 	}
 	testkeys.BootstrapTime = time.Now().Sub(start).Seconds()
 	defer tunnel.Stop()
-	err = usetunnel(ctx, tunnel, config)
+	err = usetunnel(ctx, tunnel, config, sess)
 	if err != nil {
 		testkeys.Failure = err.Error()
 		return err
 	}
 	return nil
+}
+
+// NewExperiment creates a new experiment.
+func NewExperiment(
+	sess *session.Session, config Config,
+) *experiment.Experiment {
+	return experiment.New(
+		sess, testName, testVersion,
+		func(c context.Context, s *session.Session, m *model.Measurement) error {
+			return run(c, s, m, config)
+		})
 }

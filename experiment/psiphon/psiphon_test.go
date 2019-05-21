@@ -27,23 +27,20 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reporter := psiphon.NewReporter(sess)
-	if err := reporter.OpenReport(ctx); err != nil {
-		t.Fatal(err)
-	}
-	defer reporter.CloseReport(ctx)
-
-	measurement := reporter.NewMeasurement("")
-	err := psiphon.Run(ctx, &measurement, psiphon.Config{
+	experiment := psiphon.NewExperiment(sess, psiphon.Config{
 		ConfigFilePath: "../../testdata/psiphon_config.json",
-		Logger:         sess.Logger,
-		UserAgent:      sess.UserAgent(),
 		WorkDir:        sess.WorkDir,
 	})
+	if err := experiment.OpenReport(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer experiment.CloseReport(ctx)
+
+	measurement, err := experiment.Measure(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := reporter.SubmitMeasurement(ctx, &measurement); err != nil {
+	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }

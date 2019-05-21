@@ -19,6 +19,7 @@ func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
 		DataFormatVersion:    "0.2.0",
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementStartTime: "2018-11-01 15:33:20",
+		ProbeIP:              "1.2.3.4",
 		ProbeASN:             rt.ProbeASN,
 		ProbeCC:              rt.ProbeCC,
 		ReportID:             ID,
@@ -61,8 +62,11 @@ func TestReportLifecycle(t *testing.T) {
 	}
 	defer report.Close(ctx)
 	measurement := makeMeasurement(template, report.ID)
-	err = report.SubmitMeasurement(ctx, &measurement)
+	err = report.SubmitMeasurement(ctx, &measurement, false)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if measurement.ProbeIP != model.DefaultProbeIP {
+		t.Fatal("measurement not sanitised")
 	}
 }

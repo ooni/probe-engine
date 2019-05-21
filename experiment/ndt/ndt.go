@@ -15,13 +15,10 @@ const (
 	testVersion = "0.1.0"
 )
 
-// NewReporter creates a new experiment reporter.
-func NewReporter(cs *session.Session) *experiment.Reporter {
-	return experiment.NewReporter(cs, testName, testVersion)
-}
+// Config contains the experiment config.
+type Config struct{}
 
-// Run runs a ndt test
-func Run(
+func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 ) error {
 	settings := measurementkit.NewSettings(
@@ -33,8 +30,15 @@ func Run(
 	if err != nil {
 		return err
 	}
-	for range out {
-		// Drain
+	for ev := range out {
+		sess.Logger.Debugf("%+v", ev)
 	}
 	return nil
+}
+
+// NewExperiment creates a new experiment.
+func NewExperiment(
+	sess *session.Session, config Config,
+) *experiment.Experiment {
+	return experiment.New(sess, testName, testVersion, measure)
 }

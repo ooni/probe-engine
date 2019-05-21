@@ -11,20 +11,30 @@ import (
 	"github.com/ooni/probe-engine/session"
 )
 
-// dateFormat is the format used by OONI for dates inside reports.
 const dateFormat = "2006-01-02 15:04:05"
 
-// formatTimeNowUTC formats the current time in UTC using the OONI format.
 func formatTimeNowUTC() string {
 	return time.Now().UTC().Format(dateFormat)
 }
 
-// The Reporter generates the report for an experiment.
-type Reporter struct {
-	// Report is the report used by this reporter.
+// MeasureFunc is the function that fills a measurement.
+type MeasureFunc func(
+	ctx context.Context, sess *session.Session, measurement *model.Measurement,
+) error
+
+// Experiment is a network experiment.
+type Experiment struct {
+	// DoMeasure fills a measurement.
+	DoMeasure MeasureFunc
+
+	// IncludeProbeIP indicates whether to include the probe IP
+	// when submitting measurements.
+	IncludeProbeIP bool
+
+	// Report is the report used by this experiment.
 	Report *collector.Report
 
-	// Session is the session to which the experiment belongs.
+	// Session is the session to which this experiment belongs.
 	Session *session.Session
 
 	// TestName is the experiment name.
@@ -37,11 +47,13 @@ type Reporter struct {
 	TestVersion string
 }
 
-// New creates a new reporter for an experiment.
-func NewReporter(
-	session *session.Session, testName, testVersion string,
-) *Reporter {
-	return &Reporter{
+// New creates a new experiment. You should not call this function directly
+// rather you should do <package>.NewExperiment.
+func New(
+	session *session.Session, testName, testVersion string, measure MeasureFunc,
+) *Experiment {
+	return &Experiment{
+		DoMeasure:     measure,
 		Session:       session,
 		TestName:      testName,
 		TestStartTime: formatTimeNowUTC(),
@@ -50,87 +62,92 @@ func NewReporter(
 }
 
 // OpenReport opens a new report for the experiment.
-func (r *Reporter) OpenReport(ctx context.Context) (err error) {
-	if r.Report != nil {
+func (e *Experiment) OpenReport(ctx context.Context) (err error) {
+	if e.Report != nil {
 		return // already open
 	}
-	for _, e := range r.Session.AvailableCollectors {
-		if e.Type != "https" {
-			r.Session.Logger.Debugf(
-				"experiment: unsupported collector type: %s", e.Type,
+	for _, c := range e.Session.AvailableCollectors {
+		if c.Type != "https" {
+			e.Session.Logger.Debugf(
+				"experiment: unsupported collector type: %s", c.Type,
 			)
 			continue
 		}
 		client := &collector.Client{
-			BaseURL:    e.Address,
-			HTTPClient: r.Session.HTTPDefaultClient, // proxy is OK
-			Logger:     r.Session.Logger,
-			UserAgent:  r.Session.UserAgent(),
+			BaseURL:    c.Address,
+			HTTPClient: e.Session.HTTPDefaultClient, // proxy is OK
+			Logger:     e.Session.Logger,
+			UserAgent:  e.Session.UserAgent(),
 		}
 		template := collector.ReportTemplate{
-			ProbeASN:        r.Session.ProbeASNString(),
-			ProbeCC:         r.Session.ProbeCC(),
-			SoftwareName:    r.Session.SoftwareName,
-			SoftwareVersion: r.Session.SoftwareVersion,
-			TestName:        r.TestName,
-			TestVersion:     r.TestVersion,
+			ProbeASN:        e.Session.ProbeASNString(),
+			ProbeCC:         e.Session.ProbeCC(),
+			SoftwareName:    e.Session.SoftwareName,
+			SoftwareVersion: e.Session.SoftwareVersion,
+			TestName:        e.TestName,
+			TestVersion:     e.TestVersion,
 		}
-		r.Report, err = client.OpenReport(ctx, template)
+		e.Report, err = client.OpenReport(ctx, template)
 		if err == nil {
 			return
 		}
-		r.Session.Logger.Debugf("experiment: collector error: %s", err.Error())
+		e.Session.Logger.Debugf("experiment: collector error: %s", err.Error())
 	}
 	err = errors.New("All collectors failed")
 	return
 }
 
 // ReportID returns the report ID or an empty string, if not open.
-func (r *Reporter) ReportID() string {
-	if r.Report == nil {
+func (e *Experiment) ReportID() string {
+	if e.Report == nil {
 		return ""
 	}
-	return r.Report.ID
+	return e.Report.ID
 }
 
-// NewMeasurement initializes and returns a new measurement. Note that this
-// function will set the ProbeIP to the default, privacy preserving value. If
-// you need the ProbeIP when running an experiment and/or you want to submit it
-// because the user asked for that, please override its value explicitly.
-func (r *Reporter) NewMeasurement(input string) model.Measurement {
+func (e *Experiment) newMeasurement(input string) model.Measurement {
 	return model.Measurement{
 		DataFormatVersion:    "0.2.0",
 		Input:                input,
 		MeasurementStartTime: formatTimeNowUTC(),
-		ProbeIP:              model.DefaultProbeIP, // privacy by default
-		ProbeASN:             r.Session.ProbeASNString(),
-		ProbeCC:              r.Session.ProbeCC(),
-		ReportID:             r.ReportID(),
-		SoftwareName:         r.Session.SoftwareName,
-		SoftwareVersion:      r.Session.SoftwareVersion,
-		TestName:             r.TestName,
-		TestStartTime:        r.TestStartTime,
-		TestVersion:          r.TestVersion,
+		ProbeIP:              e.Session.ProbeIP(),
+		ProbeASN:             e.Session.ProbeASNString(),
+		ProbeCC:              e.Session.ProbeCC(),
+		ReportID:             e.ReportID(),
+		SoftwareName:         e.Session.SoftwareName,
+		SoftwareVersion:      e.Session.SoftwareVersion,
+		TestName:             e.TestName,
+		TestStartTime:        e.TestStartTime,
+		TestVersion:          e.TestVersion,
 	}
+}
+
+// Measure performs a measurement with the specified input.
+func (e *Experiment) Measure(
+	ctx context.Context, input string,
+) (measurement model.Measurement, err error) {
+	measurement = e.newMeasurement(input)
+	err = e.DoMeasure(ctx, e.Session, &measurement)
+	return
 }
 
 // SubmitMeasurement submits a measurement to the selected collector. It is
 // safe to call this function from different goroutines concurrently as long
 // as the measurement is not shared by the goroutines.
-func (r *Reporter) SubmitMeasurement(
+func (e *Experiment) SubmitMeasurement(
 	ctx context.Context, measurement *model.Measurement,
 ) (err error) {
-	if r.Report != nil {
-		err = r.Report.SubmitMeasurement(ctx, measurement)
+	if e.Report != nil {
+		err = e.Report.SubmitMeasurement(ctx, measurement, e.IncludeProbeIP)
 	}
 	return
 }
 
 // CloseReport closes the open report.
-func (r *Reporter) CloseReport(ctx context.Context) (err error) {
-	if r.Report != nil {
-		err = r.Report.Close(ctx)
-		r.Report = nil
+func (e *Experiment) CloseReport(ctx context.Context) (err error) {
+	if e.Report != nil {
+		err = e.Report.Close(ctx)
+		e.Report = nil
 	}
 	return
 }

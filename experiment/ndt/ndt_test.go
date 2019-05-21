@@ -27,18 +27,17 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reporter := ndt.NewReporter(sess)
-	if err := reporter.OpenReport(ctx); err != nil {
+	experiment := ndt.NewExperiment(sess, ndt.Config{})
+	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer reporter.CloseReport(ctx)
+	defer experiment.CloseReport(ctx)
 
-	measurement := reporter.NewMeasurement("")
-	err := ndt.Run(ctx, sess, &measurement)
+	measurement, err := experiment.Measure(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := reporter.SubmitMeasurement(ctx, &measurement); err != nil {
+	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }

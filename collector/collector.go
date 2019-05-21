@@ -91,9 +91,12 @@ type updateResponse struct {
 // to the OONI collector. If the collector supports sending back to
 // us a measurement ID, we also update the m.OOID field with it.
 func (r *Report) SubmitMeasurement(
-	ctx context.Context, m *model.Measurement,
+	ctx context.Context, m *model.Measurement, includeProbeIP bool,
 ) error {
 	var updateResponse updateResponse
+	if !includeProbeIP {
+		m.ProbeIP = model.DefaultProbeIP
+	}
 	err := (&jsonapi.Client{
 		BaseURL:    r.Client.BaseURL,
 		HTTPClient: r.Client.HTTPClient,

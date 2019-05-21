@@ -16,10 +16,8 @@ const (
 	testVersion = "0.1.0"
 )
 
-// NewReporter creates a new experiment reporter.
-func NewReporter(cs *session.Session) *experiment.Reporter {
-	return experiment.NewReporter(cs, testName, testVersion)
-}
+// Config contains the experiment settings
+type Config struct{}
 
 // TestKeys contains the test keys
 type TestKeys struct {
@@ -33,19 +31,12 @@ type TestKeys struct {
 	Upload []spec.Measurement `json:"upload"`
 }
 
-// Event is an event emitted by ndt7
-type Event = spec.Measurement
-
-// Run runs a ndt7 test
-func Run(
-	ctx context.Context,
-	measurement *model.Measurement,
-	userAgent string,
-	fn func(event Event),
+func measure(
+	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 ) error {
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
-	client := upstream.NewClient(userAgent)
+	client := upstream.NewClient(sess.UserAgent())
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
 		testkeys.Failure = err.Error()
@@ -53,7 +44,7 @@ func Run(
 	}
 	for ev := range ch {
 		testkeys.Download = append(testkeys.Download, ev)
-		fn(ev)
+		sess.Logger.Debugf("%+v", ev)
 	}
 	ch, err = client.StartUpload(ctx)
 	if err != nil {
@@ -62,7 +53,14 @@ func Run(
 	}
 	for ev := range ch {
 		testkeys.Upload = append(testkeys.Upload, ev)
-		fn(ev)
+		sess.Logger.Debugf("%+v", ev)
 	}
 	return nil
+}
+
+// NewExperiment creates a new experiment.
+func NewExperiment(
+	sess *session.Session, config Config,
+) *experiment.Experiment {
+	return experiment.New(sess, testName, testVersion, measure)
 }

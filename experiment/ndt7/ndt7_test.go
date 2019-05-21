@@ -2,7 +2,6 @@ package ndt7_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/apex/log"
@@ -28,24 +27,17 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reporter := ndt7.NewReporter(sess)
-	if err := reporter.OpenReport(ctx); err != nil {
+	experiment := ndt7.NewExperiment(sess, ndt7.Config{})
+	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer reporter.CloseReport(ctx)
+	defer experiment.CloseReport(ctx)
 
-	measurement := reporter.NewMeasurement("")
-	if err := ndt7.Run(
-		ctx, &measurement, sess.UserAgent(), func(event ndt7.Event) {
-			data, err := json.Marshal(event)
-			if err != nil {
-				panic(err) // should not happen
-			}
-			log.Debug(string(data))
-		}); err != nil {
+	measurement, err := experiment.Measure(ctx, "")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := reporter.SubmitMeasurement(ctx, &measurement); err != nil {
+	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }
