@@ -3,6 +3,7 @@ package measurementkit
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ooni/probe-engine/log"
 )
@@ -186,6 +187,16 @@ func loopEx(in <-chan []byte, out chan<- Event, logger log.Logger) {
 		err := json.Unmarshal(data, &event)
 		if err != nil {
 			logger.Debugf("measurementkit: JSON processing error: %s", err.Error())
+			continue
+		}
+		if event.Key == "log" {
+			if strings.HasPrefix(event.Value.LogLevel, "DEBUG") {
+				logger.Debugf("measurementkit: %s", event.Value.Message)
+			} else if event.Value.LogLevel == "INFO" {
+				logger.Infof("measurementkit: %s", event.Value.Message)
+			} else {
+				logger.Warnf("measurementkit: %s", event.Value.Message)
+			}
 			continue
 		}
 		out <- event
