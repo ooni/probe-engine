@@ -86,7 +86,8 @@ func (r *Reporter) OpenReport(ctx context.Context) (err error) {
 	return
 }
 
-func (r *Reporter) reportID() string {
+// ReportID returns the report ID or an empty string, if not open.
+func (r *Reporter) ReportID() string {
 	if r.Report == nil {
 		return ""
 	}
@@ -105,7 +106,7 @@ func (r *Reporter) NewMeasurement(input string) model.Measurement {
 		ProbeIP:              constants.DefaultProbeIP, // privacy by default
 		ProbeASN:             r.Session.ProbeASN,
 		ProbeCC:              r.Session.ProbeCC,
-		ReportID:             r.reportID(),
+		ReportID:             r.ReportID(),
 		SoftwareName:         r.Session.SoftwareName,
 		SoftwareVersion:      r.Session.SoftwareVersion,
 		TestName:             r.TestName,
