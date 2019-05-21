@@ -88,3 +88,21 @@ type Service struct {
 	// Front is the front to use with "cloudfront" type entries.
 	Front string `json:"front,omitempty"`
 }
+
+// LocationInfo contains location information
+type LocationInfo struct {
+	// ASN is the autonomous system number
+	ASN uint
+
+	// CountryCode is the country code
+	CountryCode string
+
+	// NetworkName is the network name
+	NetworkName string
+
+	// IP is the probe IP
+	ProbeIP string
+
+	// ResolverIP is the resolver IP
+	ResolverIP string
+}

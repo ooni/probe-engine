@@ -70,7 +70,7 @@ func (r *Reporter) OpenReport(ctx context.Context) (err error) {
 		}
 		template := collector.ReportTemplate{
 			ProbeASN:        r.Session.ProbeASNString(),
-			ProbeCC:         r.Session.ProbeCC,
+			ProbeCC:         r.Session.ProbeCC(),
 			SoftwareName:    r.Session.SoftwareName,
 			SoftwareVersion: r.Session.SoftwareVersion,
 			TestName:        r.TestName,
@@ -105,7 +105,7 @@ func (r *Reporter) NewMeasurement(input string) model.Measurement {
 		MeasurementStartTime: formatTimeNowUTC(),
 		ProbeIP:              constants.DefaultProbeIP, // privacy by default
 		ProbeASN:             r.Session.ProbeASNString(),
-		ProbeCC:              r.Session.ProbeCC,
+		ProbeCC:              r.Session.ProbeCC(),
 		ReportID:             r.ReportID(),
 		SoftwareName:         r.Session.SoftwareName,
 		SoftwareVersion:      r.Session.SoftwareVersion,

@@ -3,7 +3,7 @@ package constants
 
 const (
 	// DefaultProbeASN is the default probe ASN as number.
-	DefaultProbeASN = 0
+	DefaultProbeASN uint = 0
 
 	// DefaultProbeCC is the default probe CC.
 	DefaultProbeCC = "ZZ"

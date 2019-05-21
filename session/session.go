@@ -40,20 +40,8 @@ type Session struct {
 	// Logger is the log emitter.
 	Logger log.Logger
 
-	// ProbeASN contains the probe ASN.
-	ProbeASN uint
-
-	// ProbeCC contains the probe CC.
-	ProbeCC string
-
-	// ProbeIP contains the probe IP.
-	ProbeIP string
-
-	// ProbeNetworkName contains the probe network name.
-	ProbeNetworkName string
-
-	// ResolverIP is the resolver's IP.
-	ResolverIP string
+	// Location is the probe location.
+	Location *model.LocationInfo
 
 	// SoftwareName contains the software name.
 	SoftwareName string
@@ -73,11 +61,6 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 		),
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil),
 		Logger:            logger,
-		ProbeASN:          constants.DefaultProbeASN,
-		ProbeCC:           constants.DefaultProbeCC,
-		ProbeIP:           constants.DefaultProbeIP,
-		ProbeNetworkName:  constants.DefaultProbeNetworkName,
-		ResolverIP:        constants.DefaultResolverIP,
 		SoftwareName:      softwareName,
 		SoftwareVersion:   softwareVersion,
 		WorkDir:           os.TempDir(),
@@ -86,7 +69,20 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 
 // ProbeASNString returns the probe ASN as a string.
 func (s *Session) ProbeASNString() string {
-	return fmt.Sprintf("AS%d", s.ProbeASN)
+	asn := constants.DefaultProbeASN
+	if s.Location != nil {
+		asn = s.Location.ASN
+	}
+	return fmt.Sprintf("AS%d", asn)
+}
+
+// ProbeCC returns the probe CC.
+func (s *Session) ProbeCC() string {
+	cc := constants.DefaultProbeCC
+	if s.Location != nil {
+		cc = s.Location.CountryCode
+	}
+	return cc
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
@@ -177,73 +173,68 @@ func (s *Session) LookupBackends(ctx context.Context) (err error) {
 	return
 }
 
-func (s *Session) lookupProbeIP(ctx context.Context) (err error) {
-	if s.ProbeIP == constants.DefaultProbeIP {
-		s.ProbeIP, err = (&iplookup.Client{
-			HTTPClient: s.HTTPNoProxyClient, // No proxy to have the correct IP
-			Logger:     s.Logger,
-			UserAgent:  s.UserAgent(),
-		}).Do(ctx)
-		s.Logger.Debugf("ProbeIP: %s", s.ProbeIP)
-	}
-	return
+func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
+	return (&iplookup.Client{
+		HTTPClient: s.HTTPNoProxyClient, // No proxy to have the correct IP
+		Logger:     s.Logger,
+		UserAgent:  s.UserAgent(),
+	}).Do(ctx)
 }
 
-func (s *Session) lookupProbeASN(databasePath string) (err error) {
-	if s.ProbeASN == constants.DefaultProbeASN {
-		s.ProbeASN, s.ProbeNetworkName, err = mmdblookup.LookupASN(
-			databasePath, s.ProbeIP, s.Logger,
-		)
-		s.Logger.Debugf("ProbeASN: AS%d", s.ProbeASN)
-	}
-	return
+func (s *Session) lookupProbeNetwork(
+	dbPath, probeIP string,
+) (uint, string, error) {
+	return mmdblookup.LookupASN(dbPath, probeIP, s.Logger)
 }
 
-func (s *Session) lookupProbeCC(databasePath string) (err error) {
-	if s.ProbeCC == constants.DefaultProbeCC {
-		s.ProbeCC, err = mmdblookup.LookupCC(
-			databasePath, s.ProbeIP, s.Logger,
-		)
-		s.Logger.Debugf("ProbeCC: %s", s.ProbeCC)
-	}
-	return
+func (s *Session) lookupProbeCC(
+	dbPath, probeIP string,
+) (string, error) {
+	return mmdblookup.LookupCC(dbPath, probeIP, s.Logger)
 }
 
-func (s *Session) lookupResolverIP(ctx context.Context) (err error) {
-	if s.ResolverIP == constants.DefaultResolverIP {
-		var addrs []string
-		addrs, err = resolverlookup.Do(ctx, nil)
-		if err != nil {
-			return
-		}
-		if len(addrs) < 1 {
-			err = errors.New("No resolver IPs returned")
-			return
-		}
-		s.ResolverIP = addrs[0]
-		s.Logger.Debugf("ResolverIP: %s", s.ResolverIP)
+func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
+	addrs, err := resolverlookup.Do(ctx, nil)
+	if err != nil {
+		return "", err
 	}
-	return
+	if len(addrs) < 1 {
+		return "", errors.New("No resolver IPs returned")
+	}
+	return addrs[0], nil
 }
 
 // LookupLocation discovers details on the probe location.
-func (s *Session) LookupLocation(ctx context.Context) (err error) {
-	err = s.fetchResourcesIdempotent(ctx)
-	if err != nil {
-		return
+func (s *Session) LookupLocation(ctx context.Context) error {
+	if s.Location != nil {
+		return nil
 	}
-	err = s.lookupProbeIP(ctx)
+	err := s.fetchResourcesIdempotent(ctx)
 	if err != nil {
-		return
+		return err
 	}
-	err = s.lookupProbeASN(s.ASNDatabasePath())
+	probeIP, err := s.lookupProbeIP(ctx)
 	if err != nil {
-		return
+		return err
 	}
-	err = s.lookupProbeCC(s.CountryDatabasePath())
+	asn, org, err := s.lookupProbeNetwork(s.ASNDatabasePath(), probeIP)
 	if err != nil {
-		return
+		return err
 	}
-	err = s.lookupResolverIP(ctx)
-	return
+	cc, err := s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
+	if err != nil {
+		return err
+	}
+	resolverIP, err := s.lookupResolverIP(ctx)
+	if err != nil {
+		return err
+	}
+	s.Location = &model.LocationInfo{
+		ASN:         asn,
+		CountryCode: cc,
+		NetworkName: org,
+		ProbeIP:     probeIP,
+		ResolverIP:  resolverIP,
+	}
+	return nil
 }
