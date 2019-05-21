@@ -6,8 +6,14 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 )
 
+const (
+	asnDBPath     = "../../testdata/asn.mmdb"
+	countryDBPath = "../../testdata/country.mmdb"
+	ipAddr        = "35.204.49.125"
+)
+
 func TestLookupProbeASN(t *testing.T) {
-	asn, org, err := mmdblookup.LookupASN("../../testdata/asn.mmdb", "8.8.8.8")
+	asn, org, err := mmdblookup.LookupASN(asnDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,7 +22,7 @@ func TestLookupProbeASN(t *testing.T) {
 }
 
 func TestLookupProbeCC(t *testing.T) {
-	cc, err := mmdblookup.LookupCC("../../testdata/country.mmdb", "8.8.8.8")
+	cc, err := mmdblookup.LookupCC(countryDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}

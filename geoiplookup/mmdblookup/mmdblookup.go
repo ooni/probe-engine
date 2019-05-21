@@ -41,8 +41,8 @@ func LookupCC(path, ip string) (cc string, err error) {
 	if err != nil {
 		return
 	}
-	if record.Country.IsoCode != "" {
-		cc = record.Country.IsoCode
+	if record.RegisteredCountry.IsoCode != "" {
+		cc = record.RegisteredCountry.IsoCode
 	}
 	return
 }
