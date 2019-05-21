@@ -60,7 +60,7 @@ type Measurement struct {
 	TestHelpers map[string]string `json:"test_helpers,omitempty"`
 
 	// TestKeys contains the real test result. This field is opaque because
-	// each nettest will insert here a different structure.
+	// each experiment will insert here a different structure.
 	TestKeys interface{} `json:"test_keys"`
 
 	// TestName contains the test name

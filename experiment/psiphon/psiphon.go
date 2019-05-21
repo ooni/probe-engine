@@ -1,4 +1,4 @@
-// Package psiphon implements the psiphon nettest.
+// Package psiphon implements the psiphon network experiment.
 package psiphon
 
 import (
@@ -15,9 +15,9 @@ import (
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
 	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/nettest"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -26,12 +26,12 @@ const (
 	testVersion = "0.3.0"
 )
 
-// NewNettest creates a new nettest.
-func NewNettest(cs *session.Session) *nettest.Nettest {
-	return nettest.New(cs, testName, testVersion)
+// NewReporter creates a new reporter.
+func NewReporter(cs *session.Session) *experiment.Reporter {
+	return experiment.NewReporter(cs, testName, testVersion)
 }
 
-// Config contains the nettest configuration.
+// Config contains the experiment's configuration.
 type Config struct {
 	// ConfigFilePath is the path where Psiphon config file is located.
 	ConfigFilePath string
@@ -47,11 +47,11 @@ type Config struct {
 	WorkDir string
 }
 
-// testKeys contains the nettest result.
+// TestKeys contains the experiment's result.
 //
 // This is what will end up into the Measurement.TestKeys field
-// when you run this nettest.
-type testKeys struct {
+// when you run this experiment.
+type TestKeys struct {
 	// Failure contains the failure that occurred.
 	Failure string `json:"failure"`
 
@@ -115,13 +115,13 @@ var usetunnel = func(
 // clientlibStartTunnel is a mockable clientlib.StartTunnel
 var clientlibStartTunnel = clientlib.StartTunnel
 
-// Run runs a psiphon test
+// Run runs a psiphon experiment
 func Run(
 	ctx context.Context,
 	measurement *model.Measurement,
 	config Config,
 ) error {
-	testkeys := &testKeys{}
+	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
 	configJSON, params, err := processconfig(config)
 	if err != nil {

@@ -1,12 +1,11 @@
-package ndt7_test
+package psiphon_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/nettest/ndt7"
+	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -46,23 +45,23 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nt := ndt7.NewNettest(sess)
-	if err := nt.OpenReport(ctx); err != nil {
+	reporter := psiphon.NewReporter(sess)
+	if err := reporter.OpenReport(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer nt.CloseReport(ctx)
+	defer reporter.CloseReport(ctx)
 
-	measurement := nt.NewMeasurement("")
-	if err := ndt7.Run(ctx, &measurement, func(event ndt7.Event) {
-		data, err := json.Marshal(event)
-		if err != nil {
-			panic(err) // should not happen
-		}
-		log.Debug(string(data))
-	}); err != nil {
+	measurement := reporter.NewMeasurement("")
+	err := psiphon.Run(ctx, &measurement, psiphon.Config{
+		ConfigFilePath: "../../testdata/psiphon_config.json",
+		Logger:         sess.Logger,
+		UserAgent:      sess.UserAgent(),
+		WorkDir:        sess.WorkDir,
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := nt.SubmitMeasurement(ctx, &measurement); err != nil {
+	if err := reporter.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }

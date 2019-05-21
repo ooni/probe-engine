@@ -1,4 +1,4 @@
-// Package ndt7 contains the ndt7 nettest
+// Package ndt7 contains the ndt7 network experiment.
 package ndt7
 
 import (
@@ -6,8 +6,8 @@ import (
 
 	upstream "github.com/m-lab/ndt7-client-go"
 	"github.com/m-lab/ndt7-client-go/spec"
+	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/nettest"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -16,13 +16,13 @@ const (
 	testVersion = "0.1.0"
 )
 
-// NewNettest creates a new ndt7 nettest.
-func NewNettest(cs *session.Session) *nettest.Nettest {
-	return nettest.New(cs, testName, testVersion)
+// NewReporter creates a new experiment reporter.
+func NewReporter(cs *session.Session) *experiment.Reporter {
+	return experiment.NewReporter(cs, testName, testVersion)
 }
 
-// testKeys contains the test keys
-type testKeys struct {
+// TestKeys contains the test keys
+type TestKeys struct {
 	// Failure is the failure string
 	Failure string `json:"failure"`
 
@@ -40,11 +40,12 @@ type Event = spec.Measurement
 func Run(
 	ctx context.Context,
 	measurement *model.Measurement,
+	userAgent string,
 	fn func(event Event),
 ) error {
-	testkeys := &testKeys{}
+	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
-	client := upstream.NewClient("ooniprobe-example/0.0.1")
+	client := upstream.NewClient(userAgent)
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
 		testkeys.Failure = err.Error()
