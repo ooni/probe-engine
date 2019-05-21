@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/ooni/probe-engine/experiment"
+	"github.com/ooni/probe-engine/experiment/mkevent"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -31,7 +32,7 @@ func measure(
 		return err
 	}
 	for ev := range out {
-		sess.Logger.Debugf("%+v", ev)
+		mkevent.Handle(sess, measurement, ev)
 	}
 	return nil
 }
