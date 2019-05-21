@@ -49,6 +49,9 @@ func Handle(
 	if event.Key == "status.update.performance" {
 		return // Seems unused by OONI
 	}
+	if event.Key == "status.update.websites" {
+		return // Ditto
+	}
 	if event.Key == "status.queued" {
 		return // Ditto
 	}

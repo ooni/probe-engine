@@ -56,8 +56,11 @@ type Measurement struct {
 	// SoftwareVersion contains the software version
 	SoftwareVersion string `json:"software_version"`
 
-	// TestHelpers contains the test helpers
-	TestHelpers map[string]string `json:"test_helpers,omitempty"`
+	// TestHelpers contains the test helpers. It seems this structure is more
+	// complex than we would like. In particular, using a map from string to
+	// string does not fit into the web_connectivity user case. Hence, for now
+	// we're going to represent this using interface{}.
+	TestHelpers map[string]interface{} `json:"test_helpers,omitempty"`
 
 	// TestKeys contains the real test result. This field is opaque because
 	// each experiment will insert here a different structure.
