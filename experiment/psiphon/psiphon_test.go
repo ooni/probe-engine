@@ -20,28 +20,10 @@ func TestIntegration(t *testing.T) {
 
 	sess := session.New(log.Log, softwareName, softwareVersion)
 	sess.WorkDir = "../../testdata"
-	if err := sess.FetchResourcesIdempotent(ctx); err != nil {
+	if err := sess.LookupBackends(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := sess.LookupCollectors(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupTestHelpers(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupProbeIP(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupProbeASN(sess.ASNDatabasePath()); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupProbeCC(sess.CountryDatabasePath()); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupProbeNetworkName(sess.ASNDatabasePath()); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.LookupResolverIP(ctx); err != nil {
+	if err := sess.LookupLocation(ctx); err != nil {
 		t.Fatal(err)
 	}
 

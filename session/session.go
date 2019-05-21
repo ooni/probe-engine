@@ -84,9 +84,7 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 	}
 }
 
-// FetchResourcesIdempotent makes sure we have the resources we
-// need for running inside of s.WorkDir.
-func (s *Session) FetchResourcesIdempotent(ctx context.Context) error {
+func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
 		HTTPClient: s.HTTPDefaultClient, // proxy is OK
 		Logger:     s.Logger,
@@ -150,77 +148,98 @@ func (s *Session) queryBouncer(
 	return errors.New("All available bouncers failed")
 }
 
-// LookupCollectors discovers the available collectors.
-func (s *Session) LookupCollectors(ctx context.Context) error {
+func (s *Session) lookupCollectors(ctx context.Context) error {
 	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
 		s.AvailableCollectors, err = client.GetCollectors(ctx)
 		return
 	})
 }
 
-// LookupTestHelpers discovers the available test helpers.
-func (s *Session) LookupTestHelpers(ctx context.Context) error {
+func (s *Session) lookupTestHelpers(ctx context.Context) error {
 	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
 		s.AvailableTestHelpers, err = client.GetTestHelpers(ctx)
 		return
 	})
 }
 
-// LookupProbeIP discovers the probe IP.
-func (s *Session) LookupProbeIP(ctx context.Context) (err error) {
-	s.ProbeIP, err = (&iplookup.Client{
-		HTTPClient: s.HTTPNoProxyClient, // No proxy to have the right IP
-		Logger:     s.Logger,
-		UserAgent:  s.UserAgent(),
-	}).Do(ctx)
-	s.Logger.Debugf("ProbeIP: %s", s.ProbeIP)
+// LookupBackends discovers the available OONI backends.
+func (s *Session) LookupBackends(ctx context.Context) (err error) {
+	err = s.lookupCollectors(ctx)
+	if err != nil {
+		return
+	}
+	err = s.lookupTestHelpers(ctx)
 	return
 }
 
-// LookupProbeASN discovers the probe ASN.
-func (s *Session) LookupProbeASN(databasePath string) (err error) {
+func (s *Session) lookupProbeIP(ctx context.Context) (err error) {
+	if s.ProbeIP == constants.DefaultProbeIP {
+		s.ProbeIP, err = (&iplookup.Client{
+			HTTPClient: s.HTTPNoProxyClient, // No proxy to have the correct IP
+			Logger:     s.Logger,
+			UserAgent:  s.UserAgent(),
+		}).Do(ctx)
+		s.Logger.Debugf("ProbeIP: %s", s.ProbeIP)
+	}
+	return
+}
+
+func (s *Session) lookupProbeASN(databasePath string) (err error) {
 	if s.ProbeASN == constants.DefaultProbeASNString {
 		var asn uint
 		asn, s.ProbeNetworkName, err = mmdblookup.LookupASN(
 			databasePath, s.ProbeIP, s.Logger,
 		)
 		s.ProbeASN = fmt.Sprintf("AS%d", asn)
+		s.Logger.Debugf("ProbeASN: %s", s.ProbeASN)
 	}
-	s.Logger.Debugf("ProbeASN: %s", s.ProbeASN)
 	return
 }
 
-// LookupProbeCC discovers the probe CC.
-func (s *Session) LookupProbeCC(databasePath string) (err error) {
+func (s *Session) lookupProbeCC(databasePath string) (err error) {
 	if s.ProbeCC == constants.DefaultProbeCC {
 		s.ProbeCC, err = mmdblookup.LookupCC(
 			databasePath, s.ProbeIP, s.Logger,
 		)
+		s.Logger.Debugf("ProbeCC: %s", s.ProbeCC)
 	}
-	s.Logger.Debugf("ProbeCC: %s", s.ProbeCC)
 	return
 }
 
-// LookupProbeNetworkName discovers the probe network name.
-func (s *Session) LookupProbeNetworkName(databasePath string) error {
-	// Implementation note: let the ASN lookup completely dominate
-	// the behavior and side effects of this function.
-	return s.LookupProbeASN(databasePath)
+func (s *Session) lookupResolverIP(ctx context.Context) (err error) {
+	if s.ResolverIP == constants.DefaultResolverIP {
+		addrs, err := resolverlookup.Do(ctx, nil)
+		if err != nil {
+			return
+		}
+		if len(addrs) < 1 {
+			err = errors.New("No resolver IPs returned")
+			return
+		}
+		s.ResolverIP = addrs[0]
+		s.Logger.Debugf("ResolverIP: %s", s.ResolverIP)
+	}
+	return
 }
 
-// LookupResolverIP discovers the resolver IP.
-func (s *Session) LookupResolverIP(ctx context.Context) error {
-	if s.ResolverIP != constants.DefaultResolverIP {
-		return nil
-	}
-	addrs, err := resolverlookup.Do(ctx, nil)
+// LookupLocation discovers details on the probe location.
+func (s *Session) LookupLocation(ctx context.Context) (err error) {
+	err = s.fetchResourcesIdempotent(ctx)
 	if err != nil {
-		return err
+		return
 	}
-	if len(addrs) < 1 {
-		return errors.New("No resolver IPs returned")
+	err = s.lookupProbeIP(ctx)
+	if err != nil {
+		return
 	}
-	s.ResolverIP = addrs[0]
-	s.Logger.Debugf("ResolverIP: %s", s.ResolverIP)
-	return nil
+	err = s.lookupProbeASN(s.ASNDatabasePath())
+	if err != nil {
+		return
+	}
+	err = s.lookupProbeCC(s.CountryDatabasePath())
+	if err != nil {
+		return
+	}
+	err = s.lookupResolverIP(ctx)
+	return
 }

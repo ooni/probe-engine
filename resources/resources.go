@@ -75,7 +75,6 @@ func (c *Client) Ensure(ctx context.Context) error {
 		if err == nil {
 			sha256sum := fmt.Sprintf("%x", sha256.Sum256(data))
 			if sha256sum == resource.sha256 {
-				c.Logger.Debugf("resources: %s is up to date", fullpath)
 				continue
 			}
 			c.Logger.Debugf("resources: %s is outdated", fullpath)
