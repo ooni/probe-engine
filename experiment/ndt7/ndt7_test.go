@@ -55,12 +55,12 @@ func TestIntegration(t *testing.T) {
 	measurement := reporter.NewMeasurement("")
 	if err := ndt7.Run(
 		ctx, &measurement, sess.UserAgent(), func(event ndt7.Event) {
-		data, err := json.Marshal(event)
-		if err != nil {
-			panic(err) // should not happen
-		}
-		log.Debug(string(data))
-	}); err != nil {
+			data, err := json.Marshal(event)
+			if err != nil {
+				panic(err) // should not happen
+			}
+			log.Debug(string(data))
+		}); err != nil {
 		t.Fatal(err)
 	}
 	if err := reporter.SubmitMeasurement(ctx, &measurement); err != nil {
