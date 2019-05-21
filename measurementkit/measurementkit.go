@@ -36,6 +36,9 @@ type Settings struct {
 
 // Options contains the options
 type Options struct {
+	// Backend is a test helper for a nettest
+	Backend string `json:"backend,omitempty"`
+
 	// BouncerBaseURL contains the bouncer base URL
 	BouncerBaseURL string `json:"bouncer_base_url,omitempty"`
 
