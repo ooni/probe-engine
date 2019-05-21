@@ -31,24 +31,29 @@ type Client struct {
 }
 
 func (c *Client) makePostRequest(
-	ctx context.Context, method, resourcePath string, body interface{},
+	ctx context.Context, method, resourcePath string,
+	query url.Values, body interface{},
 ) (*http.Request, error) {
 	data, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	c.Logger.Debugf("jsonapi: request body: %s", string(data))
-	return c.makeRequest(ctx, method, resourcePath, bytes.NewReader(data))
+	return c.makeRequest(ctx, method, resourcePath, query, bytes.NewReader(data))
 }
 
 func (c *Client) makeRequest(
-	ctx context.Context, method, resourcePath string, body io.Reader,
+	ctx context.Context, method, resourcePath string,
+	query url.Values, body io.Reader,
 ) (*http.Request, error) {
 	URL, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, err
 	}
 	URL.Path = resourcePath
+	if query != nil {
+		URL.RawQuery = query.Encode()
+	}
 	c.Logger.Debugf("jsonapi: method: %s", method)
 	c.Logger.Debugf("jsonapi: URL: %s", URL.String())
 	request, err := http.NewRequest(method, URL.String(), body)
@@ -85,7 +90,19 @@ func (c *Client) do(request *http.Request, output interface{}) error {
 func (c *Client) Read(
 	ctx context.Context, resourcePath string, output interface{},
 ) error {
-	request, err := c.makeRequest(ctx, "GET", resourcePath, nil)
+	request, err := c.makeRequest(ctx, "GET", resourcePath, nil, nil)
+	if err != nil {
+		return err
+	}
+	return c.do(request, output)
+}
+
+// ReadWithQuery is like Read but also has a query.
+func (c *Client) ReadWithQuery(
+	ctx context.Context, resourcePath string,
+	query url.Values, output interface{},
+) error {
+	request, err := c.makeRequest(ctx, "GET", resourcePath, query, nil)
 	if err != nil {
 		return err
 	}
@@ -99,7 +116,7 @@ func (c *Client) Read(
 func (c *Client) Create(
 	ctx context.Context, resourcePath string, input, output interface{},
 ) error {
-	request, err := c.makePostRequest(ctx, "POST", resourcePath, input)
+	request, err := c.makePostRequest(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
