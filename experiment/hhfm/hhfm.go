@@ -1,5 +1,5 @@
-// Package hirl contains the HTTP Invalid Request Line network experiment.
-package hirl
+// Package hhfm contains the HTTP Header Field Manipulation network experiment.
+package hhfm
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	testName    = "http_invalid_request_line"
-	testVersion = "0.0.3"
+	testName    = "http_header_field_manipulation"
+	testVersion = "0.0.1"
 )
 
 // Config contains the experiment config.
@@ -24,11 +24,11 @@ func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 ) error {
 	settings := measurementkit.NewSettings(
-		"HttpInvalidRequestLine", sess.SoftwareName, sess.SoftwareVersion,
+		"HttpHeaderFieldManipulation", sess.SoftwareName, sess.SoftwareVersion,
 		sess.CABundlePath(), sess.ProbeASNString(), sess.ProbeCC(),
 		sess.ProbeIP(), sess.ProbeNetworkName(),
 	)
-	err := mkhelper.Set(sess, "tcp-echo", "legacy", &settings)
+	err := mkhelper.Set(sess, "http-return-json-headers", "legacy", &settings)
 	if err != nil {
 		return err
 	}
