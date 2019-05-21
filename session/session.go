@@ -182,7 +182,7 @@ func (s *Session) LookupProbeASN(databasePath string) (err error) {
 	if s.ProbeASN == constants.DefaultProbeASNString {
 		var asn uint
 		asn, s.ProbeNetworkName, err = mmdblookup.LookupASN(
-			databasePath, s.ProbeIP,
+			databasePath, s.ProbeIP, s.Logger,
 		)
 		s.ProbeASN = fmt.Sprintf("AS%d", asn)
 	}
@@ -193,7 +193,9 @@ func (s *Session) LookupProbeASN(databasePath string) (err error) {
 // LookupProbeCC discovers the probe CC.
 func (s *Session) LookupProbeCC(databasePath string) (err error) {
 	if s.ProbeCC == constants.DefaultProbeCC {
-		s.ProbeCC, err = mmdblookup.LookupCC(databasePath, s.ProbeIP)
+		s.ProbeCC, err = mmdblookup.LookupCC(
+			databasePath, s.ProbeIP, s.Logger,
+		)
 	}
 	s.Logger.Debugf("ProbeCC: %s", s.ProbeCC)
 	return

@@ -3,6 +3,7 @@ package mmdblookup_test
 import (
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 )
 
@@ -13,7 +14,7 @@ const (
 )
 
 func TestLookupProbeASN(t *testing.T) {
-	asn, org, err := mmdblookup.LookupASN(asnDBPath, ipAddr)
+	asn, org, err := mmdblookup.LookupASN(asnDBPath, ipAddr, log.Log)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +23,7 @@ func TestLookupProbeASN(t *testing.T) {
 }
 
 func TestLookupProbeCC(t *testing.T) {
-	cc, err := mmdblookup.LookupCC(countryDBPath, ipAddr)
+	cc, err := mmdblookup.LookupCC(countryDBPath, ipAddr, log.Log)
 	if err != nil {
 		t.Fatal(err)
 	}

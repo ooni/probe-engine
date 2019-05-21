@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/ooni/probe-engine/geoiplookup/constants"
+	"github.com/ooni/probe-engine/log"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -12,7 +13,9 @@ import (
 // MMDB database located at path, or returns an error. In case
 // the IP is not valid, this function will fail with an error
 // complaining that geoip2 was passed a nil IP.
-func LookupASN(path, ip string) (asn uint, org string, err error) {
+func LookupASN(
+	path, ip string, logger log.Logger,
+) (asn uint, org string, err error) {
 	asn, org = constants.DefaultProbeASNNumber, constants.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
@@ -23,6 +26,7 @@ func LookupASN(path, ip string) (asn uint, org string, err error) {
 	if err != nil {
 		return
 	}
+	logger.Debugf("mmdblookup: ASN: %+v", record)
 	asn = record.AutonomousSystemNumber
 	if record.AutonomousSystemOrganization != "" {
 		org = record.AutonomousSystemOrganization
@@ -31,7 +35,9 @@ func LookupASN(path, ip string) (asn uint, org string, err error) {
 }
 
 // LookupCC is like LookupASN but for the country code.
-func LookupCC(path, ip string) (cc string, err error) {
+func LookupCC(
+	path, ip string, logger log.Logger,
+) (cc string, err error) {
 	cc = constants.DefaultProbeCC
 	db, err := geoip2.Open(path)
 	if err != nil {
@@ -41,6 +47,7 @@ func LookupCC(path, ip string) (cc string, err error) {
 	if err != nil {
 		return
 	}
+	logger.Debugf("mmdblookup: Country: %+v", record)
 	if record.RegisteredCountry.IsoCode != "" {
 		cc = record.RegisteredCountry.IsoCode
 	}
