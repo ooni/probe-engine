@@ -6,9 +6,9 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 type response struct {
@@ -29,13 +29,13 @@ func Do(
 		UserAgent:  userAgent,
 	}).Fetch(ctx, "https://geoip.ubuntu.com/lookup")
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	logger.Debugf("ubuntu: body: %s", string(data))
 	var v response
 	err = xml.Unmarshal(data, &v)
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

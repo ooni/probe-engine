@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/bouncer"
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
@@ -69,7 +68,7 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 
 // ProbeASNString returns the probe ASN as a string.
 func (s *Session) ProbeASNString() string {
-	asn := constants.DefaultProbeASN
+	asn := model.DefaultProbeASN
 	if s.Location != nil {
 		asn = s.Location.ASN
 	}
@@ -78,7 +77,7 @@ func (s *Session) ProbeASNString() string {
 
 // ProbeCC returns the probe CC.
 func (s *Session) ProbeCC() string {
-	cc := constants.DefaultProbeCC
+	cc := model.DefaultProbeCC
 	if s.Location != nil {
 		cc = s.Location.CountryCode
 	}

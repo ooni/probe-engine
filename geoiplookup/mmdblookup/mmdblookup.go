@@ -4,8 +4,8 @@ package mmdblookup
 import (
 	"net"
 
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -16,7 +16,7 @@ import (
 func LookupASN(
 	path, ip string, logger log.Logger,
 ) (asn uint, org string, err error) {
-	asn, org = constants.DefaultProbeASN, constants.DefaultProbeNetworkName
+	asn, org = model.DefaultProbeASN, model.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return
@@ -38,7 +38,7 @@ func LookupASN(
 func LookupCC(
 	path, ip string, logger log.Logger,
 ) (cc string, err error) {
-	cc = constants.DefaultProbeCC
+	cc = model.DefaultProbeCC
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return

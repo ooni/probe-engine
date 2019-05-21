@@ -5,9 +5,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/httpx/jsonapi"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 type response struct {
@@ -29,7 +29,7 @@ func Do(
 		UserAgent:  userAgent,
 	}).Read(ctx, "/v1/info", &v)
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/akamai"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/avast"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/ubuntu"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 type lookupFunc func(
@@ -72,10 +72,10 @@ func makeSlice() []method {
 func (c *Client) do(ctx context.Context, fn lookupFunc) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	if net.ParseIP(ip) == nil {
-		return constants.DefaultProbeIP, fmt.Errorf("Invalid IP address: %s", ip)
+		return model.DefaultProbeIP, fmt.Errorf("Invalid IP address: %s", ip)
 	}
 	c.Logger.Debugf("iplookup: IP: %s", ip)
 	return ip, nil
@@ -90,5 +90,5 @@ func (c *Client) Do(ctx context.Context) (ip string, err error) {
 			return
 		}
 	}
-	return constants.DefaultProbeIP, errors.New("All IP lookuppers failed")
+	return model.DefaultProbeIP, errors.New("All IP lookuppers failed")
 }

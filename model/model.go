@@ -106,3 +106,20 @@ type LocationInfo struct {
 	// ResolverIP is the resolver IP
 	ResolverIP string
 }
+
+const (
+	// DefaultProbeASN is the default probe ASN as number.
+	DefaultProbeASN uint = 0
+
+	// DefaultProbeCC is the default probe CC.
+	DefaultProbeCC = "ZZ"
+
+	// DefaultProbeIP is the default probe IP.
+	DefaultProbeIP = "127.0.0.1"
+
+	// DefaultProbeNetworkName is the default probe network name.
+	DefaultProbeNetworkName = ""
+
+	// DefaultResolverIP is the default resolver IP.
+	DefaultResolverIP = "127.0.0.1"
+)

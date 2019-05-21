@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/collector"
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -103,7 +102,7 @@ func (r *Reporter) NewMeasurement(input string) model.Measurement {
 		DataFormatVersion:    "0.2.0",
 		Input:                input,
 		MeasurementStartTime: formatTimeNowUTC(),
-		ProbeIP:              constants.DefaultProbeIP, // privacy by default
+		ProbeIP:              model.DefaultProbeIP, // privacy by default
 		ProbeASN:             r.Session.ProbeASNString(),
 		ProbeCC:              r.Session.ProbeCC(),
 		ReportID:             r.ReportID(),

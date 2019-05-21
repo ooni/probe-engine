@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ooni/probe-engine/geoiplookup/constants"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 type response struct {
@@ -23,13 +23,13 @@ func Do(
 ) (string, error) {
 	req, err := http.NewRequest("GET", "https://a248.e.akamai.net/", nil)
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	req.Host = "whatismyip.akamai.com" // domain fronted request
 	req.Header.Set("User-Agent", userAgent)
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return constants.DefaultProbeIP, err
+		return model.DefaultProbeIP, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
