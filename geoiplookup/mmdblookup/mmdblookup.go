@@ -16,7 +16,7 @@ import (
 func LookupASN(
 	path, ip string, logger log.Logger,
 ) (asn uint, org string, err error) {
-	asn, org = constants.DefaultProbeASNNumber, constants.DefaultProbeNetworkName
+	asn, org = constants.DefaultProbeASN, constants.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return

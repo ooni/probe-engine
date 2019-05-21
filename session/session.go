@@ -41,7 +41,7 @@ type Session struct {
 	Logger log.Logger
 
 	// ProbeASN contains the probe ASN.
-	ProbeASN string
+	ProbeASN uint
 
 	// ProbeCC contains the probe CC.
 	ProbeCC string
@@ -73,7 +73,7 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 		),
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil),
 		Logger:            logger,
-		ProbeASN:          constants.DefaultProbeASNString,
+		ProbeASN:          constants.DefaultProbeASN,
 		ProbeCC:           constants.DefaultProbeCC,
 		ProbeIP:           constants.DefaultProbeIP,
 		ProbeNetworkName:  constants.DefaultProbeNetworkName,
@@ -82,6 +82,11 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 		SoftwareVersion:   softwareVersion,
 		WorkDir:           os.TempDir(),
 	}
+}
+
+// ProbeASNString returns the probe ASN as a string.
+func (s *Session) ProbeASNString() string {
+	return fmt.Sprintf("AS%d", s.ProbeASN)
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
@@ -185,13 +190,11 @@ func (s *Session) lookupProbeIP(ctx context.Context) (err error) {
 }
 
 func (s *Session) lookupProbeASN(databasePath string) (err error) {
-	if s.ProbeASN == constants.DefaultProbeASNString {
-		var asn uint
-		asn, s.ProbeNetworkName, err = mmdblookup.LookupASN(
+	if s.ProbeASN == constants.DefaultProbeASN {
+		s.ProbeASN, s.ProbeNetworkName, err = mmdblookup.LookupASN(
 			databasePath, s.ProbeIP, s.Logger,
 		)
-		s.ProbeASN = fmt.Sprintf("AS%d", asn)
-		s.Logger.Debugf("ProbeASN: %s", s.ProbeASN)
+		s.Logger.Debugf("ProbeASN: AS%d", s.ProbeASN)
 	}
 	return
 }
@@ -208,7 +211,8 @@ func (s *Session) lookupProbeCC(databasePath string) (err error) {
 
 func (s *Session) lookupResolverIP(ctx context.Context) (err error) {
 	if s.ResolverIP == constants.DefaultResolverIP {
-		addrs, err := resolverlookup.Do(ctx, nil)
+		var addrs []string
+		addrs, err = resolverlookup.Do(ctx, nil)
 		if err != nil {
 			return
 		}
