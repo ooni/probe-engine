@@ -38,6 +38,7 @@ require (
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/redjack/marionette v0.0.0-20180930054334-5d0d25fc4084 // indirect
 	github.com/refraction-networking/utls v0.0.0-20190415193640-32987941ebd3 // indirect

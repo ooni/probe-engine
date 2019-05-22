@@ -3,7 +3,9 @@ package experiment
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/ooni/probe-engine/collector"
@@ -141,6 +143,25 @@ func (e *Experiment) SubmitMeasurement(
 		err = e.Report.SubmitMeasurement(ctx, measurement, e.IncludeProbeIP)
 	}
 	return
+}
+
+// SaveMeasurement saves a measurement on the specified file.
+func (e *Experiment) SaveMeasurement(
+	measurement model.Measurement, filePath string,
+) error {
+	data, err := json.Marshal(measurement)
+	if err != nil {
+		return err
+	}
+	data = append(data, byte('\n'))
+	filep, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := filep.Write(data); err != nil {
+		return err
+	}
+	return filep.Close()
 }
 
 // CloseReport closes the open report.
