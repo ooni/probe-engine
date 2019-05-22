@@ -14,6 +14,7 @@ import (
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
 	"github.com/ooni/probe-engine/experiment"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/model"
@@ -109,6 +110,7 @@ func run(
 	sess *session.Session,
 	measurement *model.Measurement,
 	config Config,
+	callbacks handler.Callbacks,
 ) error {
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
@@ -139,7 +141,9 @@ func NewExperiment(
 ) *experiment.Experiment {
 	return experiment.New(
 		sess, testName, testVersion,
-		func(c context.Context, s *session.Session, m *model.Measurement) error {
-			return run(c, s, m, config)
+		func(c context.Context, s *session.Session, m *model.Measurement,
+			callbacks handler.Callbacks,
+		) error {
+			return run(c, s, m, config, callbacks)
 		})
 }

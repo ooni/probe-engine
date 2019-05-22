@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -15,6 +16,7 @@ func Handle(
 	sess *session.Session,
 	measurement *model.Measurement,
 	event measurementkit.Event,
+	callbacks handler.Callbacks,
 ) {
 	if event.Key == "measurement" {
 		// We reparse the measurement and overwrite it. This is how we manage to
@@ -39,11 +41,11 @@ func Handle(
 		return
 	}
 	if event.Key == "status.progress" {
-		sess.Progress(event.Value.Percentage, event.Value.Message)
+		callbacks.Progress(event.Value.Percentage, event.Value.Message)
 		return
 	}
 	if event.Key == "status.end" {
-		sess.DataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
+		callbacks.DataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
 		return
 	}
 	if event.Key == "status.update.performance" {

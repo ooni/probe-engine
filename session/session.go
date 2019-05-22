@@ -19,12 +19,6 @@ import (
 	"github.com/ooni/probe-engine/resources"
 )
 
-// DataUsageFunc provides information about data usage.
-type DataUsageFunc func(dloadKiB, uploadKiB float64)
-
-// ProgressFunc provides information about an experiment progress.
-type ProgressFunc func(percentage float64, message string)
-
 // Session contains information on a measurement session.
 type Session struct {
 	// AvailableBouncers contains the available bouncers.
@@ -35,9 +29,6 @@ type Session struct {
 
 	// AvailableTestHelpers contains the available test helpers.
 	AvailableTestHelpers map[string][]model.Service
-
-	// DataUsage is called to provide updates on data usage.
-	DataUsage DataUsageFunc
 
 	// HTTPDefaultClient is the default HTTP client to use.
 	HTTPDefaultClient *http.Client
@@ -50,9 +41,6 @@ type Session struct {
 
 	// Location is the probe location.
 	Location *model.LocationInfo
-
-	// Progress is called to provide information about progress.
-	Progress ProgressFunc
 
 	// SoftwareName contains the software name.
 	SoftwareName string
@@ -67,20 +55,14 @@ type Session struct {
 // New creates a new experiments session.
 func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 	return &Session{
-		DataUsage: func(dloadKiB, uploadKiB float64) {
-			logger.Infof("data usage: %f/%f down/up KiB", dloadKiB, uploadKiB)
-		},
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
 			logger, http.ProxyFromEnvironment,
 		),
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil),
 		Logger:            logger,
-		Progress: func(percentage float64, message string) {
-			logger.Infof("[%4.1f%%] %s", percentage*100, message)
-		},
-		SoftwareName:    softwareName,
-		SoftwareVersion: softwareVersion,
-		WorkDir:         os.TempDir(),
+		SoftwareName:      softwareName,
+		SoftwareVersion:   softwareVersion,
+		WorkDir:           os.TempDir(),
 	}
 }
 

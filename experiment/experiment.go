@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/collector"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -22,12 +23,16 @@ func formatTimeNowUTC() string {
 // MeasureFunc is the function that fills a measurement.
 type MeasureFunc func(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
+	callbacks handler.Callbacks,
 ) error
 
 // Experiment is a network experiment.
 type Experiment struct {
 	// DoMeasure fills a measurement.
 	DoMeasure MeasureFunc
+
+	// Callbacks handles experiment events.
+	Callbacks handler.Callbacks
 
 	// IncludeProbeIP indicates whether to include the probe IP
 	// when submitting measurements.
@@ -52,11 +57,12 @@ type Experiment struct {
 // New creates a new experiment. You should not call this function directly
 // rather you should do <package>.NewExperiment.
 func New(
-	session *session.Session, testName, testVersion string, measure MeasureFunc,
+	sess *session.Session, testName, testVersion string, measure MeasureFunc,
 ) *Experiment {
 	return &Experiment{
 		DoMeasure:     measure,
-		Session:       session,
+		Callbacks:     handler.NewPrinterCallbacks(sess.Logger),
+		Session:       sess,
 		TestName:      testName,
 		TestStartTime: formatTimeNowUTC(),
 		TestVersion:   testVersion,
@@ -129,7 +135,7 @@ func (e *Experiment) Measure(
 	ctx context.Context, input string,
 ) (measurement model.Measurement, err error) {
 	measurement = e.newMeasurement(input)
-	err = e.DoMeasure(ctx, e.Session, &measurement)
+	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
 	return
 }
 

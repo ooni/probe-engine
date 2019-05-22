@@ -11,6 +11,7 @@ import (
 	"github.com/m-lab/ndt7-client-go/spec"
 
 	"github.com/ooni/probe-engine/experiment"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -37,6 +38,7 @@ type TestKeys struct {
 
 func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
+	callbacks handler.Callbacks,
 ) error {
 	const maxRuntime = 15.0 // second (conservative)
 	testkeys := &TestKeys{}
@@ -47,7 +49,7 @@ func measure(
 		testkeys.Failure = err.Error()
 		return err
 	}
-	sess.Progress(0, fmt.Sprintf("server: %s", client.FQDN))
+	callbacks.Progress(0, fmt.Sprintf("server: %s", client.FQDN))
 	for ev := range ch {
 		testkeys.Download = append(testkeys.Download, ev)
 		percentage := ev.Elapsed / maxRuntime / 2.0
@@ -56,7 +58,7 @@ func measure(
 			humanize.SI(float64(ev.BBRInfo.MaxBandwidth), "bit/s"),
 			ev.BBRInfo.MinRTT, ev.TCPInfo.SmoothedRTT, ev.TCPInfo.RTTVar,
 		)
-		sess.Progress(percentage, message)
+		callbacks.Progress(percentage, message)
 	}
 	ch, err = client.StartUpload(ctx)
 	if err != nil {
@@ -65,14 +67,14 @@ func measure(
 	}
 	for ev := range ch {
 		testkeys.Upload = append(testkeys.Upload, ev)
-		percentage := 0.5 + ev.Elapsed / maxRuntime / 2.0
+		percentage := 0.5 + ev.Elapsed/maxRuntime/2.0
 		speed := float64(ev.AppInfo.NumBytes) * 8.0 / ev.Elapsed
 		message := fmt.Sprintf(
 			"upload-speed %s", humanize.SI(float64(speed), "bit/s"),
 		)
-		sess.Progress(percentage, message)
+		callbacks.Progress(percentage, message)
 	}
-	sess.Progress(1, "done")
+	callbacks.Progress(1, "done")
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/ooni/probe-engine/experiment"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkevent"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
@@ -21,6 +22,7 @@ type Config struct{}
 
 func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
+	callbacks handler.Callbacks,
 ) error {
 	settings := measurementkit.NewSettings(
 		"Telegram", sess.SoftwareName, sess.SoftwareVersion,
@@ -32,7 +34,7 @@ func measure(
 		return err
 	}
 	for ev := range out {
-		mkevent.Handle(sess, measurement, ev)
+		mkevent.Handle(sess, measurement, ev, callbacks)
 	}
 	return nil
 }
