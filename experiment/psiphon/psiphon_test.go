@@ -18,8 +18,7 @@ func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 
-	sess := session.New(log.Log, softwareName, softwareVersion)
-	sess.WorkDir = "../../testdata"
+	sess := session.New(log.Log, softwareName, softwareVersion, "../../testdata")
 	if err := sess.LookupBackends(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +28,7 @@ func TestIntegration(t *testing.T) {
 
 	experiment := psiphon.NewExperiment(sess, psiphon.Config{
 		ConfigFilePath: "../../testdata/psiphon_config.json",
-		WorkDir:        sess.WorkDir,
+		WorkDir:        "../../testdata",
 	})
 	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)

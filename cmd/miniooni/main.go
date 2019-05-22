@@ -159,8 +159,7 @@ func main() {
 	log.Log = logger // from now on logs may be redirected
 
 	ctx := context.Background()
-	sess := session.New(logger, softwareName, softwareVersion)
-	sess.WorkDir = workDir
+	sess := session.New(logger, softwareName, softwareVersion, workDir)
 	if !globalOptions.noBouncer {
 		if err := sess.LookupBackends(ctx); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")

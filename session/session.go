@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/bouncer"
@@ -21,6 +20,9 @@ import (
 
 // Session contains information on a measurement session.
 type Session struct {
+	// AssetsDir is the directory where to store assets.
+	AssetsDir string
+
 	// AvailableBouncers contains the available bouncers.
 	AvailableBouncers []model.Service
 
@@ -47,14 +49,14 @@ type Session struct {
 
 	// SoftwareVersion contains the software version.
 	SoftwareVersion string
-
-	// WorkDir is the session's working directory.
-	WorkDir string
 }
 
 // New creates a new experiments session.
-func New(logger log.Logger, softwareName, softwareVersion string) *Session {
+func New(
+	logger log.Logger, softwareName, softwareVersion, assetsDir string,
+) *Session {
 	return &Session{
+		AssetsDir:         assetsDir,
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
 			logger, http.ProxyFromEnvironment,
 		),
@@ -62,7 +64,6 @@ func New(logger log.Logger, softwareName, softwareVersion string) *Session {
 		Logger:            logger,
 		SoftwareName:      softwareName,
 		SoftwareVersion:   softwareVersion,
-		WorkDir:           os.TempDir(),
 	}
 }
 
@@ -107,24 +108,24 @@ func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 		HTTPClient: s.HTTPDefaultClient, // proxy is OK
 		Logger:     s.Logger,
 		UserAgent:  s.UserAgent(),
-		WorkDir:    s.WorkDir,
+		WorkDir:    s.AssetsDir,
 	}).Ensure(ctx)
 }
 
 // ASNDatabasePath returns the path where the ASN database path should
 // be if you have called s.FetchResourcesIdempotent.
 func (s *Session) ASNDatabasePath() string {
-	return filepath.Join(s.WorkDir, resources.ASNDatabaseName)
+	return filepath.Join(s.AssetsDir, resources.ASNDatabaseName)
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.
 func (s *Session) CABundlePath() string {
-	return filepath.Join(s.WorkDir, resources.CABundleName)
+	return filepath.Join(s.AssetsDir, resources.CABundleName)
 }
 
 // CountryDatabasePath is like ASNDatabasePath but for the country DB path.
 func (s *Session) CountryDatabasePath() string {
-	return filepath.Join(s.WorkDir, resources.CountryDatabaseName)
+	return filepath.Join(s.AssetsDir, resources.CountryDatabaseName)
 }
 
 func (s *Session) getAvailableBouncers() []model.Service {

@@ -29,8 +29,7 @@ func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 
-	sess := session.New(log.Log, softwareName, softwareVersion)
-	sess.WorkDir = "../../testdata"
+	sess := session.New(log.Log, softwareName, softwareVersion, "../../testdata")
 	if err := sess.LookupBackends(ctx); err != nil {
 		t.Fatal(err)
 	}
