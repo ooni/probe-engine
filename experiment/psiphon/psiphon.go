@@ -95,6 +95,7 @@ var usetunnel = func(
 					Host:   fmt.Sprintf("127.0.0.1:%d", t.SOCKSProxyPort),
 				}, nil
 			},
+			nil, // meaning use default CA bundle
 		),
 		Logger:    sess.Logger,
 		UserAgent: sess.UserAgent(),

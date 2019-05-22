@@ -77,6 +77,13 @@ type Measurement struct {
 	TestVersion string `json:"test_version"`
 }
 
+// AddAnnotations adds the annotations from input to m.Annotations.
+func (m Measurement) AddAnnotations(input map[string]string) {
+	for key, value := range input {
+		m.Annotations[key] = value
+	}
+}
+
 // Service describes a backend service.
 //
 // The fields of this struct have the meaning described in v2.0.0 of the OONI

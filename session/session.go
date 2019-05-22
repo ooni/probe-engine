@@ -58,9 +58,9 @@ func New(
 	return &Session{
 		AssetsDir: assetsDir,
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
-			logger, http.ProxyFromEnvironment,
+			logger, http.ProxyFromEnvironment, nil,
 		),
-		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil),
+		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil, nil),
 		Logger:            logger,
 		SoftwareName:      softwareName,
 		SoftwareVersion:   softwareVersion,

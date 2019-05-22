@@ -12,7 +12,7 @@ import (
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ip, err := (&iplookup.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil),
+		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Do(context.Background())

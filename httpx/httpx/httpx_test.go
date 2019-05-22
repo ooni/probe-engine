@@ -13,7 +13,7 @@ import (
 func TestGet(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := httpx.NewTracingProxyingClient(log.Log, nil)
+	client := httpx.NewTracingProxyingClient(log.Log, nil, nil)
 	request, err := http.NewRequest("GET", "http://facebook.com", nil)
 	if err != nil {
 		t.Fatal(err)

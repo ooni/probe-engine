@@ -5,9 +5,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -25,6 +27,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
+	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/orchestra/testlists"
 	"github.com/ooni/probe-engine/session"
 
@@ -106,6 +109,26 @@ func split(s string) (string, string, error) {
 	return v[0], v[1], nil
 }
 
+func mustMakeMap(input []string) (output map[string]string) {
+	output = make(map[string]string)
+	for _, opt := range input {
+		key, value, err := split(opt)
+		if err != nil {
+			log.WithError(err).Fatal("cannot split key-value pair")
+		}
+		output[key] = value
+	}
+	return
+}
+
+func mustParseCA(caBundlePath string) *tls.Config {
+	config, err := httpx.NewTLSConfigWithCABundle(caBundlePath)
+	if err != nil {
+		log.WithError(err).Fatal("cannot load CA bundle")
+	}
+	return config
+}
+
 type logHandler struct {
 	io.Writer
 }
@@ -125,14 +148,8 @@ func main() {
 	if len(getopt.Args()) != 1 {
 		log.Fatal("You must specify the name of the experiment to run")
 	}
-	extraOptions := make(map[string]string)
-	for _, opt := range globalOptions.extraOptions {
-		key, value, err := split(opt)
-		if err != nil {
-			log.WithError(err).Fatal("cannot split key-value pair")
-		}
-		extraOptions[key] = value
-	}
+	extraOptions := mustMakeMap(globalOptions.extraOptions)
+	annotations := mustMakeMap(globalOptions.annotations)
 
 	logger := &log.Logger{
 		Level:   log.InfoLevel,
@@ -160,6 +177,15 @@ func main() {
 
 	ctx := context.Background()
 	sess := session.New(logger, softwareName, softwareVersion, workDir)
+	if globalOptions.caBundlePath != "" {
+		sess.HTTPDefaultClient = httpx.NewTracingProxyingClient(
+			logger, http.ProxyFromEnvironment,
+			mustParseCA(globalOptions.caBundlePath),
+		)
+		sess.HTTPNoProxyClient = httpx.NewTracingProxyingClient(
+			logger, nil, mustParseCA(globalOptions.caBundlePath),
+		)
+	}
 	if !globalOptions.noBouncer {
 		if globalOptions.bouncerURL != "" {
 			sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)
@@ -241,17 +267,20 @@ func main() {
 			log.WithError(err).Warn("measurement failed")
 			continue
 		}
+		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
 				continue
 			}
 		}
-		if err := experiment.SaveMeasurement(
-			measurement, globalOptions.reportfile,
-		); err != nil {
-			log.WithError(err).Warn("saving measurement failed")
-			continue
+		if !globalOptions.noJSON {
+			if err := experiment.SaveMeasurement(
+				measurement, globalOptions.reportfile,
+			); err != nil {
+				log.WithError(err).Warn("saving measurement failed")
+				continue
+			}
 		}
 	}
 }
