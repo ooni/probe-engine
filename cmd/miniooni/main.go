@@ -241,9 +241,11 @@ func main() {
 			log.WithError(err).Warn("measurement failed")
 			continue
 		}
-		if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
-			log.WithError(err).Warn("submitting measurement failed")
-			continue
+		if !globalOptions.noCollector {
+			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
+				log.WithError(err).Warn("submitting measurement failed")
+				continue
+			}
 		}
 		if err := experiment.SaveMeasurement(
 			measurement, globalOptions.reportfile,

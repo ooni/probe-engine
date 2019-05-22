@@ -69,7 +69,8 @@ func New(
 	}
 }
 
-// OpenReport opens a new report for the experiment.
+// OpenReport opens a new report for the experiment. This function
+// is idempotent.
 func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 	if e.Report != nil {
 		return // already open
@@ -144,11 +145,11 @@ func (e *Experiment) Measure(
 // as the measurement is not shared by the goroutines.
 func (e *Experiment) SubmitMeasurement(
 	ctx context.Context, measurement *model.Measurement,
-) (err error) {
-	if e.Report != nil {
-		err = e.Report.SubmitMeasurement(ctx, measurement, e.IncludeProbeIP)
+) error {
+	if e.Report == nil {
+		return errors.New("Report is not open")
 	}
-	return
+	return e.Report.SubmitMeasurement(ctx, measurement, e.IncludeProbeIP)
 }
 
 // SaveMeasurement saves a measurement on the specified file.
@@ -170,7 +171,7 @@ func (e *Experiment) SaveMeasurement(
 	return filep.Close()
 }
 
-// CloseReport closes the open report.
+// CloseReport closes the open report. This function is idempotent.
 func (e *Experiment) CloseReport(ctx context.Context) (err error) {
 	if e.Report != nil {
 		err = e.Report.Close(ctx)
