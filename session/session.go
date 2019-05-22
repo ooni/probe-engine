@@ -56,7 +56,7 @@ func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
 ) *Session {
 	return &Session{
-		AssetsDir:         assetsDir,
+		AssetsDir: assetsDir,
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
 			logger, http.ProxyFromEnvironment,
 		),

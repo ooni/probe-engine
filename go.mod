@@ -19,6 +19,7 @@ require (
 	github.com/aristanetworks/goarista v0.0.0-20190514202536-8f808a500156 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20190211145416-68259f75880e // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
+	github.com/avast/retry-go v2.3.0+incompatible
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/creack/goselect v0.1.0 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect

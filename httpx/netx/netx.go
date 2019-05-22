@@ -4,11 +4,8 @@ package netx
 import (
 	"context"
 	"net"
-)
 
-const (
-	// maxRetries is the maximum number of retries
-	maxRetries = 3
+	"github.com/ooni/probe-engine/httpx/retryx"
 )
 
 // RetryingDialer is a dialer where we retry dialing for
@@ -23,11 +20,9 @@ type RetryingDialer struct {
 func (rd *RetryingDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
-	for i := 0; i < maxRetries; i++ {
+	err = retryx.Do(ctx, func() error {
 		conn, err = rd.Dialer.DialContext(ctx, network, address)
-		if err == nil {
-			break
-		}
-	}
-	return conn, err
+		return err
+	})
+	return
 }
