@@ -1,6 +1,4 @@
-// Command miniooni is simple binary for testing purposes. We try
-// to mirror the command line arguments of the original measurement_kit
-// binary, to support using miniooni instead of it.
+// Command miniooni is simple binary for testing purposes.
 package main
 
 import (
@@ -9,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -45,6 +43,7 @@ type options struct {
 	noGeoIP      bool
 	noJSON       bool
 	noCollector  bool
+	proxy        string
 	reportfile   string
 	verbose      bool
 }
@@ -93,6 +92,9 @@ func init() {
 		&globalOptions.noCollector, "no-collector", 'n', "Don't use a collector",
 	)
 	getopt.FlagLong(
+		&globalOptions.proxy, "proxy", 'P', "Set the proxy URL", "URL",
+	)
+	getopt.FlagLong(
 		&globalOptions.reportfile, "reportfile", 'o',
 		"Set the report file path", "PATH",
 	)
@@ -127,6 +129,14 @@ func mustParseCA(caBundlePath string) *tls.Config {
 		log.WithError(err).Fatal("cannot load CA bundle")
 	}
 	return config
+}
+
+func mustParseURL(URL string) *url.URL {
+	rv, err := url.Parse(URL)
+	if err != nil {
+		log.WithError(err).Fatal("cannot parse URL")
+	}
+	return rv
 }
 
 type logHandler struct {
@@ -176,16 +186,18 @@ func main() {
 	log.Log = logger // from now on logs may be redirected
 
 	ctx := context.Background()
-	sess := session.New(logger, softwareName, softwareVersion, workDir)
+	var tlsConfig *tls.Config
 	if globalOptions.caBundlePath != "" {
-		sess.HTTPDefaultClient = httpx.NewTracingProxyingClient(
-			logger, http.ProxyFromEnvironment,
-			mustParseCA(globalOptions.caBundlePath),
-		)
-		sess.HTTPNoProxyClient = httpx.NewTracingProxyingClient(
-			logger, nil, mustParseCA(globalOptions.caBundlePath),
-		)
+		tlsConfig = mustParseCA(globalOptions.caBundlePath)
 	}
+	var proxyURL *url.URL
+	if globalOptions.proxy != "" {
+		proxyURL = mustParseURL(globalOptions.proxy)
+	}
+	sess := session.New(
+		logger, softwareName, softwareVersion, workDir, proxyURL, tlsConfig,
+	)
+
 	if !globalOptions.noBouncer {
 		if globalOptions.bouncerURL != "" {
 			sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)

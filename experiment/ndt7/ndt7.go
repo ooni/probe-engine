@@ -3,6 +3,8 @@ package ndt7
 
 import (
 	"context"
+	"io"
+	"net/http"
 	"fmt"
 
 	"github.com/dustin/go-humanize"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/ndt7/mlabnsx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -36,6 +39,29 @@ type TestKeys struct {
 	Upload []spec.Measurement `json:"upload"`
 }
 
+func discover(ctx context.Context, sess *session.Session) (string, error) {
+	client := mlabnsx.NewClient("ndt_ssl", sess.UserAgent())
+	// Basically: (1) make sure we're using our tracing and possibly proxied
+	// client rather than default; (2) if we have an explicit proxy make sure
+	// we tell mlab-ns to use our IP address rather than the proxy one.
+	client.Requestor = sess.HTTPDefaultClient
+	if sess.ExplicitProxy {
+		client.RequestMaker = func(
+			method, url string, body io.Reader,
+		) (*http.Request, error) {
+			req, err := http.NewRequest(method, url, body)
+			if err != nil {
+				return nil, err
+			}
+			values := req.URL.Query()
+			values.Set("ip", sess.ProbeIP())
+			req.URL.RawQuery = values.Encode()
+			return req, nil
+		}
+	}
+	return client.Query(ctx)
+}
+
 func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 	callbacks handler.Callbacks,
@@ -44,6 +70,16 @@ func measure(
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
 	client := upstream.NewClient(sess.UserAgent())
+	if sess.TLSConfig != nil {
+		client.Dialer.TLSClientConfig = sess.TLSConfig
+	}
+	FQDN, err := discover(ctx, sess)
+	if err != nil {
+		testkeys.Failure = err.Error()
+		return err
+	}
+	client.FQDN = FQDN // skip client's own mlabns call
+	sess.Logger.Debugf("ndt7: mlabns returned %s to us", FQDN)
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
 		testkeys.Failure = err.Error()

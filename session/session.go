@@ -3,9 +3,11 @@ package session
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/bouncer"
@@ -32,6 +34,11 @@ type Session struct {
 	// AvailableTestHelpers contains the available test helpers.
 	AvailableTestHelpers map[string][]model.Service
 
+	// ExplicitProxy indicates that the user has explicitly
+	// configured a proxy and wants us to know that. For more
+	// info, see the documentation of New.
+	ExplicitProxy bool
+
 	// HTTPDefaultClient is the default HTTP client to use.
 	HTTPDefaultClient *http.Client
 
@@ -49,21 +56,59 @@ type Session struct {
 
 	// SoftwareVersion contains the software version.
 	SoftwareVersion string
+
+	// TLSConfig contains the TLS config
+	TLSConfig *tls.Config
 }
 
-// New creates a new experiments session.
+// New creates a new experiments session. The logger is the logger
+// to use. The softwareName and softwareVersion identify the application
+// that we're using. The assetsDir is the directory where assets will
+// be downloaded and searched for. The proxy and tlsConfig arguments are
+// more complicated as explained below.
+//
+// We configure two HTTP clients. The default client is used to
+// contact services where the communication may be proxided. The
+// non proxied client is for running measurements. The proxy
+// argument only influences the former as the latter is not proxied
+// in any case. (You can always edit the session after New has
+// returned if you don't like this policy.)
+//
+// If proxy is nil, we'll configure the default client to use
+// http.ProxyFromEnvironment. This means that we'll honour the
+// HTTP_PROXY environment variable, if present. If proxy is
+// non nil, we'll use it as a proxy unconditionally. Also, in
+// the latter case, we'll keep track of the fact that we've
+// an explicit proxy, and will do our best to avoid confusing
+// services like mlab-ns, that may be confused by a proxy.
+//
+// Regarding tlsConfig, passing nil will always be a good idea,
+// as in that case Go is more flexible in upgrading to http2, while
+// with a custom CA it will not use http2. Yet, there may also be
+// cases where a specific CA is still required. See the documention
+// of httpx.NewTransport for more information on this.
 func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
+	proxy *url.URL, tlsConfig *tls.Config,
 ) *Session {
 	return &Session{
-		AssetsDir: assetsDir,
+		AssetsDir:     assetsDir,
+		ExplicitProxy: proxy != nil,
 		HTTPDefaultClient: httpx.NewTracingProxyingClient(
-			logger, http.ProxyFromEnvironment, nil,
+			logger, func(req *http.Request) (*url.URL, error) {
+				if proxy != nil {
+					return proxy, nil
+				}
+				return http.ProxyFromEnvironment(req)
+			}, tlsConfig,
 		),
-		HTTPNoProxyClient: httpx.NewTracingProxyingClient(logger, nil, nil),
-		Logger:            logger,
-		SoftwareName:      softwareName,
-		SoftwareVersion:   softwareVersion,
+		HTTPNoProxyClient: httpx.NewTracingProxyingClient(
+			logger, nil, tlsConfig,
+		),
+		Logger:          logger,
+		SoftwareName:    softwareName,
+		SoftwareVersion: softwareVersion,
+		TLSConfig:       tlsConfig,
 	}
 }
 
