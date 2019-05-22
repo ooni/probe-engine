@@ -58,8 +58,9 @@ type Measurement struct {
 
 	// TestHelpers contains the test helpers. It seems this structure is more
 	// complex than we would like. In particular, using a map from string to
-	// string does not fit into the web_connectivity user case. Hence, for now
-	// we're going to represent this using interface{}.
+	// string does not fit into the web_connectivity use case. Hence, for now
+	// we're going to represent this using interface{}. In going forward we
+	// may probably want to have more uniform test helpers.
 	TestHelpers map[string]interface{} `json:"test_helpers,omitempty"`
 
 	// TestKeys contains the real test result. This field is opaque because
