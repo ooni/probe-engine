@@ -161,8 +161,14 @@ func main() {
 	ctx := context.Background()
 	sess := session.New(logger, softwareName, softwareVersion, workDir)
 	if !globalOptions.noBouncer {
+		if globalOptions.bouncerURL != "" {
+			sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)
+		}
 		if err := sess.LookupBackends(ctx); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")
+		}
+		if globalOptions.collectorURL != "" {
+			sess.SetAvailableHTTPSCollector(globalOptions.collectorURL)
 		}
 	}
 	if !globalOptions.noGeoIP {

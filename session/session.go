@@ -67,6 +67,22 @@ func New(
 	}
 }
 
+// SetAvailableHTTPSBouncer sets the HTTP bouncer base URL.
+func (s *Session) SetAvailableHTTPSBouncer(baseURL string) {
+	s.AvailableBouncers = append([]model.Service{}, model.Service{
+		Address: baseURL,
+		Type:    "https",
+	})
+}
+
+// SetAvailableHTTPSCollector adds an HTTP bouncer base URL.
+func (s *Session) SetAvailableHTTPSCollector(baseURL string) {
+	s.AvailableCollectors = append([]model.Service{}, model.Service{
+		Address: baseURL,
+		Type:    "https",
+	})
+}
+
 // ProbeASNString returns the probe ASN as a string.
 func (s *Session) ProbeASNString() string {
 	asn := model.DefaultProbeASN
