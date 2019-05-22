@@ -41,11 +41,11 @@ func Handle(
 		return
 	}
 	if event.Key == "status.progress" {
-		callbacks.Progress(event.Value.Percentage, event.Value.Message)
+		callbacks.OnProgress(event.Value.Percentage, event.Value.Message)
 		return
 	}
 	if event.Key == "status.end" {
-		callbacks.DataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
+		callbacks.OnDataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
 		return
 	}
 	if event.Key == "status.update.performance" {
