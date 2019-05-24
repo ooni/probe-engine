@@ -21,10 +21,10 @@ func TestIntegration(t *testing.T) {
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
 	)
-	if err := sess.LookupBackends(ctx); err != nil {
+	if err := sess.MaybeLookupBackends(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := sess.LookupLocation(ctx); err != nil {
+	if err := sess.MaybeLookupLocation(ctx); err != nil {
 		t.Fatal(err)
 	}
 

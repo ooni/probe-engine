@@ -198,19 +198,23 @@ func main() {
 		logger, softwareName, softwareVersion, workDir, proxyURL, tlsConfig,
 	)
 
+	if globalOptions.bouncerURL != "" {
+		sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)
+	}
+	if globalOptions.collectorURL != "" {
+		// Implementation note: setting the collector before doing the lookup
+		// is totally fine because it's a maybe lookup, meaning that any bit
+		// of information already available will not be looked up again.
+		sess.SetAvailableHTTPSCollector(globalOptions.collectorURL)
+	}
+
 	if !globalOptions.noBouncer {
-		if globalOptions.bouncerURL != "" {
-			sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)
-		}
-		if err := sess.LookupBackends(ctx); err != nil {
+		if err := sess.MaybeLookupBackends(ctx); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")
-		}
-		if globalOptions.collectorURL != "" {
-			sess.SetAvailableHTTPSCollector(globalOptions.collectorURL)
 		}
 	}
 	if !globalOptions.noGeoIP {
-		if err := sess.LookupLocation(ctx); err != nil {
+		if err := sess.MaybeLookupLocation(ctx); err != nil {
 			log.WithError(err).Warn("cannot lookup your location")
 		}
 	}

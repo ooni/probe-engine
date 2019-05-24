@@ -228,27 +228,34 @@ func (s *Session) queryBouncer(
 	return errors.New("All available bouncers failed")
 }
 
-func (s *Session) lookupCollectors(ctx context.Context) error {
+func (s *Session) maybeLookupCollectors(ctx context.Context) error {
+	if len(s.AvailableCollectors) > 0 {
+		return nil
+	}
 	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
 		s.AvailableCollectors, err = client.GetCollectors(ctx)
 		return
 	})
 }
 
-func (s *Session) lookupTestHelpers(ctx context.Context) error {
+func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
+	if len(s.AvailableTestHelpers) > 0 {
+		return nil
+	}
 	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
 		s.AvailableTestHelpers, err = client.GetTestHelpers(ctx)
 		return
 	})
 }
 
-// LookupBackends discovers the available OONI backends.
-func (s *Session) LookupBackends(ctx context.Context) (err error) {
-	err = s.lookupCollectors(ctx)
+// MaybeLookupBackends discovers the available OONI backends. For each backend
+// type, we query the bouncer only if we don't already have information.
+func (s *Session) MaybeLookupBackends(ctx context.Context) (err error) {
+	err = s.maybeLookupCollectors(ctx)
 	if err != nil {
 		return
 	}
-	err = s.lookupTestHelpers(ctx)
+	err = s.maybeLookupTestHelpers(ctx)
 	return
 }
 
@@ -283,8 +290,9 @@ func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
 	return addrs[0], nil
 }
 
-// LookupLocation discovers details on the probe location.
-func (s *Session) LookupLocation(ctx context.Context) error {
+// MaybeLookupLocation discovers details on the probe location only
+// if this information it not already available.
+func (s *Session) MaybeLookupLocation(ctx context.Context) error {
 	if s.Location != nil {
 		return nil
 	}
