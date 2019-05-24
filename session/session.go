@@ -228,7 +228,9 @@ func (s *Session) queryBouncer(
 	return errors.New("All available bouncers failed")
 }
 
-func (s *Session) maybeLookupCollectors(ctx context.Context) error {
+// MaybeLookupCollectors discovers collector information unless this bit of
+// information has already been configured or discovered.
+func (s *Session) MaybeLookupCollectors(ctx context.Context) error {
 	if len(s.AvailableCollectors) > 0 {
 		return nil
 	}
@@ -238,7 +240,8 @@ func (s *Session) maybeLookupCollectors(ctx context.Context) error {
 	})
 }
 
-func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
+// MaybeLookupTestHelpers is like MaybeLookupCollectors for test helpers.
+func (s *Session) MaybeLookupTestHelpers(ctx context.Context) error {
 	if len(s.AvailableTestHelpers) > 0 {
 		return nil
 	}
@@ -250,12 +253,15 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 
 // MaybeLookupBackends discovers the available OONI backends. For each backend
 // type, we query the bouncer only if we don't already have information.
+//
+// This is equivalent to calling MaybeLookupCollectors followed by calling
+// MaybeLookupTestHelpers if MaybeLookupCollectors succeeds.
 func (s *Session) MaybeLookupBackends(ctx context.Context) (err error) {
-	err = s.maybeLookupCollectors(ctx)
+	err = s.MaybeLookupCollectors(ctx)
 	if err != nil {
 		return
 	}
-	err = s.maybeLookupTestHelpers(ctx)
+	err = s.MaybeLookupTestHelpers(ctx)
 	return
 }
 
