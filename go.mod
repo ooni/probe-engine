@@ -34,7 +34,7 @@ require (
 	github.com/grafov/m3u8 v0.6.1 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/lucas-clemente/quic-go v0.10.2 // indirect
-	github.com/m-lab/ndt7-client-go v0.0.0-20190516113520-f8aec6e1ef2e
+	github.com/m-lab/ndt7-client-go v0.0.0-20190529150833-0f066cf3ab8a
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/miekg/dns v1.1.12 // indirect
 	github.com/oschwald/geoip2-golang v1.3.0

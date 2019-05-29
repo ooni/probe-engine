@@ -3,18 +3,18 @@ package ndt7
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
-	"fmt"
 
 	"github.com/dustin/go-humanize"
 
 	upstream "github.com/m-lab/ndt7-client-go"
+	"github.com/m-lab/ndt7-client-go/mlabns"
 	"github.com/m-lab/ndt7-client-go/spec"
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/experiment/ndt7/mlabnsx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -40,11 +40,11 @@ type TestKeys struct {
 }
 
 func discover(ctx context.Context, sess *session.Session) (string, error) {
-	client := mlabnsx.NewClient("ndt_ssl", sess.UserAgent())
+	client := mlabns.NewClient("ndt_ssl", sess.UserAgent())
 	// Basically: (1) make sure we're using our tracing and possibly proxied
 	// client rather than default; (2) if we have an explicit proxy make sure
 	// we tell mlab-ns to use our IP address rather than the proxy one.
-	client.Requestor = sess.HTTPDefaultClient
+	client.HTTPClient = sess.HTTPDefaultClient
 	if sess.ExplicitProxy {
 		client.RequestMaker = func(
 			method, url string, body io.Reader,
