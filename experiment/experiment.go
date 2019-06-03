@@ -20,7 +20,7 @@ func formatTimeNowUTC() string {
 	return time.Now().UTC().Format(dateFormat)
 }
 
-// MeasureFunc is the function that fills a measurement.
+// MeasureFunc is the function that performs a measurement.
 type MeasureFunc func(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 	callbacks handler.Callbacks,
