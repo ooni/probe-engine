@@ -66,6 +66,9 @@ type Options struct {
 	// NoFileReport indicates whether to write a report file
 	NoFileReport bool `json:"no_file_report,omitempty"`
 
+	// NoGeoIP indicates whether to perform a GeoIP lookup
+	NoGeoIP bool `json:"no_geoip,omitempty"`
+
 	// ProbeASN is the AS number
 	ProbeASN string `json:"probe_asn,omitempty"`
 
@@ -116,6 +119,7 @@ func NewSettings(
 			NoBouncer:        true,
 			NoCollector:      true,
 			NoFileReport:     true,
+			NoGeoIP:          true,
 			ProbeASN:         probeASN,
 			ProbeCC:          probeCC,
 			ProbeIP:          probeIP,
