@@ -19,16 +19,19 @@ const (
 )
 
 // Config contains the experiment config.
-type Config struct{}
+type Config struct {
+	// LogLevel is the MK log level. Empty implies "WARNING".
+	LogLevel string
+}
 
 func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks handler.Callbacks, config Config,
 ) error {
 	settings := measurementkit.NewSettings(
 		"HttpInvalidRequestLine", sess.SoftwareName, sess.SoftwareVersion,
 		sess.CABundlePath(), sess.ProbeASNString(), sess.ProbeCC(),
-		sess.ProbeIP(), sess.ProbeNetworkName(),
+		sess.ProbeIP(), sess.ProbeNetworkName(), config.LogLevel,
 	)
 	err := mkhelper.Set(sess, "tcp-echo", "legacy", &settings)
 	if err != nil {
@@ -48,5 +51,14 @@ func measure(
 func NewExperiment(
 	sess *session.Session, config Config,
 ) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion, measure)
+	return experiment.New(
+		sess, testName, testVersion,
+		func(
+			ctx context.Context,
+			sess *session.Session,
+			measurement *model.Measurement,
+			callbacks handler.Callbacks,
+		) error {
+			return measure(ctx, sess, measurement, callbacks, config)
+		})
 }

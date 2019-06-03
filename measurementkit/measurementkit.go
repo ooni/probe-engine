@@ -100,6 +100,13 @@ type Options struct {
 	SoftwareVersion string `json:"software_version,omitempty"`
 }
 
+func makeLogLevel(s string) string {
+	if s == "" {
+		s = "WARNING"
+	}
+	return s
+}
+
 // NewSettings creates new Settings
 func NewSettings(
 	taskName string,
@@ -110,9 +117,10 @@ func NewSettings(
 	probeCC string,
 	probeIP string,
 	probeNetworkName string,
+	logLevel string,
 ) Settings {
 	return Settings{
-		LogLevel: "INFO",
+		LogLevel: makeLogLevel(logLevel),
 		Name:     taskName,
 		Options: Options{
 			CaBundlePath:     caBundlePath,

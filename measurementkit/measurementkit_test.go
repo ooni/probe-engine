@@ -16,6 +16,7 @@ func TestTaskIntegrationNDT(t *testing.T) {
 		"Ndt", "ooniprobe-example", "0.1.0",
 		"../testdata/ca-bundle.pem", "AS30722", "IT",
 		"130.25.149.142", "Vodafone Italia S.p.A.",
+		"WARNING",
 	)
 	ch, err := measurementkit.StartEx(settings, log.Log)
 	if err != nil {
