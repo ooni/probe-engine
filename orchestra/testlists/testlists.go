@@ -13,7 +13,7 @@ import (
 
 const (
 	// DefaultBaseURL is the default base URL
-	DefaultBaseURL = "https://events.proteus.ooni.io"
+	DefaultBaseURL = "https://orchestrate.ooni.io"
 )
 
 // URLInfo contains the URL and the citizenlab category code for that URL
