@@ -132,7 +132,7 @@ func NewSettings(
 			ProbeCC:          probeCC,
 			ProbeIP:          probeIP,
 			ProbeNetworkName: probeNetworkName,
-			SaveRealProbeIP:  false,
+			SaveRealProbeIP:  true,
 			SoftwareName:     softwareName,
 			SoftwareVersion:  softwareVersion,
 		},

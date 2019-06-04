@@ -62,11 +62,8 @@ func TestReportLifecycle(t *testing.T) {
 	}
 	defer report.Close(ctx)
 	measurement := makeMeasurement(template, report.ID)
-	err = report.SubmitMeasurement(ctx, &measurement, false)
+	err = report.SubmitMeasurement(ctx, &measurement)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if measurement.ProbeIP != model.DefaultProbeIP {
-		t.Fatal("measurement not sanitised")
 	}
 }

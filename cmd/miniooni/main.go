@@ -26,6 +26,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/orchestra/testlists"
 	"github.com/ooni/probe-engine/session"
 
@@ -278,6 +279,14 @@ func main() {
 			log.WithError(err).Warn("measurement failed")
 			continue
 		}
+		// Remember to omit the user IP.
+		//
+		// This is not ooniprobe and there's no need here to increase the
+		// complexity to make this option configurable. Still, I don't want
+		// this tool to be sharing the IP, because I want to provide the
+		// same default level of sharing of ooniprobe to random people that
+		// may run this tool for development purposes or exploration.
+		measurement.ProbeIP = model.DefaultProbeIP
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {

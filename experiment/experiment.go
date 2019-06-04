@@ -34,10 +34,6 @@ type Experiment struct {
 	// Callbacks handles experiment events.
 	Callbacks handler.Callbacks
 
-	// IncludeProbeIP indicates whether to include the probe IP
-	// when submitting measurements.
-	IncludeProbeIP bool
-
 	// Report is the report used by this experiment.
 	Report *collector.Report
 
@@ -131,7 +127,10 @@ func (e *Experiment) newMeasurement(input string) model.Measurement {
 	}
 }
 
-// Measure performs a measurement with the specified input.
+// Measure performs a measurement with the specified input. Note that the
+// returned measurement will have all its privacy sensitive values set
+// to their real values. It will be your responsibility to strip them and
+// use the default values if the user told us to do so.
 func (e *Experiment) Measure(
 	ctx context.Context, input string,
 ) (measurement model.Measurement, err error) {
@@ -149,7 +148,7 @@ func (e *Experiment) SubmitMeasurement(
 	if e.Report == nil {
 		return errors.New("Report is not open")
 	}
-	return e.Report.SubmitMeasurement(ctx, measurement, e.IncludeProbeIP)
+	return e.Report.SubmitMeasurement(ctx, measurement)
 }
 
 // SaveMeasurement saves a measurement on the specified file.
