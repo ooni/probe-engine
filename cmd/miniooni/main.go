@@ -223,12 +223,7 @@ func main() {
 	var inputs []string
 
 	if name == "web_connectivity" {
-		list, err := (&testlists.Client{
-			BaseURL:    testlists.DefaultBaseURL,
-			HTTPClient: sess.HTTPDefaultClient,
-			Logger:     logger,
-			UserAgent:  sess.UserAgent(),
-		}).Do(ctx, sess.ProbeCC())
+		list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
 		if err != nil {
 			log.WithError(err).Fatal("cannot fetch test lists")
 		}

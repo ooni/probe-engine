@@ -8,6 +8,7 @@ import (
 
 	"github.com/ooni/probe-engine/httpx/jsonapi"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -44,6 +45,16 @@ type Client struct {
 
 	// UserAgent is the user agent to use.
 	UserAgent string
+}
+
+// NewClient creates a new client in the context of the given session.
+func NewClient(sess *session.Session) *Client {
+	return &Client{
+		BaseURL:    DefaultBaseURL,
+		HTTPClient: sess.HTTPDefaultClient,
+		Logger:     sess.Logger,
+		UserAgent:  sess.UserAgent(),
+	}
 }
 
 // Do retrieves the test list for the specified country.
