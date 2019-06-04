@@ -88,7 +88,8 @@ type updateResponse struct {
 }
 
 // SubmitMeasurement submits a measurement belonging to the report
-// to the OONI collector. If the collector supports sending back to
+// to the OONI collector. On success, we will modify the measurement
+// updating its ReportID field. If the collector supports sending back to
 // us a measurement ID, we also update the m.OOID field with it.
 func (r *Report) SubmitMeasurement(
 	ctx context.Context, m *model.Measurement,
@@ -105,7 +106,10 @@ func (r *Report) SubmitMeasurement(
 			Content: m,
 		}, &updateResponse,
 	)
-	m.OOID = updateResponse.ID
+	if err == nil {
+		m.ReportID = r.ID
+		m.OOID = updateResponse.ID
+	}
 	return err
 }
 
