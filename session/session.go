@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/bouncer"
+	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
@@ -330,4 +331,41 @@ func (s *Session) MaybeLookupLocation(ctx context.Context) error {
 		ResolverIP:  resolverIP,
 	}
 	return nil
+}
+
+// OpenReport opens a new report.
+func (s *Session) OpenReport(
+	ctx context.Context, testName, testVersion string,
+) (report *collector.Report, err error) {
+	err = s.MaybeLookupCollectors(ctx)
+	if err != nil {
+		return
+	}
+	template := collector.ReportTemplate{
+		ProbeASN:        s.ProbeASNString(),
+		ProbeCC:         s.ProbeCC(),
+		SoftwareName:    s.SoftwareName,
+		SoftwareVersion: s.SoftwareVersion,
+		TestName:        testName,
+		TestVersion:     testVersion,
+	}
+	for _, c := range s.AvailableCollectors {
+		if c.Type != "https" {
+			s.Logger.Debugf("session: unsupported collector type: %s", c.Type)
+			continue
+		}
+		client := &collector.Client{
+			BaseURL:    c.Address,
+			HTTPClient: s.HTTPDefaultClient, // proxy is OK
+			Logger:     s.Logger,
+			UserAgent:  s.UserAgent(),
+		}
+		report, err = client.OpenReport(ctx, template)
+		if err == nil {
+			return
+		}
+		s.Logger.Debugf("session: collector error: %s", err.Error())
+	}
+	err = errors.New("All collectors failed")
+	return
 }

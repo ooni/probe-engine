@@ -71,34 +71,7 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 	if e.Report != nil {
 		return // already open
 	}
-	for _, c := range e.Session.AvailableCollectors {
-		if c.Type != "https" {
-			e.Session.Logger.Debugf(
-				"experiment: unsupported collector type: %s", c.Type,
-			)
-			continue
-		}
-		client := &collector.Client{
-			BaseURL:    c.Address,
-			HTTPClient: e.Session.HTTPDefaultClient, // proxy is OK
-			Logger:     e.Session.Logger,
-			UserAgent:  e.Session.UserAgent(),
-		}
-		template := collector.ReportTemplate{
-			ProbeASN:        e.Session.ProbeASNString(),
-			ProbeCC:         e.Session.ProbeCC(),
-			SoftwareName:    e.Session.SoftwareName,
-			SoftwareVersion: e.Session.SoftwareVersion,
-			TestName:        e.TestName,
-			TestVersion:     e.TestVersion,
-		}
-		e.Report, err = client.OpenReport(ctx, template)
-		if err == nil {
-			return
-		}
-		e.Session.Logger.Debugf("experiment: collector error: %s", err.Error())
-	}
-	err = errors.New("All collectors failed")
+	e.Report, err = e.Session.OpenReport(ctx, e.TestName, e.TestVersion)
 	return
 }
 

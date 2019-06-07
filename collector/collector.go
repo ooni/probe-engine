@@ -16,7 +16,7 @@ import (
 
 // Client is a client for the OONI collector API.
 type Client struct {
-	// BaseURL is the bouncer base URL.
+	// BaseURL is the collector base URL.
 	BaseURL string
 
 	// HTTPClient is the HTTP client to use.
