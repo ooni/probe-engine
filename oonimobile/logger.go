@@ -1,47 +1,40 @@
 package oonimobile
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
-type stringLogger struct {
-	Builder strings.Builder
+// LogMessage is a log message
+type LogMessage struct {
+	// LogLevel indicates the log level
+	LogLevel string
+
+	// Message is the log message
+	Message string
 }
 
-func (sl *stringLogger) SaveLogsInto(s *string) {
-	*s = sl.Builder.String()
+type channelLogger struct {
+	out chan<- *LogMessage
 }
 
-func (sl *stringLogger) log(msg string) {
-	sl.Builder.WriteString(msg)
-	sl.Builder.WriteString("\n")
+func (cl *channelLogger) Debug(msg string) {
+	cl.out <- &LogMessage{"DEBUG", msg}
 }
 
-func (sl *stringLogger) logf(format string, v ...interface{}) {
-	sl.log(fmt.Sprintf(format, v...))
+func (cl *channelLogger) Debugf(format string, v ...interface{}) {
+	cl.out <- &LogMessage{"DEBUG", fmt.Sprintf(format, v...)}
 }
 
-func (sl *stringLogger) Debug(msg string) {
-	sl.log(msg)
+func (cl *channelLogger) Info(msg string) {
+	cl.out <- &LogMessage{"INFO", msg}
 }
 
-func (sl *stringLogger) Debugf(format string, v ...interface{}) {
-	sl.logf(format, v...)
+func (cl *channelLogger) Infof(format string, v ...interface{}) {
+	cl.out <- &LogMessage{"INFO", fmt.Sprintf(format, v...)}
 }
 
-func (sl *stringLogger) Info(msg string) {
-	sl.log(msg)
+func (cl *channelLogger) Warn(msg string) {
+	cl.out <- &LogMessage{"WARNING", msg}
 }
 
-func (sl *stringLogger) Infof(format string, v ...interface{}) {
-	sl.logf(format, v...)
-}
-
-func (sl *stringLogger) Warn(msg string) {
-	sl.log(msg)
-}
-
-func (sl *stringLogger) Warnf(format string, v ...interface{}) {
-	sl.logf(format, v...)
+func (cl *channelLogger) Warnf(format string, v ...interface{}) {
+	cl.out <- &LogMessage{"WARNING", fmt.Sprintf(format, v...)}
 }
