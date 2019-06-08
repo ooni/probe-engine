@@ -66,10 +66,10 @@ func NewResubmitTask(
 // ResubmitHandle is an opaque reference to an async resubmission
 // task that is running in a background thread.
 type ResubmitHandle struct {
+	Results *ResubmitResults
 	cancel  context.CancelFunc
 	ch      chan *LogMessage
 	ctx     context.Context
-	results *ResubmitResults
 	task    *ResubmitTask
 }
 
@@ -114,9 +114,9 @@ func (rh *ResubmitHandle) do() {
 		logger.Warnf("resubmit: cannot marshal JSON: %s", err.Error())
 		return
 	}
-	rh.results.UpdatedSerializedMeasurement = string(data)
-	rh.results.UpdatedReportID = measurement.ReportID
-	rh.results.Good = true
+	rh.Results.UpdatedSerializedMeasurement = string(data)
+	rh.Results.UpdatedReportID = measurement.ReportID
+	rh.Results.Good = true
 	return
 }
 
@@ -125,15 +125,11 @@ func (rh *ResubmitHandle) Interrupt() {
 	rh.cancel()
 }
 
-// NextLogMessage returns the next log message while this async task
-// is still running and nil otherwise.
-func (rh *ResubmitHandle) NextLogMessage() *LogMessage {
+// WaitForLogMessage blocks until the next log message is available, while
+// the task is running, and returns it. If the task is not running, instead,
+// it immediately returns nil.
+func (rh *ResubmitHandle) WaitForLogMessage() *LogMessage {
 	return <-rh.ch
-}
-
-// Results returns the results
-func (rh *ResubmitHandle) Results() *ResubmitResults {
-	return rh.results
 }
 
 // Start starts an async resubmit task.
@@ -141,10 +137,10 @@ func (rt *ResubmitTask) Start() *ResubmitHandle {
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := make(chan *LogMessage)
 	rh := &ResubmitHandle{
+		Results: new(ResubmitResults),
 		cancel:  cancel,
 		ch:      ch,
 		ctx:     ctx,
-		results: new(ResubmitResults),
 		task:    rt,
 	}
 	go rh.do()
@@ -158,14 +154,14 @@ func (rt *ResubmitTask) Run() *ResubmitResults {
 	rh := rt.Start()
 	var builder strings.Builder
 	for {
-		logMessage := rh.NextLogMessage()
+		logMessage := rh.WaitForLogMessage()
 		if logMessage == nil {
 			break
 		}
-		builder.WriteString("<" + logMessage.LogLevel + "> ")
+		builder.WriteString("<" + logMessage.Level + "> ")
 		builder.WriteString(logMessage.Message)
 		builder.WriteString("\n")
 	}
-	rh.results.Logs = builder.String()
-	return rh.Results()
+	rh.Results.Logs = builder.String()
+	return rh.Results
 }

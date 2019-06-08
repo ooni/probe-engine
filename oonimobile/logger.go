@@ -4,8 +4,8 @@ import "fmt"
 
 // LogMessage is a log message
 type LogMessage struct {
-	// LogLevel indicates the log level
-	LogLevel string
+	// Level indicates the log level
+	Level string
 
 	// Message is the log message
 	Message string
