@@ -125,3 +125,29 @@ func (r *Report) Close(ctx context.Context) error {
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
 }
+
+// SubmitMeasurement submits a single measurement to the OONI collector. On
+// success, we will modify the measurement updating its ReportID field. If the
+// collector supports sending back to us a measurement ID, we also update
+// the m.OOID field with it.
+func SubmitMeasurement(
+	ctx context.Context,
+	httpClient *http.Client,
+	logger log.Logger,
+	baseURL string,
+	userAgent string,
+	m *model.Measurement,
+) error {
+	var r Report
+	err := (&jsonapi.Client{
+		BaseURL:    baseURL,
+		HTTPClient: httpClient,
+		Logger:     logger,
+		UserAgent:  userAgent,
+	}).Create(ctx, "/measurement", m, &r)
+	if err == nil {
+		m.ReportID = r.ID
+		//m.OOID = updateResponse.ID // XXX
+	}
+	return err
+}

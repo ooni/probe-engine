@@ -7,6 +7,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/collector"
+	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -66,4 +67,25 @@ func TestReportLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestSingleMeasurementLifecycle(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	measurement := makeMeasurement(collector.ReportTemplate{
+		ProbeASN:        "AS0",
+		ProbeCC:         "ZZ",
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.1.0",
+		TestName:        "dummy",
+		TestVersion:     "0.1.0",
+	}, "")
+	err := collector.SubmitMeasurement(
+		ctx, httpx.NewTracingProxyingClient(log.Log, nil, nil), log.Log,
+		"http://34.90.244.28/", "ooniprobe-engine/0.1.0", &measurement,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%+v", measurement)
 }
