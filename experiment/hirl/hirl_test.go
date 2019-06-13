@@ -16,7 +16,7 @@ const (
 )
 
 func TestIntegration(t *testing.T) {
-	if !measurementkit.IsAvailable {
+	if !measurementkit.Available() {
 		t.Skip("Measurement Kit not available; skipping")
 	}
 	log.SetLevel(log.DebugLevel)
