@@ -13,4 +13,4 @@ before_script:
 script:
 - go test -coverprofile=coverage.cov -coverpkg=./... ./...
 before_install:
-- openssl aes-256-cbc -k "$w1Yx487HSwU" -in testdata/psiphon_config.json.enc -out testdata/psiphon_config.json -d
+- openssl aes-256-cbc -k "$encrypted_password" -in testdata/psiphon_config.json.enc -out testdata/psiphon_config.json -d
