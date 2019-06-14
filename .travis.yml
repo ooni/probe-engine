@@ -9,6 +9,7 @@ before_script:
 - go get github.com/mattn/goveralls
 script:
 - go test -coverprofile=coverage.cov -coverpkg=./... ./...
+- $GOPATH/bin/goveralls -coverprofile=coverage.cov -service=travis-ci
 before_install:
 - openssl aes-256-cbc -K $encrypted_bfb3eaa23890_key -iv $encrypted_bfb3eaa23890_iv
   -in testdata/psiphon_config.json.enc -out testdata/psiphon_config.json -d
