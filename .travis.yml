@@ -3,7 +3,7 @@ go:
 - 1.12.x
 env:
 - CGO_ENABLED=0
-- GO111MODULES=on
+  GO111MODULES=on
 dist: xenial
 before_script:
 - go get golang.org/x/tools/cmd/cover
