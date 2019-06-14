@@ -37,64 +37,6 @@ you only want to use OONI tests written in Go.
 We plan on gradually rewriting all OONI tests in Go, therefore the
 dependency on Measurement Kit will eventually be removed.
 
-Please, read on for platform specific information including how
-to install Measurement Kit for each supported platform.
+A future version of this document will provide platform specific
+instruction for installing Measurement Kit and building.
 
-### Android
-
-We don't support Android yet. We'll add support in the future.
-
-### iOS
-
-We don't support iOS yet. We'll add support in the future.
-
-### Linux
-
-We support amd64 only. Create a suitable [Docker])https://www.docker.com/)
-container with
-
-```bash
-docker build -t gomkbuild .
-```
-
-Enter into the development environment with
-
-```bash
-docker run -it -v`pwd`:/gomkbuild -w/gomkbuild gomkbuild
-```
-
-Then you can use this repository as a normal Go repository.
-
-### macOS
-
-We support amd64 only. Make sure you install our [Homebrew tap](
-https://github.com/measurement-kit/homebrew-measurement-kit) and
-all the required dependencies with:
-
-```bash
-brew tap measurement-kit/measurement-kit
-brew install measurement-kit
-```
-
-Then you can use this repository as a normal Go repository.
-
-### Windows
-
-We support amd64 only. We cross compile from macOS. Make sure
-you install our [Homebrew tap](
-https://github.com/measurement-kit/homebrew-measurement-kit) and
-all the required dependencies with:
-
-```bash
-brew tap measurement-kit/measurement-kit
-brew install mingw-w64-measurement-kit
-```
-
-Then you can use this repository as a normal Go repository. Make sure you
-
-```bash
-export CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ \
-  GOOS=windows GOARCH=amd64 CGO_ENABLED=1
-```
-
-to produce Windows binaries.
