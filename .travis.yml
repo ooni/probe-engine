@@ -2,7 +2,10 @@ language: go
 go:
 - 1.12.x
 env:
-- CGO_ENABLED=0
+  matrix:
+  - CGO_ENABLED=0
+  global:
+    secure: duKFKBb+q55wdhi7pSbD2ZKw4DWDtQ/F3MsqQrgm6cZ6/YymLjFHr0VZKi2xH4riP0XQomtC7O0Yt1Bh9+YQMNvwrTgtOPFrw5TKMufSi3J5PBi4KoK+Cgc0xn97yS7OAjNG3wg0vDn6kgbJKaIbD2CWmVFufTRaEASqO/Q4BBJvHQbVDvkB+KRbWsWgM4amgSzvls1xdKjhyEUK6NmaXatvn1iEWwsCgWJJHWt0DCGHo8cCk3Zzx7tsGX8cfBR+SzjtyhFwHEO8kjbwxNWjbAX/aG6/BW5DfiF+5VfM2PCy7x0tKcJMrjPF20zxjFR5xpdd+7en+oJG85DP9DUIc2X8JBiA1uPfj9Xvpz0TovsgAQ6eUN/98spzz31Z1LiJbNh4lNONVv255VYH59G0/KcPEBEyClfsk5eTYDjLYHUgqwYBqAHIMxnY3YZklv4lzr6yQLmKDILMo8ufVZVItkhef29cmq0gyMYixQsruNEnZ1gJAdGEB3ADLvcSZy84T6pIh1Vpwyy89nDWCRzptyd1LE63ZsgM3/XvDvvf/LI+a+Ap9INu1LVZqxPlKWMQNsrfSMacWzOd7aVoG1IS6BjF1MEV52gRKWosg/9A0rkZkitisSkE2aMVU9skUoG+iMQcFxaJueHOjpRBz/SuvWdOWuhk5Cg+w1Yx487HSwU=
 dist: xenial
 before_script:
 - go get golang.org/x/tools/cmd/cover
@@ -10,5 +13,4 @@ before_script:
 script:
 - go test -coverprofile=coverage.cov -coverpkg=./... ./...
 before_install:
-- openssl aes-256-cbc -K $encrypted_bfb3eaa23890_key -iv $encrypted_bfb3eaa23890_iv
-  -in testdata/psiphon_config.json.enc -out testdata/psiphon_config.json -d
+- openssl aes-256-cbc -k "$encrypted_password" -in testdata/psiphon_config.json.enc -out testdata/psiphon_config.json -d
