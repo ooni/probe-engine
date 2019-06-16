@@ -144,7 +144,7 @@ func (rtl *RoundTripLogger) onReadComplete(
 }
 
 // RequestBodyReadComplete is called after we've read a piece of
-// the response body from the underlying connection.
+// the request body from the underlying connection.
 func (rtl *RoundTripLogger) RequestBodyReadComplete(n int, err error) {
 	rtl.onReadComplete(n, err, "}", "request")
 }

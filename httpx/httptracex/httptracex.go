@@ -46,7 +46,7 @@ type Handler interface {
 	WroteHeaders(request *http.Request)
 
 	// RequestBodyReadComplete is called after we've read a piece of
-	// the response body from the underlying connection.
+	// the request body from the underlying connection.
 	RequestBodyReadComplete(n int, err error)
 
 	// RequestBodyClose is called after we've closed the body.
