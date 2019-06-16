@@ -10,6 +10,7 @@ package httptracex
 
 import (
 	"crypto/tls"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptrace"
@@ -52,6 +53,13 @@ type Handler interface {
 
 	// GotHeaders is called when we've got the response headers.
 	GotHeaders(response *http.Response)
+
+	// ResponseBodyReadComplete is called after we've read a piece of
+	// the response body from the underlying connection.
+	ResponseBodyReadComplete(n int, err error)
+
+	// ResponseBodyClose is called after we've closed the body.
+	ResponseBodyClose(err error)
 }
 
 // Measurer is an extended http.RoundTripper.
@@ -92,6 +100,25 @@ func (m *Measurer) addTracer(request *http.Request) *http.Request {
 	)
 }
 
+type bodyWrapper struct {
+	body    io.ReadCloser
+	handler Handler
+}
+
+// Read implements the io.Reader interface for bodyWrapper
+func (bw *bodyWrapper) Read(p []byte) (n int, err error) {
+	n, err = bw.body.Read(p)
+	bw.handler.ResponseBodyReadComplete(n, err)
+	return
+}
+
+// Close implements the io.Closer interface for bodyWrapper
+func (bw *bodyWrapper) Close() (err error) {
+	err = bw.body.Close()
+	bw.handler.ResponseBodyClose(err)
+	return
+}
+
 // RoundTrip performs an HTTP round trip.
 func (m *Measurer) RoundTrip(request *http.Request) (*http.Response, error) {
 	response, err := m.RoundTripper.RoundTrip(m.addTracer(request))
@@ -99,5 +126,9 @@ func (m *Measurer) RoundTrip(request *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 	m.Handler.GotHeaders(response)
+	response.Body = &bodyWrapper{
+		body:    response.Body,
+		handler: m.Handler,
+	}
 	return response, nil
 }

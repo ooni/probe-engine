@@ -159,3 +159,23 @@ func (rtl *RoundTripLogger) GotHeaders(response *http.Response) {
 	}
 	rtl.Logger.Debug("<")
 }
+
+// ResponseBodyReadComplete is called after we've read a piece of
+// the response body from the underlying connection.
+func (rtl *RoundTripLogger) ResponseBodyReadComplete(n int, err error) {
+	if n > 0 {
+		rtl.Logger.Debugf("{ [%d bytes data]", n)
+	}
+	if err != nil {
+		rtl.Logger.Debugf("http: receiving response body: %s", err.Error())
+	}
+}
+
+// ResponseBodyClose is called after we've closed the body.
+func (rtl *RoundTripLogger) ResponseBodyClose(err error) {
+	if err != nil {
+		rtl.Logger.Debugf("http: closing response body failed: %s", err.Error())
+		return
+	}
+	rtl.Logger.Debug("http: closed response body")
+}
