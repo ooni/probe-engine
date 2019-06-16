@@ -132,6 +132,36 @@ func (rtl *RoundTripLogger) WroteHeaders(request *http.Request) {
 	rtl.Logger.Debug(">")
 }
 
+func (rtl *RoundTripLogger) onReadComplete(
+	n int, err error, dir, what string,
+) {
+	if n > 0 {
+		rtl.Logger.Debugf("%s [%d bytes data]", dir, n)
+	}
+	if err != nil {
+		rtl.Logger.Debugf("http: reading %s body: %s", what, err.Error())
+	}
+}
+
+// RequestBodyReadComplete is called after we've read a piece of
+// the response body from the underlying connection.
+func (rtl *RoundTripLogger) RequestBodyReadComplete(n int, err error) {
+	rtl.onReadComplete(n, err, "}", "request")
+}
+
+func (rtl *RoundTripLogger) onClose(err error, what string) {
+	if err != nil {
+		rtl.Logger.Debugf("http: closing %s body failed: %s", what, err.Error())
+		return
+	}
+	rtl.Logger.Debugf("http: closed %s body", what)
+}
+
+// RequestBodyClose is called after we've closed the body.
+func (rtl *RoundTripLogger) RequestBodyClose(err error) {
+	rtl.onClose(err, "request")
+}
+
 // WroteRequest is called after the request has been written.
 func (rtl *RoundTripLogger) WroteRequest(err error) {
 	if err != nil {
@@ -163,19 +193,10 @@ func (rtl *RoundTripLogger) GotHeaders(response *http.Response) {
 // ResponseBodyReadComplete is called after we've read a piece of
 // the response body from the underlying connection.
 func (rtl *RoundTripLogger) ResponseBodyReadComplete(n int, err error) {
-	if n > 0 {
-		rtl.Logger.Debugf("{ [%d bytes data]", n)
-	}
-	if err != nil {
-		rtl.Logger.Debugf("http: receiving response body: %s", err.Error())
-	}
+	rtl.onReadComplete(n, err, "{", "response")
 }
 
 // ResponseBodyClose is called after we've closed the body.
 func (rtl *RoundTripLogger) ResponseBodyClose(err error) {
-	if err != nil {
-		rtl.Logger.Debugf("http: closing response body failed: %s", err.Error())
-		return
-	}
-	rtl.Logger.Debug("http: closed response body")
+	rtl.onClose(err, "response")
 }
