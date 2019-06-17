@@ -4,50 +4,12 @@ package httplog
 
 import (
 	"crypto/tls"
-	"encoding/pem"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
 
+	"github.com/ooni/probe-engine/httpx/tlsx"
 	"github.com/ooni/probe-engine/log"
-)
-
-var (
-	tlsVersion = map[uint16]string{
-		tls.VersionSSL30: "SSLv3",
-		tls.VersionTLS10: "TLSv1",
-		tls.VersionTLS11: "TLSv1.1",
-		tls.VersionTLS12: "TLSv1.2",
-		tls.VersionTLS13: "TLSv1.3",
-	}
-	tlsCipherSuite = map[uint16]string{
-		tls.TLS_RSA_WITH_RC4_128_SHA: "TLS_RSA_WITH_RC4_128_SHA",
-		tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA: "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
-		tls.TLS_RSA_WITH_AES_128_CBC_SHA: "TLS_RSA_WITH_AES_128_CBC_SHA",
-		tls.TLS_RSA_WITH_AES_256_CBC_SHA: "TLS_RSA_WITH_AES_256_CBC_SHA",
-		tls.TLS_RSA_WITH_AES_128_CBC_SHA256: "TLS_RSA_WITH_AES_128_CBC_SHA256",
-		tls.TLS_RSA_WITH_AES_128_GCM_SHA256: "TLS_RSA_WITH_AES_128_GCM_SHA256",
-		tls.TLS_RSA_WITH_AES_256_GCM_SHA384: "TLS_RSA_WITH_AES_256_GCM_SHA384",
-		tls.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA: "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA: "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA: "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-		tls.TLS_ECDHE_RSA_WITH_RC4_128_SHA: "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-		tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA: "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA: "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA: "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256: "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256: "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384: "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305: "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
-		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305: "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
-		tls.TLS_AES_128_GCM_SHA256: "TLS_AES_128_GCM_SHA256",
-		tls.TLS_AES_256_GCM_SHA384: "TLS_AES_256_GCM_SHA384",
-		tls.TLS_CHACHA20_POLY1305_SHA256: "TLS_CHACHA20_POLY1305_SHA256",
-	}
 )
 
 // RoundTripLogger is a httptracex.Handler that logs events.
@@ -105,16 +67,10 @@ func (rtl *RoundTripLogger) TLSHandshakeDone(
 	}
 	rtl.Logger.Debug("tls: handshake OK")
 	rtl.Logger.Debugf("- negotiated protocol: %s", state.NegotiatedProtocol)
-	rtl.Logger.Debugf("- version: %s", tlsVersion[state.Version])
-	rtl.Logger.Debugf("- cipher suite: %s", tlsCipherSuite[state.CipherSuite])
+	rtl.Logger.Debugf("- version: %s", tlsx.TLSVersionString[state.Version])
+	rtl.Logger.Debugf("- cipher suite: %s", tlsx.TLSCipherSuiteString[state.CipherSuite])
 	for _, cert := range state.PeerCertificates {
-		if cert != nil {
-			b := pem.Block{
-				Type: fmt.Sprintf("%s", cert.Subject.CommonName),
-				Bytes: cert.Raw,
-			}
-			rtl.Logger.Debug(string(pem.EncodeToMemory(&b)))
-		}
+		rtl.Logger.Debug(tlsx.TLSCertToPEM(cert))
 	}
 }
 
@@ -183,7 +139,7 @@ func (rtl *RoundTripLogger) onReadComplete(
 }
 
 // RequestBodyReadComplete is called after we've read a piece of
-// the request body from the underlying connection.
+// the request body from the input file.
 func (rtl *RoundTripLogger) RequestBodyReadComplete(n int, err error) {
 	rtl.onReadComplete(n, err, "}", "request")
 }
