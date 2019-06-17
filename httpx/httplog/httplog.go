@@ -4,6 +4,8 @@ package httplog
 
 import (
 	"crypto/tls"
+	"encoding/pem"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -77,6 +79,15 @@ func (rtl *RoundTripLogger) TLSHandshakeDone(
 	rtl.Logger.Debug("tls: handshake OK")
 	rtl.Logger.Debugf("- negotiated protocol: %s", state.NegotiatedProtocol)
 	rtl.Logger.Debugf("- version: %s", tlsVersion[state.Version])
+	for _, cert := range state.PeerCertificates {
+		if cert != nil {
+			b := pem.Block{
+				Type: fmt.Sprintf("%s", cert.Subject.CommonName),
+				Bytes: cert.Raw,
+			}
+			rtl.Logger.Debug(string(pem.EncodeToMemory(&b)))
+		}
+	}
 }
 
 // ConnectionReady is called when a connection is ready to be used.
