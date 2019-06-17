@@ -7,6 +7,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
+	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -26,6 +27,9 @@ func measureURL(
 }
 
 func TestIntegration(t *testing.T) {
+	if !measurementkit.Available() {
+		t.Skip("Measurement Kit not available; skipping")
+	}
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 

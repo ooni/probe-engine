@@ -231,7 +231,7 @@ func Start(settings []byte) (<-chan []byte, error) {
 	return start(settings)
 }
 
-// IsAvailable indicates whether Measurement Kit support is available.
-func IsAvailable() bool {
-	return isAvailable()
+// Available indicates whether Measurement Kit support is available.
+func Available() bool {
+	return available()
 }
