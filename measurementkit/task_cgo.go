@@ -29,8 +29,9 @@ import (
 	//
 	// #cgo linux,amd64 LDFLAGS: -static
 	// #cgo linux,amd64 LDFLAGS: /usr/local/lib/libmeasurement_kit.a
-	// #cgo linux,amd64 LDFLAGS: /usr/local/lib/libmaxminddb.a
-	// #cgo linux,amd64 LDFLAGS: /usr/local/lib/libcurl.a
+	// #cgo linux,amd64 LDFLAGS: /usr/lib/libmaxminddb.a
+	// #cgo linux,amd64 LDFLAGS: /usr/lib/libcurl.a
+	// #cgo linux,amd64 LDFLAGS: /usr/lib/libnghttp2.a
 	// #cgo linux,amd64 LDFLAGS: /usr/lib/libevent_openssl.a
 	// #cgo linux,amd64 LDFLAGS: /usr/lib/libssl.a
 	// #cgo linux,amd64 LDFLAGS: /usr/lib/libcrypto.a
