@@ -84,6 +84,6 @@ func start(settings []byte) (<-chan []byte, error) {
 	return out, nil
 }
 
-func isAvailable() bool {
+func available() bool {
 	return true
 }

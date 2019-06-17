@@ -8,7 +8,7 @@ import (
 )
 
 func TestTaskIntegrationNDT(t *testing.T) {
-	if !measurementkit.IsAvailable() {
+	if !measurementkit.Available() {
 		t.Skip("Measurement Kit support not compiled in")
 	}
 	log.SetLevel(log.DebugLevel)
