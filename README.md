@@ -9,18 +9,17 @@ piece of software that implements OONI nettests.
 ## API
 
 You can [browse ooni/probe-engine's API](
-https://godoc.org/github.com/ooni/probe-engine?status.svg)
-at [godoc.org](https://godoc.org/). We don't provide any API
-stability guarantees and, as such, we will never release v1.0.0
-of this software.
+https://godoc.org/github.com/ooni/probe-engine)
+online at godoc.org. We currently don't provide any API
+stability guarantees.
 
 This repository also allows to build [miniooni](cmd/miniooni), a
 small command line client useful to test the functionality in here
 without integrating with OONI probe. You can browse [the manual
 of this tool](
 https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
-at [godoc.org](https://godoc.org/). We may change the command line
-API of miniooni without notice.
+online at godoc.org. We currently don't promise that the
+miniooni CLI will be stable over time.
 
 ## Integrating ooni/probe-engine
 
