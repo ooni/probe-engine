@@ -4,6 +4,7 @@ package netx
 import (
 	"context"
 	"net"
+	"time"
 
 	"github.com/ooni/probe-engine/httpx/retryx"
 )
@@ -21,7 +22,9 @@ func (rd *RetryingDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	err = retryx.Do(ctx, func() error {
-		conn, err = rd.Dialer.DialContext(ctx, network, address)
+		timedctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		conn, err = rd.Dialer.DialContext(timedctx, network, address)
 		return err
 	})
 	return

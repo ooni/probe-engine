@@ -37,6 +37,24 @@ type ReadInfo struct {
 	Error error
 }
 
+// DNSInfo contains information on DNS resolutions.
+type DNSInfo struct {
+	// StartTime is when we started the DNS query.
+	StartTime time.Time
+
+	// HostName is the hostname to resolve.
+	HostName string
+
+	// EndTime is when we received the DNS response.
+	EndTime time.Time
+
+	// Addresses contains the resolved addresses.
+	Addresses []net.IPAddr
+
+	// Error contains the result of the DNS lookup.
+	Error error
+}
+
 // RoundTripSaver is a httptracex.Handler that logs events.
 type RoundTripSaver struct {
 	// RoundTripStartTime is when the round trip started.
@@ -48,23 +66,11 @@ type RoundTripSaver struct {
 	// RequestURL is the request full URL.
 	RequestURL *url.URL
 
-	// DNSStartTime is when we started the DNS query.
-	DNSStartTime time.Time
-
-	// DNSHostName is the hostname to resolve.
-	DNSHostName string
-
-	// DNSEndTime is when we received the DNS response.
-	DNSEndTime time.Time
-
-	// DNSAddresses contains the resolved addresses.
-	DNSAddresses []net.IPAddr
-
-	// DNSError contains the result of the DNS lookup.
-	DNSError error
+	// DNSInfo contains info about DNS resolutions.
+	DNS []*DNSInfo
 
 	// Connects contains info about the connects.
-	Connects map[string]*ConnectInfo
+	Connects map[string][]*ConnectInfo
 
 	// connectsMutex synchronizes access to Connects.
 	connectsMutex sync.Mutex
@@ -148,7 +154,7 @@ type RoundTripSaver struct {
 
 func newRoundTripSaver() *RoundTripSaver {
 	return &RoundTripSaver{
-		Connects:        make(map[string]*ConnectInfo),
+		Connects:        make(map[string][]*ConnectInfo),
 		RequestHeaders:  http.Header{},
 		ResponseHeaders: http.Header{},
 	}
@@ -163,15 +169,20 @@ func (rts *RoundTripSaver) RoundTripStart(request *http.Request) {
 
 // DNSStart is called when we start name resolution.
 func (rts *RoundTripSaver) DNSStart(host string) {
-	rts.DNSStartTime = time.Now()
-	rts.DNSHostName = host
+	rts.DNS = append(rts.DNS, &DNSInfo{
+		StartTime: time.Now(),
+		HostName:  host,
+	})
 }
 
 // DNSDone is called after name resolution.
 func (rts *RoundTripSaver) DNSDone(addrs []net.IPAddr, err error) {
-	rts.DNSEndTime = time.Now()
-	rts.DNSAddresses = addrs
-	rts.DNSError = err
+	// Here we assume that we have one entry and that we're not resolving
+	// the DNS in parallel for this round-trip.
+	entry := rts.DNS[len(rts.DNS)-1]
+	entry.EndTime = time.Now()
+	entry.Addresses = addrs
+	entry.Error = err
 }
 
 func (rts *RoundTripSaver) endpoint(network, addr string) string {
@@ -183,9 +194,9 @@ func (rts *RoundTripSaver) ConnectStart(network, addr string) {
 	epnt := rts.endpoint(network, addr)
 	rts.connectsMutex.Lock()
 	defer rts.connectsMutex.Unlock()
-	rts.Connects[epnt] = &ConnectInfo{
+	rts.Connects[epnt] = append(rts.Connects[epnt], &ConnectInfo{
 		StartTime: time.Now(),
-	}
+	})
 }
 
 // ConnectDone is called after connect.
@@ -193,8 +204,9 @@ func (rts *RoundTripSaver) ConnectDone(network, addr string, err error) {
 	epnt := rts.endpoint(network, addr)
 	rts.connectsMutex.Lock()
 	defer rts.connectsMutex.Unlock()
-	rts.Connects[epnt].EndTime = time.Now()
-	rts.Connects[epnt].Error = err
+	size := len(rts.Connects[epnt])
+	rts.Connects[epnt][size-1].EndTime = time.Now()
+	rts.Connects[epnt][size-1].Error = err
 }
 
 // TLSHandshakeStart is called when we start the TLS handshake.

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/httpx/minihar"
+	"github.com/ooni/probe-engine/httpx/tlsx"
 )
 
 // HeaderInfo contains information about a header.
@@ -126,6 +127,63 @@ type TimingInfo struct {
 	SSL int64 `json:"ssl"`
 }
 
+// XDNSInfo contains extended DNS info
+type XDNSInfo struct {
+	// StartedDateTime is the time when this request started using ISO8601.
+	StartedDateTime time.Time `json:"startedDateTime"`
+
+	// Time is the time elapsed in this request
+	Time int64 `json:"time"`
+
+	// HostName is the hostname we wanted to resolve
+	HostName string `json:"hostName"`
+
+	// Addresses contains the addresses we resolved
+	Addresses []string `json:"addresses"`
+
+	// Failure is the result of the DNS
+	Failure string `json:"failure"`
+}
+
+// XConnectInfo contains extended connect info
+type XConnectInfo struct {
+	// StartedDateTime is the time when this request started using ISO8601.
+	StartedDateTime time.Time `json:"startedDateTime"`
+
+	// Time is the time elapsed in connecting
+	Time int64 `json:"time"`
+
+	// Endpoint is the endpoint we wanted to use
+	Endpoint string `json:"endpoint"`
+
+	// Failure is the result of the DNS
+	Failure string `json:"failure"`
+}
+
+// XTLSInfo contains extended TLS info
+type XTLSInfo struct {
+	// StartDateTime is when we started the TLS handshake.
+	StartDateTime time.Time `json:"startDateTime"`
+
+	// Time is the time elapsed in the handshake
+	Time int64 `json:"time"`
+
+	// NegotiatedProtocol is the ALPN negotiated protocol
+	NegotiatedProtocol string `json:"negotiatedProtocol"`
+
+	// Version is the version of TLS we're using
+	Version string `json:"version"`
+
+	// CiperSuite is the cipher suite we use
+	CipherSuite string `json:"cipherSuite"`
+
+	// Certs contains the certificates
+	Certs []string `json:"certs"`
+
+	// Failure is the result of the TLS handshake.
+	Failure string
+}
+
 // Entry is a tracker request.
 type Entry struct {
 	// StartedDateTime is the time when this request started using ISO8601.
@@ -145,6 +203,15 @@ type Entry struct {
 
 	// Timings contains timing info about the round-trip.
 	Timings TimingInfo `json:"timings"`
+
+	// DNS contains info on DNS resolution.
+	DNS []*XDNSInfo `json:"_dns"`
+
+	// Connect contains info on the TCP connect.
+	Connect []*XConnectInfo `json:"_connect"`
+
+	// TLS contains info on TLS.
+	TLS *XTLSInfo `json:"_tls"`
 }
 
 // CreatorInfo contains info on the application that created this log.
@@ -233,16 +300,28 @@ func (e *Entry) fillResponse(rts *minihar.RoundTripSaver) {
 	e.Response.BodySize = makeBodySize(rts.ResponseBodyReadInfo)
 }
 
+func dnsTime(rts *minihar.RoundTripSaver) int64 {
+	size := len(rts.DNS)
+	if size <= 0 {
+		return -1
+	}
+	return elapsed(rts.DNS[size-1].StartTime, rts.DNS[size-1].EndTime)
+}
+
 func connectTime(rts *minihar.RoundTripSaver) int64 {
 	entry, ok := rts.Connects[rts.ConnectionEndpoint]
 	if !ok {
 		return -1
 	}
-	return elapsed(entry.StartTime, entry.EndTime)
+	size := len(entry)
+	if size <= 0 {
+		return -1
+	}
+	return elapsed(entry[size-1].StartTime, entry[size-1].EndTime)
 }
 
 func (e *Entry) fillTimings(rts *minihar.RoundTripSaver) {
-	e.Timings.DNS = elapsed(rts.DNSStartTime, rts.DNSEndTime)
+	e.Timings.DNS = dnsTime(rts)
 	e.Timings.Connect = connectTime(rts)
 	e.Timings.Send = elapsed(rts.ConnectionReadyTime, rts.RequestSentTime)
 	e.Timings.Wait = elapsed(rts.RequestSentTime, rts.ResponseFirstByteTime)
@@ -250,6 +329,58 @@ func (e *Entry) fillTimings(rts *minihar.RoundTripSaver) {
 		rts.ResponseFirstByteTime, rts.ResponseBodyCloseTime,
 	)
 	e.Timings.SSL = elapsed(rts.TLSHandshakeStartTime, rts.TLSHandshakeEndTime)
+}
+
+func strerror(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
+}
+
+func (e *Entry) fillDNS(rts *minihar.RoundTripSaver) {
+	for _, info := range rts.DNS {
+		xdns := &XDNSInfo{
+			HostName:        info.HostName,
+			StartedDateTime: info.StartTime,
+		}
+		for _, addr := range info.Addresses {
+			xdns.Addresses = append(xdns.Addresses, addr.String())
+		}
+		xdns.Failure = strerror(info.Error)
+		xdns.Time = elapsed(info.StartTime, info.EndTime)
+		e.DNS = append(e.DNS, xdns)
+	}
+}
+
+func (e *Entry) fillConnect(rts *minihar.RoundTripSaver) {
+	for epnt, infos := range rts.Connects {
+		for _, info := range infos {
+			xconnect := &XConnectInfo{
+				Endpoint:        epnt,
+				StartedDateTime: info.StartTime,
+			}
+			xconnect.Failure = strerror(info.Error)
+			xconnect.Time = elapsed(info.StartTime, info.EndTime)
+			e.Connect = append(e.Connect, xconnect)
+		}
+	}
+}
+
+func (e *Entry) fillTLS(rts *minihar.RoundTripSaver) {
+	if rts.TLSHandshakeStartTime.After(rts.RoundTripStartTime) {
+		e.TLS = &XTLSInfo{
+			StartDateTime: rts.TLSHandshakeStartTime,
+			Time: elapsed(rts.TLSHandshakeStartTime, rts.TLSHandshakeEndTime),
+			NegotiatedProtocol: rts.TLSConnectionState.NegotiatedProtocol,
+			Version: tlsx.TLSVersionString[rts.TLSConnectionState.Version],
+			CipherSuite: tlsx.TLSCipherSuiteString[rts.TLSConnectionState.CipherSuite],
+			Failure: strerror(rts.TLSHandshakeError),
+		}
+		for _, cert := range rts.TLSConnectionState.PeerCertificates {
+			e.TLS.Certs = append(e.TLS.Certs, tlsx.TLSCertToPEM(cert))
+		}
+	}
 }
 
 // NewLogFromMiniHAR creates a new HAR log from a minihar log.
@@ -270,6 +401,9 @@ func NewLogFromMiniHAR(
 		entry.fillRequest(rts)
 		entry.fillResponse(rts)
 		entry.fillTimings(rts)
+		entry.fillDNS(rts)
+		entry.fillConnect(rts)
+		entry.fillTLS(rts)
 		log.Entries = append(log.Entries, entry)
 	}
 	return log
