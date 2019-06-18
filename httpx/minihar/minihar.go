@@ -64,7 +64,7 @@ type RoundTripSaver struct {
 	DNSError error
 
 	// Connects contains info about the connects.
-	Connects map[string]ConnectInfo
+	Connects map[string]*ConnectInfo
 
 	// connectsMutex synchronizes access to Connects.
 	connectsMutex sync.Mutex
@@ -83,6 +83,11 @@ type RoundTripSaver struct {
 
 	// ConnectionReadyTime is when the connection was ready to use.
 	ConnectionReadyTime time.Time
+
+	// ConnectionEndpoint is the endpoint we're using. If we connected in
+	// this round-trip, it's the index to the ConnectInfo within Connects that
+	// has been eventually promoted as the connection to use.
+	ConnectionEndpoint string
 
 	// RequestURLPath is the request URL path.
 	RequestURLPath string
@@ -143,7 +148,7 @@ type RoundTripSaver struct {
 
 func newRoundTripSaver() *RoundTripSaver {
 	return &RoundTripSaver{
-		Connects:        make(map[string]ConnectInfo),
+		Connects:        make(map[string]*ConnectInfo),
 		RequestHeaders:  http.Header{},
 		ResponseHeaders: http.Header{},
 	}
@@ -178,7 +183,7 @@ func (rts *RoundTripSaver) ConnectStart(network, addr string) {
 	epnt := rts.endpoint(network, addr)
 	rts.connectsMutex.Lock()
 	defer rts.connectsMutex.Unlock()
-	rts.Connects[epnt] = ConnectInfo{
+	rts.Connects[epnt] = &ConnectInfo{
 		StartTime: time.Now(),
 	}
 }
@@ -188,10 +193,8 @@ func (rts *RoundTripSaver) ConnectDone(network, addr string, err error) {
 	epnt := rts.endpoint(network, addr)
 	rts.connectsMutex.Lock()
 	defer rts.connectsMutex.Unlock()
-	rts.Connects[epnt] = ConnectInfo{
-		EndTime: time.Now(),
-		Error:   err,
-	}
+	rts.Connects[epnt].EndTime = time.Now()
+	rts.Connects[epnt].Error = err
 }
 
 // TLSHandshakeStart is called when we start the TLS handshake.
@@ -211,6 +214,8 @@ func (rts *RoundTripSaver) TLSHandshakeDone(
 // ConnectionReady is called when a connection is ready to be used.
 func (rts *RoundTripSaver) ConnectionReady(conn net.Conn, request *http.Request) {
 	rts.ConnectionReadyTime = time.Now()
+	addr := conn.RemoteAddr()
+	rts.ConnectionEndpoint = rts.endpoint(addr.Network(), addr.String())
 	rts.RequestMethod = request.Method
 	rts.RequestURLPath = request.URL.RequestURI()
 	// A connection is HTTP/2 if it's using TLS and ALPN was used. We cannot

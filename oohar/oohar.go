@@ -176,10 +176,10 @@ func (e *Entry) fillStartedDateTime(rts *minihar.RoundTripSaver) {
 }
 
 func elapsed(start, end time.Time) int64 {
-	if !end.After(start) {
-		return -1
+	if end.After(start) {
+		return int64(end.Sub(start) / time.Millisecond)
 	}
-	return int64(end.Sub(start) / time.Millisecond)
+	return -1
 }
 
 func (e *Entry) fillTime(rts *minihar.RoundTripSaver) {
@@ -233,12 +233,17 @@ func (e *Entry) fillResponse(rts *minihar.RoundTripSaver) {
 	e.Response.BodySize = makeBodySize(rts.ResponseBodyReadInfo)
 }
 
+func connectTime(rts *minihar.RoundTripSaver) int64 {
+	entry, ok := rts.Connects[rts.ConnectionEndpoint]
+	if !ok {
+		return -1
+	}
+	return elapsed(entry.StartTime, entry.EndTime)
+}
+
 func (e *Entry) fillTimings(rts *minihar.RoundTripSaver) {
 	e.Timings.DNS = elapsed(rts.DNSStartTime, rts.DNSEndTime)
-	e.Timings.Connect = elapsed(
-		// TODO(bassosimone): this is slightly overestimated
-		rts.DNSEndTime, rts.TLSHandshakeStartTime,
-	)
+	e.Timings.Connect = connectTime(rts)
 	e.Timings.Send = elapsed(rts.ConnectionReadyTime, rts.RequestSentTime)
 	e.Timings.Wait = elapsed(rts.RequestSentTime, rts.ResponseFirstByteTime)
 	e.Timings.Receive = elapsed(
