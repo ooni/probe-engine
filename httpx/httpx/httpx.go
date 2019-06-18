@@ -68,8 +68,10 @@ func NewTracingProxyingClient(
 	return &http.Client{
 		Transport: &httptracex.Measurer{
 			RoundTripper: NewTransport(proxy, tlsConfig),
-			Handler: &httplog.RoundTripLogger{
-				Logger: logger,
+			NewHandler: func() httptracex.Handler {
+				return &httplog.RoundTripLogger{
+					Logger: logger,
+				}
 			},
 		},
 	}

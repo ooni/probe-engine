@@ -74,33 +74,35 @@ type Measurer struct {
 	// RoundTripper is the child http.RoundTripper.
 	http.RoundTripper
 
-	// Handler is the event handler
-	Handler Handler
+	// NewHandler creates a new handler.
+	NewHandler func() Handler
 }
 
-func (m *Measurer) addTracer(request *http.Request) *http.Request {
+func (m *Measurer) addTracer(
+	request *http.Request, handler Handler,
+) *http.Request {
 	tracer := &httptrace.ClientTrace{
 		DNSStart: func(info httptrace.DNSStartInfo) {
-			m.Handler.DNSStart(info.Host)
+			handler.DNSStart(info.Host)
 		},
 		DNSDone: func(info httptrace.DNSDoneInfo) {
-			m.Handler.DNSDone(info.Addrs, info.Err)
+			handler.DNSDone(info.Addrs, info.Err)
 		},
-		ConnectStart:      m.Handler.ConnectStart,
-		ConnectDone:       m.Handler.ConnectDone,
-		TLSHandshakeStart: m.Handler.TLSHandshakeStart,
-		TLSHandshakeDone:  m.Handler.TLSHandshakeDone,
+		ConnectStart:      handler.ConnectStart,
+		ConnectDone:       handler.ConnectDone,
+		TLSHandshakeStart: handler.TLSHandshakeStart,
+		TLSHandshakeDone:  handler.TLSHandshakeDone,
 		GotConn: func(info httptrace.GotConnInfo) {
-			m.Handler.ConnectionReady(info.Conn, request)
+			handler.ConnectionReady(info.Conn, request)
 		},
-		WroteHeaderField: m.Handler.WroteHeaderField,
+		WroteHeaderField: handler.WroteHeaderField,
 		WroteHeaders: func() {
-			m.Handler.WroteHeaders(request)
+			handler.WroteHeaders(request)
 		},
 		WroteRequest: func(info httptrace.WroteRequestInfo) {
-			m.Handler.WroteRequest(info.Err)
+			handler.WroteRequest(info.Err)
 		},
-		GotFirstResponseByte: m.Handler.GotFirstResponseByte,
+		GotFirstResponseByte: handler.GotFirstResponseByte,
 	}
 	return request.WithContext(
 		httptrace.WithClientTrace(request.Context(), tracer),
@@ -129,23 +131,31 @@ func (bw *bodyWrapper) Close() (err error) {
 
 // RoundTrip performs an HTTP round trip.
 func (m *Measurer) RoundTrip(request *http.Request) (*http.Response, error) {
-	request = m.addTracer(request)
-	if request.Body != nil {
-		request.Body = &bodyWrapper{
-			onRead:  m.Handler.RequestBodyReadComplete,
-			onClose: m.Handler.RequestBodyClose,
-			body:    request.Body,
+	var handler Handler
+	if m.NewHandler != nil {
+		handler = m.NewHandler()
+	}
+	if handler != nil {
+		request = m.addTracer(request, handler)
+		if request.Body != nil {
+			request.Body = &bodyWrapper{
+				onRead:  handler.RequestBodyReadComplete,
+				onClose: handler.RequestBodyClose,
+				body:    request.Body,
+			}
 		}
 	}
 	response, err := m.RoundTripper.RoundTrip(request)
 	if err != nil {
 		return nil, err
 	}
-	m.Handler.GotHeaders(response)
-	response.Body = &bodyWrapper{
-		onRead:  m.Handler.ResponseBodyReadComplete,
-		onClose: m.Handler.ResponseBodyClose,
-		body:    response.Body,
+	if handler != nil {
+		handler.GotHeaders(response)
+		response.Body = &bodyWrapper{
+			onRead:  handler.ResponseBodyReadComplete,
+			onClose: handler.ResponseBodyClose,
+			body:    response.Body,
+		}
 	}
 	return response, nil
 }
