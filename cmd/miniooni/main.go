@@ -4,9 +4,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -26,7 +28,9 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/httpx/minihar"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/oohar"
 	"github.com/ooni/probe-engine/orchestra/testlists"
 	"github.com/ooni/probe-engine/session"
 
@@ -39,6 +43,7 @@ type options struct {
 	caBundlePath string
 	collectorURL string
 	extraOptions []string
+	harfile      string
 	logfile      string
 	noBouncer    bool
 	noGeoIP      bool
@@ -76,6 +81,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.extraOptions, "option", 'O',
 		"Pass an option to the experiment", "KEY=VALUE",
+	)
+	getopt.FlagLong(
+		&globalOptions.harfile, "harfile", 0,
+		"Dump requests in HAR format into the specified file", "PATH",
 	)
 	getopt.FlagLong(
 		&globalOptions.logfile, "logfile", 'l', "Set the logfile path", "PATH",
@@ -187,6 +196,21 @@ func main() {
 	log.Log = logger // from now on logs may be redirected
 
 	ctx := context.Background()
+	if globalOptions.harfile != "" {
+		var rs *minihar.RequestSaver
+		ctx, rs = minihar.WithRequestSaver(ctx)
+		defer func() {
+			oolog := oohar.NewLogFromMiniHAR(softwareName, softwareVersion, rs)
+			data, err := json.MarshalIndent(oolog, "", "  ")
+			if err != nil {
+				log.WithError(err).Fatal("Cannot serialize HAR file")
+			}
+			err = ioutil.WriteFile(globalOptions.harfile, data, 0644)
+			if err != nil {
+				log.WithError(err).Fatal("Cannot write HAR file")
+			}
+		}()
+	}
 	var tlsConfig *tls.Config
 	if globalOptions.caBundlePath != "" {
 		tlsConfig = mustParseCA(globalOptions.caBundlePath)

@@ -9,6 +9,7 @@
 package httptracex
 
 import (
+	"context"
 	"crypto/tls"
 	"io"
 	"net"
@@ -18,6 +19,9 @@ import (
 
 // Handler handles HTTP events.
 type Handler interface {
+	// RoundTripStart is when the round trip started.
+	RoundTripStart(request *http.Request)
+
 	// DNSStart is called when we start name resolution.
 	DNSStart(host string)
 
@@ -75,13 +79,16 @@ type Measurer struct {
 	http.RoundTripper
 
 	// NewHandler creates a new handler.
-	NewHandler func() Handler
+	NewHandler func(ctx context.Context) Handler
 }
 
 func (m *Measurer) addTracer(
 	request *http.Request, handler Handler,
 ) *http.Request {
 	tracer := &httptrace.ClientTrace{
+		GetConn: func(hostPort string) {
+			handler.RoundTripStart(request)
+		},
 		DNSStart: func(info httptrace.DNSStartInfo) {
 			handler.DNSStart(info.Host)
 		},
@@ -133,7 +140,7 @@ func (bw *bodyWrapper) Close() (err error) {
 func (m *Measurer) RoundTrip(request *http.Request) (*http.Response, error) {
 	var handler Handler
 	if m.NewHandler != nil {
-		handler = m.NewHandler()
+		handler = m.NewHandler(request.Context())
 	}
 	if handler != nil {
 		request = m.addTracer(request, handler)
@@ -151,6 +158,9 @@ func (m *Measurer) RoundTrip(request *http.Request) (*http.Response, error) {
 	}
 	if handler != nil {
 		handler.GotHeaders(response)
+		// "The http Client and Transport guarantee that Body is always
+		//  non-nil, even on responses without a body or responses with
+		//  a zero-length body." (from the docs)
 		response.Body = &bodyWrapper{
 			onRead:  handler.ResponseBodyReadComplete,
 			onClose: handler.ResponseBodyClose,

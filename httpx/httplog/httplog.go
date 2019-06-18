@@ -19,6 +19,10 @@ type RoundTripLogger struct {
 	Logger log.Logger
 }
 
+// RoundTripStart is when the round trip started.
+func (rtl *RoundTripLogger) RoundTripStart(request *http.Request) {
+}
+
 // DNSStart is called when we start name resolution.
 func (rtl *RoundTripLogger) DNSStart(host string) {
 	rtl.Logger.Debugf("dns: resolving %s", host)

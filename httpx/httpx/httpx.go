@@ -3,6 +3,7 @@
 package httpx
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ooni/probe-engine/httpx/httplog"
 	"github.com/ooni/probe-engine/httpx/httptracex"
+	"github.com/ooni/probe-engine/httpx/minihar"
 	"github.com/ooni/probe-engine/httpx/netx"
 	"github.com/ooni/probe-engine/log"
 )
@@ -68,10 +70,16 @@ func NewTracingProxyingClient(
 	return &http.Client{
 		Transport: &httptracex.Measurer{
 			RoundTripper: NewTransport(proxy, tlsConfig),
-			NewHandler: func() httptracex.Handler {
-				return &httplog.RoundTripLogger{
-					Logger: logger,
+			NewHandler: func(ctx context.Context) httptracex.Handler {
+				multihandler := &httptracex.MultiHandler{
+					All: []httptracex.Handler{&httplog.RoundTripLogger{
+						Logger: logger,
+					}},
 				}
+				if rs := minihar.ContextRequestSaver(ctx); rs != nil {
+					multihandler.All = append(multihandler.All, rs.NewRoundTripSaver())
+				}
+				return multihandler
 			},
 		},
 	}
