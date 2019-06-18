@@ -313,7 +313,7 @@ func main() {
 		measurement, err := experiment.Measure(ctx, input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
-			continue
+			// FALLTHROUGH so we write a report
 		}
 		// Remember to omit the user IP.
 		//
