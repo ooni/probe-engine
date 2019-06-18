@@ -19,6 +19,7 @@ import (
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
+	"github.com/ooni/probe-engine/experiment/harconnectivity"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
 	"github.com/ooni/probe-engine/experiment/ndt"
@@ -44,6 +45,7 @@ type options struct {
 	collectorURL string
 	extraOptions []string
 	harfile      string
+	inputs       []string
 	logfile      string
 	noBouncer    bool
 	noGeoIP      bool
@@ -85,6 +87,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.harfile, "harfile", 0,
 		"Dump requests in HAR format into the specified file", "PATH",
+	)
+	getopt.FlagLong(
+		&globalOptions.inputs, "input", 0,
+		"Add input for tests that use input", "INPUT",
 	)
 	getopt.FlagLong(
 		&globalOptions.logfile, "logfile", 'l', "Set the logfile path", "PATH",
@@ -247,13 +253,17 @@ func main() {
 	name := getopt.Args()[0]
 	var inputs []string
 
-	if name == "web_connectivity" {
-		list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
-		if err != nil {
-			log.WithError(err).Fatal("cannot fetch test lists")
-		}
-		for _, entry := range list {
-			inputs = append(inputs, entry.URL)
+	if name == "web_connectivity" || name == "harconnectivity" {
+		if len(globalOptions.inputs) <= 0 {
+			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
+			if err != nil {
+				log.WithError(err).Fatal("cannot fetch test lists")
+			}
+			for _, entry := range list {
+				inputs = append(inputs, entry.URL)
+			}
+		} else {
+			inputs = globalOptions.inputs
 		}
 	} else {
 		inputs = append(inputs, "")
@@ -264,6 +274,8 @@ func main() {
 		experiment = dash.NewExperiment(sess, dash.Config{})
 	} else if name == "facebook_messenger" {
 		experiment = fbmessenger.NewExperiment(sess, fbmessenger.Config{})
+	} else if name == "harconnectivity" {
+		experiment = harconnectivity.NewExperiment(sess, harconnectivity.Config{})
 	} else if name == "http_header_field_manipulation" {
 		experiment = hhfm.NewExperiment(sess, hhfm.Config{})
 	} else if name == "http_invalid_request_line" {
