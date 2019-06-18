@@ -37,7 +37,7 @@ type Handler interface {
 	TLSHandshakeDone(state tls.ConnectionState, err error)
 
 	// ConnectionReady is called when a connection is ready to be used.
-	ConnectionReady(conn net.Conn)
+	ConnectionReady(conn net.Conn, request *http.Request)
 
 	// WroteHeaderField is called when a header field is written.
 	WroteHeaderField(key string, values []string)
@@ -91,7 +91,7 @@ func (m *Measurer) addTracer(request *http.Request) *http.Request {
 		TLSHandshakeStart: m.Handler.TLSHandshakeStart,
 		TLSHandshakeDone:  m.Handler.TLSHandshakeDone,
 		GotConn: func(info httptrace.GotConnInfo) {
-			m.Handler.ConnectionReady(info.Conn)
+			m.Handler.ConnectionReady(info.Conn, request)
 		},
 		WroteHeaderField: m.Handler.WroteHeaderField,
 		WroteHeaders: func() {

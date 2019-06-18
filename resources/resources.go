@@ -79,7 +79,7 @@ func (c *Client) Ensure(ctx context.Context) error {
 			}
 			c.Logger.Debugf("resources: %s is outdated", fullpath)
 		} else {
-			c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
+			c.Logger.Debugf("resources: %s", err.Error())
 		}
 		URL := repository + resource.urlPath
 		c.Logger.Debugf("resources: fetch %s", URL)

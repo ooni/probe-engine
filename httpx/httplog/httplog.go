@@ -4,6 +4,7 @@ package httplog
 
 import (
 	"crypto/tls"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -16,9 +17,6 @@ import (
 type RoundTripLogger struct {
 	// Logger is the logs emitter.
 	Logger log.Logger
-
-	// header contains the emitted headers.
-	headers http.Header
 }
 
 // DNSStart is called when we start name resolution.
@@ -26,13 +24,16 @@ func (rtl *RoundTripLogger) DNSStart(host string) {
 	rtl.Logger.Debugf("dns: resolving %s", host)
 }
 
+func (rtl *RoundTripLogger) formatError(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return "no error"
+}
+
 // DNSDone is called after name resolution.
 func (rtl *RoundTripLogger) DNSDone(addrs []net.IPAddr, err error) {
-	if err != nil {
-		rtl.Logger.Debugf("dns: error: %s", err.Error())
-		return
-	}
-	rtl.Logger.Debugf("dns: got %d entries", len(addrs))
+	rtl.Logger.Debugf("dns: %s", rtl.formatError(err))
 	for _, addr := range addrs {
 		rtl.Logger.Debugf("- %s", addr.String())
 	}
@@ -40,16 +41,12 @@ func (rtl *RoundTripLogger) DNSDone(addrs []net.IPAddr, err error) {
 
 // ConnectStart is called when we start connecting.
 func (rtl *RoundTripLogger) ConnectStart(network, addr string) {
-	rtl.Logger.Debugf("connect: using %s, %s", network, addr)
+	rtl.Logger.Debugf("connect: to %s://%s...", network, addr)
 }
 
 // ConnectDone is called after connect.
 func (rtl *RoundTripLogger) ConnectDone(network, addr string, err error) {
-	if err != nil {
-		rtl.Logger.Debugf("connect: error: %s", err.Error())
-		return
-	}
-	rtl.Logger.Debugf("connect: connected to %s, %s", network, addr)
+	rtl.Logger.Debugf("connect: to %s://%s: %s", network, addr, rtl.formatError(err))
 }
 
 // TLSHandshakeStart is called when we start the TLS handshake.
@@ -61,11 +58,7 @@ func (rtl *RoundTripLogger) TLSHandshakeStart() {
 func (rtl *RoundTripLogger) TLSHandshakeDone(
 	state tls.ConnectionState, err error,
 ) {
-	if err != nil {
-		rtl.Logger.Debugf("tls: handshake error: %s", err.Error())
-		return
-	}
-	rtl.Logger.Debug("tls: handshake OK")
+	rtl.Logger.Debugf("tls: handshake: %s", rtl.formatError(err))
 	rtl.Logger.Debugf("- negotiated protocol: %s", state.NegotiatedProtocol)
 	rtl.Logger.Debugf("- version: %s", tlsx.TLSVersionString[state.Version])
 	rtl.Logger.Debugf("- cipher suite: %s", tlsx.TLSCipherSuiteString[state.CipherSuite])
@@ -75,11 +68,19 @@ func (rtl *RoundTripLogger) TLSHandshakeDone(
 }
 
 // ConnectionReady is called when a connection is ready to be used.
-func (rtl *RoundTripLogger) ConnectionReady(conn net.Conn) {
+func (rtl *RoundTripLogger) ConnectionReady(conn net.Conn, request *http.Request) {
 	rtl.Logger.Debugf(
 		"http: connection to %s ready; sending request", conn.RemoteAddr(),
 	)
-	rtl.headers = make(http.Header, 16) // reset
+	// A connection is HTTP/2 if it's using TLS and ALPN was used. We cannot
+	// rely on the Proto field because it's empty during redirects (and the
+	// doc is clear that this field is not managed by clients).
+	tlsconn, _ := conn.(*tls.Conn)
+	if tlsconn == nil || tlsconn.ConnectionState().NegotiatedProtocol != "h2" {
+		rtl.Logger.Debugf(
+			"> %s %s %s", request.Method, request.URL.RequestURI(), request.Proto,
+		)
+	}
 }
 
 func (rtl *RoundTripLogger) logSingleHeader(
@@ -101,29 +102,12 @@ func (rtl *RoundTripLogger) logHeaderVector(
 
 // WroteHeaderField is called when a header field is written.
 func (rtl *RoundTripLogger) WroteHeaderField(key string, values []string) {
-	for _, value := range values {
-		rtl.headers.Add(key, value)
-	}
+	const whatever = false // headers are already okay case-wise here
+	rtl.logHeaderVector(whatever, ">", key, values)
 }
 
 // WroteHeaders is called when all headers are written.
 func (rtl *RoundTripLogger) WroteHeaders(request *http.Request) {
-	http2 := rtl.headers.Get(":method") != ""
-	if !http2 {
-		rtl.Logger.Debugf(
-			"> %s %s HTTP/1.1", request.Method, request.URL.RequestURI(),
-		)
-	} else {
-		for _, s := range []string{":method", ":scheme", ":authority", ":path"} {
-			rtl.logSingleHeader(http2, ">", s, rtl.headers.Get(s))
-		}
-	}
-	for key, values := range rtl.headers {
-		if strings.HasPrefix(key, ":") {
-			continue
-		}
-		rtl.logHeaderVector(http2, ">", key, values)
-	}
 	rtl.Logger.Debug(">")
 }
 
@@ -133,7 +117,7 @@ func (rtl *RoundTripLogger) onReadComplete(
 	if n > 0 {
 		rtl.Logger.Debugf("%s [%d bytes data]", dir, n)
 	}
-	if err != nil {
+	if err != nil && err != io.EOF {
 		rtl.Logger.Debugf("http: reading %s body: %s", what, err.Error())
 	}
 }
@@ -145,11 +129,7 @@ func (rtl *RoundTripLogger) RequestBodyReadComplete(n int, err error) {
 }
 
 func (rtl *RoundTripLogger) onClose(err error, what string) {
-	if err != nil {
-		rtl.Logger.Debugf("http: closing %s body failed: %s", what, err.Error())
-		return
-	}
-	rtl.Logger.Debugf("http: closed %s body", what)
+	rtl.Logger.Debugf("http: closing %s body: %s", what, rtl.formatError(err))
 }
 
 // RequestBodyClose is called after we've closed the body.
@@ -159,11 +139,7 @@ func (rtl *RoundTripLogger) RequestBodyClose(err error) {
 
 // WroteRequest is called after the request has been written.
 func (rtl *RoundTripLogger) WroteRequest(err error) {
-	if err != nil {
-		rtl.Logger.Debugf("http: sending request failed: %s", err.Error())
-		return
-	}
-	rtl.Logger.Debugf("http: request sent; waiting for response")
+	rtl.Logger.Debugf("http: sending request: %s", rtl.formatError(err))
 }
 
 // GotFirstResponseByte is called when we start reading the response.
