@@ -206,8 +206,8 @@ func main() {
 		var rs *minihar.RequestSaver
 		ctx, rs = minihar.WithRequestSaver(ctx)
 		defer func() {
-			oolog := oohar.NewLogFromMiniHAR(softwareName, softwareVersion, rs)
-			data, err := json.MarshalIndent(oolog, "", "  ")
+			har := oohar.NewFromMiniHAR(softwareName, softwareVersion, rs)
+			data, err := json.MarshalIndent(har, "", "  ")
 			if err != nil {
 				log.WithError(err).Fatal("Cannot serialize HAR file")
 			}

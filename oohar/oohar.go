@@ -235,7 +235,13 @@ type Log struct {
 	Creator CreatorInfo `json:"creator"`
 
 	// Entries contains the tracker requests.
-	Entries []*Entry `json:"entry"`
+	Entries []*Entry `json:"entries"`
+}
+
+// HAR is the structure of a HAR file
+type HAR struct {
+	// Log contains the HAR log
+	Log Log `json:"log"`
 }
 
 func (e *Entry) fillStartedDateTime(rts *minihar.RoundTripSaver) {
@@ -383,15 +389,17 @@ func (e *Entry) fillTLS(rts *minihar.RoundTripSaver) {
 	}
 }
 
-// NewLogFromMiniHAR creates a new HAR log from a minihar log.
-func NewLogFromMiniHAR(
+// NewFromMiniHAR creates a new HAR log from a minihar log.
+func NewFromMiniHAR(
 	softwareName, softwareVersion string, rs *minihar.RequestSaver,
-) *Log {
-	log := &Log{
-		Version: "1.2",
-		Creator: CreatorInfo{
-			Name:    softwareName,
-			Version: softwareVersion,
+) *HAR {
+	har := &HAR{
+		Log: Log{
+			Version: "1.2",
+			Creator: CreatorInfo{
+				Name:    softwareName,
+				Version: softwareVersion,
+			},
 		},
 	}
 	for _, rts := range rs.RoundTrips {
@@ -404,7 +412,7 @@ func NewLogFromMiniHAR(
 		entry.fillDNS(rts)
 		entry.fillConnect(rts)
 		entry.fillTLS(rts)
-		log.Entries = append(log.Entries, entry)
+		har.Log.Entries = append(har.Log.Entries, entry)
 	}
-	return log
+	return har
 }

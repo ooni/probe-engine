@@ -29,7 +29,7 @@ type TestKeys struct {
 	Failure string `json:"failure"`
 
 	// HAR is the HAR log for the measurement.
-	HAR *oohar.Log `json:"har"`
+	HAR *oohar.HAR `json:"har"`
 }
 
 func measure(
@@ -38,6 +38,7 @@ func measure(
 ) error {
 	testkeys := new(TestKeys)
 	measurement.TestKeys = testkeys
+	previousrs := minihar.ContextRequestSaver(ctx)
 	ctx, rs := minihar.WithRequestSaver(ctx)
 	if measurement.Input == "" {
 		return errors.New("harconnectivity: passed an empty input")
@@ -51,9 +52,12 @@ func measure(
 	if err != nil {
 		testkeys.Failure = err.Error()
 	}
-	testkeys.HAR = oohar.NewLogFromMiniHAR(
+	testkeys.HAR = oohar.NewFromMiniHAR(
 		sess.SoftwareName, sess.SoftwareVersion, rs,
 	)
+	if previousrs != nil {
+		previousrs.RoundTrips = append(previousrs.RoundTrips, rs.RoundTrips...)
+	}
 	return err
 }
 
