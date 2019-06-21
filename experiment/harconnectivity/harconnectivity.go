@@ -4,6 +4,7 @@ package harconnectivity
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
@@ -38,6 +39,14 @@ func measure(
 ) error {
 	testkeys := new(TestKeys)
 	measurement.TestKeys = testkeys
+	// TODO(bassosimone): what would be a good timeout? We have a wide range
+	// of network access link speeds, so it's reasonable to say that there is
+	// no one-size-fits-all timeout setting here. For now, I am using 1 min
+	// under the assumption that after 1 min without the measurement converging
+	// a user would most likely be super pissed off. When we'll start having
+	// more HAR based data, we can use data to sort this out, maybe?
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 	previousrs := minihar.ContextRequestSaver(ctx)
 	ctx, rs := minihar.WithRequestSaver(ctx)
 	if measurement.Input == "" {
