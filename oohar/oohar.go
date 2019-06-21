@@ -181,7 +181,7 @@ type XTLSInfo struct {
 	Certs []string `json:"certs"`
 
 	// Failure is the result of the TLS handshake.
-	Failure string
+	Failure string `json:"failure"`
 }
 
 // Entry is a tracker request.
