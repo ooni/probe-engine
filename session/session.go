@@ -112,16 +112,16 @@ func New(
 	}
 }
 
-// SetAvailableHTTPSBouncer sets the HTTP bouncer base URL.
-func (s *Session) SetAvailableHTTPSBouncer(baseURL string) {
+// AddAvailableHTTPSBouncer adds the HTTP bouncer base URL to the list of URLs that are tried.
+func (s *Session) AddAvailableHTTPSBouncer(baseURL string) {
 	s.AvailableBouncers = append([]model.Service{}, model.Service{
 		Address: baseURL,
 		Type:    "https",
 	})
 }
 
-// SetAvailableHTTPSCollector adds an HTTP bouncer base URL.
-func (s *Session) SetAvailableHTTPSCollector(baseURL string) {
+// AddAvailableHTTPSCollector adds an HTTP collector base URL to the list of URLs that are tried.
+func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 	s.AvailableCollectors = append([]model.Service{}, model.Service{
 		Address: baseURL,
 		Type:    "https",
