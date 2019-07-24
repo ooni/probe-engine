@@ -200,13 +200,13 @@ func main() {
 	)
 
 	if globalOptions.bouncerURL != "" {
-		sess.SetAvailableHTTPSBouncer(globalOptions.bouncerURL)
+		sess.AddAvailableHTTPSBouncer(globalOptions.bouncerURL)
 	}
 	if globalOptions.collectorURL != "" {
 		// Implementation note: setting the collector before doing the lookup
 		// is totally fine because it's a maybe lookup, meaning that any bit
 		// of information already available will not be looked up again.
-		sess.SetAvailableHTTPSCollector(globalOptions.collectorURL)
+		sess.AddAvailableHTTPSCollector(globalOptions.collectorURL)
 	}
 
 	if !globalOptions.noBouncer {
