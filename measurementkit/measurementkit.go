@@ -69,6 +69,9 @@ type Options struct {
 	// NoGeoIP indicates whether to perform a GeoIP lookup
 	NoGeoIP bool `json:"no_geoip,omitempty"`
 
+	// NoResolverLookup indicates whether to perform a resolver lookup
+	NoResolverLookup bool `json:"no_resolver_lookup"`
+
 	// ProbeASN is the AS number
 	ProbeASN string `json:"probe_asn,omitempty"`
 
@@ -128,6 +131,7 @@ func NewSettings(
 			NoCollector:      true,
 			NoFileReport:     true,
 			NoGeoIP:          true,
+			NoResolverLookup: true,
 			ProbeASN:         probeASN,
 			ProbeCC:          probeCC,
 			ProbeIP:          probeIP,
