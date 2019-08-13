@@ -1,6 +1,14 @@
 // Package model defines shared data structures.
 package model
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net"
+)
+
 // Measurement is a OONI measurement.
 //
 // This structure is compatible with the definition of the base data format in
@@ -78,10 +86,21 @@ type Measurement struct {
 }
 
 // AddAnnotations adds the annotations from input to m.Annotations.
-func (m Measurement) AddAnnotations(input map[string]string) {
+func (m *Measurement) AddAnnotations(input map[string]string) {
+	if m.Annotations == nil {
+		m.Annotations = make(map[string]string)
+	}
 	for key, value := range input {
 		m.Annotations[key] = value
 	}
+}
+
+// AddAnnotation adds a single annotations to m.Annotations.
+func (m *Measurement) AddAnnotation(key, value string) {
+	if m.Annotations == nil {
+		m.Annotations = make(map[string]string)
+	}
+	m.Annotations[key] = value
 }
 
 // Service describes a backend service.
@@ -118,6 +137,57 @@ type LocationInfo struct {
 	ResolverIP string
 }
 
+// PrivacySettings contains privacy settings for submitting measurements.
+type PrivacySettings struct {
+	// IncludeASN indicates whether to include the ASN
+	IncludeASN bool
+
+	// IncludeCountry indicates whether to include the country
+	IncludeCountry bool
+
+	// IncludeIP indicates whether to include the IP
+	IncludeIP bool
+}
+
+// Apply applies the privacy settings to the |m| measurement using the
+// information inside of |li| to perform scrubbing.
+func (ps PrivacySettings) Apply(m *Measurement, li LocationInfo) (err error) {
+	if ps.IncludeASN == false {
+		m.ProbeASN = DefaultProbeASNString
+	}
+	if ps.IncludeCountry == false {
+		m.ProbeCC = DefaultProbeCC
+	}
+	if ps.IncludeIP == false {
+		m.ProbeIP = DefaultProbeIP
+		err = ps.maybeRewriteTestKeys(m, li.ProbeIP)
+	}
+	return
+}
+
+func (ps PrivacySettings) maybeRewriteTestKeys(m *Measurement, currentIP string) error {
+	if net.ParseIP(currentIP) == nil {
+		return errors.New("Invalid probe IP string")
+	}
+	data, err := json.Marshal(m.TestKeys)
+	if err != nil {
+		return err
+	}
+	// The check using Count is to save an unnecessary copy performed by
+	// ReplaceAll when there are no matches into the body. This is what
+	// we would like the common case to be, meaning that the code has done
+	// its job correctly and has not leaked the IP.
+	bpip := []byte(currentIP)
+	if bytes.Count(data, bpip) <= 0 {
+		return nil
+	}
+	data = bytes.ReplaceAll(data, bpip, []byte(`[REDACTED]`))
+	// We add an annotation such that hopefully later we can measure the
+	// number of cases where we failed to sanitize properly.
+	m.AddAnnotation("_probe_engine_sanitize_test_keys", "true")
+	return json.Unmarshal(data, &m.TestKeys)
+}
+
 const (
 	// DefaultProbeASN is the default probe ASN as number.
 	DefaultProbeASN uint = 0
@@ -134,3 +204,6 @@ const (
 	// DefaultResolverIP is the default resolver IP.
 	DefaultResolverIP = "127.0.0.1"
 )
+
+// DefaultProbeASNString is the default probe ASN as a string.
+var DefaultProbeASNString = fmt.Sprintf("AS%d", DefaultProbeASN)

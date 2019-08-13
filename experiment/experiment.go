@@ -51,7 +51,8 @@ type Experiment struct {
 }
 
 // New creates a new experiment. You should not call this function directly
-// rather you should do <package>.NewExperiment.
+// rather you should do <package>.NewExperiment where <package> is a subpackage
+// inside of the experiment package, e.g., `.../experiment/ndt7`.
 func New(
 	sess *session.Session, testName, testVersion string, measure MeasureFunc,
 ) *Experiment {
@@ -127,15 +128,22 @@ func (e *Experiment) newMeasurement(input string) model.Measurement {
 	}
 }
 
-// Measure performs a measurement with the specified input. Note that the
-// returned measurement will have all its privacy sensitive values set
-// to their real values. It will be your responsibility to strip them and
-// use the default values if the user told us to do so.
+// Measure performs a measurement with the specified input. Note that as
+// part of running the measurement, we'll also apply privacy settings. So,
+// the measurement you get back is already scrubbed (if needed).
 func (e *Experiment) Measure(
 	ctx context.Context, input string,
 ) (measurement model.Measurement, err error) {
+	err = e.Session.MaybeLookupLocation(ctx)
+	if err != nil {
+		return
+	}
 	measurement = e.newMeasurement(input)
 	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
+	scrubErr := e.Session.PrivacySettings.Apply(&measurement, *e.Session.Location)
+	if err == nil {
+		err = scrubErr
+	}
 	return
 }
 
