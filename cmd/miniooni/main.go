@@ -26,7 +26,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/httpx/httpx"
-	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/orchestra/testlists"
 	"github.com/ooni/probe-engine/session"
 
@@ -38,6 +37,7 @@ type options struct {
 	bouncerURL   string
 	caBundlePath string
 	collectorURL string
+	inputs       []string
 	extraOptions []string
 	logfile      string
 	noBouncer    bool
@@ -72,6 +72,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.collectorURL, "collector", 'c',
 		"Set collector base URL", "URL",
+	)
+	getopt.FlagLong(
+		&globalOptions.inputs, "input", 'i',
+		"Add test-dependent input to the test input", "INPUT",
 	)
 	getopt.FlagLong(
 		&globalOptions.extraOptions, "option", 'O',
@@ -221,18 +225,22 @@ func main() {
 	}
 
 	name := getopt.Args()[0]
-	var inputs []string
 
 	if name == "web_connectivity" {
-		list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
-		if err != nil {
-			log.WithError(err).Fatal("cannot fetch test lists")
+		if len(globalOptions.inputs) <= 0 {
+			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
+			if err != nil {
+				log.WithError(err).Fatal("cannot fetch test lists")
+			}
+			for _, entry := range list {
+				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
+			}
 		}
-		for _, entry := range list {
-			inputs = append(inputs, entry.URL)
-		}
+	} else if len(globalOptions.inputs) != 0 {
+		log.Fatal("this test does not expect any input")
 	} else {
-		inputs = append(inputs, "")
+		// Tests that do not expect input internally require an empty input to run
+		globalOptions.inputs = append(globalOptions.inputs, "")
 	}
 
 	var experiment *experiment.Experiment
@@ -273,20 +281,12 @@ func main() {
 		defer experiment.CloseReport(ctx)
 	}
 
-	for _, input := range inputs {
+	for _, input := range globalOptions.inputs {
 		measurement, err := experiment.Measure(ctx, input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
 			continue
 		}
-		// Remember to omit the user IP.
-		//
-		// This is not ooniprobe and there's no need here to increase the
-		// complexity to make this option configurable. Still, I don't want
-		// this tool to be sharing the IP, because I want to provide the
-		// same default level of sharing of ooniprobe to random people that
-		// may run this tool for development purposes or exploration.
-		measurement.ProbeIP = model.DefaultProbeIP
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {

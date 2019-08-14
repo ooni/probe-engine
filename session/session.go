@@ -51,6 +51,10 @@ type Session struct {
 	// Location is the probe location.
 	Location *model.LocationInfo
 
+	// PrivacySettings contains the collector privacy settings. The default
+	// is to only redact the user's IP address from results.
+	PrivacySettings model.PrivacySettings
+
 	// SoftwareName contains the software name.
 	SoftwareName string
 
@@ -105,7 +109,11 @@ func New(
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(
 			logger, nil, tlsConfig,
 		),
-		Logger:          logger,
+		Logger: logger,
+		PrivacySettings: model.PrivacySettings{
+			IncludeCountry: true,
+			IncludeASN:     true,
+		},
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
 		TLSConfig:       tlsConfig,

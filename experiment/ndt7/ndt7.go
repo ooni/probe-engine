@@ -40,7 +40,7 @@ type TestKeys struct {
 }
 
 func discover(ctx context.Context, sess *session.Session) (string, error) {
-	client := mlabns.NewClient("ndt_ssl", sess.UserAgent())
+	client := mlabns.NewClient("ndt7", sess.UserAgent())
 	// Basically: (1) make sure we're using our tracing and possibly proxied
 	// client rather than default; (2) if we have an explicit proxy make sure
 	// we tell mlab-ns to use our IP address rather than the proxy one.
@@ -69,7 +69,7 @@ func measure(
 	const maxRuntime = 15.0 // second (conservative)
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
-	client := upstream.NewClient(sess.UserAgent())
+	client := upstream.NewClient(sess.SoftwareName, sess.SoftwareVersion)
 	if sess.TLSConfig != nil {
 		client.Dialer.TLSClientConfig = sess.TLSConfig
 	}

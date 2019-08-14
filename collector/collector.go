@@ -6,6 +6,7 @@ package collector
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -50,28 +51,40 @@ type ReportTemplate struct {
 	TestVersion string `json:"test_version"`
 }
 
+type openResponse struct {
+	ID               string   `json:"report_id"`
+	SupportedFormats []string `json:"supported_formats"`
+}
+
 // Report is an open report
 type Report struct {
 	// ID is the report ID
-	ID string `json:"report_id"`
+	ID string
 
-	// Client is the client that was used.
-	Client *Client
+	// client is the client that was used.
+	client *Client
 }
 
 // OpenReport opens a new report.
 func (c *Client) OpenReport(
 	ctx context.Context, rt ReportTemplate,
 ) (*Report, error) {
-	var report Report
+	var or openResponse
 	err := (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,
-	}).Create(ctx, "/report", rt, &report)
-	report.Client = c
-	return &report, err
+	}).Create(ctx, "/report", rt, &or)
+	if err != nil {
+		return nil, err
+	}
+	for _, format := range or.SupportedFormats {
+		if format == "json" {
+			return &Report{ID: or.ID, client: c}, nil
+		}
+	}
+	return nil, errors.New("JSON format not supported")
 }
 
 type updateRequest struct {
@@ -96,10 +109,10 @@ func (r *Report) SubmitMeasurement(
 ) error {
 	var updateResponse updateResponse
 	err := (&jsonapi.Client{
-		BaseURL:    r.Client.BaseURL,
-		HTTPClient: r.Client.HTTPClient,
-		Logger:     r.Client.Logger,
-		UserAgent:  r.Client.UserAgent,
+		BaseURL:    r.client.BaseURL,
+		HTTPClient: r.client.HTTPClient,
+		Logger:     r.client.Logger,
+		UserAgent:  r.client.UserAgent,
 	}).Create(
 		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
 			Format:  "json",
@@ -117,10 +130,10 @@ func (r *Report) SubmitMeasurement(
 func (r *Report) Close(ctx context.Context) error {
 	var input, output struct{}
 	return (&jsonapi.Client{
-		BaseURL:    r.Client.BaseURL,
-		HTTPClient: r.Client.HTTPClient,
-		Logger:     r.Client.Logger,
-		UserAgent:  r.Client.UserAgent,
+		BaseURL:    r.client.BaseURL,
+		HTTPClient: r.client.HTTPClient,
+		Logger:     r.client.Logger,
+		UserAgent:  r.client.UserAgent,
 	}).Create(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
