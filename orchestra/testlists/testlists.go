@@ -3,6 +3,7 @@ package testlists
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"net/http"
 	"net/url"
@@ -64,6 +65,7 @@ func NewClient(sess *session.Session) *Client {
 // SetEnabledCategories configures the client category codes
 func (c *Client) SetEnabledCategories(categories []string) error {
 	c.EnabledCategories = categories
+	return nil
 }
 
 // Do retrieves the test list for the specified country.
@@ -76,7 +78,7 @@ func (c *Client) Do(
 		query.Set("probe_cc", countryCode)
 	}
 	if (limit > 0) {
-		query.Set("limit", limit)
+		query.Set("limit", fmt.Sprintf("%d", limit))
 	}
 	if (len(c.EnabledCategories) > 0) {
 		query.Set("category_codes", strings.Join(c.EnabledCategories, ","))
