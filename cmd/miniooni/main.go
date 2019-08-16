@@ -228,7 +228,7 @@ func main() {
 
 	if name == "web_connectivity" {
 		if len(globalOptions.inputs) <= 0 {
-			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC())
+			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC(), 100)
 			if err != nil {
 				log.WithError(err).Fatal("cannot fetch test lists")
 			}
