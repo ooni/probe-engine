@@ -20,7 +20,7 @@ func makeClient() *testlists.Client {
 
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	urls, err := makeClient().Do(context.Background(), "IT")
+	urls, err := makeClient().Do(context.Background(), "IT", 0)
 	if err != nil {
 		t.Fatal(err)
 	}

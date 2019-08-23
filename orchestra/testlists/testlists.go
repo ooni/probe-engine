@@ -3,6 +3,8 @@ package testlists
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"net/http"
 	"net/url"
 
@@ -45,6 +47,9 @@ type Client struct {
 
 	// UserAgent is the user agent to use.
 	UserAgent string
+
+	// EnabledCategories is a list of category codes that are enabled
+	EnabledCategories []string
 }
 
 // NewClient creates a new client in the context of the given session.
@@ -57,14 +62,26 @@ func NewClient(sess *session.Session) *Client {
 	}
 }
 
+// SetEnabledCategories configures the client category codes
+func (c *Client) SetEnabledCategories(categories []string) error {
+	c.EnabledCategories = categories
+	return nil
+}
+
 // Do retrieves the test list for the specified country.
 func (c *Client) Do(
-	ctx context.Context, countryCode string,
+	ctx context.Context, countryCode string, limit int,
 ) ([]URLInfo, error) {
 	var resp response
 	query := url.Values{}
 	if countryCode != "" {
 		query.Set("probe_cc", countryCode)
+	}
+	if (limit > 0) {
+		query.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	if (len(c.EnabledCategories) > 0) {
+		query.Set("category_codes", strings.Join(c.EnabledCategories, ","))
 	}
 	err := (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
