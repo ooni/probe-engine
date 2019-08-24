@@ -110,7 +110,6 @@ func getbody(s *io.ReadCloser, dest *HTTPBody) (err error) {
 	}
 	(*s).Close()
 	*s = ioutil.NopCloser(bytes.NewReader(data))
-	// TODO(bassosimone): we don't know whether the body is UTF-8
 	(*dest).Value = string(data)
 	return
 }
