@@ -15,11 +15,11 @@ func TestHTTPPerformMany(t *testing.T) {
 	templates := []ootemplate.HTTPRequestTemplate{
 		ootemplate.HTTPRequestTemplate{
 			Method: "GET",
-			URL: "http://google.com",
+			URL:    "http://google.com",
 		},
 		ootemplate.HTTPRequestTemplate{
 			Method: "GET",
-			URL: "http://kernel.org",
+			URL:    "http://kernel.org",
 		},
 	}
 	roundtrips, err := ootemplate.HTTPPerformMany(ctx, log.Log, templates...)

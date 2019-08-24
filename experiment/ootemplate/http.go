@@ -183,8 +183,8 @@ func NewHTTPClientWithMeasurer(
 // HTTPRequesTemplate is a quick template for setting up an HTTP request
 // for performing OONI measurements.
 type HTTPRequestTemplate struct {
-	Method string
-	URL string
+	Method    string
+	URL       string
 	UserAgent string
 }
 
@@ -214,7 +214,7 @@ func HTTPPerformMany(
 	client, measurer := NewHTTPClientWithMeasurer(logger, nil, nil)
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(len(requests))
-	for _, req := range(requests) {
+	for _, req := range requests {
 		go func(req *http.Request) {
 			resp, err := client.Do(req)
 			if err == nil {

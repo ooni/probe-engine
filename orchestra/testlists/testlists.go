@@ -4,9 +4,9 @@ package testlists
 import (
 	"context"
 	"fmt"
-	"strings"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ooni/probe-engine/httpx/jsonapi"
 	"github.com/ooni/probe-engine/log"
@@ -77,10 +77,10 @@ func (c *Client) Do(
 	if countryCode != "" {
 		query.Set("probe_cc", countryCode)
 	}
-	if (limit > 0) {
+	if limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", limit))
 	}
-	if (len(c.EnabledCategories) > 0) {
+	if len(c.EnabledCategories) > 0 {
 		query.Set("category_codes", strings.Join(c.EnabledCategories, ","))
 	}
 	err := (&jsonapi.Client{

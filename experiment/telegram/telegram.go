@@ -22,7 +22,7 @@ const (
 )
 
 // Config contains the experiment config.
-type Config struct {}
+type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
@@ -38,7 +38,7 @@ func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 	callbacks handler.Callbacks, config Config,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, 30 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	testkeys := &TestKeys{
 		TelegramHTTPBlocking: true,
