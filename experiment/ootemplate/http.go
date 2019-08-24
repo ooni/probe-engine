@@ -220,6 +220,8 @@ func HTTPPerformMany(
 	client, measurer := NewHTTPClientWithMeasurer(logger, nil, nil)
 	for _, req := range requests {
 		resp, err := client.Do(req)
+		// Note that here we just drain the body if needed, for correctness, but
+		// otherwise we ignore the result because we have it in measurer.
 		if err == nil {
 			ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
