@@ -211,19 +211,19 @@ func HTTPPerformMany(
 		req = req.WithContext(ctx)
 		requests = append(requests, req)
 	}
+	// TODO(bassosimone): make httptracex able to work in thread safe
+	// fashion. Until then, this code is single threaded.
+	//
+	// Failed build: https://travis-ci.org/ooni/probe-engine/builds/576181138
+	//
+	// Fix: https://github.com/ooni/probe-engine/pull/26/commits/f6f23a718
 	client, measurer := NewHTTPClientWithMeasurer(logger, nil, nil)
-	var waitgroup sync.WaitGroup
-	waitgroup.Add(len(requests))
 	for _, req := range requests {
-		go func(req *http.Request) {
-			resp, err := client.Do(req)
-			if err == nil {
-				ioutil.ReadAll(resp.Body)
-				resp.Body.Close()
-			}
-			waitgroup.Done()
-		}(req)
+		resp, err := client.Do(req)
+		if err == nil {
+			ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+		}
 	}
-	waitgroup.Wait()
 	return measurer.RoundTrips, nil
 }
