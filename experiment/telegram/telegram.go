@@ -99,6 +99,9 @@ func measure(
 		templates = append(templates, ootemplate.HTTPRequestTemplate{
 			Method: "POST", URL: "http://" + net.JoinHostPort(addr, "80"),
 		})
+		// Note: it's intended to connect using `http` on port `443`. I was
+		// surprised as well, but this is the spec and using `https` is actually
+		// going to lead to I/O timeouts and other failures.
 		templates = append(templates, ootemplate.HTTPRequestTemplate{
 			Method: "POST", URL: "http://" + net.JoinHostPort(addr, "443"),
 		})
