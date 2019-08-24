@@ -93,7 +93,6 @@ func measure(
 	}
 	for res := range ootemplate.TCPConnectAsync(ctx, sess.Logger, epnts...) {
 		if res.Status.Success {
-			testkeys.TelegramTCPBlocking = false
 			testkeys.TCPConnect = append(testkeys.TCPConnect, res)
 		}
 	}
