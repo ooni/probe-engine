@@ -92,9 +92,7 @@ func measure(
 		epnts = append(epnts, net.JoinHostPort(addr, "443"))
 	}
 	for res := range ootemplate.TCPConnectAsync(ctx, sess.Logger, epnts...) {
-		if res.Status.Success {
-			testkeys.TCPConnect = append(testkeys.TCPConnect, res)
-		}
+		testkeys.TCPConnect = append(testkeys.TCPConnect, res)
 	}
 	var templates []ootemplate.HTTPRequestTemplate
 	for _, addr := range addresses {
