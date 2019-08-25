@@ -26,20 +26,20 @@ type TCPConnectResults struct {
 // TCPConnectOnce performs a single TCP connect attempt. There is no real
 // timeout except the one you can configure using the context.
 func TCPConnectOnce(
-	ctx context.Context, logger log.Logger, epnt string,
+	ctx context.Context, logger log.Logger, endpoint string,
 ) (results TCPConnectResults, err error) {
-	logger.Debugf("tcpconnect.go: connecting to %s", epnt)
+	logger.Debugf("tcpconnect.go: connecting to %s", endpoint)
 	defer func() {
 		if err != nil {
-			logger.Debugf("tcpconnect.go: connecting to %s: %s", epnt, err.Error())
+			logger.Debugf("tcpconnect.go: connecting to %s: %s", endpoint, err.Error())
 			results.Status.Failure = err.Error()
 		} else {
-			logger.Debugf("tcpconnect.go: connecting to %s: OK", epnt)
+			logger.Debugf("tcpconnect.go: connecting to %s: OK", endpoint)
 			results.Status.Success = true
 		}
 	}()
 	var address, port string
-	address, port, err = net.SplitHostPort(epnt)
+	address, port, err = net.SplitHostPort(endpoint)
 	if err != nil {
 		return
 	}
@@ -55,7 +55,7 @@ func TCPConnectOnce(
 	results.IP = address
 	results.Port = uint16(portnum)
 	var conn net.Conn
-	conn, err = (&net.Dialer{}).DialContext(ctx, "tcp", epnt)
+	conn, err = (&net.Dialer{}).DialContext(ctx, "tcp", endpoint)
 	if err == nil {
 		conn.Close()
 	}
@@ -67,11 +67,11 @@ func TCPConnectOnce(
 // to nil) or failed (non nil error). We also return the result of each of
 // the TCP connect attempts.
 func TCPConnectWithRetry(
-	ctx context.Context, logger log.Logger, epnt string,
+	ctx context.Context, logger log.Logger, endpoint string,
 ) ([]TCPConnectResults, error) {
 	var all []TCPConnectResults
 	err := retryx.Do(ctx, func() error {
-		results, err := TCPConnectOnce(ctx, logger, epnt)
+		results, err := TCPConnectOnce(ctx, logger, endpoint)
 		all = append(all, results)
 		return err
 	})
@@ -80,11 +80,11 @@ func TCPConnectWithRetry(
 
 func tcpConnectAsyncLoop(
 	ctx context.Context, out chan<- TCPConnectResults,
-	logger log.Logger, epnts ...string,
+	logger log.Logger, endpoints ...string,
 ) {
 	defer close(out)
-	for _, epnt := range epnts {
-		results, _ := TCPConnectWithRetry(ctx, logger, epnt)
+	for _, endpoint := range endpoints {
+		results, _ := TCPConnectWithRetry(ctx, logger, endpoint)
 		for _, entry := range results {
 			out <- entry
 			if ctx.Err() != nil {
@@ -97,9 +97,9 @@ func tcpConnectAsyncLoop(
 // TCPConnectAsync connects to an array of endpoints and returns the results
 // on the returned channel, which will be closed when done.
 func TCPConnectAsync(
-	ctx context.Context, logger log.Logger, epnts ...string,
+	ctx context.Context, logger log.Logger, endpoints ...string,
 ) <-chan TCPConnectResults {
 	out := make(chan TCPConnectResults)
-	go tcpConnectAsyncLoop(ctx, out, logger, epnts...)
+	go tcpConnectAsyncLoop(ctx, out, logger, endpoints...)
 	return out
 }

@@ -86,12 +86,12 @@ func measure(
 		"149.154.175.50", "149.154.167.51", "149.154.175.100",
 		"149.154.167.91", "149.154.171.5",
 	}
-	var epnts []string
+	var endpoints []string
 	for _, addr := range addresses {
-		epnts = append(epnts, net.JoinHostPort(addr, "80"))
-		epnts = append(epnts, net.JoinHostPort(addr, "443"))
+		endpoints = append(endpoints, net.JoinHostPort(addr, "80"))
+		endpoints = append(endpoints, net.JoinHostPort(addr, "443"))
 	}
-	for res := range ootemplate.TCPConnectAsync(ctx, sess.Logger, epnts...) {
+	for res := range ootemplate.TCPConnectAsync(ctx, sess.Logger, endpoints...) {
 		testkeys.TCPConnect = append(testkeys.TCPConnect, res)
 	}
 	var templates []ootemplate.HTTPRequestTemplate
