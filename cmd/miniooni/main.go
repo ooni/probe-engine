@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/multi"
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/dash"
@@ -39,7 +39,6 @@ type options struct {
 	collectorURL string
 	inputs       []string
 	extraOptions []string
-	logfile      string
 	noBouncer    bool
 	noGeoIP      bool
 	noJSON       bool
@@ -56,6 +55,7 @@ const (
 
 var (
 	globalOptions options
+	startTime     = time.Now()
 )
 
 func init() {
@@ -80,9 +80,6 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.extraOptions, "option", 'O',
 		"Pass an option to the experiment", "KEY=VALUE",
-	)
-	getopt.FlagLong(
-		&globalOptions.logfile, "logfile", 'l', "Set the logfile path", "PATH",
 	)
 	getopt.FlagLong(
 		&globalOptions.noBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
@@ -149,7 +146,9 @@ type logHandler struct {
 }
 
 func (h *logHandler) HandleLog(e *log.Entry) (err error) {
-	s := fmt.Sprintf("<%s> %s", e.Level, e.Message)
+	s := fmt.Sprintf("[%14.6f] <%s> %s",
+		time.Since(startTime).Seconds(),
+		e.Level, e.Message)
 	if len(e.Fields) > 0 {
 		s += fmt.Sprintf(": %+v", e.Fields)
 	}
@@ -176,19 +175,11 @@ func main() {
 	if globalOptions.reportfile == "" {
 		globalOptions.reportfile = "report.jsonl"
 	}
-	if globalOptions.logfile != "" {
-		filep, err := os.Create(globalOptions.logfile)
-		if err != nil {
-			log.WithError(err).Fatal("cannot open logfile")
-		}
-		defer filep.Close()
-		logger.Handler = multi.New(logger.Handler, &logHandler{Writer: filep})
-	}
 	workDir, err := os.Getwd()
 	if err != nil {
 		log.WithError(err).Fatal("cannot get current working directory")
 	}
-	log.Log = logger // from now on logs may be redirected
+	log.Log = logger
 
 	ctx := context.Background()
 	var tlsConfig *tls.Config
@@ -214,19 +205,25 @@ func main() {
 	}
 
 	if !globalOptions.noBouncer {
+		log.Info("Looking up OONI backends")
 		if err := sess.MaybeLookupBackends(ctx); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")
 		}
 	}
 	if !globalOptions.noGeoIP {
+		log.Info("Looking up your location")
 		if err := sess.MaybeLookupLocation(ctx); err != nil {
 			log.WithError(err).Warn("cannot lookup your location")
+		} else {
+			log.Infof("your IP: %s, country: %s, ISP name: %s",
+				sess.Location.ProbeIP, sess.Location.CountryCode, sess.Location.NetworkName)
 		}
 	}
 
 	name := getopt.Args()[0]
 
 	if name == "web_connectivity" {
+		log.Info("Fetching test lists")
 		if len(globalOptions.inputs) <= 0 {
 			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC(), 100)
 			if err != nil {
@@ -281,7 +278,11 @@ func main() {
 		defer experiment.CloseReport(ctx)
 	}
 
+	inputCount := len(globalOptions.inputs)
+	inputCounter := 0
 	for _, input := range globalOptions.inputs {
+		inputCounter++
+		log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
 		measurement, err := experiment.Measure(ctx, input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
