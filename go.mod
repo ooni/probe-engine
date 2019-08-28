@@ -40,7 +40,7 @@ require (
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/miekg/dns v1.1.12 // indirect
 	github.com/oschwald/geoip2-golang v1.3.0
-	github.com/oschwald/maxminddb-golang v1.3.0 // indirect
+	github.com/oschwald/maxminddb-golang v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
 	github.com/redjack/marionette v0.0.0-20180930054334-5d0d25fc4084 // indirect
