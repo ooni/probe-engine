@@ -10,12 +10,14 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/multi"
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/dash"
+	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
@@ -270,6 +272,8 @@ func main() {
 		experiment = web_connectivity.NewExperiment(sess, web_connectivity.Config{})
 	} else if name == "whatsapp" {
 		experiment = whatsapp.NewExperiment(sess, whatsapp.Config{})
+	} else if name == "example" {
+		experiment = example.NewExperiment(sess, example.Config{2 * time.Second})
 	} else {
 		log.Fatalf("Unknown experiment: %s", name)
 	}
