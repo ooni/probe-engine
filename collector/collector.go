@@ -15,6 +15,14 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+const (
+	// DefaultDataFormatVersion is the default data format version
+	DefaultDataFormatVersion = "0.2.0"
+
+	// DefaultFormat is the default format
+	DefaultFormat = "json"
+)
+
 // Client is a client for the OONI collector API.
 type Client struct {
 	// BaseURL is the bouncer base URL.
@@ -32,6 +40,14 @@ type Client struct {
 
 // ReportTemplate is the template for opening a report
 type ReportTemplate struct {
+	// DataFormatVersion is unconditionally set to `0.2.0` and you don't
+	// need to be concerned about it.
+	DataFormatVersion string `json:"data_format_version"`
+
+	// Format is unconditionally set to `json` and you don't need
+	// to be concerned about it.
+	Format string `json:"format"`
+
 	// ProbeASN is the probe's autonomous system number (e.g. `AS1234`)
 	ProbeASN string `json:"probe_asn"`
 
@@ -69,6 +85,12 @@ type Report struct {
 func (c *Client) OpenReport(
 	ctx context.Context, rt ReportTemplate,
 ) (*Report, error) {
+	if rt.DataFormatVersion != DefaultDataFormatVersion {
+		return nil, errors.New("Unsupported data format version")
+	}
+	if rt.Format != DefaultFormat {
+		return nil, errors.New("Unsupported format")
+	}
 	var or openResponse
 	err := (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
