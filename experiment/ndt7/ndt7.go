@@ -3,6 +3,7 @@ package ndt7
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -95,6 +96,12 @@ func measure(
 			ev.BBRInfo.MinRTT, ev.TCPInfo.SmoothedRTT, ev.TCPInfo.RTTVar,
 		)
 		callbacks.OnProgress(percentage, message)
+		data, err := json.Marshal(ev)
+		if err != nil {
+			testkeys.Failure = err.Error()
+			return err
+		}
+		sess.Logger.Debugf("%s", string(data))
 	}
 	ch, err = client.StartUpload(ctx)
 	if err != nil {
@@ -109,6 +116,12 @@ func measure(
 			"upload-speed %s", humanize.SI(float64(speed), "bit/s"),
 		)
 		callbacks.OnProgress(percentage, message)
+		data, err := json.Marshal(ev)
+		if err != nil {
+			testkeys.Failure = err.Error()
+			return err
+		}
+		sess.Logger.Debugf("%s", string(data))
 	}
 	callbacks.OnProgress(1, "done")
 	return nil
