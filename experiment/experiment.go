@@ -86,12 +86,14 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 			UserAgent:  e.Session.UserAgent(),
 		}
 		template := collector.ReportTemplate{
-			ProbeASN:        e.Session.ProbeASNString(),
-			ProbeCC:         e.Session.ProbeCC(),
-			SoftwareName:    e.Session.SoftwareName,
-			SoftwareVersion: e.Session.SoftwareVersion,
-			TestName:        e.TestName,
-			TestVersion:     e.TestVersion,
+			DataFormatVersion: collector.DefaultDataFormatVersion,
+			Format:            collector.DefaultFormat,
+			ProbeASN:          e.Session.ProbeASNString(),
+			ProbeCC:           e.Session.ProbeCC(),
+			SoftwareName:      e.Session.SoftwareName,
+			SoftwareVersion:   e.Session.SoftwareVersion,
+			TestName:          e.TestName,
+			TestVersion:       e.TestVersion,
 		}
 		e.Report, err = client.OpenReport(ctx, template)
 		if err == nil {

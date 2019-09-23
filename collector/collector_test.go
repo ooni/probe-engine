@@ -48,12 +48,14 @@ func TestReportLifecycle(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := collector.ReportTemplate{
-		ProbeASN:        "AS0",
-		ProbeCC:         "ZZ",
-		SoftwareName:    "ooniprobe-engine",
-		SoftwareVersion: "0.1.0",
-		TestName:        "dummy",
-		TestVersion:     "0.1.0",
+		DataFormatVersion: collector.DefaultDataFormatVersion,
+		Format:            collector.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
 	}
 	client := makeClient()
 	report, err := client.OpenReport(ctx, template)
