@@ -38,3 +38,7 @@ dependency on Measurement Kit will eventually be removed.
 
 A future version of this document will provide platform specific
 instruction for installing Measurement Kit and building.
+
+## Design
+
+See the [design document](DESIGN.md).
