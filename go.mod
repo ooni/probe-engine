@@ -3,16 +3,14 @@ module github.com/ooni/probe-engine
 go 1.12
 
 require (
-	github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9 // indirect
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
 	github.com/Psiphon-Labs/bolt v0.0.0-20170814173724-c6e046a80d4b // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20180912164743-03e6572170e3 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.2+incompatible
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.9+incompatible
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20190321174524-b5083341bf6c // indirect
-	github.com/Psiphon-Labs/utls v0.0.0-20181219022742-11a4cc033322 // indirect
 	github.com/Yawning/chacha20 v0.0.0-20170904085104-e3b1f968fc63 // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/apex/log v1.1.1
@@ -23,8 +21,7 @@ require (
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/creack/goselect v0.1.0 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
-	github.com/dgraph-io/badger v1.5.4 // indirect
-	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
+	github.com/dgraph-io/badger v1.5.5 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
@@ -32,8 +29,10 @@ require (
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
+	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grafov/m3u8 v0.6.1 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lucas-clemente/quic-go v0.10.2 // indirect
 	github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1
@@ -62,5 +61,4 @@ require (
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
