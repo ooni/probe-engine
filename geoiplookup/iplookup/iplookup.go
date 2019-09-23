@@ -18,14 +18,15 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-type lookupFunc func(
+// LookupFunc is a function for performing the IP lookup.
+type LookupFunc func(
 	ctx context.Context, client *http.Client,
 	logger log.Logger, userAgent string,
 ) (string, error)
 
 type method struct {
 	name string
-	fn   lookupFunc
+	fn   LookupFunc
 }
 
 var (
@@ -69,7 +70,10 @@ func makeSlice() []method {
 	return ret
 }
 
-func (c *Client) do(ctx context.Context, fn lookupFunc) (string, error) {
+// DoWithCustomFunc performs the IP lookup with a custom function.
+func (c *Client) DoWithCustomFunc(
+	ctx context.Context, fn LookupFunc,
+) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
 	if err != nil {
 		return model.DefaultProbeIP, err
@@ -85,7 +89,7 @@ func (c *Client) do(ctx context.Context, fn lookupFunc) (string, error) {
 func (c *Client) Do(ctx context.Context) (ip string, err error) {
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)
-		ip, err = c.do(ctx, method.fn)
+		ip, err = c.DoWithCustomFunc(ctx, method.fn)
 		if err == nil {
 			return
 		}

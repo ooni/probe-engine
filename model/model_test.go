@@ -3,6 +3,7 @@ package model_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -12,6 +13,30 @@ import (
 type fakeTestKeys struct {
 	ClientResolver string `json:"client_resolver"`
 	Body           string `json:"body"`
+}
+
+func TestAddAnnotations(t *testing.T) {
+	m := &model.Measurement{}
+	m.AddAnnotations(map[string]string{
+		"foo": "bar",
+		"f":   "b",
+	})
+	m.AddAnnotations(map[string]string{
+		"foobar": "bar",
+		"f":      "b",
+	})
+	if len(m.Annotations) != 3 {
+		t.Fatal("unexpected number of annotations")
+	}
+	if m.Annotations["foo"] != "bar" {
+		t.Fatal("unexpected annotation")
+	}
+	if m.Annotations["f"] != "b" {
+		t.Fatal("unexpected annotation")
+	}
+	if m.Annotations["foobar"] != "bar" {
+		t.Fatal("unexpected annotation")
+	}
 }
 
 func makeMeasurement(probeIP, probeASN, probeCC string) model.Measurement {
@@ -69,5 +94,58 @@ func TestScrubCommonCase(t *testing.T) {
 	}
 	if bytes.Count(data, []byte(probeIP)) != 0 {
 		t.Fatal("ProbeIP not fully redacted")
+	}
+}
+
+func TestPrivacySettingsApply(t *testing.T) {
+	ps := &model.PrivacySettings{}
+	m := &model.Measurement{
+		ProbeASN: "AS1234",
+		ProbeCC:  "IT",
+	}
+	err := ps.Apply(m, model.LocationInfo{
+		ASN:         1234,
+		CountryCode: "IT",
+		ProbeIP:     "8.8.8.8",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.ProbeASN != model.DefaultProbeASNString {
+		t.Fatal("ASN was not scrubbed")
+	}
+	if m.ProbeCC != model.DefaultProbeCC {
+		t.Fatal("CC was not scrubbed")
+	}
+}
+
+func TestPrivacySettingsApplyInvalidIP(t *testing.T) {
+	ps := &model.PrivacySettings{}
+	m := &model.Measurement{
+		ProbeASN: "AS1234",
+		ProbeCC:  "IT",
+	}
+	err := ps.Apply(m, model.LocationInfo{
+		ASN:         1234,
+		CountryCode: "IT",
+		ProbeIP:     "", // is invalid
+	})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestPrivacySettingsApplyMarshalError(t *testing.T) {
+	ps := &model.PrivacySettings{}
+	m := &model.Measurement{
+		ProbeASN: "AS1234",
+		ProbeCC:  "IT",
+	}
+	err := ps.MaybeRewriteTestKeys(
+		m, "8.8.8.8", func(v interface{}) ([]byte, error) {
+			return nil, errors.New("mocked error")
+		})
+	if err == nil {
+		t.Fatal("expected an error here")
 	}
 }

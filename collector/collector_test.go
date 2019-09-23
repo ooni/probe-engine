@@ -3,6 +3,7 @@ package collector_test
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/apex/log"
@@ -67,5 +68,105 @@ func TestReportLifecycle(t *testing.T) {
 	err = report.SubmitMeasurement(ctx, &measurement)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	template := collector.ReportTemplate{
+		DataFormatVersion: "0.1.0",
+		Format:            collector.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	client := makeClient()
+	report, err := client.OpenReport(ctx, template)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if report != nil {
+		t.Fatal("expected a nil report here")
+	}
+}
+
+func TestOpenReportInvalidFormat(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	template := collector.ReportTemplate{
+		DataFormatVersion: collector.DefaultDataFormatVersion,
+		Format:            "yaml",
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	client := makeClient()
+	report, err := client.OpenReport(ctx, template)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if report != nil {
+		t.Fatal("expected a nil report here")
+	}
+}
+
+func TestJSONAPIClientCreateFailure(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	template := collector.ReportTemplate{
+		DataFormatVersion: collector.DefaultDataFormatVersion,
+		Format:            collector.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	client := makeClient()
+	client.BaseURL = "\t" // breaks the URL parser
+	report, err := client.OpenReport(ctx, template)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if report != nil {
+		t.Fatal("expected a nil report here")
+	}
+}
+
+func TestOpenResponseNoJSONSupport(t *testing.T) {
+	server := httptest.NewServer(
+		http.HandlerFunc(func(writer http.ResponseWriter, req *http.Request) {
+			writer.Write([]byte(`{"ID":"abc","supported_formats":["yaml"]}`))
+		}),
+	)
+	defer server.Close()
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	template := collector.ReportTemplate{
+		DataFormatVersion: collector.DefaultDataFormatVersion,
+		Format:            collector.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	client := makeClient()
+	client.BaseURL = server.URL
+	report, err := client.OpenReport(ctx, template)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if report != nil {
+		t.Fatal("expected a nil report here")
 	}
 }

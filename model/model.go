@@ -163,16 +163,21 @@ func (ps PrivacySettings) Apply(m *Measurement, li LocationInfo) (err error) {
 	}
 	if ps.IncludeIP == false {
 		m.ProbeIP = DefaultProbeIP
-		err = ps.maybeRewriteTestKeys(m, li.ProbeIP)
+		err = ps.MaybeRewriteTestKeys(m, li.ProbeIP, json.Marshal)
 	}
 	return
 }
 
-func (ps PrivacySettings) maybeRewriteTestKeys(m *Measurement, currentIP string) error {
+// MaybeRewriteTestKeys is the function called by Apply that
+// ensures that m's serialization doesn't include the IP
+func (ps PrivacySettings) MaybeRewriteTestKeys(
+	m *Measurement, currentIP string,
+	marshal func(interface{}) ([]byte, error),
+) error {
 	if net.ParseIP(currentIP) == nil {
 		return errors.New("Invalid probe IP string")
 	}
-	data, err := json.Marshal(m.TestKeys)
+	data, err := marshal(m.TestKeys)
 	if err != nil {
 		return err
 	}
