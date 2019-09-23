@@ -115,13 +115,14 @@ func (e *Experiment) ReportID() string {
 
 func (e *Experiment) newMeasurement(input string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.2.0",
+		DataFormatVersion:    "0.2.1",
 		Input:                input,
 		MeasurementStartTime: formatTimeNowUTC(),
 		ProbeIP:              e.Session.ProbeIP(),
 		ProbeASN:             e.Session.ProbeASNString(),
 		ProbeCC:              e.Session.ProbeCC(),
 		ReportID:             e.ReportID(),
+		ResolverIP:           e.Session.Location.ResolverIP,
 		SoftwareName:         e.Session.SoftwareName,
 		SoftwareVersion:      e.Session.SoftwareVersion,
 		TestName:             e.TestName,

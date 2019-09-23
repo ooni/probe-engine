@@ -58,6 +58,9 @@ type Measurement struct {
 	// ReportID contains the report ID
 	ReportID string `json:"report_id"`
 
+	// ResolverIP is the resolver IP
+	ResolverIP string `json:"resolver_ip"`
+
 	// SoftwareName contains the software name
 	SoftwareName string `json:"software_name"`
 
