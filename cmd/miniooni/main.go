@@ -285,7 +285,9 @@ func main() {
 	inputCounter := 0
 	for _, input := range globalOptions.inputs {
 		inputCounter++
-		log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+		if input != "" {
+			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+		}
 		measurement, err := experiment.Measure(ctx, input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
@@ -293,12 +295,16 @@ func main() {
 		}
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
+			log.Infof("submitting measurement to OONI collector")
 			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
 				continue
 			}
 		}
 		if !globalOptions.noJSON {
+			// Note: must be after submission because submission modifies
+			// the measurement to include the report ID.
+			log.Infof("saving measurement to disk")
 			if err := experiment.SaveMeasurement(
 				measurement, globalOptions.reportfile,
 			); err != nil {
