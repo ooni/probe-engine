@@ -269,7 +269,9 @@ func main() {
 	} else if name == "whatsapp" {
 		experiment = whatsapp.NewExperiment(sess, whatsapp.Config{})
 	} else if name == "example" {
-		experiment = example.NewExperiment(sess, example.Config{2 * time.Second})
+		experiment = example.NewExperiment(sess, example.Config{
+			SleepTime: 2 * time.Second,
+		})
 	} else {
 		log.Fatalf("Unknown experiment: %s", name)
 	}
