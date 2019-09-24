@@ -122,7 +122,7 @@ func (e *Experiment) newMeasurement(input string) model.Measurement {
 		ProbeASN:             e.Session.ProbeASNString(),
 		ProbeCC:              e.Session.ProbeCC(),
 		ReportID:             e.ReportID(),
-		ResolverIP:           e.Session.Location.ResolverIP,
+		ResolverIP:           e.Session.ResolverIP(),
 		SoftwareName:         e.Session.SoftwareName,
 		SoftwareVersion:      e.Session.SoftwareVersion,
 		TestName:             e.TestName,
@@ -141,9 +141,13 @@ func (e *Experiment) Measure(
 	if err != nil {
 		return
 	}
+	li, err := e.Session.Location()
+	if err != nil {
+		panic("we just looked up the location")
+	}
 	measurement = e.newMeasurement(input)
 	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
-	scrubErr := e.Session.PrivacySettings.Apply(&measurement, *e.Session.Location)
+	scrubErr := e.Session.PrivacySettings.Apply(&measurement, li)
 	if err == nil {
 		err = scrubErr
 	}

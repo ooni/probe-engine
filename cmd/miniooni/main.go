@@ -217,7 +217,7 @@ func main() {
 			log.WithError(err).Warn("cannot lookup your location")
 		} else {
 			log.Infof("your IP: %s, country: %s, ISP name: %s",
-				sess.Location.ProbeIP, sess.Location.CountryCode, sess.Location.NetworkName)
+				sess.ProbeIP(), sess.ProbeCC(), sess.ProbeNetworkName())
 		}
 	}
 

@@ -119,6 +119,8 @@ github.com/lucas-clemente/quic-go v0.10.2 h1:iQtTSZVbd44k94Lu0U16lLBIG3lrnjDvQon
 github.com/lucas-clemente/quic-go v0.10.2/go.mod h1:hvaRS9IHjFLMq76puFJeWNfmn+H70QZ/CXoxqw9bzao=
 github.com/lucas-clemente/quic-go-certificates v0.0.0-20160823095156-d2f86524cced h1:zqEC1GJZFbGZA0tRyNZqRjep92K5fujFtFsu5ZW7Aug=
 github.com/lucas-clemente/quic-go-certificates v0.0.0-20160823095156-d2f86524cced/go.mod h1:NCcRLrOTZbzhZvixZLlERbJtDtYsmMw8Jc4vS8Z0g58=
+github.com/m-lab/go v1.1.0 h1:BB1llaNFa2CbrqmDpRhwFGQCY726PtpqxlZykJrRN3Q=
+github.com/m-lab/go v1.1.0/go.mod h1:FcVx/N8dL5J5TVQ2L0d8/cAw/ljR6fhwZqvqZHrb5/Q=
 github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1 h1:lPFK+4ojybg/9OEaTfoJFteZnSnaiB5bo41GZ9Pn1ew=
 github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1/go.mod h1:nD9WTkxP4/mV2ph5uUpVPD2ZOJdZ9QKPTKu3tJGkM9o=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
