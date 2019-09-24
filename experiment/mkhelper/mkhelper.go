@@ -9,6 +9,7 @@ import (
 	"github.com/ooni/probe-engine/session"
 )
 
+// Set copies a specific helper from the session to MK settings.
 func Set(
 	sess *session.Session, name, kind string,
 	settings *measurementkit.Settings,

@@ -48,26 +48,28 @@ func Handle(
 		callbacks.OnDataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
 		return
 	}
-	if event.Key == "status.update.performance" {
-		return // Seems unused by OONI
-	}
-	if event.Key == "status.update.websites" {
-		return // Ditto
-	}
-	if event.Key == "status.queued" {
-		return // Ditto
-	}
-	if event.Key == "status.started" {
-		return // Ditto
-	}
-	if event.Key == "status.measurement_start" {
-		return // We know that because we control the lifecycle
-	}
-	if event.Key == "status.measurement_done" {
-		return // We know that because we control the lifecycle
-	}
-	if event.Key == "status.geoip_lookup" {
-		return // We perform the lookup before calling MK
-	}
+	/*
+		if event.Key == "status.update.performance" {
+			return // Seems unused by OONI
+		}
+		if event.Key == "status.update.websites" {
+			return // Ditto
+		}
+		if event.Key == "status.queued" {
+			return // Ditto
+		}
+		if event.Key == "status.started" {
+			return // Ditto
+		}
+		if event.Key == "status.measurement_start" {
+			return // We know that because we control the lifecycle
+		}
+		if event.Key == "status.measurement_done" {
+			return // We know that because we control the lifecycle
+		}
+		if event.Key == "status.geoip_lookup" {
+			return // We perform the lookup before calling MK
+		}
+	*/
 	sess.Logger.Debugf("mkevent: %s %+v", event.Key, event.Value)
 }
