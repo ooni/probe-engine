@@ -35,17 +35,17 @@ type resource struct {
 }
 
 var resources = map[string]resource{
-	ASNDatabaseName: resource{
+	ASNDatabaseName: {
 		urlPath:  "/releases/download/20190520205742/asn.mmdb.gz",
 		gzsha256: "9d2c7a1bafd626492645638cafab0617d689d5f18b8cd0659b9d1907ae34b2a6",
 		sha256:   "b8a1ae0910de88ba3f2dc0a01219fcb23426385e4c91c20da9aaf4d41e5c4a5a",
 	},
-	CountryDatabaseName: resource{
+	CountryDatabaseName: {
 		urlPath:  "/releases/download/20190520205742/country.mmdb.gz",
 		gzsha256: "d9d5b5aeed2b4f7a73d01804e12332990cb0d9b4afcef150d56053baeeb9b35a",
 		sha256:   "2a3c85df9dde8431e699411c28e85d716625e3f0850b717f8d61ba17190cbc88",
 	},
-	CABundleName: resource{
+	CABundleName: {
 		urlPath:  "/releases/download/20190520205742/ca-bundle.pem.gz",
 		gzsha256: "9f2d176644b779710cf3d4f975edc9d64897ef49867459d2ab94b3540943f30f",
 		sha256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
