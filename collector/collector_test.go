@@ -63,9 +63,12 @@ func TestReportLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer report.Close(ctx)
 	measurement := makeMeasurement(template, report.ID)
 	err = report.SubmitMeasurement(ctx, &measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = report.Close(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
