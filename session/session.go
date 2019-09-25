@@ -182,14 +182,6 @@ func (s *Session) ResolverIP() string {
 	return ip
 }
 
-// Location returns location info
-func (s *Session) Location() (model.LocationInfo, error) {
-	if s.location == nil {
-		return model.LocationInfo{}, errors.New("location is nil")
-	}
-	return *s.location, nil
-}
-
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
 		HTTPClient: s.HTTPDefaultClient, // proxy is OK

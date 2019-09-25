@@ -2,9 +2,12 @@ package experiment_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -92,6 +95,71 @@ func TestOpenReportFailure(t *testing.T) {
 		},
 	}
 	err = exp.OpenReport(ctx)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestMeasureLookupLocationFailure(t *testing.T) {
+	sess := session.New(
+		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil, nil,
+	)
+	exp := experiment.New(
+		sess, "antani", "0.1.1",
+		func(
+			ctx context.Context,
+			sess *session.Session,
+			measurement *model.Measurement,
+			callbacks handler.Callbacks,
+		) error {
+			return nil
+		})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	if _, err := exp.Measure(ctx, "xx"); err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestSaveMeasurementErrors(t *testing.T) {
+	ctx := context.Background()
+	exp, err := newExperiment(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirname, err := ioutil.TempDir("", "ooniprobe-engine-save-measurement")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(dirname, "report.jsonl")
+	var m model.Measurement
+	err = exp.SaveMeasurementEx(
+		m, filename, func(v interface{}) ([]byte, error) {
+			return nil, errors.New("mocked error")
+		}, os.OpenFile, func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	err = exp.SaveMeasurementEx(
+		m, filename, json.Marshal,
+		func(name string, flag int, perm os.FileMode) (*os.File, error) {
+			return nil, errors.New("mocked error")
+		}, func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	err = exp.SaveMeasurementEx(
+		m, filename, json.Marshal, os.OpenFile,
+		func(fp *os.File, b []byte) (int, error) {
+			return 0, errors.New("mocked error")
+		},
+	)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

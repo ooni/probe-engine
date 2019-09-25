@@ -2,7 +2,6 @@ package session_test
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -47,31 +46,8 @@ func TestIntegration(t *testing.T) {
 	if err := sess.MaybeLookupBackends(ctx); err != nil {
 		t.Fatal(err)
 	}
-
-	if _, err := sess.Location(); err == nil {
-		t.Fatal("expected an error here")
-	}
 	if err := sess.MaybeLookupLocation(ctx); err != nil {
 		t.Fatal(err)
-	}
-	li, err := sess.Location()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sess.ProbeASNString() != fmt.Sprintf("AS%d", li.ASN) {
-		t.Fatal("probe ASN does not match")
-	}
-	if sess.ProbeCC() != li.CountryCode {
-		t.Fatal("country code does not match")
-	}
-	if sess.ProbeNetworkName() != li.NetworkName {
-		t.Fatal("network name does not match")
-	}
-	if sess.ProbeIP() != li.ProbeIP {
-		t.Fatal("probe IP does not match")
-	}
-	if sess.ResolverIP() != li.ResolverIP {
-		t.Fatal("resolver IP does not match")
 	}
 
 	readfile := func(path string) (err error) {

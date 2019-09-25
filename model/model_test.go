@@ -73,9 +73,7 @@ func TestScrubCommonCase(t *testing.T) {
 		IncludeCountry: true,
 		IncludeASN:     true,
 	}
-	err := privacy.Apply(&m, model.LocationInfo{
-		ProbeIP: probeIP, // minimal initialization required by Apply
-	})
+	err := privacy.Apply(&m, probeIP)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,11 +101,7 @@ func TestPrivacySettingsApply(t *testing.T) {
 		ProbeASN: "AS1234",
 		ProbeCC:  "IT",
 	}
-	err := ps.Apply(m, model.LocationInfo{
-		ASN:         1234,
-		CountryCode: "IT",
-		ProbeIP:     "8.8.8.8",
-	})
+	err := ps.Apply(m, "8.8.8.8")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,11 +119,7 @@ func TestPrivacySettingsApplyInvalidIP(t *testing.T) {
 		ProbeASN: "AS1234",
 		ProbeCC:  "IT",
 	}
-	err := ps.Apply(m, model.LocationInfo{
-		ASN:         1234,
-		CountryCode: "IT",
-		ProbeIP:     "", // is invalid
-	})
+	err := ps.Apply(m, "") // invalid IP
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

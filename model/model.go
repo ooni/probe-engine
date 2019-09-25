@@ -152,9 +152,9 @@ type PrivacySettings struct {
 	IncludeIP bool
 }
 
-// Apply applies the privacy settings to the |m| measurement using the
-// information inside of |li| to perform scrubbing.
-func (ps PrivacySettings) Apply(m *Measurement, li LocationInfo) (err error) {
+// Apply applies the privacy settings to the measurement, possibly
+// scrubbing the probeIP out of it.
+func (ps PrivacySettings) Apply(m *Measurement, probeIP string) (err error) {
 	if ps.IncludeASN == false {
 		m.ProbeASN = DefaultProbeASNString
 	}
@@ -163,7 +163,7 @@ func (ps PrivacySettings) Apply(m *Measurement, li LocationInfo) (err error) {
 	}
 	if ps.IncludeIP == false {
 		m.ProbeIP = DefaultProbeIP
-		err = ps.MaybeRewriteTestKeys(m, li.ProbeIP, json.Marshal)
+		err = ps.MaybeRewriteTestKeys(m, probeIP, json.Marshal)
 	}
 	return
 }
