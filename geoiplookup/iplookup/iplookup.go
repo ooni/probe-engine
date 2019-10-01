@@ -31,15 +31,15 @@ type method struct {
 
 var (
 	methods = []method{
-		method{
+		{
 			name: "akamai",
 			fn:   akamai.Do,
 		},
-		method{
+		{
 			name: "avast",
 			fn:   avast.Do,
 		},
-		method{
+		{
 			name: "ubuntu",
 			fn:   ubuntu.Do,
 		},
