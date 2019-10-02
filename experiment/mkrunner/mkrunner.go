@@ -40,7 +40,7 @@ func Do(
 	return err
 }
 
-// DoNothingStartEx is a replacement for DefaultStartEx that
+// DoNothingStartEx is a replacement for measurementkit.StartEx that
 // does nearly nothing apart emitting a fake measurement.
 func DoNothingStartEx(
 	settings measurementkit.Settings, logger log.Logger,
@@ -58,7 +58,7 @@ func DoNothingStartEx(
 	return out, nil
 }
 
-// FailingStartEx is a replacement for DefaultStartEx that
+// FailingStartEx is a replacement for measurementkit.StartEx that
 // returns an error immediately.
 func FailingStartEx(
 	settings measurementkit.Settings, logger log.Logger,
