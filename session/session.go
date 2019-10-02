@@ -139,11 +139,16 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 
 // ProbeASNString returns the probe ASN as a string.
 func (s *Session) ProbeASNString() string {
+	return fmt.Sprintf("AS%d", s.ProbeASN())
+}
+
+// ProbeASN returns the probe ASN as an integer.
+func (s *Session) ProbeASN() uint {
 	asn := model.DefaultProbeASN
 	if s.location != nil {
 		asn = s.location.ASN
 	}
-	return fmt.Sprintf("AS%d", asn)
+	return asn
 }
 
 // ProbeCC returns the probe CC.
