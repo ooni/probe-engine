@@ -48,6 +48,8 @@ func Handle(
 		callbacks.OnDataUsage(event.Value.DownloadedKB, event.Value.UploadedKB)
 		return
 	}
+	// I've commented out the events we don't handle. For each event I've
+	// explained why we don't handle it.
 	/*
 		if event.Key == "status.update.performance" {
 			return // Seems unused by OONI
