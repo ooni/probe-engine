@@ -6,8 +6,8 @@ import (
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/experiment/mkevent"
 	"github.com/ooni/probe-engine/experiment/mkhelper"
+	"github.com/ooni/probe-engine/experiment/mkrunner"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -37,14 +37,9 @@ func measure(
 	if err != nil {
 		return err
 	}
-	out, err := measurementkit.StartEx(settings, sess.Logger)
-	if err != nil {
-		return err
-	}
-	for ev := range out {
-		mkevent.Handle(sess, measurement, ev, callbacks)
-	}
-	return nil
+	return mkrunner.Do(
+		settings, sess, measurement, callbacks, measurementkit.StartEx,
+	)
 }
 
 // NewExperiment creates a new experiment.

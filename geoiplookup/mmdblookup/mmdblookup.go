@@ -43,6 +43,7 @@ func LookupCC(
 	if err != nil {
 		return
 	}
+	defer db.Close()
 	record, err := db.Country(net.ParseIP(ip))
 	if err != nil {
 		return

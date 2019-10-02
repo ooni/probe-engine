@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path/filepath"
 
+	"github.com/m-lab/go/rtx"
 	"github.com/ooni/probe-engine/bouncer"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
@@ -48,9 +49,6 @@ type Session struct {
 	// Logger is the log emitter.
 	Logger log.Logger
 
-	// Location is the probe location.
-	Location *model.LocationInfo
-
 	// PrivacySettings contains the collector privacy settings. The default
 	// is to only redact the user's IP address from results.
 	PrivacySettings model.PrivacySettings
@@ -63,6 +61,9 @@ type Session struct {
 
 	// TLSConfig contains the TLS config
 	TLSConfig *tls.Config
+
+	// location is the probe location.
+	location *model.LocationInfo
 }
 
 // New creates a new experiments session. The logger is the logger
@@ -122,7 +123,7 @@ func New(
 
 // AddAvailableHTTPSBouncer adds the HTTP bouncer base URL to the list of URLs that are tried.
 func (s *Session) AddAvailableHTTPSBouncer(baseURL string) {
-	s.AvailableBouncers = append([]model.Service{}, model.Service{
+	s.AvailableBouncers = append(s.AvailableBouncers, model.Service{
 		Address: baseURL,
 		Type:    "https",
 	})
@@ -130,7 +131,7 @@ func (s *Session) AddAvailableHTTPSBouncer(baseURL string) {
 
 // AddAvailableHTTPSCollector adds an HTTP collector base URL to the list of URLs that are tried.
 func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
-	s.AvailableCollectors = append([]model.Service{}, model.Service{
+	s.AvailableCollectors = append(s.AvailableCollectors, model.Service{
 		Address: baseURL,
 		Type:    "https",
 	})
@@ -139,8 +140,8 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 // ProbeASNString returns the probe ASN as a string.
 func (s *Session) ProbeASNString() string {
 	asn := model.DefaultProbeASN
-	if s.Location != nil {
-		asn = s.Location.ASN
+	if s.location != nil {
+		asn = s.location.ASN
 	}
 	return fmt.Sprintf("AS%d", asn)
 }
@@ -148,8 +149,8 @@ func (s *Session) ProbeASNString() string {
 // ProbeCC returns the probe CC.
 func (s *Session) ProbeCC() string {
 	cc := model.DefaultProbeCC
-	if s.Location != nil {
-		cc = s.Location.CountryCode
+	if s.location != nil {
+		cc = s.location.CountryCode
 	}
 	return cc
 }
@@ -157,8 +158,8 @@ func (s *Session) ProbeCC() string {
 // ProbeNetworkName returns the probe network name.
 func (s *Session) ProbeNetworkName() string {
 	nn := model.DefaultProbeNetworkName
-	if s.Location != nil {
-		nn = s.Location.NetworkName
+	if s.location != nil {
+		nn = s.location.NetworkName
 	}
 	return nn
 }
@@ -166,8 +167,17 @@ func (s *Session) ProbeNetworkName() string {
 // ProbeIP returns the probe IP.
 func (s *Session) ProbeIP() string {
 	ip := model.DefaultProbeIP
-	if s.Location != nil {
-		ip = s.Location.ProbeIP
+	if s.location != nil {
+		ip = s.location.ProbeIP
+	}
+	return ip
+}
+
+// ResolverIP returns the resolver IP
+func (s *Session) ResolverIP() string {
+	ip := model.DefaultResolverIP
+	if s.location != nil {
+		ip = s.location.ResolverIP
 	}
 	return ip
 }
@@ -294,48 +304,42 @@ func (s *Session) lookupProbeCC(
 }
 
 func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
-	addrs, err := resolverlookup.Do(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	if len(addrs) < 1 {
-		return "", errors.New("No resolver IPs returned")
-	}
-	return addrs[0], nil
+	return resolverlookup.First(ctx, nil)
 }
 
 // MaybeLookupLocation discovers details on the probe location only
 // if this information it not already available.
-func (s *Session) MaybeLookupLocation(ctx context.Context) error {
-	if s.Location != nil {
-		return nil
+func (s *Session) MaybeLookupLocation(ctx context.Context) (err error) {
+	if s.location == nil {
+		defer func() {
+			if recover() != nil {
+				// JUST KNOW WE'VE BEEN HERE
+			}
+		}()
+		var (
+			probeIP    string
+			asn        uint
+			org        string
+			cc         string
+			resolverIP string
+		)
+		err = s.fetchResourcesIdempotent(ctx)
+		rtx.PanicOnError(err, "s.fetchResourcesIdempotent failed")
+		probeIP, err = s.lookupProbeIP(ctx)
+		rtx.PanicOnError(err, "s.lookupProbeIP failed")
+		asn, org, err = s.lookupProbeNetwork(s.ASNDatabasePath(), probeIP)
+		rtx.PanicOnError(err, "s.lookupProbeNetwork failed")
+		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
+		rtx.PanicOnError(err, "s.lookupProbeCC failed")
+		resolverIP, err = s.lookupResolverIP(ctx)
+		rtx.PanicOnError(err, "s.lookupResolverIP failed")
+		s.location = &model.LocationInfo{
+			ASN:         asn,
+			CountryCode: cc,
+			NetworkName: org,
+			ProbeIP:     probeIP,
+			ResolverIP:  resolverIP,
+		}
 	}
-	err := s.fetchResourcesIdempotent(ctx)
-	if err != nil {
-		return err
-	}
-	probeIP, err := s.lookupProbeIP(ctx)
-	if err != nil {
-		return err
-	}
-	asn, org, err := s.lookupProbeNetwork(s.ASNDatabasePath(), probeIP)
-	if err != nil {
-		return err
-	}
-	cc, err := s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
-	if err != nil {
-		return err
-	}
-	resolverIP, err := s.lookupResolverIP(ctx)
-	if err != nil {
-		return err
-	}
-	s.Location = &model.LocationInfo{
-		ASN:         asn,
-		CountryCode: cc,
-		NetworkName: org,
-		ProbeIP:     probeIP,
-		ResolverIP:  resolverIP,
-	}
-	return nil
+	return
 }

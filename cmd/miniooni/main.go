@@ -217,7 +217,7 @@ func main() {
 			log.WithError(err).Warn("cannot lookup your location")
 		} else {
 			log.Infof("your IP: %s, country: %s, ISP name: %s",
-				sess.Location.ProbeIP, sess.Location.CountryCode, sess.Location.NetworkName)
+				sess.ProbeIP(), sess.ProbeCC(), sess.ProbeNetworkName())
 		}
 	}
 
@@ -269,7 +269,9 @@ func main() {
 	} else if name == "whatsapp" {
 		experiment = whatsapp.NewExperiment(sess, whatsapp.Config{})
 	} else if name == "example" {
-		experiment = example.NewExperiment(sess, example.Config{2 * time.Second})
+		experiment = example.NewExperiment(sess, example.Config{
+			SleepTime: 2 * time.Second,
+		})
 	} else {
 		log.Fatalf("Unknown experiment: %s", name)
 	}
@@ -285,7 +287,9 @@ func main() {
 	inputCounter := 0
 	for _, input := range globalOptions.inputs {
 		inputCounter++
-		log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+		if input != "" {
+			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+		}
 		measurement, err := experiment.Measure(ctx, input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
@@ -293,12 +297,16 @@ func main() {
 		}
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
+			log.Infof("submitting measurement to OONI collector")
 			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
 				continue
 			}
 		}
 		if !globalOptions.noJSON {
+			// Note: must be after submission because submission modifies
+			// the measurement to include the report ID.
+			log.Infof("saving measurement to disk")
 			if err := experiment.SaveMeasurement(
 				measurement, globalOptions.reportfile,
 			); err != nil {

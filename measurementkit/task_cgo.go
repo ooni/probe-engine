@@ -4,15 +4,14 @@ import (
 	// #include <measurement_kit/ffi.h>
 	// #include <stdlib.h>
 	//
-	// #cgo darwin,amd64 LDFLAGS: -L/usr/local/opt/openssl/lib
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/lib/libmeasurement_kit.a
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/libevent/lib/libevent_core.a
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/libevent/lib/libevent_extra.a
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/libevent/lib/libevent_openssl.a
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/libevent/lib/libevent_pthreads.a
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/libmaxminddb/lib/libmaxminddb.a
-	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/openssl/lib/libssl.a
-	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/openssl/lib/libcrypto.a
+	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/openssl@1.1/lib/libssl.a
+	// #cgo darwin,amd64 LDFLAGS: /usr/local/opt/openssl@1.1/lib/libcrypto.a
 	// #cgo darwin,amd64 LDFLAGS: -lcurl
 	//
 	// #cgo windows LDFLAGS: -static

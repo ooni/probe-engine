@@ -27,7 +27,7 @@ func Do(
 	}
 	req.Host = "whatismyip.akamai.com" // domain fronted request
 	req.Header.Set("User-Agent", userAgent)
-	resp, err := httpClient.Do(req)
+	resp, err := httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return model.DefaultProbeIP, err
 	}

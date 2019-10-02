@@ -115,13 +115,14 @@ func (e *Experiment) ReportID() string {
 
 func (e *Experiment) newMeasurement(input string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.2.0",
+		DataFormatVersion:    "0.2.1",
 		Input:                input,
 		MeasurementStartTime: formatTimeNowUTC(),
 		ProbeIP:              e.Session.ProbeIP(),
 		ProbeASN:             e.Session.ProbeASNString(),
 		ProbeCC:              e.Session.ProbeCC(),
 		ReportID:             e.ReportID(),
+		ResolverIP:           e.Session.ResolverIP(),
 		SoftwareName:         e.Session.SoftwareName,
 		SoftwareVersion:      e.Session.SoftwareVersion,
 		TestName:             e.TestName,
@@ -142,7 +143,9 @@ func (e *Experiment) Measure(
 	}
 	measurement = e.newMeasurement(input)
 	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
-	scrubErr := e.Session.PrivacySettings.Apply(&measurement, *e.Session.Location)
+	scrubErr := e.Session.PrivacySettings.Apply(
+		&measurement, e.Session.ProbeIP(),
+	)
 	if err == nil {
 		err = scrubErr
 	}
@@ -165,16 +168,33 @@ func (e *Experiment) SubmitMeasurement(
 func (e *Experiment) SaveMeasurement(
 	measurement model.Measurement, filePath string,
 ) error {
-	data, err := json.Marshal(measurement)
+	return e.SaveMeasurementEx(
+		measurement, filePath, json.Marshal, os.OpenFile,
+		func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
+}
+
+// SaveMeasurementEx is like SaveMeasurement but allows you to mock
+// any operation that SaveMeasurement would perform. You generally
+// want to call SaveMeasurement rather than this function.
+func (e *Experiment) SaveMeasurementEx(
+	measurement model.Measurement, filePath string,
+	marshal func(v interface{}) ([]byte, error),
+	openFile func(name string, flag int, perm os.FileMode) (*os.File, error),
+	write func(fp *os.File, b []byte) (n int, err error),
+) error {
+	data, err := marshal(measurement)
 	if err != nil {
 		return err
 	}
 	data = append(data, byte('\n'))
-	filep, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	filep, err := openFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
-	if _, err := filep.Write(data); err != nil {
+	if _, err := write(filep, data); err != nil {
 		return err
 	}
 	return filep.Close()

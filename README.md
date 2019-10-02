@@ -38,3 +38,13 @@ dependency on Measurement Kit will eventually be removed.
 
 A future version of this document will provide platform specific
 instruction for installing Measurement Kit and building.
+
+## Release procedure
+
+1. make sure that dependencies are up to date
+
+2. make sure that resources are up to date
+
+3. commit, tag, and push
+
+4. create new release on GitHub

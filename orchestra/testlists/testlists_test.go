@@ -2,25 +2,25 @@ package testlists_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/orchestra/testlists"
+	"github.com/ooni/probe-engine/session"
 )
 
-func makeClient() *testlists.Client {
-	return &testlists.Client{
-		BaseURL:    testlists.DefaultBaseURL,
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "ooniprobe-engine/0.1.0",
-	}
-}
-
 func TestIntegration(t *testing.T) {
+	sess := session.New(
+		log.Log,
+		"ooniprobe-engine",
+		"0.1.0",
+		"../../testdata/",
+		nil, nil,
+	)
+	client := testlists.NewClient(sess)
+	client.SetEnabledCategories([]string{"NEWS", "CULTR"})
 	log.SetLevel(log.DebugLevel)
-	urls, err := makeClient().Do(context.Background(), "IT", 0)
+	urls, err := client.Do(context.Background(), "IT", 128)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,7 @@ package collector
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -151,7 +152,7 @@ func (r *Report) SubmitMeasurement(
 // Close closes the report. Returns nil on success; an error on failure.
 func (r *Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	return (&jsonapi.Client{
+	err := (&jsonapi.Client{
 		BaseURL:    r.client.BaseURL,
 		HTTPClient: r.client.HTTPClient,
 		Logger:     r.client.Logger,
@@ -159,4 +160,17 @@ func (r *Report) Close(ctx context.Context) error {
 	}).Create(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
+	// Implementation note: the server is not compliant with
+	// the spec, which says it MUST return a JSON. It does
+	// instead return an empty string. Intercept this error
+	// and turn it to nil, since we cannot really act upon
+	// this error, and we ought be flexible.
+	if _, ok := err.(*json.SyntaxError); ok &&
+		err.Error() == "unexpected end of JSON input" {
+		r.client.Logger.Debug(
+			"collector.go: working around collector returning empty string bug",
+		)
+		err = nil
+	}
+	return err
 }
