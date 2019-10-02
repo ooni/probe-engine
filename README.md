@@ -39,10 +39,6 @@ dependency on Measurement Kit will eventually be removed.
 A future version of this document will provide platform specific
 instruction for installing Measurement Kit and building.
 
-## Design
-
-See the [design document](DESIGN.md).
-
 ## Release procedure
 
 1. make sure that dependencies are up to date
