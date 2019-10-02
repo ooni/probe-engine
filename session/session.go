@@ -143,7 +143,7 @@ func (s *Session) ProbeASNString() string {
 }
 
 // ProbeASN returns the probe ASN as an integer.
-func (s *Session) ProbeASN() int {
+func (s *Session) ProbeASN() uint {
 	asn := model.DefaultProbeASN
 	if s.location != nil {
 		asn = s.location.ASN
