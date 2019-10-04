@@ -142,7 +142,7 @@ func Queries(
 				}
 				ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 				defer cancel()
-				// Just ignore errors and do not include the CNAME
+				// Just ignore errors; don't include CNAME on failure
 				cname, _ := resolver.LookupCNAME(ctx, ev.Resolve.Hostname)
 				out = append(out, QueryEntry{
 					Answers:   makeAnswers("A", A, cname),
