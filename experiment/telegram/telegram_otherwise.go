@@ -9,9 +9,9 @@ package telegram
 import (
 	"context"
 	"net"
+	"strings"
 	"time"
 
-	netxmodel "github.com/ooni/netx/model"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/ootemplate"
@@ -30,14 +30,13 @@ type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
-	Queries              []ootemplate.QueryEntry              `json:"queries"`
-	Requests             []ootemplate.RequestsEntry           `json:"requests"`
-	TCPConnect           []ootemplate.TCPConnectEntry         `json:"tcp_connect"`
-	TelegramHTTPBlocking bool                                 `json:"telegram_http_blocking"`
-	TelegramTCPBlocking  bool                                 `json:"telegram_tcp_blocking"`
-	TelegramWebFailure   *string                              `json:"telegram_web_failure"`
-	TelegramWebStatus    *string                              `json:"telegram_web_status"`
-	XEvents              map[string][][]netxmodel.Measurement `json:"x-events"`
+	Queries              []ootemplate.QueryEntry      `json:"queries"`
+	Requests             []ootemplate.RequestsEntry   `json:"requests"`
+	TCPConnect           []ootemplate.TCPConnectEntry `json:"tcp_connect"`
+	TelegramHTTPBlocking bool                         `json:"telegram_http_blocking"`
+	TelegramTCPBlocking  bool                         `json:"telegram_tcp_blocking"`
+	TelegramWebFailure   *string                      `json:"telegram_web_failure"`
+	TelegramWebStatus    *string                      `json:"telegram_web_status"`
 }
 
 func (tk *TestKeys) measureURL(
@@ -48,7 +47,6 @@ func (tk *TestKeys) measureURL(
 		Method: method,
 		URL:    URL,
 	})
-	tk.XEvents[URL] = output.Events
 	tk.Queries = append(tk.Queries, ootemplate.Queries(
 		measurer.DNSNetwork,
 		measurer.DNSAddress,
@@ -79,6 +77,57 @@ func (tk *TestKeys) measureAll(ctx context.Context, sess *session.Session) {
 	tk.measureURL(ctx, measurer, "GET", "https://web.telegram.org/")
 }
 
+func (tk *TestKeys) analyze() {
+	// "If all TCP connections on ports 80 and 443 to Telegram's access point
+	// IPs fail we consider Telegram to be blocked"
+	for _, tcpconn := range tk.TCPConnect {
+		if tcpconn.Status.Success == true {
+			tk.TelegramTCPBlocking = false
+			break
+		}
+	}
+	// "If at least an HTTP request [to an access point] returns back a
+	// response, we consider Telegram to not be blocked"
+	for _, roundtrip := range tk.Requests {
+		if strings.Contains(roundtrip.Request.URL, "web.telegram.org") {
+			continue // exclude web
+		}
+		if roundtrip.Failure == nil {
+			tk.TelegramHTTPBlocking = false
+			break
+		}
+	}
+	// "If the HTTP(S) requests fail or the HTML <title> tag text is not
+	// `Telegram Web` we consider the web version of Telegram to be blocked."
+	var failure *string
+	count := 0
+	for _, roundtrip := range tk.Requests {
+		if !strings.Contains(roundtrip.Request.URL, "web.telegram.org") {
+			continue // only web
+		}
+		count += 1
+		if roundtrip.Failure != nil {
+			failure = roundtrip.Failure
+			break
+		}
+		if strings.Contains(
+			roundtrip.Response.Body.Value, "<title>Telegram Web</title>",
+		) == false {
+			v := `Page title is not "Telegram Web"`
+			failure = &v
+			break
+		}
+	}
+	var status string
+	if failure != nil {
+		tk.TelegramWebFailure = failure
+		status = "blocked"
+	} else if count > 0 {
+		status = "ok"
+	}
+	tk.TelegramWebStatus = &status
+}
+
 func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 	callbacks handler.Callbacks, config Config,
@@ -88,10 +137,10 @@ func measure(
 	testkeys := &TestKeys{
 		TelegramHTTPBlocking: true,
 		TelegramTCPBlocking:  true,
-		XEvents:              make(map[string][][]netxmodel.Measurement),
 	}
 	measurement.TestKeys = testkeys
 	testkeys.measureAll(ctx, sess)
+	testkeys.analyze()
 	return nil
 }
 
