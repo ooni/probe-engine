@@ -109,7 +109,8 @@ type RequestsEntry struct {
 // Queries returns the list of events for "queries". The network and
 // address arguments are the same of netx.Dialer.NewResolver.
 func Queries(
-	network, address string, events [][]model.Measurement,
+	ctx context.Context, network, address string,
+	events [][]model.Measurement,
 ) []QueryEntry {
 	var (
 		out      []QueryEntry
@@ -139,7 +140,6 @@ func Queries(
 						A = append(A, addr)
 					}
 				}
-				ctx := context.Background()
 				ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 				defer cancel()
 				// Just ignore errors and do not include the CNAME

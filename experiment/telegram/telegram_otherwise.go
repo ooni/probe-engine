@@ -48,9 +48,7 @@ func (tk *TestKeys) measureURL(
 		URL:    URL,
 	})
 	tk.Queries = append(tk.Queries, ootemplate.Queries(
-		measurer.DNSNetwork,
-		measurer.DNSAddress,
-		output.Events,
+		ctx, measurer.DNSNetwork, measurer.DNSAddress, output.Events,
 	)...)
 	tk.TCPConnect = append(tk.TCPConnect, ootemplate.TCPConnect(output.Events)...)
 	tk.Requests = append(tk.Requests, ootemplate.Requests(output.Events)...)
