@@ -32,7 +32,7 @@ type QueryAnswer struct {
 type QueryEntry struct {
 	Answers          []QueryAnswer `json:"answers"`
 	Engine           string        `json:"engine"`
-	Failure          string        `json:"failure"`
+	Failure          *string       `json:"failure"`
 	Hostname         string        `json:"hostname"`
 	QueryType        string        `json:"query_type"`
 	ResolverHostname *string       `json:"resolver_hostname"`
@@ -41,8 +41,8 @@ type QueryEntry struct {
 
 // TCPConnectStatus contains the TCP connect status.
 type TCPConnectStatus struct {
-	Failure string `json:"failure"`
-	Success bool   `json:"success"`
+	Failure *string `json:"failure"`
+	Success bool    `json:"success"`
 }
 
 // TCPConnectEntry contains one of the entries that are part
@@ -101,7 +101,7 @@ type HTTPResponse struct {
 // RequestsEntry is one of the entries that are part of
 // the "requests" key of a OONI report.
 type RequestsEntry struct {
-	Failure  string       `json:"failure"`
+	Failure  *string      `json:"failure"`
 	Request  HTTPRequest  `json:"request"`
 	Response HTTPResponse `json:"response"`
 }
@@ -236,16 +236,16 @@ func Requests(events [][]model.Measurement) []RequestsEntry {
 			// Note how dividing events by round trip simplifies
 			// deciding whether there has been an error
 			if ev.Resolve != nil && ev.Resolve.Error != nil {
-				entry.Failure = ev.Resolve.Error.Error()
+				entry.Failure = makeFailure(ev.Resolve.Error)
 			}
 			if ev.Connect != nil && ev.Connect.Error != nil {
-				entry.Failure = ev.Connect.Error.Error()
+				entry.Failure = makeFailure(ev.Connect.Error)
 			}
 			if ev.Read != nil && ev.Read.Error != nil {
-				entry.Failure = ev.Read.Error.Error()
+				entry.Failure = makeFailure(ev.Read.Error)
 			}
 			if ev.Write != nil && ev.Write.Error != nil {
-				entry.Failure = ev.Write.Error.Error()
+				entry.Failure = makeFailure(ev.Write.Error)
 			}
 			if ev.HTTPRequestHeadersDone != nil {
 				for key, values := range ev.HTTPRequestHeadersDone.Headers {
@@ -279,7 +279,7 @@ func Requests(events [][]model.Measurement) []RequestsEntry {
 					// We may see error here if we receive a bad TLS record or
 					// bad gzip data. ReadEvent only sees what happens in the
 					// network. Here we sit on top of much more stuff.
-					entry.Failure = ev.HTTPResponseBodyPart.Error.Error()
+					entry.Failure = makeFailure(ev.HTTPResponseBodyPart.Error)
 				}
 			}
 		}
@@ -288,9 +288,10 @@ func Requests(events [][]model.Measurement) []RequestsEntry {
 	return out
 }
 
-func makeFailure(err error) (s string) {
+func makeFailure(err error) (s *string) {
 	if err != nil {
-		s = err.Error()
+		serio := err.Error()
+		s = &serio
 	}
 	return
 }
