@@ -38,7 +38,7 @@ require (
 	github.com/m-lab/go v1.1.0
 	github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
-	github.com/miekg/dns v1.1.12 // indirect
+	github.com/ooni/netx v0.0.0-20191003164159-d2f8f756e28f
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -56,10 +56,5 @@ require (
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0 // indirect
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
-	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
-	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

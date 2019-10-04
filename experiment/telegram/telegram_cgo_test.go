@@ -1,3 +1,5 @@
+// +build cgo
+
 package telegram_test
 
 import (
