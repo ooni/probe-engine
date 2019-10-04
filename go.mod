@@ -38,7 +38,7 @@ require (
 	github.com/m-lab/go v1.1.0
 	github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
-	github.com/ooni/netx v0.0.0-20191003164159-d2f8f756e28f
+	github.com/ooni/netx v0.0.0-20191004141039-3e77798d29b6
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect

@@ -2,8 +2,8 @@
 package urlmeasurer
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"sync"
@@ -28,30 +28,45 @@ type Input struct {
 	URL    string
 }
 
-// Output is the output of the URL measurer. We do not emit
-// the body as JSON because that would duplicate a large
-// piece of data that we already submit to OONI's collector
-// using specific keys of the report.
+// Output is the output of the URL measurer.
 type Output struct {
-	Body    []byte `json:"-"`
-	Events  []model.Measurement
-	Err     error
-	logger  log.Logger
-	mutex   sync.Mutex
-	verbose bool
+	Events       [][]model.Measurement
+	Err          error
+	current      []model.Measurement
+	logger       log.Logger
+	roundTripper http.RoundTripper
+	mutex        sync.Mutex
+	verbose      bool
 }
 
 // OnMeasurement handles incoming measurements
 func (o *Output) OnMeasurement(meas model.Measurement) {
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
-	o.Events = append(o.Events, meas)
+	o.current = append(o.current, meas)
 	if o.verbose {
-		data, err := json.Marshal(meas)
-		if err == nil {
-			o.logger.Debugf("%s", data)
-		}
+		o.logger.Debugf("%+v", meas)
 	}
+}
+
+// RoundTrip implements the http.RoundTripper interface
+func (o *Output) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := o.roundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	// Fully read the response body so to see all the round trip events
+	// and have all of them inside of the o.current buffer.
+	data, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	resp.Body = ioutil.NopCloser(bytes.NewReader(data))
+	// Move events of the current round trip into the archive so that
+	// all the events we have are organized by round trip.
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+	o.Events = append(o.Events, o.current)
+	o.current = nil
+	return resp, err
 }
 
 func (um *URLMeasurer) do(
@@ -65,13 +80,19 @@ func (um *URLMeasurer) do(
 	if out.Err != nil {
 		return
 	}
+	// 11.8% as of August 24, 2019 according to
+	// https://techblog.willshouse.com/2012/01/03/most-common-user-agents/
+	req.Header.Set(
+		"User-Agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+	)
 	req = req.WithContext(ctx)
 	resp, out.Err = client.Do(req)
 	if out.Err != nil {
 		return
 	}
-	out.Body, out.Err = ioutil.ReadAll(resp.Body)
-	resp.Body.Close() // do it synchronously
+	defer resp.Body.Close()
+	_, out.Err = ioutil.ReadAll(resp.Body)
 	return
 }
 
@@ -87,6 +108,10 @@ func (um *URLMeasurer) Do(ctx context.Context, input Input) *Output {
 	if out.Err != nil {
 		return out
 	}
+	// replace the round tripper with our round tripper than ensures
+	// that events are conveniently divided by round trip.
+	out.roundTripper = client.HTTPClient.Transport
+	client.HTTPClient.Transport = out
 	um.do(ctx, input, client.HTTPClient, out)
 	client.Transport.CloseIdleConnections()
 	return out
