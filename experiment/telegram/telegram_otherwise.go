@@ -88,7 +88,9 @@ func (tk *TestKeys) analyze() {
 	// response, we consider Telegram to not be blocked"
 	for _, roundtrip := range tk.Requests {
 		if strings.Contains(roundtrip.Request.URL, "web.telegram.org") {
-			continue // exclude web
+			// Here we exclude the web endpoints because they are
+			// processed below to compute web stats.
+			continue
 		}
 		if roundtrip.Failure == nil {
 			tk.TelegramHTTPBlocking = false
@@ -101,7 +103,9 @@ func (tk *TestKeys) analyze() {
 	count := 0
 	for _, roundtrip := range tk.Requests {
 		if !strings.Contains(roundtrip.Request.URL, "web.telegram.org") {
-			continue // only web
+			// Here we exclude the non-web-endpoints because we have
+			// already processed them above to compute other stats
+			continue
 		}
 		count += 1
 		if roundtrip.Failure != nil {
