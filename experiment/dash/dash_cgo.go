@@ -1,3 +1,5 @@
+// +build cgo
+
 // Package dash contains the dash network experiment.
 package dash
 

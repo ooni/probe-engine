@@ -1,3 +1,5 @@
+// +build !cgo
+
 package dash_test
 
 import (
