@@ -23,6 +23,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
+	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
@@ -222,6 +223,10 @@ func main() {
 	}
 
 	name := getopt.Args()[0]
+	experimentsWithInput := map[string]bool{
+		"sni_blocking": true,
+	}
+	_, requiresInput := experimentsWithInput[name]
 
 	if name == "web_connectivity" {
 		log.Info("Fetching test lists")
@@ -234,9 +239,11 @@ func main() {
 				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
 			}
 		}
-	} else if len(globalOptions.inputs) != 0 {
+	} else if len(globalOptions.inputs) != 0 && !requiresInput {
 		log.Fatal("this test does not expect any input")
-	} else {
+	} else if len(globalOptions.inputs) == 0 && requiresInput {
+		log.Fatal("this test requires input")
+	} else if !requiresInput {
 		// Tests that do not expect input internally require an empty input to run
 		globalOptions.inputs = append(globalOptions.inputs, "")
 	}
@@ -262,6 +269,8 @@ func main() {
 			ConfigFilePath: extraOptions["config_file_path"],
 			WorkDir:        workDir,
 		})
+	} else if name == "sni_blocking" {
+		experiment = sniblocking.NewExperiment(sess, sniblocking.Config{})
 	} else if name == "telegram" {
 		experiment = telegram.NewExperiment(sess, telegram.Config{})
 	} else if name == "web_connectivity" {
