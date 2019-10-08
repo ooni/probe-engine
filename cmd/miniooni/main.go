@@ -16,6 +16,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/dash"
+	"github.com/ooni/probe-engine/experiment/doh"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/experiment/hhfm"
@@ -222,6 +223,10 @@ func main() {
 	}
 
 	name := getopt.Args()[0]
+	experimentsWithInput := map[string]bool{
+		"doh": true,
+	}
+	_, requiresInput := experimentsWithInput[name]
 
 	if name == "web_connectivity" {
 		log.Info("Fetching test lists")
@@ -234,9 +239,11 @@ func main() {
 				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
 			}
 		}
-	} else if len(globalOptions.inputs) != 0 {
+	} else if len(globalOptions.inputs) != 0 && !requiresInput {
 		log.Fatal("this test does not expect any input")
-	} else {
+	} else if len(globalOptions.inputs) == 0 && requiresInput {
+		log.Fatal("this test requires input")
+	} else if !requiresInput {
 		// Tests that do not expect input internally require an empty input to run
 		globalOptions.inputs = append(globalOptions.inputs, "")
 	}
@@ -244,6 +251,8 @@ func main() {
 	var experiment *experiment.Experiment
 	if name == "dash" {
 		experiment = dash.NewExperiment(sess, dash.Config{})
+	} else if name == "doh" {
+		experiment = doh.NewExperiment(sess, doh.Config{})
 	} else if name == "facebook_messenger" {
 		experiment = fbmessenger.NewExperiment(sess, fbmessenger.Config{})
 	} else if name == "http_header_field_manipulation" {
