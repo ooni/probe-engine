@@ -26,19 +26,17 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/protobuf v1.3.2 // indirect
-	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
-	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grafov/m3u8 v0.6.1 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lucas-clemente/quic-go v0.10.2 // indirect
 	github.com/m-lab/go v1.1.0
 	github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/miekg/dns v1.1.12 // indirect
+	github.com/montanaflynn/stats v0.5.0
+	github.com/neubot/dash v0.4.0
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -61,5 +59,4 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	golang.org/x/text v0.3.2 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
