@@ -5,7 +5,6 @@ package sniblocking
 
 import (
 	"context"
-	"crypto/x509"
 	"math/rand"
 	"time"
 
@@ -27,7 +26,6 @@ type Config struct{}
 
 // TestKeys contains the experiment test keys
 type TestKeys struct {
-	Behavior             string  `json:"behavior"`
 	FailureWithProperSNI *string `json:"failure_with_proper_sni"`
 	FailureWithRandomSNI *string `json:"failure_with_random_sni"`
 }
@@ -78,23 +76,6 @@ func doWithContextAndSNI(ctx context.Context, input, SNI string) error {
 	}
 }
 
-func (tk *TestKeys) analyze(properErr, randomErr error) {
-	if randomErr == nil {
-		tk.Behavior = "interesting"
-		return
-	}
-	_, expected := randomErr.(x509.HostnameError)
-	if properErr == nil && expected {
-		tk.Behavior = "normal"
-		return
-	}
-	if properErr != nil && expected {
-		tk.Behavior = "suspicious"
-		return
-	}
-	tk.Behavior = "🤷"
-}
-
 func (tk *TestKeys) fill(properErr, randomErr error) {
 	if properErr != nil {
 		s := properErr.Error()
@@ -117,7 +98,6 @@ func measure(
 	properErr := doWithContextAndSNI(ctx, measurement.Input, "")
 	randErr := doWithContextAndSNI(ctx, measurement.Input, randomDomain())
 	tk.fill(properErr, randErr)
-	tk.analyze(properErr, randErr)
 	return nil
 }
 
