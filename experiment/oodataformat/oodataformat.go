@@ -128,6 +128,9 @@ func NewRequestList(events [][]model.Measurement) RequestList {
 	var out RequestList
 	// within the same round-trip, so proceed backwards.
 	for idx := len(events) - 1; idx >= 0; idx-- {
+		if len(events[idx]) <= 0 {
+			continue // just for correctness skip empty entries
+		}
 		var entry RequestEntry
 		entry.Request.Headers = make(map[string]string)
 		entry.Response.Headers = make(map[string]string)
