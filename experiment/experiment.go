@@ -142,7 +142,10 @@ func (e *Experiment) Measure(
 		return
 	}
 	measurement = e.newMeasurement(input)
+	start := time.Now()
 	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
+	stop := time.Now()
+	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
 	scrubErr := e.Session.PrivacySettings.Apply(
 		&measurement, e.Session.ProbeIP(),
 	)
