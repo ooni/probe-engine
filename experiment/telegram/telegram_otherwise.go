@@ -36,12 +36,6 @@ type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
-	// TODO(bassosimone):
-	//
-	// 1. we don't fill Telegram{HTTP,TCP}Blocking for now
-	//
-	// This issue will be addressed later when we will
-	// start processing ooni/netx events.
 	Requests             oodataformat.RequestList    `json:"requests"`
 	TCPConnect           oodataformat.TCPConnectList `json:"tcp_connect"`
 	TelegramHTTPBlocking bool                        `json:"telegram_http_blocking"`
@@ -79,6 +73,9 @@ func (m *measurer) measureDC(ctx context.Context) {
 		"149.154.175.50", "149.154.167.51", "149.154.175.100",
 		"149.154.167.91", "149.154.171.5",
 	}
+	// "If at least an HTTP request [to an access point] returns back a
+	// response, we consider Telegram to not be blocked"
+	m.tk.TelegramHTTPBlocking = true
 	for _, addr := range addresses {
 		for _, port := range []string{"80", "443"} {
 			const alwaysHTTP = "http" // note: it's intended to use HTTP with 443
@@ -95,6 +92,7 @@ func (m *measurer) measureDC(ctx context.Context) {
 			if err != nil {
 				continue
 			}
+			m.tk.TelegramHTTPBlocking = false // see above
 		}
 	}
 }
@@ -138,7 +136,21 @@ func (m *measurer) measureWeb(ctx context.Context) {
 	}
 }
 
-func (m *measurer) analyze(all [][]modelx.Measurement) {
+func (m *measurer) setTelegramTCPBlocking(all [][]modelx.Measurement) {
+	// "If all TCP connections on ports 80 and 443 to Telegram's access point
+	// IPs fail we consider Telegram to be blocked"
+	m.tk.TelegramTCPBlocking = true
+	for _, rt := range all {
+		for _, ev := range rt {
+			if ev.Connect != nil && ev.Connect.Error == nil {
+				m.tk.TelegramTCPBlocking = false
+				return
+			}
+		}
+	}
+}
+
+func (m *measurer) fillParentDataFormats(all [][]modelx.Measurement) {
 	m.tk.Requests = oodataformat.NewRequestList(all)
 	m.tk.TCPConnect = oodataformat.NewTCPConnectList(all)
 }
@@ -159,8 +171,11 @@ func measure(
 	}
 	measurement.TestKeys = &measurer.tk
 	measurer.measureDC(ctx)
+	all := mc.PopMeasurementsByRoundTrip()
+	measurer.setTelegramTCPBlocking(all)
 	measurer.measureWeb(ctx)
-	measurer.analyze(mc.PopMeasurementsByRoundTrip())
+	all = append(all, mc.PopMeasurementsByRoundTrip()...)
+	measurer.fillParentDataFormats(all)
 	return nil
 }
 
