@@ -1,3 +1,5 @@
+// +build !cgo
+
 package telegram_test
 
 import (
@@ -6,7 +8,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/telegram"
-	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -16,9 +17,6 @@ const (
 )
 
 func TestIntegration(t *testing.T) {
-	if !measurementkit.Available() {
-		t.Skip("Measurement Kit not available; skipping")
-	}
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 
