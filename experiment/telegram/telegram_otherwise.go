@@ -16,8 +16,10 @@ import (
 	"net/url"
 	"time"
 
+	modelx "github.com/ooni/netx/model"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/oodataformat"
 	"github.com/ooni/probe-engine/experiment/oohttp"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
@@ -39,14 +41,15 @@ type TestKeys struct {
 	// 1. we don't fill Telegram{HTTP,TCP}Blocking for now
 	//
 	// 2. we need to fill keys for the parent data format, and
-	// specifically `tcp_connect` and `requests`
+	// specifically `requests`
 	//
 	// Both issues will be addressed later when we will
 	// start processing ooni/netx events.
-	TelegramHTTPBlocking bool    `json:"telegram_http_blocking"`
-	TelegramTCPBlocking  bool    `json:"telegram_tcp_blocking"`
-	TelegramWebFailure   *string `json:"telegram_web_failure"`
-	TelegramWebStatus    string  `json:"telegram_web_status"`
+	TCPConnect           oodataformat.TCPConnectList `json:"tcp_connect"`
+	TelegramHTTPBlocking bool                        `json:"telegram_http_blocking"`
+	TelegramTCPBlocking  bool                        `json:"telegram_tcp_blocking"`
+	TelegramWebFailure   *string                     `json:"telegram_web_failure"`
+	TelegramWebStatus    string                      `json:"telegram_web_status"`
 }
 
 type measurer struct {
@@ -137,7 +140,8 @@ func (m *measurer) measureWeb(ctx context.Context) {
 	}
 }
 
-func (m *measurer) analyze() {
+func (m *measurer) analyze(all [][]modelx.Measurement) {
+	m.tk.TCPConnect = oodataformat.NewTCPConnectList(all)
 	// TODO(bassosimone): this is where we need to process
 	// netx events and fill more keys in the results
 }
@@ -159,7 +163,7 @@ func measure(
 	measurement.TestKeys = &measurer.tk
 	measurer.measureDC(ctx)
 	measurer.measureWeb(ctx)
-	measurer.analyze()
+	measurer.analyze(mc.PopMeasurementsByRoundTrip())
 	return nil
 }
 
