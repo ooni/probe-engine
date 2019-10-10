@@ -16,10 +16,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/netx/handlers"
-	"github.com/ooni/netx/httpx"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/oohttp"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -149,17 +148,18 @@ func measure(
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	client := httpx.NewClient(handlers.StdoutHandler)
+	mc := oohttp.NewMeasuringClient(oohttp.Config{
+		CABundlePath: sess.CABundlePath(),
+	})
+	defer mc.Close()
 	measurer := &measurer{
-		client: client.HTTPClient,
+		client: mc.HTTPClient(),
 		logger: sess.Logger,
 	}
 	measurement.TestKeys = &measurer.tk
-	client.SetCABundle(sess.CABundlePath())
 	measurer.measureDC(ctx)
 	measurer.measureWeb(ctx)
 	measurer.analyze()
-	client.Transport.CloseIdleConnections()
 	return nil
 }
 
