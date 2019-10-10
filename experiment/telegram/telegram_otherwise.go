@@ -40,11 +40,9 @@ type TestKeys struct {
 	//
 	// 1. we don't fill Telegram{HTTP,TCP}Blocking for now
 	//
-	// 2. we need to fill keys for the parent data format, and
-	// specifically `requests`
-	//
-	// Both issues will be addressed later when we will
+	// This issue will be addressed later when we will
 	// start processing ooni/netx events.
+	Requests             oodataformat.RequestList    `json:"requests"`
 	TCPConnect           oodataformat.TCPConnectList `json:"tcp_connect"`
 	TelegramHTTPBlocking bool                        `json:"telegram_http_blocking"`
 	TelegramTCPBlocking  bool                        `json:"telegram_tcp_blocking"`
@@ -141,9 +139,8 @@ func (m *measurer) measureWeb(ctx context.Context) {
 }
 
 func (m *measurer) analyze(all [][]modelx.Measurement) {
+	m.tk.Requests = oodataformat.NewRequestList(all)
 	m.tk.TCPConnect = oodataformat.NewTCPConnectList(all)
-	// TODO(bassosimone): this is where we need to process
-	// netx events and fill more keys in the results
 }
 
 func measure(
