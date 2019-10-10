@@ -1,3 +1,5 @@
+// +build !nopsiphon
+
 package psiphon_test
 
 import (

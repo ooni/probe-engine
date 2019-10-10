@@ -1,7 +1,9 @@
 // +build !cgo
 
 // Package dash contains the dash network experiment. This file
-// in particular is a pure-Go implementation of that.
+// in particular is a pure-Go implementation of this test.
+//
+// Spec: https://github.com/ooni/spec/blob/master/nettests/ts-021-dash.md
 package dash
 
 import (
@@ -39,36 +41,26 @@ type Simple struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	Simple Simple `json:"simple"`
-
-	// Failure is the failure string
-	Failure string `json:"failure"`
-
+	Simple       Simple                      `json:"simple"`
+	Failure      string                      `json:"failure"`
 	ReceiverData []neubotModel.ClientResults `json:"receiver_data"`
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks, config Config,
+// loop runs the neubot/dash measurement loop and writes the
+// interim all the results of the test in `tk`. It is not this
+// function concern to set tk.Failure. The caller must do it
+// when this function returns a non-nil error.
+func (tk *TestKeys) loop(
+	ctx context.Context, sess *session.Session,
+	client *client.Client, callbacks handler.Callbacks,
 ) error {
-	testkeys := &TestKeys{}
-	measurement.TestKeys = testkeys
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
-	// StartDownload starts the DASH download. It returns a channel where
-	// client measurements are posted, or an error.
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
-		testkeys.Failure = err.Error()
 		return err
 	}
 	callbacks.OnProgress(0, fmt.Sprintf("server: %s", client.FQDN))
-	var rates []float64
-	var frameReadyTime float64 = 0.0
-	var playTime float64 = 0.0
 	percentage := 0.0
-	step := 100 / (totalStep + 1) / 100
+	step := 1 / (totalStep + 1)
 	for results := range ch {
 		percentage += step
 		message := fmt.Sprintf(
@@ -80,60 +72,89 @@ func measure(
 		callbacks.OnProgress(percentage, message)
 		data, err := json.Marshal(results)
 		if err != nil {
-			testkeys.Failure = err.Error()
 			return err
 		}
 		sess.Logger.Debugf("%s", string(data))
+		tk.ReceiverData = append(tk.ReceiverData, results)
+	}
+	if client.Error() != nil {
+		return err
+	}
+	data, err := json.Marshal(client.ServerResults())
+	if err != nil {
+		return err
+	}
+	sess.Logger.Debugf("Server result: %s", string(data))
+	// TODO(bassosimone): it seems we're not saving the server data?
+	return nil
+}
 
-		// Here we're computing stats inline
-		// rates is used to calculate MedianBitrate.
+// analyze analyzes the results of DASH and fills stats inside of tk.
+func (tk *TestKeys) analyze(
+	sess *session.Session, client *client.Client, callbacks handler.Callbacks,
+) error {
+	var rates []float64
+	var frameReadyTime float64
+	var playTime float64
+	for _, results := range tk.ReceiverData {
 		rates = append(rates, float64(results.Rate))
-
-		if testkeys.Simple.ConnectLatency == 0.0 {
-			// It is always equal for all the records
-			testkeys.Simple.ConnectLatency = results.ConnectTime
-		}
-
+		tk.Simple.ConnectLatency = results.ConnectTime // same in all samples
+		// Rationale: first segment plays when it arrives. Subsequent segments
+		// would play in ElapsedTarget seconds. However, will play when they
+		// arrive. Stall is the time we need to wait for a frame to arrive with
+		// the video stopped and the spinning icon.
 		frameReadyTime += float64(results.Elapsed)
-		if playTime == 0 {
+		if playTime == 0.0 {
 			playTime += frameReadyTime
 		} else {
 			playTime += float64(results.ElapsedTarget)
 		}
-		var stall float64 = frameReadyTime - playTime
-		if stall > testkeys.Simple.MinPlayoutDelay {
-			testkeys.Simple.MinPlayoutDelay = stall
+		stall := frameReadyTime - playTime
+		if stall > tk.Simple.MinPlayoutDelay {
+			tk.Simple.MinPlayoutDelay = stall
 		}
-		testkeys.ReceiverData = append(testkeys.ReceiverData, results)
 	}
-
 	median, err := stats.Median(rates)
-	testkeys.Simple.MedianBitrate = int64(median)
-	if err != nil {
-		testkeys.Failure = err.Error()
-		return err
-	}
-	if client.Error() != nil {
-		testkeys.Failure = err.Error()
-		return client.Error()
-	}
-	data, err := json.Marshal(client.ServerResults())
-	if err != nil {
-		testkeys.Failure = err.Error()
-		return err
-	}
-	sess.Logger.Debugf("Server result: %s", string(data))
-	callbacks.OnProgress(1, "done")
+	tk.Simple.MedianBitrate = int64(median)
+	return err
+}
+
+// printSummary just prints a debug-level summary. We cannot use the info
+// level because that is reserved for the OONI Probe CLI.
+func (tk *TestKeys) printSummary(sess *session.Session) {
 	sess.Logger.Debugf("Test Summary: ")
 	sess.Logger.Debugf("Connect latency: %s",
 		// convert to nanoseconds
-		time.Duration(testkeys.Simple.ConnectLatency*1000000000),
+		time.Duration(tk.Simple.ConnectLatency*1000000000),
 	)
 	sess.Logger.Debugf("Median bitrate: %s/s",
 		// MedianBitrate is kbit in SI size
-		humanize.IBytes(uint64(testkeys.Simple.MedianBitrate*1000/8)),
+		humanize.Bytes(uint64(tk.Simple.MedianBitrate*1000/8)),
 	)
-	sess.Logger.Debugf("Min. playout delay: %.3f s", testkeys.Simple.MinPlayoutDelay)
+	sess.Logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
+}
+
+func measure(
+	ctx context.Context, sess *session.Session, measurement *model.Measurement,
+	callbacks handler.Callbacks, config Config,
+) error {
+	testkeys := &TestKeys{}
+	measurement.TestKeys = testkeys
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
+	err := testkeys.loop(ctx, sess, client, callbacks)
+	if err != nil {
+		testkeys.Failure = err.Error()
+		return err
+	}
+	err = testkeys.analyze(sess, client, callbacks)
+	if err != nil {
+		testkeys.Failure = err.Error()
+		return err
+	}
+	callbacks.OnProgress(1, "done")
+	testkeys.printSummary(sess)
 	return nil
 }
 
