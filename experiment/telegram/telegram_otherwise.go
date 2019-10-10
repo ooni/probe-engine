@@ -65,7 +65,7 @@ func (m *measurer) request(
 	if err != nil {
 		return nil, err
 	}
-	return m.client.Do(req)
+	return m.client.Do(req.WithContext(ctx))
 }
 
 func (m *measurer) measureDC(ctx context.Context) {
@@ -129,7 +129,10 @@ func (m *measurer) measureWeb(ctx context.Context) {
 		s := errHTTP.Error()
 		m.tk.TelegramWebFailure = &s
 		m.tk.TelegramWebStatus = "failure"
-	} else if errHTTPS != nil {
+	}
+	// Implementation note: this is not an `else if` because it helps
+	// me with testability without changing code correctness
+	if errHTTPS != nil {
 		s := errHTTPS.Error()
 		m.tk.TelegramWebFailure = &s
 		m.tk.TelegramWebStatus = "failure"
