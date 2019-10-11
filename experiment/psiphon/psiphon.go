@@ -1,3 +1,5 @@
+// +build !nopsiphon
+
 // Package psiphon implements the psiphon network experiment.
 package psiphon
 
@@ -20,21 +22,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
-
-const (
-	testName    = "psiphon"
-	testVersion = "0.3.0"
-)
-
-// Config contains the experiment's configuration.
-type Config struct {
-	// ConfigFilePath is the path where Psiphon config file is located.
-	ConfigFilePath string
-
-	// WorkDir is the directory where Psiphon should store
-	// its configuration database.
-	WorkDir string
-}
 
 // TestKeys contains the experiment's result.
 //

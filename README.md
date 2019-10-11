@@ -33,6 +33,11 @@ therefore will prevent Measurement Kit tests from being linked into
 the resulting Go binaries. You may want that in some cases, e.g. when
 you only want to use OONI tests written in Go.
 
+The Psiphon experiment requires some secrets that you may not have. To
+disable building it, use the `nopsiphon` build tag. For example, you
+can use `go build -v -tags nopsiphon ./cmd/miniooni` to build a version
+of the `miniooni` testing command that does not include Psiphon.
+
 We plan on gradually rewriting all OONI tests in Go, therefore the
 dependency on Measurement Kit will eventually be removed.
 
