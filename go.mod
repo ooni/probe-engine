@@ -32,7 +32,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/lucas-clemente/quic-go v0.10.2 // indirect
 	github.com/m-lab/go v1.1.0
-	github.com/m-lab/ndt7-client-go v0.0.0-20190724152841-ad7eefc52fe1
+	github.com/m-lab/ndt7-client-go v0.1.0
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/miekg/dns v1.1.12 // indirect
 	github.com/montanaflynn/stats v0.5.0
