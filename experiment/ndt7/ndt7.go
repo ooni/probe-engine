@@ -89,13 +89,17 @@ func measure(
 	callbacks.OnProgress(0, fmt.Sprintf("server: %s", client.FQDN))
 	for ev := range ch {
 		testkeys.Download = append(testkeys.Download, ev)
-		percentage := ev.Elapsed / maxRuntime / 2.0
-		message := fmt.Sprintf(
-			"max-bandwidth (download) %s (RTT min/smoothed/var %.1f/%.1f/%.1f ms)",
-			humanize.SI(float64(ev.BBRInfo.MaxBandwidth), "bit/s"),
-			ev.BBRInfo.MinRTT, ev.TCPInfo.SmoothedRTT, ev.TCPInfo.RTTVar,
-		)
-		callbacks.OnProgress(percentage, message)
+		if ev.AppInfo != nil && ev.Origin == "client" {
+			elapsed := float64(ev.AppInfo.ElapsedTime) / 1e06 // to seconds
+			// The percentage of completion of download goes from 0 to
+			// 50% of the whole experiment, hence the `/2.0`.
+			percentage := elapsed / maxRuntime / 2.0
+			speed := float64(ev.AppInfo.NumBytes) * 8.0 / elapsed
+			message := fmt.Sprintf(
+				"download-speed %s", humanize.SI(float64(speed), "bit/s"),
+			)
+			callbacks.OnProgress(percentage, message)
+		}
 		data, err := json.Marshal(ev)
 		if err != nil {
 			testkeys.Failure = err.Error()
@@ -110,12 +114,17 @@ func measure(
 	}
 	for ev := range ch {
 		testkeys.Upload = append(testkeys.Upload, ev)
-		percentage := 0.5 + ev.Elapsed/maxRuntime/2.0
-		speed := float64(ev.AppInfo.NumBytes) * 8.0 / ev.Elapsed
-		message := fmt.Sprintf(
-			"upload-speed %s", humanize.SI(float64(speed), "bit/s"),
-		)
-		callbacks.OnProgress(percentage, message)
+		if ev.AppInfo != nil && ev.Origin == "client" {
+			elapsed := float64(ev.AppInfo.ElapsedTime) / 1e06 // to seconds
+			// The percentage of completion of upload goes from 50% to 100% of
+			// the whole experiment, hence `0.5 +` and `/2.0`.
+			percentage := 0.5 + elapsed/maxRuntime/2.0
+			speed := float64(ev.AppInfo.NumBytes) * 8.0 / elapsed
+			message := fmt.Sprintf(
+				"upload-speed %s", humanize.SI(float64(speed), "bit/s"),
+			)
+			callbacks.OnProgress(percentage, message)
+		}
 		data, err := json.Marshal(ev)
 		if err != nil {
 			testkeys.Failure = err.Error()
