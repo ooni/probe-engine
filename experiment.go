@@ -210,6 +210,19 @@ func (e *Experiment) Measure(input string) (*Measurement, error) {
 	return &Measurement{m: measurement}, err
 }
 
+// LoadMeasurement loads a measurement from a byte stream. The measurement
+// must be a measurement for this experiment.
+func (e *Experiment) LoadMeasurement(data []byte) (*Measurement, error) {
+	var measurement model.Measurement
+	if err := json.Unmarshal(data, &measurement); err != nil {
+		return nil, err
+	}
+	if measurement.TestName != e.Name() {
+		return nil, errors.New("not a measurement for this experiment")
+	}
+	return &Measurement{m: measurement}, nil
+}
+
 // SubmitAndUpdateMeasurement submits a measurement and updates the
 // fields whose value has changed as part of the submission.
 func (e *Experiment) SubmitAndUpdateMeasurement(measurement *Measurement) error {
@@ -284,6 +297,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				return example.NewExperiment(session.session, *config.(*example.Config))
 			},
 			config: &example.Config{
+				Message:   "Good day from the example experiment!",
 				SleepTime: int64(2 * time.Second),
 			},
 			needsInput: false,
