@@ -59,6 +59,9 @@ type Session struct {
 	// SoftwareVersion contains the software version.
 	SoftwareVersion string
 
+	// TempDir is the directory where to store temporary files
+	TempDir string
+
 	// TLSConfig contains the TLS config
 	TLSConfig *tls.Config
 
@@ -94,7 +97,7 @@ type Session struct {
 // of httpx.NewTransport for more information on this.
 func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
-	proxy *url.URL, tlsConfig *tls.Config,
+	proxy *url.URL, tlsConfig *tls.Config, tempDir string,
 ) *Session {
 	return &Session{
 		AssetsDir:     assetsDir,
@@ -117,6 +120,7 @@ func New(
 		},
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
+		TempDir:         tempDir,
 		TLSConfig:       tlsConfig,
 	}
 }

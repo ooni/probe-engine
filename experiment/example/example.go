@@ -3,6 +3,7 @@ package example
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment"
@@ -21,7 +22,9 @@ const (
 // This contains all the settings that user can set to modify the behaviour
 // of this experiment.
 type Config struct {
-	SleepTime time.Duration
+	ReturnError bool   `ooni:"Toogle to return a mocked error"`
+	Message     string `ooni:"Message to emit at test completion"`
+	SleepTime   int64  `ooni:"Amount of time to sleep for"`
 }
 
 // TestKeys contains the experiment's result.
@@ -40,11 +43,16 @@ func measure(
 	ctx context.Context, sess *session.Session, measurement *model.Measurement,
 	callbacks handler.Callbacks, config Config,
 ) error {
-	testkeys := &TestKeys{Success: true}
+	var err error
+	if config.ReturnError {
+		err = errors.New("mocked error")
+	}
+	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
-	//let's pretend to do something..
-	time.Sleep(config.SleepTime)
-	return nil
+	time.Sleep(time.Duration(config.SleepTime))
+	callbacks.OnProgress(100, config.Message)
+	callbacks.OnDataUsage(0, 0)
+	return err
 }
 
 // NewExperiment creates a new experiment.
