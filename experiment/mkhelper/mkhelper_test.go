@@ -13,6 +13,7 @@ import (
 func TestNoHelpers(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		"../../testdata",
 	)
 	var settings measurementkit.Settings
 	err := mkhelper.Set(
@@ -26,6 +27,7 @@ func TestNoHelpers(t *testing.T) {
 func TestNoSuitableHelper(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		"../../testdata",
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{
 		"foobar": []model.Service{
@@ -47,6 +49,7 @@ func TestNoSuitableHelper(t *testing.T) {
 func TestGoodHelper(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		"../../testdata",
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{
 		"foobar": []model.Service{

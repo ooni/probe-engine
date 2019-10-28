@@ -7,8 +7,50 @@ import (
 	"github.com/apex/log"
 )
 
-func TestNewSessionBuilder(t *testing.T) {
+func TestNewSessionBuilderChecks(t *testing.T) {
+	t.Run("with no settings", func(t *testing.T) {
+		newSessionMustFail(t, SessionConfig{})
+	})
+	t.Run("with only assets dir", func(t *testing.T) {
+		newSessionMustFail(t, SessionConfig{
+			AssetsDir: "testdata",
+		})
+	})
+	t.Run("with also logger", func(t *testing.T) {
+		newSessionMustFail(t, SessionConfig{
+			AssetsDir: "testdata",
+			Logger:    log.Log,
+		})
+	})
+	t.Run("with also software name", func(t *testing.T) {
+		newSessionMustFail(t, SessionConfig{
+			AssetsDir:    "testdata",
+			Logger:       log.Log,
+			SoftwareName: "ooniprobe-engine",
+		})
+	})
+	t.Run("with also software version", func(t *testing.T) {
+		newSessionMustFail(t, SessionConfig{
+			AssetsDir:       "testdata",
+			Logger:          log.Log,
+			SoftwareName:    "ooniprobe-engine",
+			SoftwareVersion: "0.0.1",
+		})
+	})
+}
+
+func TestNewSessionBuilderGood(t *testing.T) {
 	newSessionForTesting(t)
+}
+
+func newSessionMustFail(t *testing.T, config SessionConfig) {
+	sess, err := NewSession(config)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil session here")
+	}
 }
 
 func newSessionForTesting(t *testing.T) *Session {
@@ -26,6 +68,11 @@ func newSessionForTesting(t *testing.T) *Session {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sess.AddAvailableHTTPSBouncer("https://bouncer.ooni.io")
+	sess.AddAvailableHTTPSCollector("https://ams-ps.ooni.nu")
+	sess.SetIncludeProbeASN(true)
+	sess.SetIncludeProbeCC(true)
+	sess.SetIncludeProbeIP(false)
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
 	}

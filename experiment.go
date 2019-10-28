@@ -60,7 +60,11 @@ type OptionInfo struct {
 // Options returns info about all options
 func (b *ExperimentBuilder) Options() (map[string]OptionInfo, error) {
 	result := make(map[string]OptionInfo)
-	structinfo := reflect.ValueOf(b.config).Type()
+	ptrinfo := reflect.ValueOf(b.config)
+	if ptrinfo.Kind() != reflect.Ptr {
+		return nil, errors.New("config is not a pointer")
+	}
+	structinfo := ptrinfo.Elem().Type()
 	if structinfo.Kind() != reflect.Struct {
 		return nil, errors.New("config is not a struct")
 	}
@@ -120,9 +124,13 @@ func (b *ExperimentBuilder) SetCallbacks(callbacks Callbacks) {
 
 func fieldbyname(v interface{}, key string) (reflect.Value, error) {
 	// See https://stackoverflow.com/a/6396678/4354461
-	structinfo := reflect.ValueOf(v)
+	ptrinfo := reflect.ValueOf(v)
+	if ptrinfo.Kind() != reflect.Ptr {
+		return reflect.Value{}, errors.New("value is not a pointer")
+	}
+	structinfo := ptrinfo.Elem()
 	if structinfo.Kind() != reflect.Struct {
-		return reflect.Value{}, errors.New("value is not a struct")
+		return reflect.Value{}, errors.New("value is not a pointer to struct")
 	}
 	field := structinfo.FieldByName(key)
 	if !field.IsValid() || !field.CanSet() {
@@ -196,10 +204,10 @@ func (e *Experiment) ReportID() string {
 func (e *Experiment) Measure(input string) (*Measurement, error) {
 	ctx := context.Background()
 	measurement, err := e.experiment.Measure(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	return &Measurement{m: measurement}, nil
+	// Note: the experiment returns a measurement and not a pointer
+	// therefore we can always safely wrap what we've got. This is
+	// in line with knowing also from the measurement what was wrong.
+	return &Measurement{m: measurement}, err
 }
 
 // SubmitAndUpdateMeasurement submits a measurement and updates the
@@ -241,10 +249,16 @@ func (m *Measurement) AddAnnotations(annotations map[string]string) {
 // which is possible for MK tests, and then use JSON serialization and
 // de-serialization only if that's required.
 func (m *Measurement) MakeGenericTestKeys() (map[string]interface{}, error) {
+	return m.makeGenericTestKeys(json.Marshal)
+}
+
+func (m *Measurement) makeGenericTestKeys(
+	marshal func(v interface{}) ([]byte, error),
+) (map[string]interface{}, error) {
 	if result, ok := m.m.TestKeys.(map[string]interface{}); ok {
 		return result, nil
 	}
-	data, err := json.Marshal(m.m.TestKeys)
+	data, err := marshal(m.m.TestKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -257,9 +271,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"dash": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return dash.NewExperiment(session.session, config.(dash.Config))
+				return dash.NewExperiment(session.session, *config.(*dash.Config))
 			},
-			config:     dash.Config{},
+			config:     &dash.Config{},
 			needsInput: false,
 		}
 	},
@@ -267,10 +281,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(session.session, config.(example.Config))
+				return example.NewExperiment(session.session, *config.(*example.Config))
 			},
-			config: example.Config{
-				SleepTime: 2 * time.Second,
+			config: &example.Config{
+				SleepTime: int64(2 * time.Second),
 			},
 			needsInput: false,
 		}
@@ -279,9 +293,11 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"facebook_messenger": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return fbmessenger.NewExperiment(session.session, config.(fbmessenger.Config))
+				return fbmessenger.NewExperiment(
+					session.session, *config.(*fbmessenger.Config),
+				)
 			},
-			config:     fbmessenger.Config{},
+			config:     &fbmessenger.Config{},
 			needsInput: false,
 		}
 	},
@@ -289,9 +305,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"http_header_field_manipulation": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return hhfm.NewExperiment(session.session, config.(hhfm.Config))
+				return hhfm.NewExperiment(session.session, *config.(*hhfm.Config))
 			},
-			config:     hhfm.Config{},
+			config:     &hhfm.Config{},
 			needsInput: false,
 		}
 	},
@@ -299,9 +315,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"http_invalid_request_line": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return hirl.NewExperiment(session.session, config.(hirl.Config))
+				return hirl.NewExperiment(session.session, *config.(*hirl.Config))
 			},
-			config:     hirl.Config{},
+			config:     &hirl.Config{},
 			needsInput: false,
 		}
 	},
@@ -309,9 +325,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"ndt": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return ndt.NewExperiment(session.session, config.(ndt.Config))
+				return ndt.NewExperiment(session.session, *config.(*ndt.Config))
 			},
-			config:     ndt.Config{},
+			config:     &ndt.Config{},
 			needsInput: false,
 		}
 	},
@@ -319,9 +335,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"ndt7": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return ndt7.NewExperiment(session.session, config.(ndt7.Config))
+				return ndt7.NewExperiment(session.session, *config.(*ndt7.Config))
 			},
-			config:     ndt7.Config{},
+			config:     &ndt7.Config{},
 			needsInput: false,
 		}
 	},
@@ -329,9 +345,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"psiphon": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return psiphon.NewExperiment(session.session, config.(psiphon.Config))
+				return psiphon.NewExperiment(session.session, *config.(*psiphon.Config))
 			},
-			config: psiphon.Config{
+			config: &psiphon.Config{
 				ConfigFilePath: filepath.Join(
 					session.session.AssetsDir, "psiphon_config.json",
 				),
@@ -344,9 +360,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"telegram": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return telegram.NewExperiment(session.session, config.(telegram.Config))
+				return telegram.NewExperiment(session.session, *config.(*telegram.Config))
 			},
-			config:     telegram.Config{},
+			config:     &telegram.Config{},
 			needsInput: false,
 		}
 	},
@@ -355,10 +371,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
 				return web_connectivity.NewExperiment(
-					session.session, config.(web_connectivity.Config),
+					session.session, *config.(*web_connectivity.Config),
 				)
 			},
-			config:     web_connectivity.Config{},
+			config:     &web_connectivity.Config{},
 			needsInput: true,
 		}
 	},
@@ -367,10 +383,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
 				return whatsapp.NewExperiment(
-					session.session, config.(whatsapp.Config),
+					session.session, *config.(*whatsapp.Config),
 				)
 			},
-			config:     whatsapp.Config{},
+			config:     &whatsapp.Config{},
 			needsInput: false,
 		}
 	},

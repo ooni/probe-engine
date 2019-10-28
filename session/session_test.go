@@ -23,6 +23,7 @@ func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
 	)
 
 	sess.AvailableBouncers = append(sess.AvailableBouncers, model.Service{
@@ -92,6 +93,7 @@ func TestBouncerError(t *testing.T) {
 	ctx := context.Background()
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../testdata", URL, nil,
+		"../../testdata/",
 	)
 
 	if err := sess.MaybeLookupBackends(ctx); err == nil {
@@ -108,6 +110,7 @@ func TestLookupLocationError(t *testing.T) {
 	cancel() // cause operations to fail
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
 	)
 	if err := sess.MaybeLookupLocation(ctx); err == nil {
 		t.Fatal("expected an error here")

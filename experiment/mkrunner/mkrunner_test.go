@@ -16,7 +16,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		measurementkit.Settings{},
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
-			"../../testdata", nil, nil,
+			"../../testdata", nil, nil, "../../testdata",
 		),
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(apexlog.Log),
@@ -32,7 +32,7 @@ func TestIntegrationFailure(t *testing.T) {
 		measurementkit.Settings{},
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
-			"../../testdata", nil, nil,
+			"../../testdata", nil, nil, "../../testdata",
 		),
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(apexlog.Log),

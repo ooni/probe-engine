@@ -29,6 +29,9 @@ type URLInfo interface {
 // Fetch fetches the test list
 func (c *TestListsClient) Fetch(config *TestListsConfig) ([]URLInfo, error) {
 	var out []URLInfo
+	if config.BaseURL != "" {
+		c.client.BaseURL = config.BaseURL
+	}
 	list, err := c.client.Do(context.Background(), config.CountryCode, config.Limit)
 	if err != nil {
 		return nil, err
