@@ -6,6 +6,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/psiphon"
+	"github.com/ooni/probe-engine/measurementkit"
 )
 
 func TestCreateAll(t *testing.T) {
@@ -188,6 +189,9 @@ func TestUseOptions(t *testing.T) {
 }
 
 func TestRunHHFM(t *testing.T) {
+	if !measurementkit.Available() {
+		t.Skip("Measurement Kit not available; skipping")
+	}
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("http_header_field_manipulation")
 	if err != nil {
