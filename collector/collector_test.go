@@ -39,7 +39,7 @@ func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
 
 func makeClient() *collector.Client {
 	return &collector.Client{
-		BaseURL:    "https://a.collector.ooni.io/",
+		BaseURL:    "https://ps-test.ooni.io/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
