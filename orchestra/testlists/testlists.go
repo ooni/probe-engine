@@ -88,6 +88,6 @@ func (c *Client) Do(
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,
-	}).ReadWithQuery(ctx, "/api/v1/urls", query, &resp)
+	}).ReadWithQuery(ctx, "/api/v1/test-list/urls", query, &resp)
 	return resp.Results, err
 }
