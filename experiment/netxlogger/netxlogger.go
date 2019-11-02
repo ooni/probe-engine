@@ -4,22 +4,26 @@ package netxlogger
 import (
 	"encoding/json"
 
-	"github.com/ooni/probe-engine/log"
-	"github.com/ooni/netx/model"
+	"github.com/ooni/netx/modelx"
 )
+
+// Logger is the logger this package excepts
+type Logger interface {
+	Debug(msg string)
+}
 
 // Handler is a measurements handler
 type Handler struct {
-	logger log.Logger
+	logger Logger
 }
 
 // New creates a new log handler
-func New(logger log.Logger) *Handler {
+func New(logger Logger) *Handler {
 	return &Handler{logger: logger}
 }
 
 // OnMeasurement handles the measurement
-func (h *Handler) OnMeasurement(m model.Measurement) {
+func (h *Handler) OnMeasurement(m modelx.Measurement) {
 	if data, err := json.Marshal(m); err == nil {
 		h.logger.Debug(string(data))
 	}

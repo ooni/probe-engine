@@ -148,7 +148,7 @@ func measure(
 			continue
 		}
 		title := []byte(`<title>Telegram Web</title>`)
-		if bytes.Contains(r.Body, title) == false {
+		if bytes.Contains(r.BodySnap, title) == false {
 			failureString := "telegram_missing_title_error"
 			testkeys.TelegramWebFailure = &failureString
 			testkeys.TelegramWebStatus = "blocked"
