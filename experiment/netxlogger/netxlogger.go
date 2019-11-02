@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/netx/modelx"
 )
 
-// Logger is the logger this package excepts
+// Logger is the logger this package expects
 type Logger interface {
 	Debug(msg string)
 }

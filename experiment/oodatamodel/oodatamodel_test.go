@@ -251,7 +251,6 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 	out := oodatamodel.NewRequestList(&porcelain.HTTPDoResults{
 		TestKeys: porcelain.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
-				// need two requests to test that order is inverted
 				&modelx.HTTPRoundTripDoneEvent{
 					RequestBodySnap:  []byte("abcd"),
 					MaxBodySnapSize:  4,

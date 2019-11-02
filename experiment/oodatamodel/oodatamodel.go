@@ -114,7 +114,7 @@ type RequestList []RequestEntry
 // NewRequestList returns the list for "requests"
 func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 	// TODO(bassosimone): here I'm using netx snapshots which are
-	// limited to 1<<17. They are probably good enough for a really
+	// limited to 1<<20. They are probably good enough for a really
 	// wide range of cases, and truncating the body seems good for
 	// loading measurements on mobile as well. I think I should make
 	// sure I modify the documentation to mention that.
@@ -123,7 +123,7 @@ func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 		return out
 	}
 	in := httpresults.TestKeys.HTTPRequests
-	// within the same round-trip, so proceed backwards.
+	// OONI's data format wants more recent request first
 	for idx := len(in) - 1; idx >= 0; idx-- {
 		var entry RequestEntry
 		entry.Failure = makeFailure(in[idx].Error)
