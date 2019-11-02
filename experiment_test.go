@@ -34,6 +34,15 @@ func TestRunExample(t *testing.T) {
 	runexperimentflow(t, builder.Build())
 }
 
+func TestRunTelegram(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("telegram")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build())
+}
+
 func TestNeedsInput(t *testing.T) {
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("web_connectivity")

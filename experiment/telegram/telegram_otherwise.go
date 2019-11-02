@@ -49,13 +49,103 @@ type urlMeasurements struct {
 	results *porcelain.HTTPDoResults
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks, config Config,
+func newTestKeys() *TestKeys {
+	return &TestKeys{
+		TelegramHTTPBlocking: true,
+		TelegramTCPBlocking:  true,
+		TelegramWebFailure:   nil,
+		TelegramWebStatus:    "ok",
+	}
+}
+
+func (tk *TestKeys) processone(v *urlMeasurements) error {
+	if v == nil || v.err != nil {
+		return errors.New("passed wrong data to processone")
+	}
+	r := v.results
+	if r == nil {
+		return errors.New("passed nil results")
+	}
+	// update the requests and tcp-connect entries
+	tk.Requests = append(
+		tk.Requests, oodatamodel.NewRequestList(r)...,
+	)
+	tk.TCPConnect = append(
+		tk.TCPConnect,
+		oodatamodel.NewTCPConnectList(r.TestKeys)...,
+	)
+	// process access points first
+	if v.method != "GET" {
+		if r.Error == nil {
+			tk.TelegramHTTPBlocking = false
+			tk.TelegramTCPBlocking = false
+			return nil // found successful access point connection
+		}
+		for _, connect := range r.TestKeys.Connects {
+			if connect.Error == nil {
+				tk.TelegramTCPBlocking = false
+				break // not a connect error meaning we can connect
+			}
+		}
+		return nil
+	}
+	// now take care of web
+	if tk.TelegramWebStatus != "ok" {
+		return nil // we already flipped the state
+	}
+	if r.Error != nil {
+		failureString := r.Error.Error()
+		tk.TelegramWebStatus = "blocked"
+		tk.TelegramWebFailure = &failureString
+		return nil
+	}
+	if r.StatusCode != 200 {
+		failureString := "http_request_failed" // MK uses it
+		tk.TelegramWebFailure = &failureString
+		tk.TelegramWebStatus = "blocked"
+		return nil
+	}
+	title := []byte(`<title>Telegram Web</title>`)
+	if bytes.Contains(r.BodySnap, title) == false {
+		failureString := "telegram_missing_title_error"
+		tk.TelegramWebFailure = &failureString
+		tk.TelegramWebStatus = "blocked"
+		return nil
+	}
+	return nil
+}
+
+func (tk *TestKeys) processall(m map[string]*urlMeasurements) error {
+	for _, v := range m {
+		err := tk.processone(v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type measurer struct {
+	config Config
+	do     func(origCtx context.Context,
+		config porcelain.HTTPDoConfig) (*porcelain.HTTPDoResults, error)
+}
+
+func newMeasurer(config Config) *measurer {
+	return &measurer{
+		config: config,
+		do:     porcelain.HTTPDo,
+	}
+}
+
+func (m *measurer) measure(
+	ctx context.Context,
+	sess *session.Session,
+	measurement *model.Measurement,
+	callbacks handler.Callbacks,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-
 	// setup data container
 	var urlmeasurements = map[string]*urlMeasurements{
 		"http://149.154.175.50/":  &urlMeasurements{method: "POST"},
@@ -73,104 +163,41 @@ func measure(
 		"http://web.telegram.org/":  &urlMeasurements{method: "GET"},
 		"https://web.telegram.org/": &urlMeasurements{method: "GET"},
 	}
-
 	// run all measurements in parallel
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(len(urlmeasurements))
 	for key := range urlmeasurements {
 		go func(key string) {
+			defer waitgroup.Done()
 			// Avoid making all requests concurrently
 			gen := rand.New(rand.NewSource(time.Now().UnixNano()))
-			time.Sleep(time.Duration(gen.Intn(5000)) * time.Millisecond)
+			sleeptime := time.Duration(gen.Intn(5000)) * time.Millisecond
+			select {
+			case <-time.After(sleeptime):
+			case <-ctx.Done():
+				return
+			}
 			// No races because each goroutine writes its entry
 			entry := urlmeasurements[key]
-			entry.results, entry.err = porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+			entry.results, entry.err = m.do(ctx, porcelain.HTTPDoConfig{
 				Handler:   netxlogger.New(log.Log),
 				Method:    entry.method,
 				URL:       key,
 				UserAgent: useragent.Random(),
 			})
-			waitgroup.Done()
 		}(key)
 	}
 	waitgroup.Wait()
-
 	// fill the measurement entry
-	testkeys := &TestKeys{
-		TelegramHTTPBlocking: true,
-		TelegramTCPBlocking:  true,
-		TelegramWebFailure:   nil,
-		TelegramWebStatus:    "ok",
-	}
+	testkeys := newTestKeys()
 	measurement.TestKeys = &testkeys
-	for _, v := range urlmeasurements {
-		if v.err != nil {
-			return errors.New("passed wrong data to netx/porcelain")
-		}
-		r := v.results
-		// update the requests and tcp-connect entries
-		testkeys.Requests = append(
-			testkeys.Requests, oodatamodel.NewRequestList(r)...,
-		)
-		testkeys.TCPConnect = append(
-			testkeys.TCPConnect,
-			oodatamodel.NewTCPConnectList(r.TestKeys)...,
-		)
-		// process access points first
-		if v.method != "GET" {
-			if r.Error == nil {
-				testkeys.TelegramHTTPBlocking = false
-				testkeys.TelegramTCPBlocking = false
-				continue // found successful access point connection
-			}
-			for _, connect := range r.TestKeys.Connects {
-				if connect.Error == nil {
-					testkeys.TelegramTCPBlocking = false
-					break // not a connect error meaning we can connect
-				}
-			}
-			continue
-		}
-		// now take care of web
-		if testkeys.TelegramWebStatus != "ok" {
-			continue // we already flipped the state
-		}
-		if r.Error != nil {
-			failureString := r.Error.Error()
-			testkeys.TelegramWebStatus = "blocked"
-			testkeys.TelegramWebFailure = &failureString
-			continue
-		}
-		if r.StatusCode != 200 {
-			failureString := "http_request_failed" // MK uses it
-			testkeys.TelegramWebFailure = &failureString
-			testkeys.TelegramWebStatus = "blocked"
-			continue
-		}
-		title := []byte(`<title>Telegram Web</title>`)
-		if bytes.Contains(r.BodySnap, title) == false {
-			failureString := "telegram_missing_title_error"
-			testkeys.TelegramWebFailure = &failureString
-			testkeys.TelegramWebStatus = "blocked"
-			continue
-		}
-	}
-
-	return nil
+	return testkeys.processall(urlmeasurements)
 }
 
 // NewExperiment creates a new experiment.
 func NewExperiment(
 	sess *session.Session, config Config,
 ) *experiment.Experiment {
-	return experiment.New(
-		sess, testName, testVersion,
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return measure(ctx, sess, measurement, callbacks, config)
-		})
+	return experiment.New(sess, testName, testVersion,
+		newMeasurer(config).measure)
 }
