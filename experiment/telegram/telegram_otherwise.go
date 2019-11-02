@@ -144,6 +144,9 @@ func (m *measurer) measure(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {
+	// TODO(bassosimone):
+	// 1. implement measure of KiB sent and received
+	// 2. emit progress using callbacks
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	// setup data container
