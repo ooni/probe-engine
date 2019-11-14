@@ -16,44 +16,6 @@ import (
 	"github.com/ooni/probe-engine/log"
 )
 
-const (
-	// ASNDatabaseName is the name of the ASN database file
-	ASNDatabaseName = "asn.mmdb"
-
-	// CABundleName is the name of the CA bundle file
-	CABundleName = "ca-bundle.pem"
-
-	// CountryDatabaseName is the name of the country database file
-	CountryDatabaseName = "country.mmdb"
-
-	repository = "https://github.com/measurement-kit/generic-assets"
-)
-
-// ResourceInfo contains information on a resource.
-type ResourceInfo struct {
-	URLPath  string
-	GzSHA256 string
-	SHA256   string
-}
-
-var resources = map[string]ResourceInfo{
-	ASNDatabaseName: ResourceInfo{
-		URLPath:  "/releases/download/20190822135402/asn.mmdb.gz",
-		GzSHA256: "6cd343757dc4e3fe26de6f9f5a5b3e07a8b5949df99f3efd06e8d8d85e7031d1",
-		SHA256:   "d2649105e32b3a924ecac416b9d441fcf7f56186b4a3fe5bb3891e5d7c2c2d46",
-	},
-	CountryDatabaseName: ResourceInfo{
-		URLPath:  "/releases/download/20190822135402/country.mmdb.gz",
-		GzSHA256: "c29a631d448bace064d3ce675664714c3f4bec5839b14e618e07b18631189584",
-		SHA256:   "20bef853dd1288d55c9fd474cfe02f899f000f355c05252f355cbcedeba843b5",
-	},
-	CABundleName: ResourceInfo{
-		URLPath:  "/releases/download/20190822135402/ca-bundle.pem.gz",
-		GzSHA256: "d5a6aa2290ee18b09cc4fb479e2577ed5ae66c253870ba09776803a5396ea3ab",
-		SHA256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
-	},
-}
-
 // Client is a client for fetching resources.
 type Client struct {
 	// HTTPClient is the HTTP client to use.
@@ -71,7 +33,7 @@ type Client struct {
 
 // Ensure ensures that resources are downloaded and current.
 func (c *Client) Ensure(ctx context.Context) error {
-	for name, resource := range resources {
+	for name, resource := range All {
 		if err := c.EnsureForSingleResource(
 			ctx, name, resource, func(real, expected string) bool {
 				return real == expected
@@ -103,7 +65,7 @@ func (c *Client) EnsureForSingleResource(
 	} else {
 		c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
 	}
-	URL := repository + resource.URLPath
+	URL := RepositoryURL + resource.URLPath
 	c.Logger.Debugf("resources: fetch %s", URL)
 	data, err = (&fetch.Client{
 		HTTPClient: c.HTTPClient,
