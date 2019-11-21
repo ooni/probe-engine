@@ -1,11 +1,12 @@
-package telegram_test
+// +build cgo
+
+package telegram
 
 import (
 	"context"
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/session"
 )
@@ -33,7 +34,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	experiment := telegram.NewExperiment(sess, telegram.Config{})
+	experiment := NewExperiment(sess, Config{})
 	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)
 	}
