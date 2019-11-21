@@ -184,8 +184,8 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[0].Request.URL != "" {
 		t.Fatal("unexpected out[0].Request.URL")
 	}
-	if out[0].Request.XBodyIsSnap != false {
-		t.Fatal("unexpected out[0].Request.XBodyIsSnap")
+	if out[0].Request.BodyIsTruncated != false {
+		t.Fatal("unexpected out[0].Request.BodyIsTruncated")
 	}
 	if out[0].Response.Body.Value != "" {
 		t.Fatal("unexpected out[0].Response.Body.Value")
@@ -196,8 +196,8 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if len(out[0].Response.Headers) != 0 {
 		t.Fatal("unexpected out[0].Response.Headers")
 	}
-	if out[0].Response.XBodyIsSnap != false {
-		t.Fatal("unexpected out[0].Response.XBodyIsSnap")
+	if out[0].Response.BodyIsTruncated != false {
+		t.Fatal("unexpected out[0].Response.BodyIsTruncated")
 	}
 
 	if out[1].Failure != nil {
@@ -221,8 +221,8 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[1].Request.URL != "http://x.org/" {
 		t.Fatal("unexpected out[1].Request.URL")
 	}
-	if out[1].Request.XBodyIsSnap != false {
-		t.Fatal("unexpected out[1].Request.XBodyIsSnap")
+	if out[1].Request.BodyIsTruncated != false {
+		t.Fatal("unexpected out[1].Request.BodyIsTruncated")
 	}
 	if out[1].Response.Body.Value != "abcdef" {
 		t.Fatal("unexpected out[1].Response.Body.Value")
@@ -242,8 +242,8 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[1].Response.Headers["Content-Length"] != "14" {
 		t.Fatal("unexpected out[1].Response.Headers Content-Length value")
 	}
-	if out[1].Response.XBodyIsSnap != false {
-		t.Fatal("unexpected out[1].Response.XBodyIsSnap")
+	if out[1].Response.BodyIsTruncated != false {
+		t.Fatal("unexpected out[1].Response.BodyIsTruncated")
 	}
 }
 
@@ -262,11 +262,11 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 	if len(out) != 1 {
 		t.Fatal("unexpected output length")
 	}
-	if out[0].Request.XBodyIsSnap != true {
-		t.Fatal("wrong out[0].Request.XBodyIsSnap")
+	if out[0].Request.BodyIsTruncated != true {
+		t.Fatal("wrong out[0].Request.BodyIsTruncated")
 	}
-	if out[0].Response.XBodyIsSnap != true {
-		t.Fatal("wrong out[0].Response.XBodyIsSnap")
+	if out[0].Response.BodyIsTruncated != true {
+		t.Fatal("wrong out[0].Response.BodyIsTruncated")
 	}
 }
 

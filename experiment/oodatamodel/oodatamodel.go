@@ -84,20 +84,20 @@ func (hb HTTPBody) MarshalJSON() ([]byte, error) {
 
 // HTTPRequest contains an HTTP request
 type HTTPRequest struct {
-	Body        HTTPBody          `json:"body"`
-	Headers     map[string]string `json:"headers"`
-	Method      string            `json:"method"`
-	Tor         HTTPTor           `json:"tor"`
-	URL         string            `json:"url"`
-	XBodyIsSnap bool              `json:"x_body_is_snap"`
+	Body            HTTPBody          `json:"body"`
+	BodyIsTruncated bool              `json:"body_is_truncated"`
+	Headers         map[string]string `json:"headers"`
+	Method          string            `json:"method"`
+	Tor             HTTPTor           `json:"tor"`
+	URL             string            `json:"url"`
 }
 
 // HTTPResponse contains an HTTP response
 type HTTPResponse struct {
-	Body        HTTPBody          `json:"body"`
-	Code        int64             `json:"code"`
-	Headers     map[string]string `json:"headers"`
-	XBodyIsSnap bool              `json:"x_body_is_snap"`
+	Body            HTTPBody          `json:"body"`
+	BodyIsTruncated bool              `json:"body_is_truncated"`
+	Code            int64             `json:"code"`
+	Headers         map[string]string `json:"headers"`
 }
 
 // RequestEntry is one of the entries that are part of
@@ -131,24 +131,30 @@ func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 		for key, values := range in[idx].RequestHeaders {
 			for _, value := range values {
 				entry.Request.Headers[key] = value
-				break // known data format issue
+				// We skip processing after the first header with
+				// such name has been processed. This is a known
+				// issue of OONI's data model.
+				break
 			}
 		}
 		entry.Request.Method = in[idx].RequestMethod
 		entry.Request.URL = in[idx].RequestURL
 		entry.Request.Body.Value = string(in[idx].RequestBodySnap)
-		entry.Request.XBodyIsSnap = in[idx].MaxBodySnapSize > 0 &&
+		entry.Request.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
 			int64(len(in[idx].RequestBodySnap)) >= in[idx].MaxBodySnapSize
 		entry.Response.Headers = make(map[string]string)
 		for key, values := range in[idx].ResponseHeaders {
 			for _, value := range values {
 				entry.Response.Headers[key] = value
-				break // known data format issue
+				// We skip processing after the first header with
+				// such name has been processed. This is a known
+				// issue of OONI's data model.
+				break
 			}
 		}
 		entry.Response.Code = in[idx].ResponseStatusCode
 		entry.Response.Body.Value = string(in[idx].ResponseBodySnap)
-		entry.Response.XBodyIsSnap = in[idx].MaxBodySnapSize > 0 &&
+		entry.Response.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
 			int64(len(in[idx].ResponseBodySnap)) >= in[idx].MaxBodySnapSize
 		out = append(out, entry)
 	}
