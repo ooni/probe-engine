@@ -21,6 +21,7 @@ func TestIntegration(t *testing.T) {
 
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
+		"../../testdata",
 	)
 	if err := sess.MaybeLookupBackends(ctx); err != nil {
 		t.Fatal(err)
@@ -30,7 +31,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	experiment := example.NewExperiment(
-		sess, example.Config{SleepTime: 2 * time.Second},
+		sess, example.Config{SleepTime: int64(2 * time.Second)},
 	)
 	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)
@@ -43,5 +44,23 @@ func TestIntegration(t *testing.T) {
 	}
 	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestIntegrationFailure(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	ctx := context.Background()
+	sess := session.New(
+		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
+		"../../testdata",
+	)
+	experiment := example.NewExperiment(
+		sess, example.Config{
+			SleepTime:   int64(2 * time.Second),
+			ReturnError: true,
+		},
+	)
+	if _, err := experiment.Measure(ctx, ""); err == nil {
+		t.Fatal("expected an error here")
 	}
 }

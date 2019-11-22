@@ -1,3 +1,5 @@
+// +build cgo
+
 // Package telegram contains the Telegram network experiment.
 package telegram
 

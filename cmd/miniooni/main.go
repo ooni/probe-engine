@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -14,21 +13,8 @@ import (
 
 	"github.com/apex/log"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/dash"
-	"github.com/ooni/probe-engine/experiment/example"
-	"github.com/ooni/probe-engine/experiment/fbmessenger"
-	"github.com/ooni/probe-engine/experiment/hhfm"
-	"github.com/ooni/probe-engine/experiment/hirl"
-	"github.com/ooni/probe-engine/experiment/ndt"
-	"github.com/ooni/probe-engine/experiment/ndt7"
-	"github.com/ooni/probe-engine/experiment/psiphon"
-	"github.com/ooni/probe-engine/experiment/telegram"
-	"github.com/ooni/probe-engine/experiment/web_connectivity"
-	"github.com/ooni/probe-engine/experiment/whatsapp"
+	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/httpx/httpx"
-	"github.com/ooni/probe-engine/orchestra/testlists"
-	"github.com/ooni/probe-engine/session"
 
 	"github.com/pborman/getopt/v2"
 )
@@ -176,13 +162,12 @@ func main() {
 	if globalOptions.reportfile == "" {
 		globalOptions.reportfile = "report.jsonl"
 	}
-	workDir, err := os.Getwd()
+	tempDir, err := os.Getwd()
 	if err != nil {
 		log.WithError(err).Fatal("cannot get current working directory")
 	}
 	log.Log = logger
 
-	ctx := context.Background()
 	var tlsConfig *tls.Config
 	if globalOptions.caBundlePath != "" {
 		tlsConfig = mustParseCA(globalOptions.caBundlePath)
@@ -191,9 +176,19 @@ func main() {
 	if globalOptions.proxy != "" {
 		proxyURL = mustParseURL(globalOptions.proxy)
 	}
-	sess := session.New(
-		logger, softwareName, softwareVersion, workDir, proxyURL, tlsConfig,
-	)
+
+	sess, err := engine.NewSession(engine.SessionConfig{
+		AssetsDir:       tempDir,
+		Logger:          logger,
+		ProxyURL:        proxyURL,
+		SoftwareName:    softwareName,
+		SoftwareVersion: softwareVersion,
+		TempDir:         tempDir,
+		TLSConfig:       tlsConfig,
+	})
+	if err != nil {
+		log.WithError(err).Fatal("cannot create measurement session")
+	}
 
 	if globalOptions.bouncerURL != "" {
 		sess.AddAvailableHTTPSBouncer(globalOptions.bouncerURL)
@@ -207,13 +202,13 @@ func main() {
 
 	if !globalOptions.noBouncer {
 		log.Info("Looking up OONI backends")
-		if err := sess.MaybeLookupBackends(ctx); err != nil {
+		if err := sess.MaybeLookupBackends(); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")
 		}
 	}
 	if !globalOptions.noGeoIP {
 		log.Info("Looking up your location")
-		if err := sess.MaybeLookupLocation(ctx); err != nil {
+		if err := sess.MaybeLookupLocation(); err != nil {
 			log.WithError(err).Warn("cannot lookup your location")
 		} else {
 			log.Infof("your IP: %s, country: %s, ISP name: %s",
@@ -222,65 +217,43 @@ func main() {
 	}
 
 	name := getopt.Args()[0]
-
-	if name == "web_connectivity" {
-		log.Info("Fetching test lists")
+	builder, err := sess.NewExperimentBuilder(name)
+	if err != nil {
+		log.WithError(err).Fatal("cannot create experiment builder")
+	}
+	if builder.NeedsInput() {
 		if len(globalOptions.inputs) <= 0 {
-			list, err := testlists.NewClient(sess).Do(ctx, sess.ProbeCC(), 100)
+			log.Info("Fetching test lists")
+			config := sess.NewTestListsConfig()
+			config.Limit = 16
+			client := sess.NewTestListsClient()
+			list, err := client.Fetch(config)
 			if err != nil {
 				log.WithError(err).Fatal("cannot fetch test lists")
 			}
 			for _, entry := range list {
-				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
+				globalOptions.inputs = append(globalOptions.inputs, entry.URL())
 			}
 		}
 	} else if len(globalOptions.inputs) != 0 {
-		log.Fatal("this test does not expect any input")
+		log.Fatal("this experiment does not expect any input")
 	} else {
 		// Tests that do not expect input internally require an empty input to run
 		globalOptions.inputs = append(globalOptions.inputs, "")
 	}
-
-	var experiment *experiment.Experiment
-	if name == "dash" {
-		experiment = dash.NewExperiment(sess, dash.Config{})
-	} else if name == "facebook_messenger" {
-		experiment = fbmessenger.NewExperiment(sess, fbmessenger.Config{})
-	} else if name == "http_header_field_manipulation" {
-		experiment = hhfm.NewExperiment(sess, hhfm.Config{})
-	} else if name == "http_invalid_request_line" {
-		experiment = hirl.NewExperiment(sess, hirl.Config{})
-	} else if name == "ndt" {
-		experiment = ndt.NewExperiment(sess, ndt.Config{})
-	} else if name == "ndt7" {
-		experiment = ndt7.NewExperiment(sess, ndt7.Config{})
-	} else if name == "psiphon" {
-		if _, ok := extraOptions["config_file_path"]; !ok {
-			log.Fatal("psiphon requires the `-O config_file_path=PATH` option")
+	for key, value := range extraOptions {
+		err := builder.SetOptionString(key, value)
+		if err != nil {
+			log.WithError(err).Fatal("cannot set string option")
 		}
-		experiment = psiphon.NewExperiment(sess, psiphon.Config{
-			ConfigFilePath: extraOptions["config_file_path"],
-			WorkDir:        workDir,
-		})
-	} else if name == "telegram" {
-		experiment = telegram.NewExperiment(sess, telegram.Config{})
-	} else if name == "web_connectivity" {
-		experiment = web_connectivity.NewExperiment(sess, web_connectivity.Config{})
-	} else if name == "whatsapp" {
-		experiment = whatsapp.NewExperiment(sess, whatsapp.Config{})
-	} else if name == "example" {
-		experiment = example.NewExperiment(sess, example.Config{
-			SleepTime: 2 * time.Second,
-		})
-	} else {
-		log.Fatalf("Unknown experiment: %s", name)
 	}
+	experiment := builder.Build()
 
 	if !globalOptions.noCollector {
-		if err := experiment.OpenReport(ctx); err != nil {
+		if err := experiment.OpenReport(); err != nil {
 			log.WithError(err).Fatal("cannot open report")
 		}
-		defer experiment.CloseReport(ctx)
+		defer experiment.CloseReport()
 	}
 
 	inputCount := len(globalOptions.inputs)
@@ -290,7 +263,7 @@ func main() {
 		if input != "" {
 			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
 		}
-		measurement, err := experiment.Measure(ctx, input)
+		measurement, err := experiment.Measure(input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
 			continue
@@ -298,7 +271,7 @@ func main() {
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			log.Infof("submitting measurement to OONI collector")
-			if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
+			if err := experiment.SubmitAndUpdateMeasurement(measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
 				continue
 			}

@@ -20,7 +20,7 @@ func Handle(
 ) {
 	if event.Key == "measurement" {
 		// We reparse the measurement and overwrite it. This is how we manage to
-		// return the measurement to the caller. Seriousy.
+		// return the measurement to the caller. Seriously.
 		//
 		// We panic if we cannot parse because since MK v0.9.0 the vendored
 		// nlohmann/json library should throw if passed non UTF-8 input.

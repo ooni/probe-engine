@@ -4,7 +4,6 @@ package psiphon
 
 import (
 	"context"
-	"errors"
 
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
@@ -21,6 +20,6 @@ func NewExperiment(
 		func(c context.Context, s *session.Session, m *model.Measurement,
 			callbacks handler.Callbacks,
 		) error {
-			return errors.New("Psiphon disabled at compile time")
+			return ErrDisabled
 		})
 }

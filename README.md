@@ -24,7 +24,7 @@ miniooni CLI will be stable over time.
 ## Integrating ooni/probe-engine
 
 This software uses [Go modules](https://github.com/golang/go/wiki/Modules)
-and therefore requires Go v1.11+. We also depend on [Measurement Kit](
+and requires Go v1.13+. We also depend on [Measurement Kit](
 https://github.com/measurement-kit/measurement-kit), a C++14 library
 implementing many OONI tests.
 

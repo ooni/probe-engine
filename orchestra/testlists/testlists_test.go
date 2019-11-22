@@ -16,6 +16,7 @@ func TestIntegration(t *testing.T) {
 		"0.1.0",
 		"../../testdata/",
 		nil, nil,
+		"../../testdata/",
 	)
 	client := testlists.NewClient(sess)
 	client.SetEnabledCategories([]string{"NEWS", "CULTR"})
