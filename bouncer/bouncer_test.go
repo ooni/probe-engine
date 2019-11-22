@@ -11,7 +11,7 @@ import (
 
 func makeClient() *bouncer.Client {
 	return &bouncer.Client{
-		BaseURL:    "https://bouncer.ooni.io/",
+		BaseURL:    "https://ps-test.ooni.io/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",

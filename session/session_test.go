@@ -29,7 +29,7 @@ func TestIntegration(t *testing.T) {
 		Address: "http://foobar.onion",
 		Type:    "onion",
 	})
-	sess.AddAvailableHTTPSBouncer("https://bouncer.ooni.io")
+	sess.AddAvailableHTTPSBouncer("https://ps-test.ooni.io")
 	if len(sess.AvailableBouncers) != 2 {
 		t.Fatal("unexpected size of available bouncers")
 	}
@@ -38,7 +38,7 @@ func TestIntegration(t *testing.T) {
 		Address: "http://foobar.onion",
 		Type:    "onion",
 	})
-	sess.AddAvailableHTTPSCollector("https://b.collector.ooni.io")
+	sess.AddAvailableHTTPSCollector("https://ps-test.ooni.io")
 	if len(sess.AvailableCollectors) != 2 {
 		t.Fatal("unexpected size of available collectors")
 	}
