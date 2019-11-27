@@ -1,6 +1,9 @@
 // +build !nopsiphon
 
-// Package psiphon implements the psiphon network experiment.
+// Package psiphon implements the psiphon network experiment. This
+// implements, in particular, v0.2.0 of the spec.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-015-psiphon.md
 package psiphon
 
 import (
