@@ -68,8 +68,8 @@ func newSessionForTesting(t *testing.T) *Session {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sess.AddAvailableHTTPSBouncer("https://bouncer.ooni.io")
-	sess.AddAvailableHTTPSCollector("https://ams-ps.ooni.nu")
+	sess.AddAvailableHTTPSBouncer("https://ps-test.ooni.io")
+	sess.AddAvailableHTTPSCollector("https://ps-test.ooni.io")
 	sess.SetIncludeProbeASN(true)
 	sess.SetIncludeProbeCC(true)
 	sess.SetIncludeProbeIP(false)
