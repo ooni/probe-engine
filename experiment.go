@@ -13,6 +13,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
 	"github.com/ooni/probe-engine/experiment/ndt"
@@ -21,7 +22,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -155,22 +155,8 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 		return nil, errors.New("no such experiment")
 	}
 	builder := factory(session)
-	builder.callbacks = &defaultCallbacks{
-		logger: session.session.Logger,
-	}
+	builder.callbacks = handler.NewPrinterCallbacks(session.session.Logger)
 	return builder, nil
-}
-
-type defaultCallbacks struct {
-	logger log.Logger
-}
-
-func (cb *defaultCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	// NOTHING
-}
-
-func (cb *defaultCallbacks) OnProgress(percentage float64, message string) {
-	cb.logger.Infof("%s", message)
 }
 
 // Experiment is an experiment instance.
