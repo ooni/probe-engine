@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -145,8 +146,6 @@ func (m *measurer) measure(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {
-	// TODO(bassosimone):
-	// 1. emit progress using callbacks
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	// setup data container
@@ -168,9 +167,10 @@ func (m *measurer) measure(
 	}
 	// run all measurements in parallel
 	var (
-		waitgroup     sync.WaitGroup
-		sentBytes     int64
+		completed     int64
 		receivedBytes int64
+		sentBytes     int64
+		waitgroup     sync.WaitGroup
 	)
 	waitgroup.Add(len(urlmeasurements))
 	for key := range urlmeasurements {
@@ -197,6 +197,15 @@ func (m *measurer) measure(
 				atomic.AddInt64(&sentBytes, tk.SentBytes)
 				atomic.AddInt64(&receivedBytes, tk.ReceivedBytes)
 			}
+			sofar := atomic.AddInt64(&completed, 1)
+			percentage := float64(sofar) / float64(len(urlmeasurements))
+			errstr := "success"
+			if entry.err != nil {
+				errstr = entry.err.Error()
+			}
+			callbacks.OnProgress(percentage, fmt.Sprintf(
+				"telegram: access %s: %s", key, errstr,
+			))
 		}(key)
 	}
 	waitgroup.Wait()
