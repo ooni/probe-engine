@@ -10,8 +10,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/apex/log"
@@ -144,9 +146,6 @@ func (m *measurer) measure(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {
-	// TODO(bassosimone):
-	// 1. implement measure of KiB sent and received
-	// 2. emit progress using callbacks
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	// setup data container
@@ -167,7 +166,12 @@ func (m *measurer) measure(
 		"https://web.telegram.org/": &urlMeasurements{method: "GET"},
 	}
 	// run all measurements in parallel
-	var waitgroup sync.WaitGroup
+	var (
+		completed     int64
+		receivedBytes int64
+		sentBytes     int64
+		waitgroup     sync.WaitGroup
+	)
 	waitgroup.Add(len(urlmeasurements))
 	for key := range urlmeasurements {
 		go func(key string) {
@@ -188,13 +192,32 @@ func (m *measurer) measure(
 				URL:       key,
 				UserAgent: useragent.Random(),
 			})
+			if entry.results != nil {
+				tk := &entry.results.TestKeys
+				atomic.AddInt64(&sentBytes, tk.SentBytes)
+				atomic.AddInt64(&receivedBytes, tk.ReceivedBytes)
+			}
+			sofar := atomic.AddInt64(&completed, 1)
+			percentage := float64(sofar) / float64(len(urlmeasurements))
+			errstr := "success"
+			if entry.err != nil {
+				errstr = entry.err.Error()
+			}
+			callbacks.OnProgress(percentage, fmt.Sprintf(
+				"telegram: access %s: %s", key, errstr,
+			))
 		}(key)
 	}
 	waitgroup.Wait()
 	// fill the measurement entry
 	testkeys := newTestKeys()
 	measurement.TestKeys = &testkeys
-	return testkeys.processall(urlmeasurements)
+	err := testkeys.processall(urlmeasurements)
+	callbacks.OnDataUsage(
+		float64(receivedBytes)/1024.0, // downloaded
+		float64(sentBytes)/1024.0,     // uploaded
+	)
+	return err
 }
 
 // NewExperiment creates a new experiment.

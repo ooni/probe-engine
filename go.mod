@@ -36,7 +36,7 @@ require (
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/montanaflynn/stats v0.5.0
 	github.com/neubot/dash v0.4.0
-	github.com/ooni/netx v0.0.0-20191102111013-0563295d50dc
+	github.com/ooni/netx v0.0.0-20191127145621-75e074291fca
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.4.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect

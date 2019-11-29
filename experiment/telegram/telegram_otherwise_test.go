@@ -10,6 +10,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/netx/modelx"
 	"github.com/ooni/netx/x/porcelain"
+	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -38,7 +39,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 		ctx,
 		nil, // session
 		new(model.Measurement),
-		nil, // callbacks
+		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -59,7 +60,7 @@ func TestUnitMeasureWithNetxPorcelainError(t *testing.T) {
 		context.Background(),
 		nil, // session
 		new(model.Measurement),
-		nil, // callbacks
+		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil {
 		t.Fatal("expected an error here")

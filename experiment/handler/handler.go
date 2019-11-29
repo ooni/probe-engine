@@ -26,7 +26,7 @@ func NewPrinterCallbacks(logger log.Logger) PrinterCallbacks {
 
 // OnDataUsage provides information about data usage.
 func (d PrinterCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	d.Logger.Infof("data usage: %f/%f down/up KiB", dloadKiB, uploadKiB)
+	d.Logger.Infof("data usage: %.1f/%.1f down/up KiB", dloadKiB, uploadKiB)
 }
 
 // OnProgress provides information about an experiment progress.
