@@ -115,7 +115,7 @@ func (e *Experiment) ReportID() string {
 
 func (e *Experiment) newMeasurement(input string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.2.1",
+		DataFormatVersion:    collector.DefaultDataFormatVersion,
 		Input:                input,
 		MeasurementStartTime: formatTimeNowUTC(),
 		ProbeIP:              e.Session.ProbeIP(),

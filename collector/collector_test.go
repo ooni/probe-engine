@@ -18,7 +18,7 @@ type fakeTestKeys struct {
 
 func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.2.0",
+		DataFormatVersion:    "0.3.0",
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementStartTime: "2018-11-01 15:33:20",
 		ProbeIP:              "1.2.3.4",
@@ -188,7 +188,8 @@ func TestEndToEnd(t *testing.T) {
 					panic(err)
 				}
 				sdata := string(data)
-				const expectedString = `{"format":"json","content":{"data_format_version":"0.2.0","id":"bdd20d7a-bba5-40dd-a111-9863d7908572","measurement_start_time":"2018-11-01 15:33:20","test_runtime":5.0565230846405,"probe_asn":"AS0","probe_cc":"ZZ","probe_ip":"1.2.3.4","report_id":"_id","resolver_ip":"","software_name":"ooniprobe-engine","software_version":"0.1.0","test_keys":{"client_resolver":"91.80.37.104"},"test_name":"dummy","test_start_time":"2018-11-01 15:33:17","test_version":"0.1.0"}}`
+				// TODO(bassosimone): could this be a fixture?
+				const expectedString = `{"format":"json","content":{"data_format_version":"0.3.0","id":"bdd20d7a-bba5-40dd-a111-9863d7908572","measurement_start_time":"2018-11-01 15:33:20","test_runtime":5.0565230846405,"probe_asn":"AS0","probe_cc":"ZZ","probe_ip":"1.2.3.4","report_id":"_id","resolver_ip":"","software_name":"ooniprobe-engine","software_version":"0.1.0","test_keys":{"client_resolver":"91.80.37.104"},"test_name":"dummy","test_start_time":"2018-11-01 15:33:17","test_version":"0.1.0"}}`
 				if sdata != expectedString {
 					panic(sdata)
 				}

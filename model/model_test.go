@@ -41,7 +41,7 @@ func TestAddAnnotations(t *testing.T) {
 
 func makeMeasurement(probeIP, probeASN, probeCC string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.2.0",
+		DataFormatVersion:    "0.3.0",
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementStartTime: "2018-11-01 15:33:20",
 		ProbeIP:              probeIP,
