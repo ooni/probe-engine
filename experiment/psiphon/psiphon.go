@@ -18,10 +18,11 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
+	netxlogger "github.com/ooni/netx/x/logger"
+	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/httpx/fetch"
-	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -76,20 +77,18 @@ var usetunnel = func(
 	ctx context.Context, t *clientlib.PsiphonTunnel, config Config,
 	sess *session.Session,
 ) error {
-	_, err := (&fetch.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(
-			sess.Logger,
-			func(req *http.Request) (*url.URL, error) {
-				return &url.URL{
-					Scheme: "socks5",
-					Host:   fmt.Sprintf("127.0.0.1:%d", t.SOCKSProxyPort),
-				}, nil
-			},
-			nil, // meaning use default CA bundle
-		),
-		Logger:    sess.Logger,
-		UserAgent: sess.UserAgent(),
-	}).Fetch(ctx, "https://www.google.com/humans.txt")
+	_, err := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+		Handler: netxlogger.NewHandler(sess.Logger),
+		Method:  "GET",
+		ProxyFunc: func(req *http.Request) (*url.URL, error) {
+			return &url.URL{
+				Scheme: "socks5",
+				Host:   fmt.Sprintf("127.0.0.1:%d", t.SOCKSProxyPort),
+			}, nil
+		},
+		URL:       "https://www.google.com/humans.txt",
+		UserAgent: useragent.Random(),
+	})
 	return err
 }
 
