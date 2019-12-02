@@ -37,7 +37,9 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	cancel()
 	err := m.measure(
 		ctx,
-		nil, // session
+		&session.Session{
+			Logger: log.Log,
+		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
@@ -58,7 +60,9 @@ func TestUnitMeasureWithNetxPorcelainError(t *testing.T) {
 	}
 	err := m.measure(
 		context.Background(),
-		nil, // session
+		&session.Session{
+			Logger: log.Log,
+		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
