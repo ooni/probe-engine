@@ -25,6 +25,15 @@ func TestCreateAll(t *testing.T) {
 	}
 }
 
+func TestRunDASH(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("dash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build())
+}
+
 func TestRunExample(t *testing.T) {
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("example")

@@ -18,6 +18,7 @@ import (
 	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -46,19 +47,43 @@ type TestKeys struct {
 	ReceiverData []neubotModel.ClientResults `json:"receiver_data"`
 }
 
-// loop runs the neubot/dash measurement loop and writes the
-// interim all the results of the test in `tk`. It is not this
-// function concern to set tk.Failure. The caller must do it
+type dashClient interface {
+	StartDownload(ctx context.Context) (<-chan neubotModel.ClientResults, error)
+	Error() error
+	ServerResults() []neubotModel.ServerResults
+}
+
+type runner struct {
+	callbacks   handler.Callbacks
+	client      dashClient
+	jsonMarshal func(v interface{}) ([]byte, error)
+	logger      log.Logger
+	tk          *TestKeys
+}
+
+func newRunner(
+	logger log.Logger, client dashClient,
+	callbacks handler.Callbacks,
+	jsonMarshal func(v interface{}) ([]byte, error),
+) *runner {
+	return &runner{
+		callbacks:   callbacks,
+		client:      client,
+		jsonMarshal: jsonMarshal,
+		logger:      logger,
+		tk:          new(TestKeys),
+	}
+}
+
+// loop runs the neubot/dash measurement loop and writes
+// interim results of the test in `tk`. It is not this
+// function's concern to set tk.Failure. The caller must do it
 // when this function returns a non-nil error.
-func (tk *TestKeys) loop(
-	ctx context.Context, sess *session.Session,
-	client *client.Client, callbacks handler.Callbacks,
-) error {
-	ch, err := client.StartDownload(ctx)
+func (r *runner) loop(ctx context.Context) error {
+	ch, err := r.client.StartDownload(ctx)
 	if err != nil {
 		return err
 	}
-	callbacks.OnProgress(0, fmt.Sprintf("server: %s", client.FQDN))
 	percentage := 0.0
 	step := 1 / (totalStep + 1)
 	for results := range ch {
@@ -69,30 +94,28 @@ func (tk *TestKeys) loop(
 			humanize.Bytes(uint64(float64(results.Received)/results.Elapsed)),
 			results.Elapsed,
 		)
-		callbacks.OnProgress(percentage, message)
-		data, err := json.Marshal(results)
+		r.callbacks.OnProgress(percentage, message)
+		data, err := r.jsonMarshal(results)
 		if err != nil {
 			return err
 		}
-		sess.Logger.Debugf("%s", string(data))
-		tk.ReceiverData = append(tk.ReceiverData, results)
+		r.logger.Debugf("%s", string(data))
+		r.tk.ReceiverData = append(r.tk.ReceiverData, results)
 	}
-	if client.Error() != nil {
-		return err
+	if r.client.Error() != nil {
+		return r.client.Error()
 	}
-	data, err := json.Marshal(client.ServerResults())
+	data, err := r.jsonMarshal(r.client.ServerResults())
 	if err != nil {
 		return err
 	}
-	sess.Logger.Debugf("Server result: %s", string(data))
+	r.logger.Debugf("Server result: %s", string(data))
 	// TODO(bassosimone): it seems we're not saving the server data?
 	return nil
 }
 
 // analyze analyzes the results of DASH and fills stats inside of tk.
-func (tk *TestKeys) analyze(
-	sess *session.Session, client *client.Client, callbacks handler.Callbacks,
-) error {
+func (tk *TestKeys) analyze() error {
 	var rates []float64
 	var frameReadyTime float64
 	var playTime float64
@@ -103,7 +126,7 @@ func (tk *TestKeys) analyze(
 		// would play in ElapsedTarget seconds. However, will play when they
 		// arrive. Stall is the time we need to wait for a frame to arrive with
 		// the video stopped and the spinning icon.
-		frameReadyTime += float64(results.Elapsed)
+		frameReadyTime += results.Elapsed
 		if playTime == 0.0 {
 			playTime += frameReadyTime
 		} else {
@@ -121,55 +144,57 @@ func (tk *TestKeys) analyze(
 
 // printSummary just prints a debug-level summary. We cannot use the info
 // level because that is reserved for the OONI Probe CLI.
-func (tk *TestKeys) printSummary(sess *session.Session) {
-	sess.Logger.Debugf("Test Summary: ")
-	sess.Logger.Debugf("Connect latency: %s",
+func (tk *TestKeys) printSummary(logger log.Logger) {
+	logger.Debugf("Test Summary: ")
+	logger.Debugf("Connect latency: %s",
 		// convert to nanoseconds
 		time.Duration(tk.Simple.ConnectLatency*1000000000),
 	)
-	sess.Logger.Debugf("Median bitrate: %s/s",
+	logger.Debugf("Median bitrate: %s/s",
 		// MedianBitrate is kbit in SI size
 		humanize.Bytes(uint64(tk.Simple.MedianBitrate*1000/8)),
 	)
-	sess.Logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
+	logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks, config Config,
-) error {
-	testkeys := &TestKeys{}
-	measurement.TestKeys = testkeys
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
-	err := testkeys.loop(ctx, sess, client, callbacks)
+// do is the main function of the runner
+func (r *runner) do(ctx context.Context) error {
+	err := r.loop(ctx)
 	if err != nil {
-		testkeys.Failure = err.Error()
+		r.tk.Failure = err.Error()
 		return err
 	}
-	err = testkeys.analyze(sess, client, callbacks)
+	err = r.tk.analyze()
 	if err != nil {
-		testkeys.Failure = err.Error()
+		r.tk.Failure = err.Error()
 		return err
 	}
-	callbacks.OnProgress(1, "done")
-	testkeys.printSummary(sess)
+	r.callbacks.OnProgress(1, "done")
+	r.tk.printSummary(r.logger)
 	return nil
+}
+
+type measurer struct {
+	config Config
+}
+
+func (m *measurer) measure(
+	ctx context.Context, sess *session.Session,
+	measurement *model.Measurement, callbacks handler.Callbacks,
+) error {
+	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
+	r := newRunner(sess.Logger, client, callbacks, json.Marshal)
+	measurement.TestKeys = r.tk
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
+	callbacks.OnProgress(0, fmt.Sprintf("server: %s", client.FQDN))
+	return r.do(ctx)
 }
 
 // NewExperiment creates a new experiment.
 func NewExperiment(
 	sess *session.Session, config Config,
 ) *experiment.Experiment {
-	return experiment.New(
-		sess, testName, testVersion,
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return measure(ctx, sess, measurement, callbacks, config)
-		})
+	m := &measurer{config: config}
+	return experiment.New(sess, testName, testVersion, m.measure)
 }
