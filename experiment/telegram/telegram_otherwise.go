@@ -16,11 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apex/log"
+	netxlogger "github.com/ooni/netx/x/logger"
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/experiment/netxlogger"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
 	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/model"
@@ -187,7 +186,7 @@ func (m *measurer) measure(
 			// No races because each goroutine writes its entry
 			entry := urlmeasurements[key]
 			entry.results, entry.err = m.do(ctx, porcelain.HTTPDoConfig{
-				Handler:   netxlogger.New(log.Log),
+				Handler:   netxlogger.NewHandler(sess.Logger),
 				Method:    entry.method,
 				URL:       key,
 				UserAgent: useragent.Random(),
