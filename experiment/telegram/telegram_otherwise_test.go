@@ -5,6 +5,7 @@ package telegram
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/apex/log"
@@ -37,7 +38,9 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	cancel()
 	err := m.measure(
 		ctx,
-		nil, // session
+		&session.Session{
+			Logger: log.Log,
+		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
@@ -49,24 +52,29 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureWithNetxPorcelainError(t *testing.T) {
+func TestIntegrationMeasure(t *testing.T) {
 	m := newMeasurer(Config{})
-	m.do = func(
-		origCtx context.Context, config porcelain.HTTPDoConfig,
-	) (*porcelain.HTTPDoResults, error) {
-		return nil, errors.New("mocked error")
-	}
 	err := m.measure(
 		context.Background(),
-		nil, // session
+		&session.Session{
+			Logger: log.Log,
+		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUnitProcessoneNil(t *testing.T) {
+	tk := newTestKeys()
+	err := tk.processone(nil)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if err.Error() != "passed wrong data to processone" {
-		t.Fatal("unexpected error")
+	if err.Error() != "passed nil data to processone" {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -74,14 +82,12 @@ func TestUnitProcessallWithNoAccessPointsBlocking(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://149.154.175.50/": &urlMeasurements{
-			err:    nil,
 			method: "POST",
 			results: &porcelain.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"http://149.154.175.50:443/": &urlMeasurements{
-			err:    nil,
 			method: "POST",
 			results: &porcelain.HTTPDoResults{
 				Error: nil, // this should be enough to declare success
@@ -103,14 +109,12 @@ func TestUnitProcessallWithTelegramHTTPBlocking(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://149.154.175.50/": &urlMeasurements{
-			err:    nil,
 			method: "POST",
 			results: &porcelain.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"http://149.154.175.50:443/": &urlMeasurements{
-			err:    nil,
 			method: "POST",
 			results: &porcelain.HTTPDoResults{
 				Error: errors.New("mocked error"),
@@ -139,14 +143,12 @@ func TestUnitProcessallWithMixedResults(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				Error: nil,
@@ -168,14 +170,12 @@ func TestUnitProcessallWithBadRequest(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				StatusCode: 400,
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				Error: nil,
@@ -197,7 +197,6 @@ func TestUnitProcessallWithMissingTitle(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				StatusCode: 200,
@@ -205,7 +204,6 @@ func TestUnitProcessallWithMissingTitle(t *testing.T) {
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				StatusCode: 200,
@@ -228,7 +226,6 @@ func TestUnitProcessallWithAllGood(t *testing.T) {
 	tk := newTestKeys()
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				StatusCode: 200,
@@ -236,7 +233,6 @@ func TestUnitProcessallWithAllGood(t *testing.T) {
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
-			err:    nil,
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
 				StatusCode: 200,
@@ -252,5 +248,14 @@ func TestUnitProcessallWithAllGood(t *testing.T) {
 	}
 	if tk.TelegramWebFailure != nil {
 		t.Fatal("invalid TelegramWebFailure")
+	}
+}
+
+func TestUnitErrString(t *testing.T) {
+	if errString(nil) != "success" {
+		t.Fatal("unexpected value with nil error")
+	}
+	if errString(io.EOF) != "EOF" {
+		t.Fatal("unexpected value with real error")
 	}
 }

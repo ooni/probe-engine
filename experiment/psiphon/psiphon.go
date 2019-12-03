@@ -1,6 +1,9 @@
 // +build !nopsiphon
 
-// Package psiphon implements the psiphon network experiment.
+// Package psiphon implements the psiphon network experiment. This
+// implements, in particular, v0.2.0 of the spec.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-015-psiphon.md
 package psiphon
 
 import (
@@ -12,13 +15,16 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
+	netxlogger "github.com/ooni/netx/x/logger"
+	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/httpx/fetch"
-	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/experiment/useragent"
+	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -28,110 +34,165 @@ import (
 // This is what will end up into the Measurement.TestKeys field
 // when you run this experiment.
 type TestKeys struct {
-	// Failure contains the failure that occurred.
-	Failure string `json:"failure"`
-
 	// BootstrapTime is the time it took to bootstrap Psiphon.
 	BootstrapTime float64 `json:"bootstrap_time"`
+
+	// Failure contains the failure that occurred.
+	Failure string `json:"failure"`
 }
 
-// osRemoveAll is a mockable os.RemoveAll
-var osRemoveAll = os.RemoveAll
+type runner struct {
+	callbacks      handler.Callbacks
+	config         Config
+	ioutilReadFile func(filename string) ([]byte, error)
+	osMkdirAll     func(path string, perm os.FileMode) error
+	osRemoveAll    func(path string) error
+	testkeys       *TestKeys
+}
 
-// osMkdirAll is a mockable os.MkdirAll
-var osMkdirAll = os.MkdirAll
+func newRunner(config Config, callbacks handler.Callbacks) *runner {
+	return &runner{
+		callbacks:      callbacks,
+		config:         config,
+		ioutilReadFile: ioutil.ReadFile,
+		osMkdirAll:     os.MkdirAll,
+		osRemoveAll:    os.RemoveAll,
+		testkeys:       new(TestKeys),
+	}
+}
 
-// ioutilReadFile is a mockable ioutil.ReadFile
-var ioutilReadFile = ioutil.ReadFile
+func (r *runner) readconfig() ([]byte, error) {
+	configJSON, err := r.ioutilReadFile(r.config.ConfigFilePath)
+	if err != nil {
+		return nil, err
+	}
+	return configJSON, nil
+}
 
-func processconfig(config Config) ([]byte, clientlib.Parameters, error) {
-	if config.WorkDir == "" {
-		return nil, clientlib.Parameters{}, errors.New("WorkDir is empty")
+func (r *runner) makeworkingdir() (string, error) {
+	if r.config.WorkDir == "" {
+		return "", errors.New("WorkDir is empty")
 	}
 	const testdirname = "oonipsiphon"
-	workdir := filepath.Join(config.WorkDir, testdirname)
-	err := osRemoveAll(workdir)
-	if err != nil {
-		return nil, clientlib.Parameters{}, err
+	workdir := filepath.Join(r.config.WorkDir, testdirname)
+	if err := r.osRemoveAll(workdir); err != nil {
+		return "", err
 	}
-	err = osMkdirAll(workdir, 0700)
-	if err != nil {
-		return nil, clientlib.Parameters{}, err
+	if err := r.osMkdirAll(workdir, 0700); err != nil {
+		return "", err
 	}
-	params := clientlib.Parameters{
-		DataRootDirectory: &workdir,
-	}
-	configJSON, err := ioutilReadFile(config.ConfigFilePath)
-	if err != nil {
-		return nil, clientlib.Parameters{}, err
-	}
-	return configJSON, params, nil
+	return workdir, nil
 }
 
-// usetunnel is a mockable function that uses the tunnel
-var usetunnel = func(
-	ctx context.Context, t *clientlib.PsiphonTunnel, config Config,
-	sess *session.Session,
-) error {
-	_, err := (&fetch.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(
-			sess.Logger,
-			func(req *http.Request) (*url.URL, error) {
-				return &url.URL{
-					Scheme: "socks5",
-					Host:   fmt.Sprintf("127.0.0.1:%d", t.SOCKSProxyPort),
-				}, nil
-			},
-			nil, // meaning use default CA bundle
-		),
-		Logger:    sess.Logger,
-		UserAgent: sess.UserAgent(),
-	}).Fetch(ctx, "https://www.google.com/humans.txt")
-	return err
+func (r *runner) starttunnel(
+	ctx context.Context, configJSON []byte,
+	params clientlib.Parameters,
+) (*clientlib.PsiphonTunnel, error) {
+	return clientlib.StartTunnel(ctx, configJSON, "", params, nil, nil)
 }
 
-// clientlibStartTunnel is a mockable clientlib.StartTunnel
-var clientlibStartTunnel = clientlib.StartTunnel
-
-func run(
-	ctx context.Context,
-	sess *session.Session,
-	measurement *model.Measurement,
-	config Config,
-	callbacks handler.Callbacks,
+func (r *runner) usetunnel(
+	ctx context.Context, port int, logger log.Logger,
 ) error {
-	testkeys := &TestKeys{}
-	measurement.TestKeys = testkeys
-	configJSON, params, err := processconfig(config)
+	// TODO(bassosimone): here we should store the results of
+	// fetching the page using psiphon and http.
+	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+		Handler: netxlogger.NewHandler(logger),
+		Method:  "GET",
+		ProxyFunc: func(req *http.Request) (*url.URL, error) {
+			return &url.URL{
+				Scheme: "socks5",
+				Host:   fmt.Sprintf("127.0.0.1:%d", port),
+			}, nil
+		},
+		URL:       "https://www.google.com/humans.txt",
+		UserAgent: useragent.Random(),
+	})
+	// TODO(bassosimone): understand if there is a way to ask
+	// the tunnel the number of bytes sent and/or received
+	receivedBytes := results.TestKeys.ReceivedBytes
+	sentBytes := results.TestKeys.SentBytes
+	r.callbacks.OnDataUsage(
+		float64(receivedBytes)/1024.0, // downloaded
+		float64(sentBytes)/1024.0,     // uploaded
+	)
+	if results.Error != nil {
+		r.testkeys.Failure = results.Error.Error()
+		return results.Error
+	}
+	return nil
+}
+
+func (r *runner) run(ctx context.Context, logger log.Logger) error {
+	configJSON, err := r.readconfig()
 	if err != nil {
-		testkeys.Failure = err.Error()
+		r.testkeys.Failure = err.Error()
+		return err
+	}
+	workdir, err := r.makeworkingdir()
+	if err != nil {
+		r.testkeys.Failure = err.Error()
 		return err
 	}
 	start := time.Now()
-	tunnel, err := clientlibStartTunnel(ctx, configJSON, "", params, nil, nil)
+	tunnel, err := r.starttunnel(ctx, configJSON, clientlib.Parameters{
+		DataRootDirectory: &workdir,
+	})
 	if err != nil {
-		testkeys.Failure = err.Error()
+		r.testkeys.Failure = err.Error()
 		return err
 	}
-	testkeys.BootstrapTime = time.Now().Sub(start).Seconds()
+	r.testkeys.BootstrapTime = time.Since(start).Seconds()
 	defer tunnel.Stop()
-	err = usetunnel(ctx, tunnel, config, sess)
-	if err != nil {
-		testkeys.Failure = err.Error()
-		return err
+	return r.usetunnel(ctx, tunnel.SOCKSProxyPort, logger)
+}
+
+type measurer struct {
+	config Config
+}
+
+func (m *measurer) printprogress(
+	ctx context.Context, wg *sync.WaitGroup,
+	maxruntime int, callbacks handler.Callbacks,
+) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	step := 1 / float64(maxruntime)
+	var progress float64
+	defer callbacks.OnProgress(1.0, "psiphon experiment complete")
+	defer wg.Done()
+	for {
+		select {
+		case <-ticker.C:
+			progress += step
+			callbacks.OnProgress(progress, "psiphon experiment running")
+		case <-ctx.Done():
+			return
+		}
 	}
-	return nil
+}
+
+func (m *measurer) measure(
+	ctx context.Context, sess *session.Session,
+	measurement *model.Measurement, callbacks handler.Callbacks,
+) error {
+	const maxruntime = 30
+	ctx, cancel := context.WithTimeout(ctx, maxruntime*time.Second)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go m.printprogress(ctx, &wg, maxruntime, callbacks)
+	r := newRunner(m.config, callbacks)
+	measurement.TestKeys = r.testkeys
+	err := r.run(ctx, sess.Logger)
+	cancel()
+	wg.Wait()
+	return err
 }
 
 // NewExperiment creates a new experiment.
 func NewExperiment(
 	sess *session.Session, config Config,
 ) *experiment.Experiment {
-	return experiment.New(
-		sess, testName, testVersion,
-		func(c context.Context, s *session.Session, m *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return run(c, s, m, config, callbacks)
-		})
+	m := &measurer{config: config}
+	return experiment.New(sess, testName, testVersion, m.measure)
 }

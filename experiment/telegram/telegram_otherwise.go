@@ -16,11 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apex/log"
+	netxlogger "github.com/ooni/netx/x/logger"
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/experiment/netxlogger"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
 	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/model"
@@ -47,7 +46,6 @@ type TestKeys struct {
 
 type urlMeasurements struct {
 	method  string
-	err     error
 	results *porcelain.HTTPDoResults
 }
 
@@ -61,8 +59,8 @@ func newTestKeys() *TestKeys {
 }
 
 func (tk *TestKeys) processone(v *urlMeasurements) error {
-	if v == nil || v.err != nil {
-		return errors.New("passed wrong data to processone")
+	if v == nil {
+		return errors.New("passed nil data to processone")
 	}
 	r := v.results
 	if r == nil {
@@ -129,14 +127,11 @@ func (tk *TestKeys) processall(m map[string]*urlMeasurements) error {
 
 type measurer struct {
 	config Config
-	do     func(origCtx context.Context,
-		config porcelain.HTTPDoConfig) (*porcelain.HTTPDoResults, error)
 }
 
 func newMeasurer(config Config) *measurer {
 	return &measurer{
 		config: config,
-		do:     porcelain.HTTPDo,
 	}
 }
 
@@ -186,25 +181,19 @@ func (m *measurer) measure(
 			}
 			// No races because each goroutine writes its entry
 			entry := urlmeasurements[key]
-			entry.results, entry.err = m.do(ctx, porcelain.HTTPDoConfig{
-				Handler:   netxlogger.New(log.Log),
+			entry.results = porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+				Handler:   netxlogger.NewHandler(sess.Logger),
 				Method:    entry.method,
 				URL:       key,
 				UserAgent: useragent.Random(),
 			})
-			if entry.results != nil {
-				tk := &entry.results.TestKeys
-				atomic.AddInt64(&sentBytes, tk.SentBytes)
-				atomic.AddInt64(&receivedBytes, tk.ReceivedBytes)
-			}
+			tk := &entry.results.TestKeys
+			atomic.AddInt64(&sentBytes, tk.SentBytes)
+			atomic.AddInt64(&receivedBytes, tk.ReceivedBytes)
 			sofar := atomic.AddInt64(&completed, 1)
 			percentage := float64(sofar) / float64(len(urlmeasurements))
-			errstr := "success"
-			if entry.err != nil {
-				errstr = entry.err.Error()
-			}
 			callbacks.OnProgress(percentage, fmt.Sprintf(
-				"telegram: access %s: %s", key, errstr,
+				"telegram: access %s: %s", key, errString(entry.results.Error),
 			))
 		}(key)
 	}
@@ -226,4 +215,12 @@ func NewExperiment(
 ) *experiment.Experiment {
 	return experiment.New(sess, testName, testVersion,
 		newMeasurer(config).measure)
+}
+
+func errString(err error) (s string) {
+	s = "success"
+	if err != nil {
+		s = err.Error()
+	}
+	return
 }
