@@ -23,6 +23,7 @@ import (
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/oodatamodel"
 	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
@@ -34,11 +35,20 @@ import (
 // This is what will end up into the Measurement.TestKeys field
 // when you run this experiment.
 type TestKeys struct {
-	// BootstrapTime is the time it took to bootstrap Psiphon.
+	// Agent is the HTTP agent we're using.
+	Agent string `json:"agent"`
+
+	// BootstrapTime is the seconds it took to bootstrap Psiphon.
 	BootstrapTime float64 `json:"bootstrap_time"`
 
 	// Failure contains the failure that occurred.
-	Failure string `json:"failure"`
+	Failure *string `json:"failure"`
+
+	// Requests contains HTTP measurements
+	Requests oodatamodel.RequestList `json:"requests"`
+
+	// SOCKSProxy is the address of the proxy we're using.
+	SOCKSProxy string `json:"socksproxy"`
 }
 
 type runner struct {
@@ -94,20 +104,23 @@ func (r *runner) starttunnel(
 func (r *runner) usetunnel(
 	ctx context.Context, port int, logger log.Logger,
 ) error {
-	// TODO(bassosimone): here we should store the results of
-	// fetching the page using psiphon and http.
+	r.testkeys.Agent = "redirect"
+	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
 	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
 		Handler: netxlogger.NewHandler(logger),
 		Method:  "GET",
 		ProxyFunc: func(req *http.Request) (*url.URL, error) {
 			return &url.URL{
 				Scheme: "socks5",
-				Host:   fmt.Sprintf("127.0.0.1:%d", port),
+				Host:   r.testkeys.SOCKSProxy,
 			}, nil
 		},
 		URL:       "https://www.google.com/humans.txt",
 		UserAgent: useragent.Random(),
 	})
+	r.testkeys.Requests = append(
+		r.testkeys.Requests, oodatamodel.NewRequestList(results)...,
+	)
 	// TODO(bassosimone): understand if there is a way to ask
 	// the tunnel the number of bytes sent and/or received
 	receivedBytes := results.TestKeys.ReceivedBytes
@@ -117,7 +130,8 @@ func (r *runner) usetunnel(
 		float64(sentBytes)/1024.0,     // uploaded
 	)
 	if results.Error != nil {
-		r.testkeys.Failure = results.Error.Error()
+		s := results.Error.Error()
+		r.testkeys.Failure = &s
 		return results.Error
 	}
 	return nil
@@ -126,12 +140,14 @@ func (r *runner) usetunnel(
 func (r *runner) run(ctx context.Context, logger log.Logger) error {
 	configJSON, err := r.readconfig()
 	if err != nil {
-		r.testkeys.Failure = err.Error()
+		s := err.Error()
+		r.testkeys.Failure = &s
 		return err
 	}
 	workdir, err := r.makeworkingdir()
 	if err != nil {
-		r.testkeys.Failure = err.Error()
+		s := err.Error()
+		r.testkeys.Failure = &s
 		return err
 	}
 	start := time.Now()
@@ -139,7 +155,8 @@ func (r *runner) run(ctx context.Context, logger log.Logger) error {
 		DataRootDirectory: &workdir,
 	})
 	if err != nil {
-		r.testkeys.Failure = err.Error()
+		s := err.Error()
+		r.testkeys.Failure = &s
 		return err
 	}
 	r.testkeys.BootstrapTime = time.Since(start).Seconds()
