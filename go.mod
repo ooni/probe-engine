@@ -1,6 +1,6 @@
 module github.com/ooni/probe-engine
 
-go 1.12
+go 1.13
 
 require (
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
