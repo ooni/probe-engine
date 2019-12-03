@@ -95,7 +95,7 @@ func (r *runner) usetunnel(
 	// TODO(bassosimone): here we should store the results of
 	// fetching the page using psiphon and http.
 	// TODO(bassosimone): count number of bytes sent/recv
-	results, err := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
 		Handler: netxlogger.NewHandler(logger),
 		Method:  "GET",
 		ProxyFunc: func(req *http.Request) (*url.URL, error) {
@@ -107,17 +107,6 @@ func (r *runner) usetunnel(
 		URL:       "https://www.google.com/humans.txt",
 		UserAgent: useragent.Random(),
 	})
-	// TODO(bassosimone): the fact that porcelain returns basically two
-	// different errors is actually very unidiomatic. I will fix this soon
-	// as documented in <https://github.com/ooni/netx/issues/141>.
-	//
-	// For this reason, I am not bothering with writing a unit test to
-	// provoke the former error, since it will happen once the above
-	// mentioned netx issue has been fully addressed.
-	if err != nil {
-		r.testkeys.Failure = err.Error()
-		return err
-	}
 	if results.Error != nil {
 		r.testkeys.Failure = results.Error.Error()
 		return results.Error
