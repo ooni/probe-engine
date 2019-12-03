@@ -23,8 +23,8 @@ import (
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
-	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -107,8 +107,10 @@ func (r *runner) usetunnel(
 	r.testkeys.Agent = "redirect"
 	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
 	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
-		Handler: netxlogger.NewHandler(logger),
-		Method:  "GET",
+		Accept:         httpheader.RandomAccept(),
+		AcceptLanguage: httpheader.RandomAcceptLanguage(),
+		Handler:        netxlogger.NewHandler(logger),
+		Method:         "GET",
 		ProxyFunc: func(req *http.Request) (*url.URL, error) {
 			return &url.URL{
 				Scheme: "socks5",
@@ -116,7 +118,7 @@ func (r *runner) usetunnel(
 			}, nil
 		},
 		URL:       "https://www.google.com/humans.txt",
-		UserAgent: useragent.Random(),
+		UserAgent: httpheader.RandomUserAgent(),
 	})
 	r.testkeys.Requests = append(
 		r.testkeys.Requests, oodatamodel.NewRequestList(results)...,

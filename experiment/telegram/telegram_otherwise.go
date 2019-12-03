@@ -20,8 +20,8 @@ import (
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
-	"github.com/ooni/probe-engine/experiment/useragent"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -182,10 +182,12 @@ func (m *measurer) measure(
 			// No races because each goroutine writes its entry
 			entry := urlmeasurements[key]
 			entry.results = porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
-				Handler:   netxlogger.NewHandler(sess.Logger),
-				Method:    entry.method,
-				URL:       key,
-				UserAgent: useragent.Random(),
+				Accept:         httpheader.RandomAccept(),
+				AcceptLanguage: httpheader.RandomAcceptLanguage(),
+				Handler:        netxlogger.NewHandler(sess.Logger),
+				Method:         entry.method,
+				URL:            key,
+				UserAgent:      httpheader.RandomUserAgent(),
 			})
 			tk := &entry.results.TestKeys
 			atomic.AddInt64(&sentBytes, tk.SentBytes)
