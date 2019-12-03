@@ -161,6 +161,8 @@ func TestUnitProcessallWithMixedResults(t *testing.T) {
 	if tk.TelegramWebStatus != "blocked" {
 		t.Fatal("TelegramWebStatus should be blocked")
 	}
+	// To better understand https://github.com/ooni/probe-engine/issues/142
+	t.Logf("%+v", *tk.TelegramWebFailure)
 	if *tk.TelegramWebFailure != "mocked error" {
 		t.Fatal("invalid TelegramWebFailure")
 	}
