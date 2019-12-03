@@ -137,7 +137,7 @@ func TestIntegration(t *testing.T) {
 }
 
 func TestUnitUsetunnel(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so should fail immediately
 	err := r.usetunnel(ctx, 8080, log.Log)
