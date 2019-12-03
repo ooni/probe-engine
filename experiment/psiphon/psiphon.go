@@ -195,7 +195,7 @@ func (m *measurer) measure(
 	ctx context.Context, sess *session.Session,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
-	const maxruntime = 30
+	const maxruntime = 60
 	ctx, cancel := context.WithTimeout(ctx, maxruntime*time.Second)
 	var wg sync.WaitGroup
 	wg.Add(1)

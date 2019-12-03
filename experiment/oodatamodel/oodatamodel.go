@@ -62,17 +62,17 @@ type HTTPTor struct {
 	IsTor    bool    `json:"is_tor"`
 }
 
-// HTTPBody is an HTTP body. We use this helper class to define a custom
-// JSON encoder that allows us to choose the proper representation depending
-// on whether the Value field is UTF-8 or not.
-type HTTPBody struct {
+// MaybeBinaryValue is a possibly binary string. We use this helper class
+// to define a custom JSON encoder that allows us to choose the proper
+// representation depending on whether the Value field is valid UTF-8 or not.
+type MaybeBinaryValue struct {
 	Value string
 }
 
 // MarshalJSON marshal the body to JSON following the OONI spec that says
 // that UTF-8 bodies are represened as string and non-UTF-8 bodies are
 // instead represented as `{"format":"base64","data":"..."}`.
-func (hb HTTPBody) MarshalJSON() ([]byte, error) {
+func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	if utf8.ValidString(hb.Value) {
 		return json.Marshal(hb.Value)
 	}
@@ -82,22 +82,28 @@ func (hb HTTPBody) MarshalJSON() ([]byte, error) {
 	return json.Marshal(er)
 }
 
+// HTTPBody is an HTTP body.
+type HTTPBody MaybeBinaryValue
+
+// HTTPHeaders contains HTTP headers.
+type HTTPHeaders map[string]MaybeBinaryValue
+
 // HTTPRequest contains an HTTP request
 type HTTPRequest struct {
-	Body            HTTPBody          `json:"body"`
-	BodyIsTruncated bool              `json:"body_is_truncated"`
-	Headers         map[string]string `json:"headers"`
-	Method          string            `json:"method"`
-	Tor             HTTPTor           `json:"tor"`
-	URL             string            `json:"url"`
+	Body            HTTPBody    `json:"body"`
+	BodyIsTruncated bool        `json:"body_is_truncated"`
+	Headers         HTTPHeaders `json:"headers"`
+	Method          string      `json:"method"`
+	Tor             HTTPTor     `json:"tor"`
+	URL             string      `json:"url"`
 }
 
 // HTTPResponse contains an HTTP response
 type HTTPResponse struct {
-	Body            HTTPBody          `json:"body"`
-	BodyIsTruncated bool              `json:"body_is_truncated"`
-	Code            int64             `json:"code"`
-	Headers         map[string]string `json:"headers"`
+	Body            HTTPBody    `json:"body"`
+	BodyIsTruncated bool        `json:"body_is_truncated"`
+	Code            int64       `json:"code"`
+	Headers         HTTPHeaders `json:"headers"`
 }
 
 // RequestEntry is one of the entries that are part of
@@ -127,10 +133,12 @@ func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 	for idx := len(in) - 1; idx >= 0; idx-- {
 		var entry RequestEntry
 		entry.Failure = makeFailure(in[idx].Error)
-		entry.Request.Headers = make(map[string]string)
+		entry.Request.Headers = make(HTTPHeaders)
 		for key, values := range in[idx].RequestHeaders {
 			for _, value := range values {
-				entry.Request.Headers[key] = value
+				entry.Request.Headers[key] = MaybeBinaryValue{
+					Value: value,
+				}
 				// We skip processing after the first header with
 				// such name has been processed. This is a known
 				// issue of OONI's data model.
@@ -142,10 +150,12 @@ func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 		entry.Request.Body.Value = string(in[idx].RequestBodySnap)
 		entry.Request.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
 			int64(len(in[idx].RequestBodySnap)) >= in[idx].MaxBodySnapSize
-		entry.Response.Headers = make(map[string]string)
+		entry.Response.Headers = make(HTTPHeaders)
 		for key, values := range in[idx].ResponseHeaders {
 			for _, value := range values {
-				entry.Response.Headers[key] = value
+				entry.Response.Headers[key] = MaybeBinaryValue{
+					Value: value,
+				}
 				// We skip processing after the first header with
 				// such name has been processed. This is a known
 				// issue of OONI's data model.
