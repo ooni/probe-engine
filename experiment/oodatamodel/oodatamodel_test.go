@@ -209,10 +209,10 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if len(out[1].Request.Headers) != 2 {
 		t.Fatal("unexpected out[1].Request.Headers")
 	}
-	if out[1].Request.Headers["Content-Type"] != "text/plain" {
+	if out[1].Request.Headers["Content-Type"].Value != "text/plain" {
 		t.Fatal("unexpected out[1].Request.Headers Content-Type value")
 	}
-	if out[1].Request.Headers["Content-Length"] != "17" {
+	if out[1].Request.Headers["Content-Length"].Value != "17" {
 		t.Fatal("unexpected out[1].Request.Headers Content-Length value")
 	}
 	if out[1].Request.Method != "GET" {
@@ -233,13 +233,13 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if len(out[1].Response.Headers) != 3 {
 		t.Fatal("unexpected out[1].Response.Headers")
 	}
-	if out[1].Response.Headers["Content-Type"] != "application/json" {
+	if out[1].Response.Headers["Content-Type"].Value != "application/json" {
 		t.Fatal("unexpected out[1].Response.Headers Content-Type value")
 	}
-	if out[1].Response.Headers["Server"] != "antani" {
+	if out[1].Response.Headers["Server"].Value != "antani" {
 		t.Fatal("unexpected out[1].Response.Headers Server value")
 	}
-	if out[1].Response.Headers["Content-Length"] != "14" {
+	if out[1].Response.Headers["Content-Length"].Value != "14" {
 		t.Fatal("unexpected out[1].Response.Headers Content-Length value")
 	}
 	if out[1].Response.BodyIsTruncated != false {
@@ -270,11 +270,11 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 	}
 }
 
-func TestMarshalBodyString(t *testing.T) {
-	body := oodatamodel.HTTPBody{
+func TestMarshalMaybeBinaryValueString(t *testing.T) {
+	mbv := oodatamodel.MaybeBinaryValue{
 		Value: "1234",
 	}
-	data, err := json.Marshal(body)
+	data, err := json.Marshal(mbv)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestMarshalBodyString(t *testing.T) {
 	}
 }
 
-func TestMarshalBodyBinary(t *testing.T) {
+func TestMarshalMaybeBinaryValueBinary(t *testing.T) {
 	input := []uint8{
 		0x57, 0xe5, 0x79, 0xfb, 0xa6, 0xbb, 0x0d, 0xbc, 0xce, 0xbd, 0xa7, 0xa0,
 		0xba, 0xa4, 0x78, 0x78, 0x12, 0x59, 0xee, 0x68, 0x39, 0xa4, 0x07, 0x98,
@@ -297,10 +297,10 @@ func TestMarshalBodyBinary(t *testing.T) {
 		0x80, 0xcf, 0x86, 0xf9, 0x5f, 0x9d, 0x8c, 0xab, 0xf5, 0xc5, 0x74, 0x24,
 		0x3a, 0xa2, 0xd4, 0x40, 0x4e, 0xd7, 0x10, 0x1f,
 	}
-	body := oodatamodel.HTTPBody{
+	mbv := oodatamodel.MaybeBinaryValue{
 		Value: string(input),
 	}
-	data, err := json.Marshal(body)
+	data, err := json.Marshal(mbv)
 	if err != nil {
 		t.Fatal(err)
 	}
