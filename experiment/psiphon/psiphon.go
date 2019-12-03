@@ -42,6 +42,7 @@ type TestKeys struct {
 }
 
 type runner struct {
+	callbacks      handler.Callbacks
 	config         Config
 	ioutilReadFile func(filename string) ([]byte, error)
 	osMkdirAll     func(path string, perm os.FileMode) error
@@ -49,8 +50,9 @@ type runner struct {
 	testkeys       *TestKeys
 }
 
-func newRunner(config Config) *runner {
+func newRunner(config Config, callbacks handler.Callbacks) *runner {
 	return &runner{
+		callbacks:      callbacks,
 		config:         config,
 		ioutilReadFile: ioutil.ReadFile,
 		osMkdirAll:     os.MkdirAll,
@@ -94,7 +96,6 @@ func (r *runner) usetunnel(
 ) error {
 	// TODO(bassosimone): here we should store the results of
 	// fetching the page using psiphon and http.
-	// TODO(bassosimone): count number of bytes sent/recv
 	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
 		Handler: netxlogger.NewHandler(logger),
 		Method:  "GET",
@@ -107,6 +108,14 @@ func (r *runner) usetunnel(
 		URL:       "https://www.google.com/humans.txt",
 		UserAgent: useragent.Random(),
 	})
+	// TODO(bassosimone): understand if there is a way to ask
+	// the tunnel the number of bytes sent and/or received
+	receivedBytes := results.TestKeys.ReceivedBytes
+	sentBytes := results.TestKeys.SentBytes
+	r.callbacks.OnDataUsage(
+		float64(receivedBytes)/1024.0, // downloaded
+		float64(sentBytes)/1024.0,     // uploaded
+	)
 	if results.Error != nil {
 		r.testkeys.Failure = results.Error.Error()
 		return results.Error
@@ -172,7 +181,7 @@ func (m *measurer) measure(
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
-	r := newRunner(m.config)
+	r := newRunner(m.config, callbacks)
 	measurement.TestKeys = r.testkeys
 	err := r.run(ctx, sess.Logger)
 	cancel()

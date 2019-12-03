@@ -49,7 +49,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitReadConfig(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	r.config.ConfigFilePath = "../../testdata/nonexistent_config.json"
 	configJSON, err := r.readconfig()
 	if err == nil {
@@ -61,7 +61,7 @@ func TestUnitReadConfig(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirEmptyWorkingDir(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	r.config.WorkDir = ""
 	workdir, err := r.makeworkingdir()
 	if err == nil {
@@ -73,7 +73,7 @@ func TestUnitMakeWorkingDirEmptyWorkingDir(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirOsRemoveAllError(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	expected := errors.New("mocked error")
 	r.osRemoveAll = func(path string) error {
 		return expected
@@ -88,7 +88,7 @@ func TestUnitMakeWorkingDirOsRemoveAllError(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	expected := errors.New("mocked error")
 	r.osMkdirAll = func(path string, perm os.FileMode) error {
 		return expected
@@ -103,7 +103,7 @@ func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
 }
 
 func TestUnitRunReadconfigError(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	r.config.ConfigFilePath = "../../testdata/nonexistent_config.json"
 	err := r.run(context.Background(), log.Log)
 	if err == nil {
@@ -112,7 +112,7 @@ func TestUnitRunReadconfigError(t *testing.T) {
 }
 
 func TestUnitRunMakeworkingdirError(t *testing.T) {
-	r := newRunner(makeconfig())
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
 	expected := errors.New("mocked error")
 	r.osRemoveAll = func(path string) error {
 		return expected
