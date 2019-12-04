@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
-	github.com/Psiphon-Labs/bolt v0.0.0-20170814173724-c6e046a80d4b // indirect
+	github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
@@ -25,7 +25,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/grafov/m3u8 v0.6.1 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
 	go.uber.org/atomic v1.4.0 // indirect
-	go.uber.org/multierr v1.1.0 // indirect
+	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
 	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect

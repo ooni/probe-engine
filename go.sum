@@ -3,8 +3,8 @@ github.com/AndreasBriese/bbloom v0.0.0-20190306092124-e2d15f34fcf9/go.mod h1:bOv
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 h1:6IRS6D+hXUqTS/aPqYMRwj2pan6gGnEi1KuYREk5sMQ=
 github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9/go.mod h1:ZdY5pBfat/WVzw3eXbIf7N1nZN0XD5H5+X8ZMDWbCs4=
-github.com/Psiphon-Labs/bolt v0.0.0-20170814173724-c6e046a80d4b h1:1CAIqZRwh4W0+doCfSaqBqKSR9UCyeXQp/JgR3vLRCk=
-github.com/Psiphon-Labs/bolt v0.0.0-20170814173724-c6e046a80d4b/go.mod h1:nYj8s6HxsjYV7vZjTiH3tMcVjj/x+R702DXT89PomgE=
+github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e h1:2zxppKeojJOuiO2aRjvVTD13hTPb+0RCia+TbGZX4Dg=
+github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e/go.mod h1:nYj8s6HxsjYV7vZjTiH3tMcVjj/x+R702DXT89PomgE=
 github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc h1:W+dNJivdYUujm+mhvmSDn3847jbzar8J7qzjj/w4U6I=
 github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc/go.mod h1:F1eU0RdWZXN2kn6A8cBRixr1HLyM1Va7xXp88LRhlps=
 github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 h1:aQE2/masBGr/uqI63UIxN/IkRByNTxjYz2JYySw9ry8=
@@ -76,8 +76,8 @@ github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
-github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
-github.com/gobwas/glob v0.2.3/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
+github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 h1:T6zlOdzrYuHf6HUKujm9bzkzbZ5Iv/xf6rs8BHZDpoI=
+github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/golang/mock v1.2.0 h1:28o5sBqPkBsMGnC6b4MvE2TzSr5/AT4c/1fLqVGIwlk=
 github.com/golang/mock v1.2.0/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
@@ -253,8 +253,8 @@ github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea h1:Cyhwe
 github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea/go.mod h1:eNr558nEUjP8acGw8FFjTeWvSgU1stO7FAO6eknhHe4=
 go.uber.org/atomic v1.4.0 h1:cxzIVoETapQEqDhQu3QfnvXAV4AlzcvUCxkVUFw3+EU=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
-go.uber.org/multierr v1.1.0 h1:HoEmRHQPVSqub6w2z2d2EOVs2fjyFRGyofhKuyDq0QI=
-go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
+go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df h1:ijDSp1iOMDAWixcZLxdmOBE0N7YTvtV4s2HWE3U1CoQ=
+go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/zap v1.10.0 h1:ORx85nbTijNz8ljznvCMR1ZBIPKFn3jQrag10X2AsuM=
 go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
