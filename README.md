@@ -53,3 +53,72 @@ instruction for installing Measurement Kit and building.
 3. commit, tag, and push
 
 4. create new release on GitHub
+
+## Updating dependencies
+
+Updating dependencies is more complex than `go get -u ./...` until our
+direct dependency Psiphon migrates to `go.mod`. In turn, they cannot
+migrate to `go.mod` until they have support for that in `gomobile`. In
+turn `gomobile` with `go.mod` [is in progress](
+https://github.com/golang/go/issues/27234). So, we expect to use this
+procedure for updating for a few months.
+
+To update direct dependencies use:
+
+```bash
+for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
+  go get -u -v $name;                                             \
+done
+```
+
+Then update Psiphon. We track the `staging-client` branch. Find the commit
+hash of such branch and then run:
+
+```bash
+go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
+```
+
+Then you need to clone `psiphon-tunnel-core` and generate a `go.mod` for
+it by running `go mod init && go mod tidy` in its toplevel dir.
+
+Lastly, generate the commands to update using this script:
+
+```Python
+import distutils.version
+import sys
+
+def slurp(path):
+    deps = {}
+    with open(path, "r") as filep:
+        for line in filep:
+            if not line.startswith("\t"):
+                continue
+            line = line.strip()
+            if "// indirect" in line:
+                index = line.find("// indirect")
+                line = line[:index]
+                line = line.strip()
+            name, version = line.strip().split()
+            deps[name] = version
+    return deps
+
+def main():
+    if len(sys.argv) != 3:
+        sys.exit("usage: %s /our/go.mod /psiphon/go.mod" % sys.argv[0])
+    ourdict = slurp(sys.argv[1])
+    theirdict = slurp(sys.argv[2])
+    for key in theirdict:
+        if key not in ourdict:
+            continue
+        ourver = distutils.version.LooseVersion(ourdict[key])
+        theirver = distutils.version.LooseVersion(theirdict[key])
+        if theirver <= ourver:
+            continue
+        print("#", key, theirdict[key], ourdict[key])
+        print("go get -v %s@%s" % (key, theirdict[key]))
+
+if __name__ == "__main__":
+    main()
+```
+
+Run the emitted commands and finally `go mod tidy`.
