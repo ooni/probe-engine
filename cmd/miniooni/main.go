@@ -224,15 +224,16 @@ func main() {
 	if builder.NeedsInput() {
 		if len(globalOptions.inputs) <= 0 {
 			log.Info("Fetching test lists")
-			config := sess.NewTestListsConfig()
-			config.Limit = 16
-			client := sess.NewTestListsClient()
-			list, err := client.Fetch(config)
+			config := &engine.TestListsURLsConfig{}
+			config.SetLimit(16)
+			list, err := sess.QueryTestListsURLs(config)
 			if err != nil {
 				log.WithError(err).Fatal("cannot fetch test lists")
 			}
-			for _, entry := range list {
-				globalOptions.inputs = append(globalOptions.inputs, entry.URL())
+			for idx := int64(0); idx < list.Count(); idx++ {
+				globalOptions.inputs = append(
+					globalOptions.inputs, list.At(idx).URL(),
+				)
 			}
 		}
 	} else if len(globalOptions.inputs) != 0 {
