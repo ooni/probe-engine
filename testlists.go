@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/urls"
+	"github.com/ooni/probe-engine/model"
 )
 
 // TestListsURLsConfig config config for test-lists/urls API.
@@ -23,7 +24,7 @@ func (c *TestListsURLsConfig) AddCategory(s string) {
 // TestListsURLsResult contains the results of calling the
 // test-lists/urls OONI orchestra API.
 type TestListsURLsResult struct {
-	Result []TestListsURLInfo
+	Result []model.URLInfo
 }
 
 // Count returns the number of returned URLs
@@ -32,11 +33,11 @@ func (r *TestListsURLsResult) Count() int64 {
 }
 
 // At returns the URL at the given index or nil
-func (r *TestListsURLsResult) At(idx int64) TestListsURLInfo {
-	if idx < 0 || idx >= int64(len(r.Result)) {
-		return nil
+func (r *TestListsURLsResult) At(idx int64) (out model.URLInfo) {
+	if idx >= 0 && idx < int64(len(r.Result)) {
+		out = r.Result[int(idx)]
 	}
-	return r.Result[int(idx)]
+	return
 }
 
 // QueryTestListsURLs queries the test-lists/urls API.
@@ -62,32 +63,5 @@ func (sess *Session) QueryTestListsURLs(
 	if err != nil {
 		return nil, err
 	}
-	out := new(TestListsURLsResult)
-	for _, entry := range result.Results {
-		out.Result = append(out.Result, &urlinfo{u: entry})
-	}
-	return out, nil
-}
-
-// TestListsURLInfo contains info about URLs
-type TestListsURLInfo interface {
-	CategoryCode() string
-	CountryCode() string
-	URL() string
-}
-
-type urlinfo struct {
-	u urls.URLInfo
-}
-
-func (u *urlinfo) URL() string {
-	return u.u.URL
-}
-
-func (u *urlinfo) CategoryCode() string {
-	return u.u.CategoryCode
-}
-
-func (u *urlinfo) CountryCode() string {
-	return u.u.CountryCode
+	return &TestListsURLsResult{Result: result.Results}, nil
 }

@@ -215,3 +215,10 @@ const (
 
 // DefaultProbeASNString is the default probe ASN as a string.
 var DefaultProbeASNString = fmt.Sprintf("AS%d", DefaultProbeASN)
+
+// URLInfo contains info on a test lists URL
+type URLInfo struct {
+	CategoryCode string `json:"category_code"`
+	CountryCode  string `json:"country_code"`
+	URL          string `json:"url"`
+}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ooni/probe-engine/httpx/jsonapi"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Config contains configs for querying tests-lists/urls
@@ -25,14 +26,7 @@ type Config struct {
 
 // Result contains the result returned by tests-lists/urls
 type Result struct {
-	Results []URLInfo `json:"results"`
-}
-
-// URLInfo contains the URL and the citizenlab category code for that URL
-type URLInfo struct {
-	CategoryCode string `json:"category_code"`
-	CountryCode  string `json:"country_code"`
-	URL          string `json:"url"`
+	Results []model.URLInfo `json:"results"`
 }
 
 // Query retrieves the test list for the specified country.

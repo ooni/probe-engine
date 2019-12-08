@@ -18,24 +18,15 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	}
 	for idx := int64(0); idx < result.Count(); idx++ {
 		entry := result.At(idx)
-		if entry == nil {
-			t.Fatal("expected non-nil entry here")
-		}
-		if entry.URL() == "" {
+		if entry.URL == "" {
 			t.Fatal("expected non empty URL here")
 		}
-		if entry.CategoryCode() != "NEWS" {
+		if entry.CategoryCode != "NEWS" {
 			t.Fatal("expected another category here")
 		}
-		if entry.CountryCode() == "" {
+		if entry.CountryCode == "" {
 			t.Fatal("expected non empty country-code here")
 		}
-	}
-	if result.At(-1) != nil {
-		t.Fatal("unexpected value for negative index")
-	}
-	if result.At(result.Count()) != nil {
-		t.Fatal("unexpected value for too large index")
 	}
 }
 

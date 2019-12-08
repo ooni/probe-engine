@@ -231,7 +231,7 @@ func main() {
 				log.WithError(err).Fatal("cannot fetch test lists")
 			}
 			for _, entry := range list.Result {
-				globalOptions.inputs = append(globalOptions.inputs, entry.URL())
+				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
 			}
 		}
 	} else if len(globalOptions.inputs) != 0 {
