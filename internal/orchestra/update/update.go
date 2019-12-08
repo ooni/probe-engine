@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/log"
 )
 
-// Config contains configs for registering to OONI orchestra.
+// Config contains configs for calling the update API.
 type Config struct {
 	Auth       *login.Auth
 	BaseURL    string
