@@ -18,6 +18,9 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	}
 	for idx := int64(0); idx < result.Count(); idx++ {
 		entry := result.At(idx)
+		if entry == nil {
+			t.Fatal("expecyed non-nil entry here")
+		}
 		if entry.URL == "" {
 			t.Fatal("expected non empty URL here")
 		}
@@ -27,6 +30,12 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 		if entry.CountryCode == "" {
 			t.Fatal("expected non empty country-code here")
 		}
+	}
+	if result.At(-1) != nil {
+		t.Fatal("expected nil entry here")
+	}
+	if result.At(result.Count()) != nil {
+		t.Fatal("expected nil entry here")
 	}
 }
 

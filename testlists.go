@@ -33,9 +33,9 @@ func (r *TestListsURLsResult) Count() int64 {
 }
 
 // At returns the URL at the given index or nil
-func (r *TestListsURLsResult) At(idx int64) (out model.URLInfo) {
+func (r *TestListsURLsResult) At(idx int64) (out *model.URLInfo) {
 	if idx >= 0 && idx < int64(len(r.Result)) {
-		out = r.Result[int(idx)]
+		out = &r.Result[int(idx)]
 	}
 	return
 }
