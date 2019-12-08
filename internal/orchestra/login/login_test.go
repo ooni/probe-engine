@@ -1,4 +1,4 @@
-package login
+package login_test
 
 import (
 	"context"
@@ -6,25 +6,16 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/register"
+	"github.com/ooni/probe-engine/internal/orchestra/login"
+	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
-const password = "xx"
-
 func TestIntegrationSuccess(t *testing.T) {
-	clientID, err := doRegister()
+	clientID, err := testorchestra.Register()
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := Do(context.Background(), Config{
-		BaseURL:    "https://ps-test.ooni.io",
-		ClientID:   clientID,
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		Password:   password,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
+	result, err := testorchestra.Login(clientID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +32,7 @@ func TestIntegrationSuccess(t *testing.T) {
 
 func TestIntegrationFailure(t *testing.T) {
 	// This should fail because the username/password is wrong
-	result, err := Do(context.Background(), Config{
+	result, err := login.Do(context.Background(), login.Config{
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -53,28 +44,4 @@ func TestIntegrationFailure(t *testing.T) {
 	if result != nil {
 		t.Fatal("result should be nil here")
 	}
-}
-
-func doRegister() (string, error) {
-	result, err := register.Do(context.Background(), register.Config{
-		BaseURL:    "https://ps-test.ooni.io",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		Metadata: metadata.Metadata{
-			Platform:        "linux",
-			ProbeASN:        "AS15169",
-			ProbeCC:         "US",
-			SoftwareName:    "miniooni",
-			SoftwareVersion: "0.1.0-dev",
-			SupportedTests: []string{
-				"web_connectivity",
-			},
-		},
-		Password:  password,
-		UserAgent: "miniooni/0.1.0-dev",
-	})
-	if err != nil {
-		return "", err
-	}
-	return result.ClientID, nil
 }
