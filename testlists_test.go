@@ -8,7 +8,7 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	sess := newSessionForTesting(t)
 	config := &TestListsURLsConfig{}
 	config.AddCategory("NEWS")
-	config.SetLimit(7)
+	config.Limit = 7
 	result, err := sess.QueryTestListsURLs(config)
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +41,7 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 
 func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
 	sess := newSessionForTesting(t)
-	config := &TestListsURLsConfig{baseURL: "\t"}
+	config := &TestListsURLsConfig{BaseURL: "\t"}
 	result, err := sess.QueryTestListsURLs(config)
 	if err == nil {
 		t.Fatal("expected an error here")
