@@ -17,6 +17,9 @@ import (
 
 // Client is a client for a JSON API.
 type Client struct {
+	// Authorization contains the authorization header.
+	Authorization string
+
 	// BaseURL is the base URL of the API.
 	BaseURL string
 
@@ -30,7 +33,7 @@ type Client struct {
 	UserAgent string
 }
 
-func (c *Client) makePostRequest(
+func (c *Client) makeRequestWithBody(
 	ctx context.Context, method, resourcePath string,
 	query url.Values, body interface{},
 ) (*http.Request, error) {
@@ -62,6 +65,9 @@ func (c *Client) makeRequest(
 	}
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
+	}
+	if c.Authorization != "" {
+		request.Header.Set("Authorization", c.Authorization)
 	}
 	request.Header.Set("User-Agent", c.UserAgent)
 	return request.WithContext(ctx), nil
@@ -116,7 +122,19 @@ func (c *Client) ReadWithQuery(
 func (c *Client) Create(
 	ctx context.Context, resourcePath string, input, output interface{},
 ) error {
-	request, err := c.makePostRequest(ctx, "POST", resourcePath, nil, input)
+	request, err := c.makeRequestWithBody(ctx, "POST", resourcePath, nil, input)
+	if err != nil {
+		return err
+	}
+	return c.do(request, output)
+}
+
+// Update updates a JSON resource at a specific path and returns
+// the error that occurred and possibly an output document
+func (c *Client) Update(
+	ctx context.Context, resourcePath string, input, output interface{},
+) error {
+	request, err := c.makeRequestWithBody(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
