@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/ooni/probe-engine/log"
-	"github.com/ooni/probe-engine/orchestra/testlists"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -122,22 +121,6 @@ func (sess *Session) SetIncludeProbeCC(value bool) {
 // SetIncludeProbeIP controls whether to include the IP
 func (sess *Session) SetIncludeProbeIP(value bool) {
 	sess.session.PrivacySettings.IncludeIP = value
-}
-
-// NewTestListsConfig returns prefilled settings for TestListsClient
-// where in particular we have set the correct country code
-func (sess *Session) NewTestListsConfig() *TestListsConfig {
-	return &TestListsConfig{
-		CountryCode: sess.session.ProbeCC(),
-	}
-}
-
-// NewTestListsClient returns a new TestListsClient that is configured
-// to perform requests in the context of this session
-func (sess *Session) NewTestListsClient() *TestListsClient {
-	return &TestListsClient{
-		client: testlists.NewClient(sess.session),
-	}
 }
 
 // NewExperimentBuilder returns a new experiment builder

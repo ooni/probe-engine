@@ -4,30 +4,60 @@ import (
 	"testing"
 )
 
-func TestLookupTestListsSuccess(t *testing.T) {
+func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	sess := newSessionForTesting(t)
-	config := sess.NewTestListsConfig()
-	config.Limit = 14
-	client := sess.NewTestListsClient()
-	urls, err := client.Fetch(config)
+	config := &TestListsURLsConfig{}
+	config.AddCategory("NEWS")
+	config.Limit = 7
+	result, err := sess.QueryTestListsURLs(config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, url := range urls {
-		t.Logf("%s\t%s\t%s", url.CountryCode(), url.CategoryCode(), url.URL())
+	if result == nil {
+		t.Fatal("expected non nil result")
+	}
+	for idx := int64(0); idx < result.Count(); idx++ {
+		entry := result.At(idx)
+		if entry == nil {
+			t.Fatal("expecyed non-nil entry here")
+		}
+		if entry.URL == "" {
+			t.Fatal("expected non empty URL here")
+		}
+		if entry.CategoryCode != "NEWS" {
+			t.Fatal("expected another category here")
+		}
+		if entry.CountryCode == "" {
+			t.Fatal("expected non empty country-code here")
+		}
+	}
+	if result.At(-1) != nil {
+		t.Fatal("expected nil entry here")
+	}
+	if result.At(result.Count()) != nil {
+		t.Fatal("expected nil entry here")
 	}
 }
 
-func TestLookupTestListsFailure(t *testing.T) {
+func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
 	sess := newSessionForTesting(t)
-	config := sess.NewTestListsConfig()
-	config.BaseURL = "\t"
-	client := sess.NewTestListsClient()
-	urls, err := client.Fetch(config)
+	config := &TestListsURLsConfig{BaseURL: "\t"}
+	result, err := sess.QueryTestListsURLs(config)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if urls != nil {
-		t.Fatal("expected nil urls")
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestUnitQueryTestListsURLsNilConfig(t *testing.T) {
+	sess := newSessionForTesting(t)
+	result, err := sess.QueryTestListsURLs(nil)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
 	}
 }
