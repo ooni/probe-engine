@@ -35,11 +35,13 @@ func Register() (string, error) {
 // information on success, and an error on failure.
 func Login(clientID string) (*login.Auth, error) {
 	return login.Do(context.Background(), login.Config{
-		BaseURL:    "https://ps-test.ooni.io",
-		ClientID:   clientID,
+		BaseURL: "https://ps-test.ooni.io",
+		Credentials: login.Credentials{
+			ClientID: clientID,
+			Password: password,
+		},
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		Password:   password,
 		UserAgent:  "miniooni/0.1.0-dev",
 	})
 }

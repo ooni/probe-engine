@@ -12,16 +12,16 @@ import (
 
 // Config contains configs for logging in with the OONI orchestra.
 type Config struct {
-	BaseURL    string
-	ClientID   string
-	HTTPClient *http.Client
-	Logger     log.Logger
-	Password   string
-	UserAgent  string
+	BaseURL     string
+	Credentials Credentials
+	HTTPClient  *http.Client
+	Logger      log.Logger
+	UserAgent   string
 }
 
-type request struct {
-	Username string `json:"username"`
+// Credentials contains the login credentials
+type Credentials struct {
+	ClientID string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -33,17 +33,13 @@ type Auth struct {
 
 // Do logs this probe in with OONI orchestra
 func Do(ctx context.Context, config Config) (*Auth, error) {
-	req := &request{
-		Password: config.Password,
-		Username: config.ClientID,
-	}
 	var resp Auth
 	err := (&jsonapi.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
-	}).Create(ctx, "/api/v1/login", req, &resp)
+	}).Create(ctx, "/api/v1/login", config.Credentials, &resp)
 	if err != nil {
 		return nil, err
 	}
