@@ -9,6 +9,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/register"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/update"
 )
 
@@ -21,7 +22,7 @@ func Register() (string, error) {
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		Metadata:   metadataFixture(),
+		Metadata:   MetadataFixture(),
 		Password:   password,
 		UserAgent:  "miniooni/0.1.0-dev",
 	})
@@ -54,12 +55,13 @@ func Update(auth *login.Auth, clientID string) error {
 		ClientID:   clientID,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		Metadata:   metadataFixture(),
+		Metadata:   MetadataFixture(),
 		UserAgent:  "miniooni/0.1.0-dev",
 	})
 }
 
-func metadataFixture() metadata.Metadata {
+// MetadataFixture returns a valid metadata struct
+func MetadataFixture() metadata.Metadata {
 	return metadata.Metadata{
 		Platform:        "linux",
 		ProbeASN:        "AS15169",
@@ -70,4 +72,21 @@ func metadataFixture() metadata.Metadata {
 			"web_connectivity",
 		},
 	}
+}
+
+// StateFileFake is a fake state file
+type StateFileFake struct {
+	GetState *statefile.State
+	GetError error
+	SetError error
+}
+
+// Set overrides the current state
+func (sf *StateFileFake) Set(s *statefile.State) error {
+	return nil
+}
+
+// Get returns the current state
+func (sf *StateFileFake) Get() (*statefile.State, error) {
+	return sf.GetState, sf.GetError
 }
