@@ -30,7 +30,7 @@ type Result struct {
 }
 
 // Query retrieves the test list for the specified country.
-func Query(ctx context.Context, config Config) (response Result, err error) {
+func Query(ctx context.Context, config Config) (*Result, error) {
 	query := url.Values{}
 	if config.CountryCode != "" {
 		query.Set("probe_cc", config.CountryCode)
@@ -41,11 +41,15 @@ func Query(ctx context.Context, config Config) (response Result, err error) {
 	if len(config.EnabledCategories) > 0 {
 		query.Set("category_codes", strings.Join(config.EnabledCategories, ","))
 	}
-	err = (&jsonapi.Client{
+	var response Result
+	err := (&jsonapi.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
 	}).ReadWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
-	return
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
