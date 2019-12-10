@@ -7,7 +7,7 @@ type Metadata struct {
 	AvailableBandwidth string   `json:"available_bandwidth,omitempty"`
 	DeviceToken        string   `json:"device_token,omitempty"`
 	Language           string   `json:"language,omitempty"`
-	NetworkType        string   `json:"network_type"`
+	NetworkType        string   `json:"network_type,omitempty"`
 	Platform           string   `json:"platform"`
 	ProbeASN           string   `json:"probe_asn"`
 	ProbeCC            string   `json:"probe_cc"`
