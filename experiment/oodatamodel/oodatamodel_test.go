@@ -270,8 +270,8 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 	}
 }
 
-func TestMarshalMaybeBinaryValueString(t *testing.T) {
-	mbv := oodatamodel.MaybeBinaryValue{
+func TestMarshalHTTPBodyString(t *testing.T) {
+	mbv := oodatamodel.HTTPBody{
 		Value: "1234",
 	}
 	data, err := json.Marshal(mbv)
@@ -283,7 +283,7 @@ func TestMarshalMaybeBinaryValueString(t *testing.T) {
 	}
 }
 
-func TestMarshalMaybeBinaryValueBinary(t *testing.T) {
+func TestMarshalHTTPBodyBinary(t *testing.T) {
 	input := []uint8{
 		0x57, 0xe5, 0x79, 0xfb, 0xa6, 0xbb, 0x0d, 0xbc, 0xce, 0xbd, 0xa7, 0xa0,
 		0xba, 0xa4, 0x78, 0x78, 0x12, 0x59, 0xee, 0x68, 0x39, 0xa4, 0x07, 0x98,
@@ -297,14 +297,13 @@ func TestMarshalMaybeBinaryValueBinary(t *testing.T) {
 		0x80, 0xcf, 0x86, 0xf9, 0x5f, 0x9d, 0x8c, 0xab, 0xf5, 0xc5, 0x74, 0x24,
 		0x3a, 0xa2, 0xd4, 0x40, 0x4e, 0xd7, 0x10, 0x1f,
 	}
-	mbv := oodatamodel.MaybeBinaryValue{
+	mbv := oodatamodel.HTTPBody{
 		Value: string(input),
 	}
 	data, err := json.Marshal(mbv)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(string(data))
 	if !bytes.Equal(data, []byte(`{"data":"V+V5+6a7DbzOvaeguqR4eBJZ7mg5pAeYxT68Vcv+NDx+G1qzIp3BLW7KW/EQJUceROItYAjqsArMBUig9Xg48Ns/nZ8lb4kAlpOvQ6xNyawT2yK+en3ZJKJSadiJwdFXqgQrotixGfbVETm7gM+G+V+djKv1xXQkOqLUQE7XEB8=","format":"base64"}`)) {
 		t.Fatal("result is unexpected")
 	}

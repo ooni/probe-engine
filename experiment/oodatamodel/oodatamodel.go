@@ -82,8 +82,10 @@ func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(er)
 }
 
-// HTTPBody is an HTTP body.
-type HTTPBody MaybeBinaryValue
+// HTTPBody is an HTTP body. As an implementation note, this type must be
+// an alias for the MaybeBinaryValue type, otherwise the specific serialisation
+// mechanism implemented by MaybeBinaryValue is not working.
+type HTTPBody = MaybeBinaryValue
 
 // HTTPHeaders contains HTTP headers.
 type HTTPHeaders map[string]MaybeBinaryValue
