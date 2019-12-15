@@ -8,7 +8,7 @@ import (
 func TestIntegration(t *testing.T) {
 	var expected bool
 	switch Name() {
-	case "android", "ios", "linux", "windows":
+	case "android", "ios", "linux", "macos", "windows":
 		expected = true
 	}
 	if !expected {

@@ -76,6 +76,7 @@ func newSessionForTesting(t *testing.T) *Session {
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
 	}
+	log.Infof("Platform: %s", sess.Platform())
 	log.Infof("ProbeASN: %d", sess.ProbeASN())
 	log.Infof("ProbeASNString: %s", sess.ProbeASNString())
 	log.Infof("ProbeCC: %s", sess.ProbeCC())
