@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/session"
 )
@@ -75,6 +76,22 @@ func (sess *Session) MaybeLookupLocation() error {
 // MaybeLookupBackends is a caching OONI backends lookup call.
 func (sess *Session) MaybeLookupBackends() error {
 	return sess.session.MaybeLookupBackends(context.Background())
+}
+
+// Platform returns the current platform. The platform is one of:
+//
+// - android
+// - ios
+// - linux
+// - macos
+// - windows
+// - unknown
+//
+// When running on the iOS simulator, the returned platform is
+// macos rather than ios if CGO is disabled. This is a known issue,
+// that however should have a very limited impact.
+func (sess *Session) Platform() string {
+	return platform.Name()
 }
 
 // ProbeASN returns the ASN of the probe's network.
