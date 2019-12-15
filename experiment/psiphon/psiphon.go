@@ -44,6 +44,10 @@ type TestKeys struct {
 	// Failure contains the failure that occurred.
 	Failure *string `json:"failure"`
 
+	// MaxRuntime is the number of seconds after which we
+	// interrupt the psiphon experiment.
+	MaxRuntime float64 `json:"max_runtime"`
+
 	// Requests contains HTTP measurements
 	Requests oodatamodel.RequestList `json:"requests"`
 
@@ -202,6 +206,7 @@ func (m *measurer) measure(
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
 	r := newRunner(m.config, callbacks)
 	measurement.TestKeys = r.testkeys
+	r.testkeys.MaxRuntime = maxruntime
 	err := r.run(ctx, sess.Logger)
 	cancel()
 	wg.Wait()
