@@ -15,13 +15,17 @@ import "runtime"
 //
 // The android, ios, linux, macos, windows, and unknown strings are
 // also returned by Measurement Kit. As a known bug, the detection of
-// darwin-based systems relies on the architecture. It returns "ios"
-// when using arm{,64} and "macos" when using x86{,_64}.
+// darwin-based systems relies on the architecture, when CGO support
+// has been disabled. In such case, the code will return "ios" when
+// using arm{,64} and "macos" when using x86{,_64}.
 func Name() string {
-	return name(runtime.GOOS, runtime.GOARCH)
+	if name := cgoname(); name != "unknown" {
+		return name
+	}
+	return puregoname(runtime.GOOS, runtime.GOARCH)
 }
 
-func name(goos, goarch string) string {
+func puregoname(goos, goarch string) string {
 	switch goos {
 	case "android", "linux", "windows":
 		return goos
@@ -32,9 +36,6 @@ func name(goos, goarch string) string {
 }
 
 func detectDarwin(goarch string) string {
-	// TODO(bassosimone): consider copying more precise detection from
-	// Measurement Kit. Though, using architecture to detect ios vs macos
-	// does not seem to be an issue, except for the simulator.
 	switch goarch {
 	case "386", "amd64":
 		return "macos"

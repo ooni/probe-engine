@@ -16,7 +16,7 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-func TestUnit(t *testing.T) {
+func TestUnitPuregoname(t *testing.T) {
 	var runtimevariables = []struct {
 		expected string
 		goarch   string
@@ -60,7 +60,7 @@ func TestUnit(t *testing.T) {
 	}}
 	for _, v := range runtimevariables {
 		t.Run(fmt.Sprintf("with %s/%s", v.goos, v.goarch), func(t *testing.T) {
-			if name(v.goos, v.goarch) != v.expected {
+			if puregoname(v.goos, v.goarch) != v.expected {
 				t.Fatal("unexpected results")
 			}
 		})

@@ -88,9 +88,8 @@ func (sess *Session) MaybeLookupBackends() error {
 // - unknown
 //
 // When running on the iOS simulator, the returned platform is
-// macos rather than ios. This is a known issue. However, a mobile
-// app should already know what platform it is running on, hence
-// the impact of this issue is most likely limited.
+// macos rather than ios if CGO is disabled. This is a known issue,
+// that however should have a very limited impact.
 func (sess *Session) Platform() string {
 	return platform.Name()
 }
