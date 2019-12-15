@@ -43,7 +43,7 @@ type Simple struct {
 // TestKeys contains the test keys
 type TestKeys struct {
 	Simple       Simple                      `json:"simple"`
-	Failure      string                      `json:"failure"`
+	Failure      *string                     `json:"failure"`
 	ReceiverData []neubotModel.ClientResults `json:"receiver_data"`
 }
 
@@ -161,12 +161,14 @@ func (tk *TestKeys) printSummary(logger log.Logger) {
 func (r *runner) do(ctx context.Context) error {
 	err := r.loop(ctx)
 	if err != nil {
-		r.tk.Failure = err.Error()
+		s := err.Error()
+		r.tk.Failure = &s
 		return err
 	}
 	err = r.tk.analyze()
 	if err != nil {
-		r.tk.Failure = err.Error()
+		s := err.Error()
+		r.tk.Failure = &s
 		return err
 	}
 	r.callbacks.OnProgress(1, "done")
