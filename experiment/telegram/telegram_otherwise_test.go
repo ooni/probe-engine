@@ -151,7 +151,8 @@ func TestUnitProcessallWithMixedResults(t *testing.T) {
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
-				Error: nil,
+				Error:      nil,
+				StatusCode: 200,
 			},
 		},
 	})
