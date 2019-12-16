@@ -32,13 +32,13 @@ require (
 	github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/m-lab/go v1.1.0
+	github.com/m-lab/go v1.2.0
 	github.com/m-lab/ndt-server v0.13.4 // indirect
 	github.com/m-lab/ndt7-client-go v0.1.0
 	github.com/m-lab/tcp-info v1.3.0 // indirect
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/montanaflynn/stats v0.5.0
-	github.com/neubot/dash v0.4.0
+	github.com/neubot/dash v0.4.1
 	github.com/ooni/netx v0.0.0-20191203103428-8b6135339b03
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
