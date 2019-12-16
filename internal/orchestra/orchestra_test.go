@@ -2,6 +2,7 @@ package orchestra
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -15,7 +16,6 @@ import (
 
 func TestIntegrationUpdate(t *testing.T) {
 	clnt := newclient()
-	log.SetLevel(log.DebugLevel)
 	if err := clnt.MaybeRegister(
 		context.Background(),
 		testorchestra.MetadataFixture(),
@@ -233,6 +233,44 @@ func TestUnitUpdate(t *testing.T) {
 			t.Fatal("expected an error here")
 		}
 	})
+}
+
+func TestIntegrationFetchPsiphonConfig(t *testing.T) {
+	clnt := newclient()
+	if err := clnt.MaybeRegister(
+		context.Background(),
+		testorchestra.MetadataFixture(),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := clnt.MaybeLogin(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	data, err := clnt.FetchPsiphonConfig(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUnitGetPsiphonConfigNotRegistered(t *testing.T) {
+	clnt := newclient()
+	state := statefile.State{
+		// Explicitly empty so the test is more clear
+	}
+	if err := clnt.StateFile.Set(&state); err != nil {
+		t.Fatal(err)
+	}
+	data, err := clnt.FetchPsiphonConfig(context.Background())
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if data != nil {
+		t.Fatal("expected nil data here")
+	}
 }
 
 func newclient() *Client {
