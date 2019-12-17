@@ -50,7 +50,7 @@ func measure(
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
 	time.Sleep(time.Duration(config.SleepTime))
-	callbacks.OnProgress(100, config.Message)
+	callbacks.OnProgress(1.0, config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err
 }

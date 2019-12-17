@@ -5,12 +5,16 @@ package psiphon
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -36,27 +40,15 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	err := m.measure(
-		ctx, &session.Session{Logger: log.Log},
+		ctx, newsession(),
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "controller.Run exited unexpectedly") {
+	if !strings.HasSuffix(err.Error(), "All IP lookuppers failed") {
 		t.Fatal("not the error we expected")
-	}
-}
-
-func TestUnitReadConfig(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
-	r.config.ConfigFilePath = "../../testdata/nonexistent_config.json"
-	configJSON, err := r.readconfig()
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if configJSON != nil {
-		t.Fatal("expected nil configJSON")
 	}
 }
 
@@ -102,12 +94,14 @@ func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
 	}
 }
 
-func TestUnitRunReadconfigError(t *testing.T) {
+func TestUnitRunFetchPsiphonConfigError(t *testing.T) {
 	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
-	r.config.ConfigFilePath = "../../testdata/nonexistent_config.json"
-	err := r.run(context.Background(), log.Log)
-	if err == nil {
-		t.Fatal("expected an error here")
+	expected := errors.New("mocked error")
+	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
+		return nil, expected
+	})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -117,18 +111,51 @@ func TestUnitRunMakeworkingdirError(t *testing.T) {
 	r.osRemoveAll = func(path string) error {
 		return expected
 	}
-	err := r.run(context.Background(), log.Log)
+	clnt, err := newclient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = r.run(context.Background(), log.Log, clnt.FetchPsiphonConfig)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
 }
 
+func TestUnitRunStartTunnelError(t *testing.T) {
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
+		return []byte("{"), nil
+	})
+	if !strings.HasSuffix(err.Error(), "unexpected end of JSON input") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func newclient() (*orchestra.Client, error) {
+	clnt := orchestra.NewClient(
+		http.DefaultClient,
+		log.Log,
+		"miniooni/0.1.0-dev",
+		statefile.NewMemory("/tmp"),
+	)
+	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	ctx := context.Background()
+	meta := testorchestra.MetadataFixture()
+	if err := clnt.MaybeRegister(ctx, meta); err != nil {
+		return nil, err
+	}
+	if err := clnt.MaybeLogin(ctx); err != nil {
+		return nil, err
+	}
+	return clnt, nil
+}
+
 func TestIntegration(t *testing.T) {
 	m := &measurer{config: makeconfig()}
-	sess := &session.Session{Logger: log.Log}
 	if err := m.measure(
 		context.Background(),
-		sess,
+		newsession(),
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	); err != nil {
@@ -148,7 +175,17 @@ func TestUnitUsetunnel(t *testing.T) {
 
 func makeconfig() Config {
 	return Config{
-		ConfigFilePath: "../../testdata/psiphon_config.json",
-		WorkDir:        "../../testdata/psiphon_unit_tests",
+		WorkDir: "../../testdata/psiphon_unit_tests",
 	}
+}
+
+func newsession() *session.Session {
+	return session.New(
+		log.Log,
+		"miniooni",
+		"0.1.0-dev",
+		"../../testdata",
+		nil, nil,
+		"../../testdata",
+	)
 }

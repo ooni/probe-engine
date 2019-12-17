@@ -1,16 +1,19 @@
-package session_test
+package session
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -21,7 +24,7 @@ const (
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	sess := session.New(
+	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
 		"../../testdata/",
 	)
@@ -51,6 +54,25 @@ func TestIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if sess.ProbeASNString() == model.DefaultProbeASNString {
+		t.Fatal("unexpected ProbeASNString")
+	}
+	if sess.ProbeASN() == model.DefaultProbeASN {
+		t.Fatal("unexpected ProbeASN")
+	}
+	if sess.ProbeCC() == model.DefaultProbeCC {
+		t.Fatal("unexpected ProbeCC")
+	}
+	if sess.ProbeIP() == model.DefaultProbeIP {
+		t.Fatal("unexpected ProbeIP")
+	}
+	if sess.ProbeNetworkName() == model.DefaultProbeNetworkName {
+		t.Fatal("unexpected ProbeNetworkName")
+	}
+	if sess.ResolverIP() == model.DefaultResolverIP {
+		t.Fatal("unexpected ResolverIP")
+	}
+
 	readfile := func(path string) (err error) {
 		_, err = ioutil.ReadFile(path)
 		return
@@ -74,6 +96,87 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
+func TestIntegrationNewOrchestraClient(t *testing.T) {
+	ctx := context.Background()
+	sess := New(
+		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
+	)
+	clnt, err := sess.NewOrchestraClient(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if clnt == nil {
+		t.Fatal("expected non nil client here")
+	}
+}
+
+func TestUnitNewOrchestraMaybeLookupLocationError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	sess := New(
+		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
+	)
+	clnt, err := sess.NewOrchestraClient(ctx)
+	if !strings.HasSuffix(err.Error(), "All IP lookuppers failed") {
+		t.Fatal("not the error we expected")
+	}
+	if clnt != nil {
+		t.Fatal("expected nil client here")
+	}
+}
+
+func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	sess := New(
+		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
+	)
+	clnt := orchestra.NewClient(
+		sess.HTTPDefaultClient,
+		sess.Logger,
+		sess.UserAgent(),
+		statefile.NewMemory(sess.AssetsDir),
+	)
+	outclnt, err := sess.initOrchestraClient(
+		ctx, clnt, clnt.MaybeLogin,
+	)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if outclnt != nil {
+		t.Fatal("expected a nil client here")
+	}
+}
+
+func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
+	ctx := context.Background()
+	sess := New(
+		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		"../../testdata/",
+	)
+	clnt := orchestra.NewClient(
+		sess.HTTPDefaultClient,
+		sess.Logger,
+		sess.UserAgent(),
+		statefile.NewMemory(sess.AssetsDir),
+	)
+	expected := errors.New("mocked error")
+	outclnt, err := sess.initOrchestraClient(
+		ctx, clnt, func(context.Context) error {
+			return expected
+		},
+	)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if outclnt != nil {
+		t.Fatal("expected a nil client here")
+	}
+}
+
 func TestBouncerError(t *testing.T) {
 	// Combine proxy testing with a broken proxy with errors
 	// in reaching out to the bouncer.
@@ -91,7 +194,7 @@ func TestBouncerError(t *testing.T) {
 
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	sess := session.New(
+	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", URL, nil,
 		"../../testdata/",
 	)
@@ -108,11 +211,29 @@ func TestLookupLocationError(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause operations to fail
-	sess := session.New(
+	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
 		"../../testdata/",
 	)
 	if err := sess.MaybeLookupLocation(ctx); err == nil {
 		t.Fatal("expected an error here")
+	}
+	if sess.ProbeASNString() != model.DefaultProbeASNString {
+		t.Fatal("unexpected ProbeASNString")
+	}
+	if sess.ProbeASN() != model.DefaultProbeASN {
+		t.Fatal("unexpected ProbeASN")
+	}
+	if sess.ProbeCC() != model.DefaultProbeCC {
+		t.Fatal("unexpected ProbeCC")
+	}
+	if sess.ProbeIP() != model.DefaultProbeIP {
+		t.Fatal("unexpected ProbeIP")
+	}
+	if sess.ProbeNetworkName() != model.DefaultProbeNetworkName {
+		t.Fatal("unexpected ProbeNetworkName")
+	}
+	if sess.ResolverIP() != model.DefaultResolverIP {
+		t.Fatal("unexpected ResolverIP")
 	}
 }

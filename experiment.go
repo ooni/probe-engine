@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"path/filepath"
 	"reflect"
 	"time"
 
@@ -348,9 +347,6 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				return psiphon.NewExperiment(session.session, *config.(*psiphon.Config))
 			},
 			config: &psiphon.Config{
-				ConfigFilePath: filepath.Join(
-					session.session.AssetsDir, "psiphon_config.json",
-				),
 				WorkDir: session.session.TempDir,
 			},
 			needsInput: false,
