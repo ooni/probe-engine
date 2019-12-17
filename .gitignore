@@ -1,5 +1,6 @@
-asn.mmdb
-ca-bundle.pem
-country.mmdb
-miniooni
-report.jsonl
+/asn.mmdb
+/ca-bundle.pem
+/country.mmdb
+/miniooni
+/oonipsiphon/
+/report.jsonl

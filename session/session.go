@@ -16,6 +16,10 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/metadata"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/resources"
@@ -189,6 +193,56 @@ func (s *Session) ResolverIP() string {
 		ip = s.location.ResolverIP
 	}
 	return ip
+}
+
+func (s *Session) initOrchestraClient(
+	ctx context.Context,
+	clnt *orchestra.Client,
+	maybeLogin func(ctx context.Context) error,
+) (*orchestra.Client, error) {
+	meta := metadata.Metadata{
+		Platform:        platform.Name(),
+		ProbeASN:        s.ProbeASNString(),
+		ProbeCC:         s.ProbeCC(),
+		SoftwareName:    s.SoftwareName,
+		SoftwareVersion: s.SoftwareVersion,
+		SupportedTests: []string{
+			// TODO(bassosimone): do we need to declare more tests
+			// here? I believe we're not using this functionality of
+			// orchestra for now. Plus, we can always change later.
+			"web_connectivity",
+		},
+	}
+	if err := clnt.MaybeRegister(ctx, meta); err != nil {
+		return nil, err
+	}
+	if err := maybeLogin(ctx); err != nil {
+		return nil, err
+	}
+	return clnt, nil
+}
+
+// NewOrchestraClient creates a new orchestra client. This client is registered
+// and logged in with the OONI orchestra. An error is returned on failure.
+func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, error) {
+	clnt := orchestra.NewClient(
+		s.HTTPDefaultClient,
+		s.Logger,
+		s.UserAgent(),
+		statefile.NewMemory(s.AssetsDir),
+	)
+	// Make sure we have location info so we can fill metadata
+	if err := s.MaybeLookupLocation(ctx); err != nil {
+		return nil, err
+	}
+	// TODO(bassosimone): until we implement persistent storage
+	// it is advisable to use the testing service. The related
+	// tracking GitHub issue is ooni/probe-engine#164.
+	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	return s.initOrchestraClient(
+		ctx, clnt, clnt.MaybeLogin,
+	)
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {

@@ -9,9 +9,6 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
-	// ConfigFilePath is the path where Psiphon config file is located.
-	ConfigFilePath string `ooni:"configuration file path"`
-
 	// WorkDir is the directory where Psiphon should store
 	// its configuration database.
 	WorkDir string `ooni:"experiment working directory"`

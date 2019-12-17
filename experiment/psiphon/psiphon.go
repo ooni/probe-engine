@@ -75,14 +75,6 @@ func newRunner(config Config, callbacks handler.Callbacks) *runner {
 	}
 }
 
-func (r *runner) readconfig() ([]byte, error) {
-	configJSON, err := r.ioutilReadFile(r.config.ConfigFilePath)
-	if err != nil {
-		return nil, err
-	}
-	return configJSON, nil
-}
-
 func (r *runner) makeworkingdir() (string, error) {
 	if r.config.WorkDir == "" {
 		return "", errors.New("WorkDir is empty")
@@ -143,8 +135,12 @@ func (r *runner) usetunnel(
 	return nil
 }
 
-func (r *runner) run(ctx context.Context, logger log.Logger) error {
-	configJSON, err := r.readconfig()
+func (r *runner) run(
+	ctx context.Context,
+	logger log.Logger,
+	fetchPsiphonConfig func(ctx context.Context) ([]byte, error),
+) error {
+	configJSON, err := fetchPsiphonConfig(ctx)
 	if err != nil {
 		s := err.Error()
 		r.testkeys.Failure = &s
@@ -199,6 +195,10 @@ func (m *measurer) measure(
 	ctx context.Context, sess *session.Session,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
+	clnt, err := sess.NewOrchestraClient(ctx)
+	if err != nil {
+		return err
+	}
 	const maxruntime = 60
 	ctx, cancel := context.WithTimeout(ctx, maxruntime*time.Second)
 	var wg sync.WaitGroup
@@ -207,7 +207,7 @@ func (m *measurer) measure(
 	r := newRunner(m.config, callbacks)
 	measurement.TestKeys = r.testkeys
 	r.testkeys.MaxRuntime = maxruntime
-	err := r.run(ctx, sess.Logger)
+	err = r.run(ctx, sess.Logger, clnt.FetchPsiphonConfig)
 	cancel()
 	wg.Wait()
 	return err
