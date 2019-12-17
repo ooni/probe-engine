@@ -1,5 +1,7 @@
 /asn.mmdb
 /ca-bundle.pem
 /country.mmdb
+/enginetests*/
 /oonipsiphon
 /psiphon_config.json
+/psiphon_unit_tests/

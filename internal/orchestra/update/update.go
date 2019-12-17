@@ -33,10 +33,6 @@ func Do(ctx context.Context, config Config) error {
 	if config.Auth == nil {
 		return errors.New("config.Auth is nil")
 	}
-	// TODO(bassosimone): we should improve the codebase to avoid
-	// assuming that the token isn't expired, even though the default
-	// expire time is currently compatible with logging in at the
-	// beginning of every session and ignore this fact.
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
 	req := &request{Metadata: config.Metadata}
 	var resp struct{}

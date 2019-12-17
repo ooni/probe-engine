@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/register"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/update"
 	"github.com/ooni/probe-engine/log"
 )
@@ -113,6 +114,22 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	return c.StateFile.Set(state)
 }
 
+func (c *Client) getCredsAndAuth() (*login.Credentials, *login.Auth, error) {
+	state, err := c.StateFile.Get()
+	if err != nil {
+		return nil, nil, err
+	}
+	creds := state.Credentials()
+	if creds == nil {
+		return nil, nil, errNotRegistered
+	}
+	auth := state.Auth()
+	if auth == nil {
+		return nil, nil, errNotLoggedIn
+	}
+	return creds, auth, nil
+}
+
 // Update updates the state of a probe
 func (c *Client) Update(
 	ctx context.Context, metadata metadata.Metadata,
@@ -120,17 +137,9 @@ func (c *Client) Update(
 	if !metadata.Valid() {
 		return errInvalidMetadata
 	}
-	state, err := c.StateFile.Get()
+	creds, auth, err := c.getCredsAndAuth()
 	if err != nil {
 		return err
-	}
-	creds := state.Credentials()
-	if creds == nil {
-		return errNotRegistered
-	}
-	auth := state.Auth()
-	if auth == nil {
-		return errNotLoggedIn
 	}
 	return update.Do(context.Background(), update.Config{
 		Auth:       auth,
@@ -139,6 +148,21 @@ func (c *Client) Update(
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		Metadata:   metadata,
+		UserAgent:  c.UserAgent,
+	})
+}
+
+// FetchPsiphonConfig fetches psiphon config from authenticated OONI orchestra.
+func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
+	_, auth, err := c.getCredsAndAuth()
+	if err != nil {
+		return nil, err
+	}
+	return psiphon.Query(ctx, psiphon.Config{
+		Auth:       auth,
+		BaseURL:    c.OrchestraBaseURL,
+		HTTPClient: c.HTTPClient,
+		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,
 	})
 }

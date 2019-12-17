@@ -13,6 +13,9 @@ import (
 
 // Client is a client for fetching resources.
 type Client struct {
+	// Authorization is the authorization header to use.
+	Authorization string
+
 	// HTTPClient is the http client to use.
 	HTTPClient *http.Client
 
@@ -32,6 +35,9 @@ func (c *Client) makeRequest(
 		return nil, err
 	}
 	request.Header.Set("User-Agent", c.UserAgent)
+	if c.Authorization != "" {
+		request.Header.Set("Authorization", c.Authorization)
+	}
 	return request.WithContext(ctx), nil
 }
 
