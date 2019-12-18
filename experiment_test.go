@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/experiment/example"
-	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/measurementkit"
 )
 
