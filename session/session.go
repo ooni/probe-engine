@@ -50,6 +50,9 @@ type Session struct {
 	// HTTPNoProxyClient is a non-proxied HTTP client.
 	HTTPNoProxyClient *http.Client
 
+	// KVStore is a key-value store used by this session.
+	KVStore model.KeyValueStore
+
 	// Logger is the log emitter.
 	Logger log.Logger
 
@@ -102,6 +105,7 @@ type Session struct {
 func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
 	proxy *url.URL, tlsConfig *tls.Config, tempDir string,
+	kvstore model.KeyValueStore,
 ) *Session {
 	return &Session{
 		AssetsDir:     assetsDir,
@@ -117,7 +121,8 @@ func New(
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(
 			logger, nil, tlsConfig,
 		),
-		Logger: logger,
+		KVStore: kvstore,
+		Logger:  logger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,

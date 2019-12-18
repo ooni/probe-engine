@@ -8,6 +8,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/dash"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/session"
 )
@@ -26,7 +27,7 @@ func TestIntegration(t *testing.T) {
 
 	sess := session.New(
 		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupBackends(ctx); err != nil {
 		t.Fatal(err)

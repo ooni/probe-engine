@@ -6,8 +6,10 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -15,6 +17,7 @@ import (
 type SessionConfig struct {
 	AssetsDir       string
 	Logger          log.Logger
+	KVStore         model.KeyValueStore
 	ProxyURL        *url.URL
 	SoftwareName    string
 	SoftwareVersion string
@@ -44,6 +47,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.TempDir == "" {
 		return nil, errors.New("TempDir is empty")
 	}
+	if config.KVStore == nil {
+		config.KVStore = kvstore.NewMemoryKeyValueStore()
+	}
 	sess := session.New(
 		config.Logger,
 		config.SoftwareName,
@@ -52,6 +58,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.ProxyURL,
 		config.TLSConfig,
 		config.TempDir,
+		config.KVStore,
 	)
 	return &Session{session: sess}, nil
 }
