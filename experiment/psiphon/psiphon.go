@@ -40,9 +40,6 @@ type Config struct {
 	WorkDir string `ooni:"experiment working directory"`
 }
 
-// ErrDisabled indicates that we disabled psiphon at compile time
-var ErrDisabled = errors.New("Psiphon disabled at compile time")
-
 // TestKeys contains the experiment's result.
 //
 // This is what will end up into the Measurement.TestKeys field
