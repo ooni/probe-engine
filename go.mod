@@ -31,7 +31,6 @@ require (
 	github.com/grafov/m3u8 v0.6.1 // indirect
 	github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47 // indirect
 	github.com/juju/ratelimit v1.0.1 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/m-lab/go v1.2.0
 	github.com/m-lab/ndt-server v0.13.4 // indirect
 	github.com/m-lab/ndt7-client-go v0.1.0
@@ -44,20 +43,19 @@ require (
 	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
+	github.com/prologic/bitcask v0.3.5
 	github.com/redjack/marionette v0.0.0-20180930054334-5d0d25fc4084 // indirect
 	github.com/refraction-networking/gotapdance v0.0.0-20190930205302-d6cb3725f991 // indirect
 	github.com/refraction-networking/utls v0.0.0-20190909200633-43c36d3c1f57 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sergeyfrolov/bsbuffer v0.0.0-20180903213811-94e85abb8507 // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
-	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
-	go.uber.org/zap v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
+	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect
 	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect
 	golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e // indirect
 )
