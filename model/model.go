@@ -225,6 +225,6 @@ type URLInfo struct {
 
 // KeyValueStore is a key-value store used by the session.
 type KeyValueStore interface {
-	Get(key string) (value string, err error)
-	Set(key, value string) (err error)
+	Get(key string) (value []byte, err error)
+	Set(key string, value []byte) (err error)
 }

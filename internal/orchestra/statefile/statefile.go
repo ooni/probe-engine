@@ -67,7 +67,7 @@ func (sf *StateFile) set(s State, mf func(interface{}) ([]byte, error)) error {
 	if err != nil {
 		return err
 	}
-	return sf.store.Set(sf.key, string(data))
+	return sf.store.Set(sf.key, data)
 }
 
 // Set saves the current state on the key-value store.
@@ -76,7 +76,7 @@ func (sf *StateFile) Set(s State) error {
 }
 
 func (sf *StateFile) get(
-	sfget func(string) (string, error),
+	sfget func(string) ([]byte, error),
 	unmarshal func([]byte, interface{}) error,
 ) (State, error) {
 	value, err := sfget(sf.key)
@@ -84,7 +84,7 @@ func (sf *StateFile) get(
 		return State{}, err
 	}
 	var state State
-	if err := unmarshal([]byte(value), &state); err != nil {
+	if err := unmarshal(value, &state); err != nil {
 		return State{}, err
 	}
 	return state, nil

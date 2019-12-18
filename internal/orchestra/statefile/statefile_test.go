@@ -117,8 +117,8 @@ func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
 		t.Fatal("expected non nil pointer here")
 	}
 	expected := errors.New("mocked error")
-	failingfunc := func(string) (string, error) {
-		return "", expected
+	failingfunc := func(string) ([]byte, error) {
+		return nil, expected
 	}
 	s, err := sf.get(failingfunc, json.Unmarshal)
 	if !errors.Is(err, expected) {

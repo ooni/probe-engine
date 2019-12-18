@@ -150,16 +150,12 @@ type keyValueStoreAdapter struct {
 	db *bitcask.Bitcask
 }
 
-func (kva *keyValueStoreAdapter) Get(key string) (string, error) {
-	value, err := kva.db.Get([]byte(key))
-	if err != nil {
-		return "", err
-	}
-	return string(value), nil
+func (kva *keyValueStoreAdapter) Get(key string) ([]byte, error) {
+	return kva.db.Get([]byte(key))
 }
 
-func (kva *keyValueStoreAdapter) Set(key, value string) error {
-	return kva.db.Put([]byte(key), []byte(value))
+func (kva *keyValueStoreAdapter) Set(key string, value []byte) error {
+	return kva.db.Put([]byte(key), value)
 }
 
 // See https://gist.github.com/miguelmota/f30a04a6d64bd52d7ab59ea8d95e54da

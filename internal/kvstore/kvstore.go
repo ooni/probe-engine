@@ -8,23 +8,23 @@ import (
 
 // MemoryKeyValueStore is an in-memory key-value store
 type MemoryKeyValueStore struct {
-	m  map[string]string
+	m  map[string][]byte
 	mu sync.Mutex
 }
 
 // NewMemoryKeyValueStore creates a new in-memory key-value store
 func NewMemoryKeyValueStore() *MemoryKeyValueStore {
 	return &MemoryKeyValueStore{
-		m: make(map[string]string),
+		m: make(map[string][]byte),
 	}
 }
 
 // Get returns a key from the key value store
-func (kvs *MemoryKeyValueStore) Get(key string) (string, error) {
+func (kvs *MemoryKeyValueStore) Get(key string) ([]byte, error) {
 	var (
 		err   error
 		ok    bool
-		value string
+		value []byte
 	)
 	kvs.mu.Lock()
 	defer kvs.mu.Unlock()
@@ -36,7 +36,7 @@ func (kvs *MemoryKeyValueStore) Get(key string) (string, error) {
 }
 
 // Set sets a key into the key value store
-func (kvs *MemoryKeyValueStore) Set(key, value string) error {
+func (kvs *MemoryKeyValueStore) Set(key string, value []byte) error {
 	kvs.mu.Lock()
 	defer kvs.mu.Unlock()
 	kvs.m[key] = value
