@@ -1,5 +1,3 @@
-// +build !cgo
-
 // Package telegram contains the Telegram network experiment. This file
 // in particular is a pure-Go implementation of that.
 //
