@@ -43,6 +43,15 @@ func TestRunExample(t *testing.T) {
 	runexperimentflow(t, builder.Build())
 }
 
+func TestRunPsiphon(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("psiphon")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build())
+}
+
 func TestRunTelegram(t *testing.T) {
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("telegram")
