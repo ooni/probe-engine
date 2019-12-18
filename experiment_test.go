@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/experiment/example"
-	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/measurementkit"
 )
 
@@ -37,6 +36,15 @@ func TestRunDASH(t *testing.T) {
 func TestRunExample(t *testing.T) {
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build())
+}
+
+func TestRunPsiphon(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("psiphon")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,10 +238,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment) {
 	}
 	measurement, err := experiment.Measure("")
 	if err != nil {
-		if err == psiphon.ErrDisabled {
-			defer experiment.CloseReport()
-			return
-		}
 		t.Fatal(err)
 	}
 	measurement.AddAnnotations(map[string]string{

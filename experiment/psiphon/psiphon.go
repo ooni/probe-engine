@@ -1,5 +1,3 @@
-// +build !nopsiphon
-
 // Package psiphon implements the psiphon network experiment. This
 // implements, in particular, v0.2.0 of the spec.
 //
@@ -29,6 +27,18 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
+
+const (
+	testName    = "psiphon"
+	testVersion = "0.3.0"
+)
+
+// Config contains the experiment's configuration.
+type Config struct {
+	// WorkDir is the directory where Psiphon should store
+	// its configuration database.
+	WorkDir string `ooni:"experiment working directory"`
+}
 
 // TestKeys contains the experiment's result.
 //

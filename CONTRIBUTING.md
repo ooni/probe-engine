@@ -39,9 +39,8 @@ run `go mod tidy` to minimize such changes.
 
 ## Code testing requirements
 
-Make sure all tests pass with `go test -tags nopsiphon ./...` run
-from the top-level directory. Omit `-tags nopsiphon` if you have
-access to the secret required by the Psiphon experiment tests.
+Make sure all tests pass with `go test ./...` run from the
+top-level directory.
 
 ## Writing a new OONI experiment
 
