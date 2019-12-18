@@ -22,14 +22,14 @@ import (
 
 // Client is a client for OONI orchestra
 type Client struct {
-	HTTPClient       *http.Client
-	Logger           log.Logger
-	OrchestraBaseURL string
-	RegistryBaseURL  string
-	StateFile        *statefile.StateFile
-	UserAgent        string
-	registerCalls    int
-	loginCalls       int
+	HTTPClient         *http.Client
+	Logger             log.Logger
+	OrchestrateBaseURL string
+	RegistryBaseURL    string
+	StateFile          *statefile.StateFile
+	UserAgent          string
+	registerCalls      int
+	loginCalls         int
 }
 
 // NewClient creates a new client.
@@ -38,12 +38,12 @@ func NewClient(
 	userAgent string, stateFile *statefile.StateFile,
 ) *Client {
 	return &Client{
-		HTTPClient:       httpClient,
-		Logger:           logger,
-		OrchestraBaseURL: "https://orchestrate.ooni.io",
-		RegistryBaseURL:  "https://registry.ooni.io",
-		StateFile:        stateFile,
-		UserAgent:        userAgent,
+		HTTPClient:         httpClient,
+		Logger:             logger,
+		OrchestrateBaseURL: "https://orchestrate.ooni.io",
+		RegistryBaseURL:    "https://registry.ooni.io",
+		StateFile:          stateFile,
+		UserAgent:          userAgent,
 	}
 }
 
@@ -134,7 +134,7 @@ func (c *Client) Update(
 	}
 	return update.Do(context.Background(), update.Config{
 		Auth:       auth,
-		BaseURL:    c.OrchestraBaseURL,
+		BaseURL:    c.OrchestrateBaseURL,
 		ClientID:   creds.ClientID,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
@@ -151,7 +151,7 @@ func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 	}
 	return psiphon.Query(ctx, psiphon.Config{
 		Auth:       auth,
-		BaseURL:    c.OrchestraBaseURL,
+		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,

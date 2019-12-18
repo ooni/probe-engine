@@ -138,7 +138,7 @@ func newclient() (*orchestra.Client, error) {
 		"miniooni/0.1.0-dev",
 		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
-	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
 	ctx := context.Background()
 	meta := testorchestra.MetadataFixture()

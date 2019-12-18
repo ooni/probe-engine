@@ -243,7 +243,7 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, er
 	// TODO(bassosimone): until we implement persistent storage
 	// it is advisable to use the testing service. The related
 	// tracking GitHub issue is ooni/probe-engine#164.
-	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
 	return s.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,

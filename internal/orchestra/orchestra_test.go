@@ -248,7 +248,7 @@ func newclient() *Client {
 		"miniooni/0.1.0-dev",
 		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
-	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
 	return clnt
 }
