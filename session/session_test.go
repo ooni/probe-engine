@@ -139,7 +139,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 		sess.HTTPDefaultClient,
 		sess.Logger,
 		sess.UserAgent(),
-		statefile.NewMemory(sess.AssetsDir),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	outclnt, err := sess.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
@@ -162,7 +162,7 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 		sess.HTTPDefaultClient,
 		sess.Logger,
 		sess.UserAgent(),
-		statefile.NewMemory(sess.AssetsDir),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	expected := errors.New("mocked error")
 	outclnt, err := sess.initOrchestraClient(

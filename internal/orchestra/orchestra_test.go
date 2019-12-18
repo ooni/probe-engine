@@ -3,12 +3,12 @@ package orchestra
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
@@ -41,24 +41,13 @@ func TestUnitMaybeRegister(t *testing.T) {
 			t.Fatal("expected an error here")
 		}
 	})
-	t.Run("when we cannot get the state", func(t *testing.T) {
-		clnt := newclient()
-		clnt.StateFile = &testorchestra.StateFileFake{
-			GetError: errors.New("mocked error"),
-		}
-		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
-		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
 	t.Run("when we have already registered", func(t *testing.T) {
 		clnt := newclient()
 		state := statefile.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -94,23 +83,13 @@ func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
 }
 
 func TestUnitMaybeLogin(t *testing.T) {
-	t.Run("when we cannot get the state", func(t *testing.T) {
-		clnt := newclient()
-		clnt.StateFile = &testorchestra.StateFileFake{
-			GetError: errors.New("mocked error"),
-		}
-		ctx := context.Background()
-		if err := clnt.MaybeLogin(ctx); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
 	t.Run("when we already have a token", func(t *testing.T) {
 		clnt := newclient()
 		state := statefile.State{
 			Expire: time.Now().Add(time.Hour),
 			Token:  "xx-xxx-x-xxxx",
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -123,7 +102,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 		state := statefile.State{
 			// Explicitly empty to clarify what this test does
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -138,7 +117,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -175,23 +154,12 @@ func TestUnitUpdate(t *testing.T) {
 			t.Fatal("expected an error here")
 		}
 	})
-	t.Run("when we cannot get the state", func(t *testing.T) {
-		clnt := newclient()
-		clnt.StateFile = &testorchestra.StateFileFake{
-			GetError: errors.New("mocked error"),
-		}
-		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
-		if err := clnt.Update(ctx, metadata); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
 	t.Run("when we have are not registered", func(t *testing.T) {
 		clnt := newclient()
 		state := statefile.State{
 			// Explicitly empty so the test is more clear
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -206,7 +174,7 @@ func TestUnitUpdate(t *testing.T) {
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -224,7 +192,7 @@ func TestUnitUpdate(t *testing.T) {
 			Password: "xx",
 			Token:    "xx-xxx-x-xxxx",
 		}
-		if err := clnt.StateFile.Set(&state); err != nil {
+		if err := clnt.StateFile.Set(state); err != nil {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
@@ -261,7 +229,7 @@ func TestUnitGetPsiphonConfigNotRegistered(t *testing.T) {
 	state := statefile.State{
 		// Explicitly empty so the test is more clear
 	}
-	if err := clnt.StateFile.Set(&state); err != nil {
+	if err := clnt.StateFile.Set(state); err != nil {
 		t.Fatal(err)
 	}
 	data, err := clnt.FetchPsiphonConfig(context.Background())
@@ -278,7 +246,7 @@ func newclient() *Client {
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",
-		statefile.NewMemory("/tmp"),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"

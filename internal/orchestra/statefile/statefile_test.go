@@ -1,8 +1,12 @@
 package statefile
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
 	"time"
+
+	"github.com/ooni/probe-engine/internal/kvstore"
 )
 
 func TestUnitStateAuth(t *testing.T) {
@@ -58,13 +62,10 @@ func TestUnitStateCredentials(t *testing.T) {
 	})
 }
 
-func TestUnitStateFileMemory(t *testing.T) {
-	sf := NewMemory("/tmp")
+func TestIntegrationStateFileMemory(t *testing.T) {
+	sf := New(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
-	}
-	if err := sf.Set(nil); err == nil {
-		t.Fatal("expected an error here")
 	}
 	s := State{
 		Expire:   time.Now(),
@@ -72,13 +73,10 @@ func TestUnitStateFileMemory(t *testing.T) {
 		Token:    "abc",
 		ClientID: "xx",
 	}
-	if err := sf.Set(&s); err != nil {
+	if err := sf.Set(s); err != nil {
 		t.Fatal(err)
 	}
-	os, err := sf.Get()
-	if err != nil {
-		t.Fatal(err)
-	}
+	os := sf.Get()
 	if s.ClientID != os.ClientID {
 		t.Fatal("the ClientID field has changed")
 	}
@@ -90,5 +88,82 @@ func TestUnitStateFileMemory(t *testing.T) {
 	}
 	if s.Token != os.Token {
 		t.Fatal("the Token field has changed")
+	}
+}
+
+func TestUnitStateFileSetMarshalError(t *testing.T) {
+	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	if sf == nil {
+		t.Fatal("expected non nil pointer here")
+	}
+	s := State{
+		Expire:   time.Now(),
+		Password: "xy",
+		Token:    "abc",
+		ClientID: "xx",
+	}
+	expected := errors.New("mocked error")
+	failingfunc := func(v interface{}) ([]byte, error) {
+		return nil, expected
+	}
+	if err := sf.set(s, failingfunc); !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
+	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	if sf == nil {
+		t.Fatal("expected non nil pointer here")
+	}
+	expected := errors.New("mocked error")
+	failingfunc := func(string) (string, error) {
+		return "", expected
+	}
+	s, err := sf.get(failingfunc, json.Unmarshal)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if s.ClientID != "" {
+		t.Fatal("unexpected ClientID field")
+	}
+	if !s.Expire.IsZero() {
+		t.Fatal("unexpected Expire field")
+	}
+	if s.Password != "" {
+		t.Fatal("unexpected Password field")
+	}
+	if s.Token != "" {
+		t.Fatal("unexpected Token field")
+	}
+}
+
+func TestUnitStateFileGetUnmarshalError(t *testing.T) {
+	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	if sf == nil {
+		t.Fatal("expected non nil pointer here")
+	}
+	if err := sf.Set(State{}); err != nil {
+		t.Fatal(err)
+	}
+	expected := errors.New("mocked error")
+	failingfunc := func([]byte, interface{}) error {
+		return expected
+	}
+	s, err := sf.get(sf.store.Get, failingfunc)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if s.ClientID != "" {
+		t.Fatal("unexpected ClientID field")
+	}
+	if !s.Expire.IsZero() {
+		t.Fatal("unexpected Expire field")
+	}
+	if s.Password != "" {
+		t.Fatal("unexpected Password field")
+	}
+	if s.Token != "" {
+		t.Fatal("unexpected Token field")
 	}
 }

@@ -234,7 +234,7 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, er
 		s.HTTPDefaultClient,
 		s.Logger,
 		s.UserAgent(),
-		statefile.NewMemory(s.AssetsDir),
+		statefile.New(s.KVStore),
 	)
 	// Make sure we have location info so we can fill metadata
 	if err := s.MaybeLookupLocation(ctx); err != nil {

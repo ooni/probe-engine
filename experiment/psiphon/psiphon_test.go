@@ -136,7 +136,7 @@ func newclient() (*orchestra.Client, error) {
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",
-		statefile.NewMemory("/tmp"),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"

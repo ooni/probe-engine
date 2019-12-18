@@ -60,10 +60,7 @@ func (c *Client) MaybeRegister(
 	if !metadata.Valid() {
 		return errInvalidMetadata
 	}
-	state, err := c.StateFile.Get()
-	if err != nil {
-		return err
-	}
+	state := c.StateFile.Get()
 	if state.Credentials() != nil {
 		return nil // we're already good
 	}
@@ -87,10 +84,7 @@ func (c *Client) MaybeRegister(
 
 // MaybeLogin performs login if necessary
 func (c *Client) MaybeLogin(ctx context.Context) error {
-	state, err := c.StateFile.Get()
-	if err != nil {
-		return err
-	}
+	state := c.StateFile.Get()
 	if state.Auth() != nil {
 		return nil // we're already good
 	}
@@ -115,10 +109,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 }
 
 func (c *Client) getCredsAndAuth() (*login.Credentials, *login.Auth, error) {
-	state, err := c.StateFile.Get()
-	if err != nil {
-		return nil, nil, err
-	}
+	state := c.StateFile.Get()
 	creds := state.Credentials()
 	if creds == nil {
 		return nil, nil, errNotRegistered
