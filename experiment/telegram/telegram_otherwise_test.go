@@ -151,6 +151,7 @@ func TestUnitProcessallWithMixedResults(t *testing.T) {
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
 			results: &porcelain.HTTPDoResults{
+				BodySnap:   []byte(`<title>Telegram Web</title>`),
 				Error:      nil,
 				StatusCode: 200,
 			},
