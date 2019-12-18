@@ -9,7 +9,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/register"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/update"
 )
 
@@ -72,21 +71,4 @@ func MetadataFixture() metadata.Metadata {
 			"web_connectivity",
 		},
 	}
-}
-
-// StateFileFake is a fake state file
-type StateFileFake struct {
-	GetState *statefile.State
-	GetError error
-	SetError error
-}
-
-// Set overrides the current state
-func (sf *StateFileFake) Set(s *statefile.State) error {
-	return nil
-}
-
-// Get returns the current state
-func (sf *StateFileFake) Get() (*statefile.State, error) {
-	return sf.GetState, sf.GetError
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/mkhelper"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -13,7 +14,7 @@ import (
 func TestNoHelpers(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var settings measurementkit.Settings
 	err := mkhelper.Set(
@@ -27,7 +28,7 @@ func TestNoHelpers(t *testing.T) {
 func TestNoSuitableHelper(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{
 		"foobar": []model.Service{
@@ -49,7 +50,7 @@ func TestNoSuitableHelper(t *testing.T) {
 func TestGoodHelper(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{
 		"foobar": []model.Service{

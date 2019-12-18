@@ -50,6 +50,9 @@ type Session struct {
 	// HTTPNoProxyClient is a non-proxied HTTP client.
 	HTTPNoProxyClient *http.Client
 
+	// KVStore is a key-value store used by this session.
+	KVStore model.KeyValueStore
+
 	// Logger is the log emitter.
 	Logger log.Logger
 
@@ -102,6 +105,7 @@ type Session struct {
 func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
 	proxy *url.URL, tlsConfig *tls.Config, tempDir string,
+	kvstore model.KeyValueStore,
 ) *Session {
 	return &Session{
 		AssetsDir:     assetsDir,
@@ -117,7 +121,8 @@ func New(
 		HTTPNoProxyClient: httpx.NewTracingProxyingClient(
 			logger, nil, tlsConfig,
 		),
-		Logger: logger,
+		KVStore: kvstore,
+		Logger:  logger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
@@ -229,17 +234,12 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, er
 		s.HTTPDefaultClient,
 		s.Logger,
 		s.UserAgent(),
-		statefile.NewMemory(s.AssetsDir),
+		statefile.New(s.KVStore),
 	)
 	// Make sure we have location info so we can fill metadata
 	if err := s.MaybeLookupLocation(ctx); err != nil {
 		return nil, err
 	}
-	// TODO(bassosimone): until we implement persistent storage
-	// it is advisable to use the testing service. The related
-	// tracking GitHub issue is ooni/probe-engine#164.
-	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
-	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
 	return s.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
 	)

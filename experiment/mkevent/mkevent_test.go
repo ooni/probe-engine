@@ -6,6 +6,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkevent"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -14,7 +15,7 @@ import (
 func TestIntegrationMeasurementSuccess(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
@@ -34,7 +35,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 	}()
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
@@ -49,7 +50,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 func TestIntegrationLog(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
@@ -79,7 +80,7 @@ func TestIntegrationLog(t *testing.T) {
 func TestIntegrationStatusProgress(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
@@ -95,7 +96,7 @@ func TestIntegrationStatusProgress(t *testing.T) {
 func TestIntegrationStatusEnd(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
@@ -111,7 +112,7 @@ func TestIntegrationStatusEnd(t *testing.T) {
 func TestIntegrationOtherEvent(t *testing.T) {
 	sess := session.New(
 		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
-		"../../testdata",
+		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)

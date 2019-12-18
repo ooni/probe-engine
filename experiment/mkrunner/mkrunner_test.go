@@ -6,6 +6,7 @@ import (
 	apexlog "github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkrunner"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -17,6 +18,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
 			"../../testdata", nil, nil, "../../testdata",
+			kvstore.NewMemoryKeyValueStore(),
 		),
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(apexlog.Log),
@@ -33,6 +35,7 @@ func TestIntegrationFailure(t *testing.T) {
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
 			"../../testdata", nil, nil, "../../testdata",
+			kvstore.NewMemoryKeyValueStore(),
 		),
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(apexlog.Log),

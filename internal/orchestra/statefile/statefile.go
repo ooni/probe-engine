@@ -2,11 +2,11 @@
 package statefile
 
 import (
-	"errors"
-	"sync"
+	"encoding/json"
 	"time"
 
 	"github.com/ooni/probe-engine/internal/orchestra/login"
+	"github.com/ooni/probe-engine/model"
 )
 
 // State is the state stored inside the state file
@@ -47,35 +47,52 @@ func (s State) Credentials() *login.Credentials {
 	}
 }
 
-// StateFile is a generic state file
-type StateFile interface {
-	Set(*State) error
-	Get() (*State, error)
+// StateFile is the orchestra state file. It is backed by
+// a generic key-value store configured by the user.
+type StateFile struct {
+	key   string
+	store model.KeyValueStore
 }
 
-type memory struct {
-	state State
-	mu    sync.Mutex
-}
-
-// NewMemory creates a new state file in memory
-func NewMemory(workdir string) StateFile {
-	return &memory{}
-}
-
-func (sf *memory) Set(s *State) error {
-	if s == nil {
-		return errors.New("passed nil pointer")
+// New creates a new state file backed by a key-value store
+func New(kvstore model.KeyValueStore) *StateFile {
+	return &StateFile{
+		key:   "orchestra.state",
+		store: kvstore,
 	}
-	sf.mu.Lock()
-	defer sf.mu.Unlock()
-	sf.state = *s
-	return nil
 }
 
-func (sf *memory) Get() (*State, error) {
-	sf.mu.Lock()
-	defer sf.mu.Unlock()
-	state := sf.state
-	return &state, nil
+func (sf *StateFile) set(s State, mf func(interface{}) ([]byte, error)) error {
+	data, err := mf(s)
+	if err != nil {
+		return err
+	}
+	return sf.store.Set(sf.key, data)
+}
+
+// Set saves the current state on the key-value store.
+func (sf *StateFile) Set(s State) error {
+	return sf.set(s, json.Marshal)
+}
+
+func (sf *StateFile) get(
+	sfget func(string) ([]byte, error),
+	unmarshal func([]byte, interface{}) error,
+) (State, error) {
+	value, err := sfget(sf.key)
+	if err != nil {
+		return State{}, err
+	}
+	var state State
+	if err := unmarshal(value, &state); err != nil {
+		return State{}, err
+	}
+	return state, nil
+}
+
+// Get returns the current state. In case of any error with the
+// underlying key-value store, we return an empty state.
+func (sf *StateFile) Get() (state State) {
+	state, _ = sf.get(sf.store.Get, json.Unmarshal)
+	return
 }

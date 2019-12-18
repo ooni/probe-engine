@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
@@ -26,7 +27,7 @@ func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 
 	sess.AvailableBouncers = append(sess.AvailableBouncers, model.Service{
@@ -100,7 +101,7 @@ func TestIntegrationNewOrchestraClient(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt, err := sess.NewOrchestraClient(ctx)
 	if err != nil {
@@ -116,7 +117,7 @@ func TestUnitNewOrchestraMaybeLookupLocationError(t *testing.T) {
 	cancel() // so we fail immediately
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt, err := sess.NewOrchestraClient(ctx)
 	if !strings.HasSuffix(err.Error(), "All IP lookuppers failed") {
@@ -132,13 +133,13 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	cancel() // so we fail immediately
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt := orchestra.NewClient(
 		sess.HTTPDefaultClient,
 		sess.Logger,
 		sess.UserAgent(),
-		statefile.NewMemory(sess.AssetsDir),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	outclnt, err := sess.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
@@ -155,13 +156,13 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt := orchestra.NewClient(
 		sess.HTTPDefaultClient,
 		sess.Logger,
 		sess.UserAgent(),
-		statefile.NewMemory(sess.AssetsDir),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
 	expected := errors.New("mocked error")
 	outclnt, err := sess.initOrchestraClient(
@@ -196,7 +197,7 @@ func TestBouncerError(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", URL, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 
 	if err := sess.MaybeLookupBackends(ctx); err == nil {
@@ -213,7 +214,7 @@ func TestLookupLocationError(t *testing.T) {
 	cancel() // cause operations to fail
 	sess := New(
 		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/",
+		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupLocation(ctx); err == nil {
 		t.Fatal("expected an error here")

@@ -10,6 +10,7 @@ import (
 	"github.com/ooni/netx/modelx"
 	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -23,6 +24,7 @@ func TestUnitNewExperiment(t *testing.T) {
 	sess := session.New(
 		log.Log, softwareName, softwareVersion,
 		"../../testdata", nil, nil, "../../testdata",
+		kvstore.NewMemoryKeyValueStore(),
 	)
 	experiment := NewExperiment(sess, Config{})
 	if experiment == nil {

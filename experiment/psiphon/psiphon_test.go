@@ -10,6 +10,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
@@ -26,6 +27,7 @@ func TestUnitNewExperiment(t *testing.T) {
 	sess := session.New(
 		log.Log, softwareName, softwareVersion,
 		"../../testdata", nil, nil, "../../testdata",
+		kvstore.NewMemoryKeyValueStore(),
 	)
 	experiment := NewExperiment(sess, makeconfig())
 	if experiment == nil {
@@ -134,9 +136,9 @@ func newclient() (*orchestra.Client, error) {
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",
-		statefile.NewMemory("/tmp"),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
-	clnt.OrchestraBaseURL = "https://ps-test.ooni.io"
+	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
 	ctx := context.Background()
 	meta := testorchestra.MetadataFixture()
@@ -185,5 +187,6 @@ func newsession() *session.Session {
 		"../../testdata",
 		nil, nil,
 		"../../testdata",
+		kvstore.NewMemoryKeyValueStore(),
 	)
 }

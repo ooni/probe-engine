@@ -6,17 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/apex/log"
-
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/httpx/httpx"
-
 	"github.com/pborman/getopt/v2"
+	"github.com/prologic/bitcask"
 )
 
 type options struct {
@@ -144,6 +146,37 @@ func (h *logHandler) HandleLog(e *log.Entry) (err error) {
 	return
 }
 
+type keyValueStoreAdapter struct {
+	db *bitcask.Bitcask
+}
+
+func (kva *keyValueStoreAdapter) Get(key string) ([]byte, error) {
+	return kva.db.Get([]byte(key))
+}
+
+func (kva *keyValueStoreAdapter) Set(key string, value []byte) error {
+	return kva.db.Put([]byte(key), value)
+}
+
+// See https://gist.github.com/miguelmota/f30a04a6d64bd52d7ab59ea8d95e54da
+func gethomedir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	if runtime.GOOS == "linux" {
+		home := os.Getenv("XDG_CONFIG_HOME")
+		if home != "" {
+			return home
+		}
+		// fallthrough
+	}
+	return os.Getenv("HOME")
+}
+
 func main() {
 	getopt.Parse()
 	if len(getopt.Args()) != 1 {
@@ -162,11 +195,23 @@ func main() {
 	if globalOptions.reportfile == "" {
 		globalOptions.reportfile = "report.jsonl"
 	}
-	tempDir, err := os.Getwd()
-	if err != nil {
-		log.WithError(err).Fatal("cannot get current working directory")
-	}
 	log.Log = logger
+
+	homeDir := gethomedir()
+	if homeDir == "" {
+		log.Fatal("home directory is empty")
+	}
+	miniooniDir := path.Join(homeDir, ".miniooni")
+	assetsDir := path.Join(miniooniDir, "assets")
+	if err := os.MkdirAll(assetsDir, 0700); err != nil {
+		log.WithError(err).Fatal("cannot create miniooni directories")
+	}
+	log.Infof("miniooni state directory: %s", miniooniDir)
+	tempDir, err := ioutil.TempDir("", "miniooni")
+	if err != nil {
+		log.WithError(err).Fatal("cannot get a temporary directory")
+	}
+	log.Debugf("miniooni temporary directory: %s", tempDir)
 
 	var tlsConfig *tls.Config
 	if globalOptions.caBundlePath != "" {
@@ -177,8 +222,17 @@ func main() {
 		proxyURL = mustParseURL(globalOptions.proxy)
 	}
 
+	dbpath := path.Join(miniooniDir, "kvstore")
+	db, err := bitcask.Open(dbpath)
+	if err != nil {
+		log.WithError(err).Fatal("cannot open key-value store")
+	}
+	defer db.Close()
+	log.Debugf("miniooni state database: %s", dbpath)
+
 	sess, err := engine.NewSession(engine.SessionConfig{
-		AssetsDir:       tempDir,
+		AssetsDir:       assetsDir,
+		KVStore:         &keyValueStoreAdapter{db: db},
 		Logger:          logger,
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
