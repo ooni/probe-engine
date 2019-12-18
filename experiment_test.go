@@ -239,10 +239,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment) {
 	}
 	measurement, err := experiment.Measure("")
 	if err != nil {
-		if err == psiphon.ErrDisabled {
-			defer experiment.CloseReport()
-			return
-		}
 		t.Fatal(err)
 	}
 	measurement.AddAnnotations(map[string]string{
