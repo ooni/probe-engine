@@ -47,26 +47,22 @@ func (s State) Credentials() *login.Credentials {
 	}
 }
 
-// StateFile is a generic state file
-type StateFile interface {
-	Set(State) error
-	Get() State
-}
-
-type kvstoresf struct {
-	store model.KeyValueStore
+// StateFile is the orchestra state file. It is backed by
+// a generic key-value store configured by the user.
+type StateFile struct {
 	key   string
+	store model.KeyValueStore
 }
 
 // New creates a new state file backed by a key-value store
-func New(kvstore model.KeyValueStore) StateFile {
-	return &kvstoresf{
-		store: kvstore,
+func New(kvstore model.KeyValueStore) *StateFile {
+	return &StateFile{
 		key:   "orchestra.state",
+		store: kvstore,
 	}
 }
 
-func (sf *kvstoresf) set(s State, mf func(interface{}) ([]byte, error)) error {
+func (sf *StateFile) set(s State, mf func(interface{}) ([]byte, error)) error {
 	data, err := mf(s)
 	if err != nil {
 		return err
@@ -74,11 +70,12 @@ func (sf *kvstoresf) set(s State, mf func(interface{}) ([]byte, error)) error {
 	return sf.store.Set(sf.key, string(data))
 }
 
-func (sf *kvstoresf) Set(s State) error {
+// Set saves the current state on the key-value store.
+func (sf *StateFile) Set(s State) error {
 	return sf.set(s, json.Marshal)
 }
 
-func (sf *kvstoresf) get(
+func (sf *StateFile) get(
 	sfget func(string) (string, error),
 	unmarshal func([]byte, interface{}) error,
 ) (State, error) {
@@ -93,7 +90,9 @@ func (sf *kvstoresf) get(
 	return state, nil
 }
 
-func (sf *kvstoresf) Get() (state State) {
+// Get returns the current state. In case of any error with the
+// underlying key-value store, we return an empty state.
+func (sf *StateFile) Get() (state State) {
 	state, _ = sf.get(sf.store.Get, json.Unmarshal)
 	return
 }

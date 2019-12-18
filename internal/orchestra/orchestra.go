@@ -26,7 +26,7 @@ type Client struct {
 	Logger           log.Logger
 	OrchestraBaseURL string
 	RegistryBaseURL  string
-	StateFile        statefile.StateFile
+	StateFile        *statefile.StateFile
 	UserAgent        string
 	registerCalls    int
 	loginCalls       int
@@ -35,7 +35,7 @@ type Client struct {
 // NewClient creates a new client.
 func NewClient(
 	httpClient *http.Client, logger log.Logger,
-	userAgent string, stateFile statefile.StateFile,
+	userAgent string, stateFile *statefile.StateFile,
 ) *Client {
 	return &Client{
 		HTTPClient:       httpClient,

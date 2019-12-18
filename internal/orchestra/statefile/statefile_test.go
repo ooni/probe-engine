@@ -92,7 +92,7 @@ func TestIntegrationStateFileMemory(t *testing.T) {
 }
 
 func TestUnitStateFileSetMarshalError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	sf := New(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
@@ -112,7 +112,7 @@ func TestUnitStateFileSetMarshalError(t *testing.T) {
 }
 
 func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	sf := New(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
@@ -139,7 +139,7 @@ func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
 }
 
 func TestUnitStateFileGetUnmarshalError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore()).(*kvstoresf)
+	sf := New(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
