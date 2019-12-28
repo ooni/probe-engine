@@ -9,7 +9,6 @@ import (
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/log"
-	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -17,7 +16,7 @@ import (
 type SessionConfig struct {
 	AssetsDir       string
 	Logger          log.Logger
-	KVStore         model.KeyValueStore
+	KVStore         KVStore
 	ProxyURL        *url.URL
 	SoftwareName    string
 	SoftwareVersion string
