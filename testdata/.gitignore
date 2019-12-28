@@ -2,6 +2,7 @@
 /ca-bundle.pem
 /country.mmdb
 /enginetests*/
+/kvstore2/
 /oonipsiphon
 /psiphon_config.json
 /psiphon_unit_tests/

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -18,7 +19,6 @@ import (
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/pborman/getopt/v2"
-	"github.com/prologic/bitcask"
 )
 
 type options struct {
@@ -146,18 +146,6 @@ func (h *logHandler) HandleLog(e *log.Entry) (err error) {
 	return
 }
 
-type keyValueStoreAdapter struct {
-	db *bitcask.Bitcask
-}
-
-func (kva *keyValueStoreAdapter) Get(key string) ([]byte, error) {
-	return kva.db.Get([]byte(key))
-}
-
-func (kva *keyValueStoreAdapter) Set(key string, value []byte) error {
-	return kva.db.Put([]byte(key), value)
-}
-
 // See https://gist.github.com/miguelmota/f30a04a6d64bd52d7ab59ea8d95e54da
 func gethomedir() string {
 	if runtime.GOOS == "windows" {
@@ -204,7 +192,7 @@ func main() {
 	miniooniDir := path.Join(homeDir, ".miniooni")
 	assetsDir := path.Join(miniooniDir, "assets")
 	if err := os.MkdirAll(assetsDir, 0700); err != nil {
-		log.WithError(err).Fatal("cannot create miniooni directories")
+		log.WithError(err).Fatal("cannot create assets directory")
 	}
 	log.Infof("miniooni state directory: %s", miniooniDir)
 	tempDir, err := ioutil.TempDir("", "miniooni")
@@ -222,17 +210,15 @@ func main() {
 		proxyURL = mustParseURL(globalOptions.proxy)
 	}
 
-	dbpath := path.Join(miniooniDir, "kvstore")
-	db, err := bitcask.Open(dbpath)
+	kvstore2dir := filepath.Join(miniooniDir, "kvstore2")
+	kvstore, err := engine.NewFileSystemKVStore(kvstore2dir)
 	if err != nil {
-		log.WithError(err).Fatal("cannot open key-value store")
+		log.WithError(err).Fatal("cannot create kvstore2 directory")
 	}
-	defer db.Close()
-	log.Debugf("miniooni state database: %s", dbpath)
 
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir:       assetsDir,
-		KVStore:         &keyValueStoreAdapter{db: db},
+		KVStore:         kvstore,
 		Logger:          logger,
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
