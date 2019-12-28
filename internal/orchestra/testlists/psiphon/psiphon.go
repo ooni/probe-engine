@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path/filepath"
 
 	"github.com/ooni/probe-engine/httpx/fetch"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
+	"github.com/ooni/probe-engine/internal/urlpath"
 	"github.com/ooni/probe-engine/log"
 )
 
@@ -32,7 +32,7 @@ func Query(ctx context.Context, config Config) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	url.Path = filepath.Join(url.Path, "/api/v1/test-list/psiphon-config")
+	url.Path = urlpath.Append(url.Path, "/api/v1/test-list/psiphon-config")
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
 	return (&fetch.Client{
 		Authorization: authorization,
