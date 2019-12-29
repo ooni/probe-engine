@@ -251,8 +251,17 @@ func main() {
 		if err := sess.MaybeLookupLocation(); err != nil {
 			log.WithError(err).Warn("cannot lookup your location")
 		} else {
-			log.Infof("your IP: %s, country: %s, ISP name: %s",
-				sess.ProbeIP(), sess.ProbeCC(), sess.ProbeNetworkName())
+			log.Infof("- IP: %s", sess.ProbeIP())
+			log.Infof("- country: %s", sess.ProbeCC())
+			log.Infof(
+				"- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString(),
+			)
+			log.Infof("- resolver's IP: %s", sess.ResolverIP())
+			log.Infof(
+				"- resolver's network: %s (%s)",
+				sess.ResolverNetworkName(),
+				sess.ResolverASNString(),
+			)
 		}
 	}
 
