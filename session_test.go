@@ -82,7 +82,10 @@ func newSessionForTesting(t *testing.T) *Session {
 	log.Infof("ProbeCC: %s", sess.ProbeCC())
 	log.Infof("ProbeIP: %s", sess.ProbeIP())
 	log.Infof("ProbeNetworkName: %s", sess.ProbeNetworkName())
+	log.Infof("ResolverASN: %d", sess.ResolverASN())
+	log.Infof("ResolverASNString: %s", sess.ResolverASNString())
 	log.Infof("ResolverIP: %s", sess.ResolverIP())
+	log.Infof("ResolverNetworkName: %s", sess.ResolverNetworkName())
 	if err := sess.MaybeLookupBackends(); err != nil {
 		t.Fatal(err)
 	}

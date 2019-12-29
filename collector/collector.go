@@ -18,7 +18,7 @@ import (
 
 const (
 	// DefaultDataFormatVersion is the default data format version
-	DefaultDataFormatVersion = "0.3.0"
+	DefaultDataFormatVersion = "0.3.1"
 
 	// DefaultFormat is the default format
 	DefaultFormat = "json"

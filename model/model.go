@@ -58,8 +58,14 @@ type Measurement struct {
 	// ReportID contains the report ID
 	ReportID string `json:"report_id"`
 
+	// ResolverASN is the ASN of the resolver
+	ResolverASN string `json:"resolver_asn"`
+
 	// ResolverIP is the resolver IP
 	ResolverIP string `json:"resolver_ip"`
+
+	// ResolverNetworkName is the network name of the resolver.
+	ResolverNetworkName string `json:"resolver_network_name"`
 
 	// SoftwareName contains the software name
 	SoftwareName string `json:"software_name"`
@@ -136,8 +142,14 @@ type LocationInfo struct {
 	// IP is the probe IP
 	ProbeIP string
 
+	// ResolverASN is the resolver ASN
+	ResolverASN uint
+
 	// ResolverIP is the resolver IP
 	ResolverIP string
+
+	// ResolverNetworkName is the resolver network name
+	ResolverNetworkName string
 }
 
 // PrivacySettings contains privacy settings for submitting measurements.
@@ -209,12 +221,23 @@ const (
 	// DefaultProbeNetworkName is the default probe network name.
 	DefaultProbeNetworkName = ""
 
+	// DefaultResolverASN is the default resolver ASN.
+	DefaultResolverASN uint = 0
+
 	// DefaultResolverIP is the default resolver IP.
 	DefaultResolverIP = "127.0.0.1"
+
+	// DefaultResolverNetworkName is the default resolver network name.
+	DefaultResolverNetworkName = ""
 )
 
-// DefaultProbeASNString is the default probe ASN as a string.
-var DefaultProbeASNString = fmt.Sprintf("AS%d", DefaultProbeASN)
+var (
+	// DefaultProbeASNString is the default probe ASN as a string.
+	DefaultProbeASNString = fmt.Sprintf("AS%d", DefaultProbeASN)
+
+	// DefaultResolverASNString is the default resolver ASN as a string.
+	DefaultResolverASNString = fmt.Sprintf("AS%d", DefaultResolverASN)
+)
 
 // URLInfo contains info on a test lists URL
 type URLInfo struct {

@@ -126,9 +126,24 @@ func (sess *Session) ProbeNetworkName() string {
 	return sess.session.ProbeNetworkName()
 }
 
+// ResolverASNString returns the resolver ASN as as string
+func (sess *Session) ResolverASNString() string {
+	return sess.session.ResolverASNString()
+}
+
+// ResolverASN returns the resolver ASN
+func (sess *Session) ResolverASN() uint {
+	return sess.session.ResolverASN()
+}
+
 // ResolverIP returns the resolver IP.
 func (sess *Session) ResolverIP() string {
 	return sess.session.ResolverIP()
+}
+
+// ResolverNetworkName returns the resolver network name
+func (sess *Session) ResolverNetworkName() string {
+	return sess.session.ResolverNetworkName()
 }
 
 // SetIncludeProbeASN controls whether to include the ASN

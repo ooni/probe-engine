@@ -191,6 +191,20 @@ func (s *Session) ProbeIP() string {
 	return ip
 }
 
+// ResolverASNString returns the resolver ASN as a string
+func (s *Session) ResolverASNString() string {
+	return fmt.Sprintf("AS%d", s.ResolverASN())
+}
+
+// ResolverASN returns the resolver ASN
+func (s *Session) ResolverASN() uint {
+	asn := model.DefaultResolverASN
+	if s.location != nil {
+		asn = s.location.ResolverASN
+	}
+	return asn
+}
+
 // ResolverIP returns the resolver IP
 func (s *Session) ResolverIP() string {
 	ip := model.DefaultResolverIP
@@ -198,6 +212,15 @@ func (s *Session) ResolverIP() string {
 		ip = s.location.ResolverIP
 	}
 	return ip
+}
+
+// ResolverNetworkName returns the probe network name.
+func (s *Session) ResolverNetworkName() string {
+	nn := model.DefaultResolverNetworkName
+	if s.location != nil {
+		nn = s.location.ResolverNetworkName
+	}
+	return nn
 }
 
 func (s *Session) initOrchestraClient(
@@ -354,10 +377,10 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	}).Do(ctx)
 }
 
-func (s *Session) lookupProbeNetwork(
-	dbPath, probeIP string,
+func (s *Session) lookupASN(
+	dbPath, ip string,
 ) (uint, string, error) {
-	return mmdblookup.LookupASN(dbPath, probeIP, s.Logger)
+	return mmdblookup.LookupASN(dbPath, ip, s.Logger)
 }
 
 func (s *Session) lookupProbeCC(
@@ -380,28 +403,36 @@ func (s *Session) MaybeLookupLocation(ctx context.Context) (err error) {
 			}
 		}()
 		var (
-			probeIP    string
-			asn        uint
-			org        string
-			cc         string
-			resolverIP string
+			probeIP     string
+			asn         uint
+			org         string
+			cc          string
+			resolverASN uint
+			resolverIP  string
+			resolverOrg string
 		)
 		err = s.fetchResourcesIdempotent(ctx)
 		rtx.PanicOnError(err, "s.fetchResourcesIdempotent failed")
 		probeIP, err = s.lookupProbeIP(ctx)
 		rtx.PanicOnError(err, "s.lookupProbeIP failed")
-		asn, org, err = s.lookupProbeNetwork(s.ASNDatabasePath(), probeIP)
-		rtx.PanicOnError(err, "s.lookupProbeNetwork failed")
+		asn, org, err = s.lookupASN(s.ASNDatabasePath(), probeIP)
+		rtx.PanicOnError(err, "s.lookupASN #1 failed")
 		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
 		rtx.PanicOnError(err, "s.lookupProbeCC failed")
 		resolverIP, err = s.lookupResolverIP(ctx)
 		rtx.PanicOnError(err, "s.lookupResolverIP failed")
+		resolverASN, resolverOrg, err = s.lookupASN(
+			s.ASNDatabasePath(), resolverIP,
+		)
+		rtx.PanicOnError(err, "s.lookupASN #2 failed")
 		s.location = &model.LocationInfo{
-			ASN:         asn,
-			CountryCode: cc,
-			NetworkName: org,
-			ProbeIP:     probeIP,
-			ResolverIP:  resolverIP,
+			ASN:                 asn,
+			CountryCode:         cc,
+			NetworkName:         org,
+			ProbeIP:             probeIP,
+			ResolverASN:         resolverASN,
+			ResolverIP:          resolverIP,
+			ResolverNetworkName: resolverOrg,
 		}
 	}
 	return

@@ -70,8 +70,17 @@ func TestIntegration(t *testing.T) {
 	if sess.ProbeNetworkName() == model.DefaultProbeNetworkName {
 		t.Fatal("unexpected ProbeNetworkName")
 	}
+	if sess.ResolverASN() == model.DefaultResolverASN {
+		t.Fatal("unexpected ResolverASN")
+	}
+	if sess.ResolverASNString() == model.DefaultResolverASNString {
+		t.Fatal("unexpected ResolverASNString")
+	}
 	if sess.ResolverIP() == model.DefaultResolverIP {
 		t.Fatal("unexpected ResolverIP")
+	}
+	if sess.ResolverNetworkName() == model.DefaultResolverNetworkName {
+		t.Fatal("unexDefaultResolverNetworkName")
 	}
 
 	readfile := func(path string) (err error) {
