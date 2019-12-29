@@ -214,7 +214,7 @@ func (s *Session) ResolverIP() string {
 	return ip
 }
 
-// ResolverNetworkName returns the probe network name.
+// ResolverNetworkName returns the resolver network name.
 func (s *Session) ResolverNetworkName() string {
 	nn := model.DefaultResolverNetworkName
 	if s.location != nil {
