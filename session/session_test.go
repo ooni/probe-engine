@@ -80,7 +80,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatal("unexpected ResolverIP")
 	}
 	if sess.ResolverNetworkName() == model.DefaultResolverNetworkName {
-		t.Fatal("unexDefaultResolverNetworkName")
+		t.Fatal("unexpected DefaultResolverNetworkName")
 	}
 
 	readfile := func(path string) (err error) {
