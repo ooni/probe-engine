@@ -410,7 +410,6 @@ func TestMarshalHTTPHeaderBinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(string(data))
 	expected := []byte(
 		`[["Content-Type","application/json"],["Content-Type",{"data":"V+V5+6a7DbzOvaeguqR4eBJZ7mg5pAeYxT68Vcv+NDx+G1qzIp3BLW7KW/EQJUceROItYAjqsArMBUig9Xg48Ns/nZ8lb4kAlpOvQ6xNyawT2yK+en3ZJKJSadiJwdFXqgQrotixGfbVETm7gM+G+V+djKv1xXQkOqLUQE7XEB8=","format":"base64"}],["Content-Length","17"]]`,
 	)
