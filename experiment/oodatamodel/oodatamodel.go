@@ -70,9 +70,9 @@ type MaybeBinaryValue struct {
 	Value string
 }
 
-// MarshalJSON marshal the body to JSON following the OONI spec that says
-// that UTF-8 bodies are represened as string and non-UTF-8 bodies are
-// instead represented as `{"format":"base64","data":"..."}`.
+// MarshalJSON marshals a string-like to JSON following the OONI spec that
+// says that UTF-8 content is represened as string and non-UTF-8 content is
+// instead represented using `{"format":"base64","data":"..."}`.
 func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	if utf8.ValidString(hb.Value) {
 		return json.Marshal(hb.Value)
@@ -98,9 +98,8 @@ type HTTPHeader struct {
 	Value MaybeBinaryValue
 }
 
-// MarshalJSON marshal the body to JSON following the OONI spec that says
-// that UTF-8 bodies are represened as string and non-UTF-8 bodies are
-// instead represented as `{"format":"base64","data":"..."}`.
+// MarshalJSON marshals a single HTTP header to a tuple where the first
+// element is a string and the second element is maybe-binary data.
 func (hh HTTPHeader) MarshalJSON() ([]byte, error) {
 	if utf8.ValidString(hh.Value.Value) {
 		return json.Marshal([]string{hh.Key, hh.Value.Value})
@@ -161,6 +160,8 @@ func addheaders(
 	for key, values := range source {
 		for index, value := range values {
 			value := MaybeBinaryValue{Value: value}
+			// With the map representation we can only represent a single
+			// value for every key. Hence the list representation.
 			if index == 0 {
 				(*destMap)[key] = value
 			}
