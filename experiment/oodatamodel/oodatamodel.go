@@ -70,9 +70,9 @@ type MaybeBinaryValue struct {
 	Value string
 }
 
-// MarshalJSON marshals the body to JSON following the OONI spec that says
-// that UTF-8 bodies are represened as string and non-UTF-8 bodies are
-// instead represented as `{"format":"base64","data":"..."}`.
+// MarshalJSON marshals a string-like to JSON following the OONI spec that
+// says that UTF-8 content is represened as string and non-UTF-8 content is
+// instead represented using `{"format":"base64","data":"..."}`.
 func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	if utf8.ValidString(hb.Value) {
 		return json.Marshal(hb.Value)
