@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net"
+	"net/http"
 	"strconv"
 	"unicode/utf8"
 
@@ -69,9 +70,9 @@ type MaybeBinaryValue struct {
 	Value string
 }
 
-// MarshalJSON marshal the body to JSON following the OONI spec that says
-// that UTF-8 bodies are represened as string and non-UTF-8 bodies are
-// instead represented as `{"format":"base64","data":"..."}`.
+// MarshalJSON marshals a string-like to JSON following the OONI spec that
+// says that UTF-8 content is represened as string and non-UTF-8 content is
+// instead represented using `{"format":"base64","data":"..."}`.
 func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	if utf8.ValidString(hb.Value) {
 		return json.Marshal(hb.Value)
@@ -87,25 +88,57 @@ func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 // mechanism implemented by MaybeBinaryValue is not working.
 type HTTPBody = MaybeBinaryValue
 
-// HTTPHeaders contains HTTP headers.
+// HTTPHeaders contains HTTP headers. This headers representation is
+// deprecated in favour of HTTPHeadersList since data format 0.3.0.
 type HTTPHeaders map[string]MaybeBinaryValue
 
-// HTTPRequest contains an HTTP request
-type HTTPRequest struct {
-	Body            HTTPBody    `json:"body"`
-	BodyIsTruncated bool        `json:"body_is_truncated"`
-	Headers         HTTPHeaders `json:"headers"`
-	Method          string      `json:"method"`
-	Tor             HTTPTor     `json:"tor"`
-	URL             string      `json:"url"`
+// HTTPHeader is a single HTTP header.
+type HTTPHeader struct {
+	Key   string
+	Value MaybeBinaryValue
 }
 
-// HTTPResponse contains an HTTP response
+// MarshalJSON marshals a single HTTP header to a tuple where the first
+// element is a string and the second element is maybe-binary data.
+func (hh HTTPHeader) MarshalJSON() ([]byte, error) {
+	if utf8.ValidString(hh.Value.Value) {
+		return json.Marshal([]string{hh.Key, hh.Value.Value})
+	}
+	value := make(map[string]string)
+	value["format"] = "base64"
+	value["data"] = base64.StdEncoding.EncodeToString([]byte(hh.Value.Value))
+	return json.Marshal([]interface{}{hh.Key, value})
+}
+
+// HTTPHeadersList is a list of headers.
+type HTTPHeadersList []HTTPHeader
+
+// HTTPRequest contains an HTTP request.
+//
+// Headers are a map in Web Connectivity data format but
+// we have added support for a list since data format version
+// equal to 0.2.1 (later renamed to 0.3.0).
+type HTTPRequest struct {
+	Body            HTTPBody        `json:"body"`
+	BodyIsTruncated bool            `json:"body_is_truncated"`
+	HeadersList     HTTPHeadersList `json:"headers_list"`
+	Headers         HTTPHeaders     `json:"headers"`
+	Method          string          `json:"method"`
+	Tor             HTTPTor         `json:"tor"`
+	URL             string          `json:"url"`
+}
+
+// HTTPResponse contains an HTTP response.
+//
+// Headers are a map in Web Connectivity data format but
+// we have added support for a list since data format version
+// equal to 0.2.1 (later renamed to 0.3.0).
 type HTTPResponse struct {
-	Body            HTTPBody    `json:"body"`
-	BodyIsTruncated bool        `json:"body_is_truncated"`
-	Code            int64       `json:"code"`
-	Headers         HTTPHeaders `json:"headers"`
+	Body            HTTPBody        `json:"body"`
+	BodyIsTruncated bool            `json:"body_is_truncated"`
+	Code            int64           `json:"code"`
+	HeadersList     HTTPHeadersList `json:"headers_list"`
+	Headers         HTTPHeaders     `json:"headers"`
 }
 
 // RequestEntry is one of the entries that are part of
@@ -119,13 +152,29 @@ type RequestEntry struct {
 // RequestList is a list of RequestEntry
 type RequestList []RequestEntry
 
+func addheaders(
+	source http.Header,
+	destList *HTTPHeadersList,
+	destMap *HTTPHeaders,
+) {
+	for key, values := range source {
+		for index, value := range values {
+			value := MaybeBinaryValue{Value: value}
+			// With the map representation we can only represent a single
+			// value for every key. Hence the list representation.
+			if index == 0 {
+				(*destMap)[key] = value
+			}
+			*destList = append(*destList, HTTPHeader{
+				Key:   key,
+				Value: value,
+			})
+		}
+	}
+}
+
 // NewRequestList returns the list for "requests"
 func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
-	// TODO(bassosimone): here I'm using netx snapshots which are
-	// limited to 1<<20. They are probably good enough for a really
-	// wide range of cases, and truncating the body seems good for
-	// loading measurements on mobile as well. I think I should make
-	// sure I modify the documentation to mention that.
 	var out RequestList
 	if httpresults == nil {
 		return out
@@ -136,34 +185,20 @@ func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
 		var entry RequestEntry
 		entry.Failure = makeFailure(in[idx].Error)
 		entry.Request.Headers = make(HTTPHeaders)
-		for key, values := range in[idx].RequestHeaders {
-			for _, value := range values {
-				entry.Request.Headers[key] = MaybeBinaryValue{
-					Value: value,
-				}
-				// We skip processing after the first header with
-				// such name has been processed. This is a known
-				// issue of OONI's data model.
-				break
-			}
-		}
+		addheaders(
+			in[idx].RequestHeaders, &entry.Request.HeadersList,
+			&entry.Request.Headers,
+		)
 		entry.Request.Method = in[idx].RequestMethod
 		entry.Request.URL = in[idx].RequestURL
 		entry.Request.Body.Value = string(in[idx].RequestBodySnap)
 		entry.Request.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
 			int64(len(in[idx].RequestBodySnap)) >= in[idx].MaxBodySnapSize
 		entry.Response.Headers = make(HTTPHeaders)
-		for key, values := range in[idx].ResponseHeaders {
-			for _, value := range values {
-				entry.Response.Headers[key] = MaybeBinaryValue{
-					Value: value,
-				}
-				// We skip processing after the first header with
-				// such name has been processed. This is a known
-				// issue of OONI's data model.
-				break
-			}
-		}
+		addheaders(
+			in[idx].ResponseHeaders, &entry.Response.HeadersList,
+			&entry.Response.Headers,
+		)
 		entry.Response.Code = in[idx].ResponseStatusCode
 		entry.Response.Body.Value = string(in[idx].ResponseBodySnap)
 		entry.Response.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
