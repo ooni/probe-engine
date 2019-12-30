@@ -70,7 +70,7 @@ type MaybeBinaryValue struct {
 	Value string
 }
 
-// MarshalJSON marshal the body to JSON following the OONI spec that says
+// MarshalJSON marshals the body to JSON following the OONI spec that says
 // that UTF-8 bodies are represened as string and non-UTF-8 bodies are
 // instead represented as `{"format":"base64","data":"..."}`.
 func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
@@ -98,7 +98,7 @@ type HTTPHeader struct {
 	Value MaybeBinaryValue
 }
 
-// MarshalJSON marshal the body to JSON following the OONI spec that says
+// MarshalJSON marshals the body to JSON following the OONI spec that says
 // that UTF-8 bodies are represened as string and non-UTF-8 bodies are
 // instead represented as `{"format":"base64","data":"..."}`.
 func (hh HTTPHeader) MarshalJSON() ([]byte, error) {
