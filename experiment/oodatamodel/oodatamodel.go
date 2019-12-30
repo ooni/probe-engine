@@ -160,6 +160,8 @@ func addheaders(
 	for key, values := range source {
 		for index, value := range values {
 			value := MaybeBinaryValue{Value: value}
+			// With the map representation we can only represent a single
+			// value for every key. Hence the list representation.
 			if index == 0 {
 				(*destMap)[key] = value
 			}
