@@ -215,23 +215,42 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[1].Request.Headers["Content-Length"].Value != "17" {
 		t.Fatal("unexpected out[1].Request.Headers Content-Length value")
 	}
-	if out[1].Request.HeadersList[0].Key != "Content-Type" {
-		t.Fatal("unexpected out[1].Request.HeadersList[0].Key value")
+	var (
+		request_has_text_plain     bool
+		request_has_foobar         bool
+		request_has_content_length bool
+		request_has_other          int64
+	)
+	for _, header := range out[1].Request.HeadersList {
+		if header.Key == "Content-Type" {
+			if header.Value.Value == "text/plain" {
+				request_has_text_plain = true
+			} else if header.Value.Value == "foobar" {
+				request_has_foobar = true
+			} else {
+				request_has_other++
+			}
+		} else if header.Key == "Content-Length" {
+			if header.Value.Value == "17" {
+				request_has_content_length = true
+			} else {
+				request_has_other++
+			}
+		} else {
+			request_has_other++
+		}
 	}
-	if out[1].Request.HeadersList[0].Value.Value != "text/plain" {
-		t.Fatal("unexpected out[1].Request.HeadersList[0].Value.Value value")
+	if !request_has_text_plain {
+		t.Fatal("missing text/plain for request")
 	}
-	if out[1].Request.HeadersList[1].Key != "Content-Type" {
-		t.Fatal("unexpected out[1].Request.HeadersList[1].Key value")
+	if !request_has_foobar {
+		t.Fatal("missing foobar for request")
 	}
-	if out[1].Request.HeadersList[1].Value.Value != "foobar" {
-		t.Fatal("unexpected out[1].Request.HeadersList[1].Value.Value value")
+	if !request_has_content_length {
+		t.Fatal("missing content_length for request")
 	}
-	if out[1].Request.HeadersList[2].Key != "Content-Length" {
-		t.Fatal("unexpected out[1].Request.HeadersList[2].Key value")
-	}
-	if out[1].Request.HeadersList[2].Value.Value != "17" {
-		t.Fatal("unexpected out[1].Request.HeadersList[2].Value.Value value")
+	if request_has_other != 0 {
+		t.Fatal("seen something unexpected")
 	}
 	if out[1].Request.Method != "GET" {
 		t.Fatal("unexpected out[1].Request.Method")
@@ -242,6 +261,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[1].Request.BodyIsTruncated != false {
 		t.Fatal("unexpected out[1].Request.BodyIsTruncated")
 	}
+
 	if out[1].Response.Body.Value != "abcdef" {
 		t.Fatal("unexpected out[1].Response.Body.Value")
 	}
@@ -260,29 +280,52 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	if out[1].Response.Headers["Content-Length"].Value != "14" {
 		t.Fatal("unexpected out[1].Response.Headers Content-Length value")
 	}
-	if out[1].Response.HeadersList[0].Key != "Content-Type" {
-		t.Fatal("unexpected out[1].Response.HeadersList[0].Key value")
+	var (
+		response_has_application_json bool
+		response_has_foobaz           bool
+		response_has_server           bool
+		response_has_content_length   bool
+		response_has_other            int64
+	)
+	for _, header := range out[1].Response.HeadersList {
+		if header.Key == "Content-Type" {
+			if header.Value.Value == "application/json" {
+				response_has_application_json = true
+			} else if header.Value.Value == "foobaz" {
+				response_has_foobaz = true
+			} else {
+				response_has_other++
+			}
+		} else if header.Key == "Content-Length" {
+			if header.Value.Value == "14" {
+				response_has_content_length = true
+			} else {
+				response_has_other++
+			}
+		} else if header.Key == "Server" {
+			if header.Value.Value == "antani" {
+				response_has_server = true
+			} else {
+				response_has_other++
+			}
+		} else {
+			response_has_other++
+		}
 	}
-	if out[1].Response.HeadersList[0].Value.Value != "application/json" {
-		t.Fatal("unexpected out[1].Response.HeadersList[0].Value.Value value")
+	if !response_has_application_json {
+		t.Fatal("missing application/json for response")
 	}
-	if out[1].Response.HeadersList[1].Key != "Content-Type" {
-		t.Fatal("unexpected out[1].Response.HeadersList[1].Key value")
+	if !response_has_foobaz {
+		t.Fatal("missing foobaz for response")
 	}
-	if out[1].Response.HeadersList[1].Value.Value != "foobaz" {
-		t.Fatal("unexpected out[1].Response.HeadersList[1].Value.Value value")
+	if !response_has_content_length {
+		t.Fatal("missing content_length for response")
 	}
-	if out[1].Response.HeadersList[2].Key != "Server" {
-		t.Fatal("unexpected out[1].Response.HeadersList[2].Key value")
+	if !response_has_server {
+		t.Fatal("missing server for response")
 	}
-	if out[1].Response.HeadersList[2].Value.Value != "antani" {
-		t.Fatal("unexpected out[1].Response.HeadersList[2].Value.Value value")
-	}
-	if out[1].Response.HeadersList[3].Key != "Content-Length" {
-		t.Fatal("unexpected out[1].Response.HeadersList[3].Key value")
-	}
-	if out[1].Response.HeadersList[3].Value.Value != "14" {
-		t.Fatal("unexpected out[1].Response.HeadersList[3].Value.Value value")
+	if response_has_other != 0 {
+		t.Fatal("seen something unexpected")
 	}
 	if out[1].Response.BodyIsTruncated != false {
 		t.Fatal("unexpected out[1].Response.BodyIsTruncated")
