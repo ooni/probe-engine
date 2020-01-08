@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
-	netxlogger "github.com/ooni/netx/x/logger"
-	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
+	"github.com/ooni/probe-engine/internal/netxlogger"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -112,7 +112,7 @@ func (r *runner) usetunnel(
 ) error {
 	r.testkeys.Agent = "redirect"
 	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
-	results := porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+	results := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 		Accept:         httpheader.RandomAccept(),
 		AcceptLanguage: httpheader.RandomAcceptLanguage(),
 		Handler:        netxlogger.NewHandler(logger),

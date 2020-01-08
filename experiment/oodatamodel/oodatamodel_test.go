@@ -8,19 +8,19 @@ import (
 	"testing"
 
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 )
 
 func TestUnitNewTCPConnectListEmpty(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(porcelain.Results{})
+	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewTCPConnectListSuccess(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(porcelain.Results{
+	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -60,7 +60,7 @@ func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListFailure(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(porcelain.Results{
+	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -86,7 +86,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(porcelain.Results{
+	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8",
@@ -119,15 +119,15 @@ func TestUnitNewRequestsListNil(t *testing.T) {
 }
 
 func TestUnitNewRequestsListEmptyList(t *testing.T) {
-	out := oodatamodel.NewRequestList(&porcelain.HTTPDoResults{})
+	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListGood(t *testing.T) {
-	out := oodatamodel.NewRequestList(&porcelain.HTTPDoResults{
-		TestKeys: porcelain.Results{
+	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				// need two requests to test that order is inverted
 				&modelx.HTTPRoundTripDoneEvent{
@@ -333,8 +333,8 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 }
 
 func TestUnitNewRequestsSnaps(t *testing.T) {
-	out := oodatamodel.NewRequestList(&porcelain.HTTPDoResults{
-		TestKeys: porcelain.Results{
+	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				&modelx.HTTPRoundTripDoneEvent{
 					RequestBodySnap:  []byte("abcd"),

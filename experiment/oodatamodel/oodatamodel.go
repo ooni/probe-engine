@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"github.com/ooni/netx/x/porcelain"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 )
 
 // TCPConnectStatus contains the TCP connect status.
@@ -30,7 +30,7 @@ type TCPConnectEntry struct {
 type TCPConnectList []TCPConnectEntry
 
 // NewTCPConnectList creates a new TCPConnectList
-func NewTCPConnectList(results porcelain.Results) TCPConnectList {
+func NewTCPConnectList(results oonitemplates.Results) TCPConnectList {
 	var out TCPConnectList
 	for _, connect := range results.Connects {
 		// We assume Go is passing us legit data structs
@@ -174,7 +174,7 @@ func addheaders(
 }
 
 // NewRequestList returns the list for "requests"
-func NewRequestList(httpresults *porcelain.HTTPDoResults) RequestList {
+func NewRequestList(httpresults *oonitemplates.HTTPDoResults) RequestList {
 	var out RequestList
 	if httpresults == nil {
 		return out

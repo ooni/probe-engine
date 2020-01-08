@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	netxlogger "github.com/ooni/netx/x/logger"
-	"github.com/ooni/netx/x/porcelain"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/experiment/oodatamodel"
+	"github.com/ooni/probe-engine/internal/netxlogger"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -44,7 +44,7 @@ type TestKeys struct {
 
 type urlMeasurements struct {
 	method  string
-	results *porcelain.HTTPDoResults
+	results *oonitemplates.HTTPDoResults
 }
 
 func newTestKeys() *TestKeys {
@@ -179,7 +179,7 @@ func (m *measurer) measure(
 			}
 			// No races because each goroutine writes its entry
 			entry := urlmeasurements[key]
-			entry.results = porcelain.HTTPDo(ctx, porcelain.HTTPDoConfig{
+			entry.results = oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 				Accept:         httpheader.RandomAccept(),
 				AcceptLanguage: httpheader.RandomAcceptLanguage(),
 				Handler:        netxlogger.NewHandler(sess.Logger),

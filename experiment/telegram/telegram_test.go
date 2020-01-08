@@ -8,7 +8,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/netx/x/porcelain"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/model"
@@ -83,13 +83,13 @@ func TestUnitProcessallWithNoAccessPointsBlocking(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://149.154.175.50/": &urlMeasurements{
 			method: "POST",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"http://149.154.175.50:443/": &urlMeasurements{
 			method: "POST",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: nil, // this should be enough to declare success
 			},
 		},
@@ -110,15 +110,15 @@ func TestUnitProcessallWithTelegramHTTPBlocking(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://149.154.175.50/": &urlMeasurements{
 			method: "POST",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"http://149.154.175.50:443/": &urlMeasurements{
 			method: "POST",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: errors.New("mocked error"),
-				TestKeys: porcelain.Results{
+				TestKeys: oonitemplates.Results{
 					Connects: []*modelx.ConnectEvent{
 						&modelx.ConnectEvent{
 							Error: nil, // enough  to declare we can TCP connect
@@ -144,13 +144,13 @@ func TestUnitProcessallWithMixedResults(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: errors.New("mocked error"),
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				BodySnap:   []byte(`<title>Telegram Web</title>`),
 				Error:      nil,
 				StatusCode: 200,
@@ -175,13 +175,13 @@ func TestUnitProcessallWithBadRequest(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				StatusCode: 400,
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				Error: nil,
 			},
 		},
@@ -202,14 +202,14 @@ func TestUnitProcessallWithMissingTitle(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				StatusCode: 200,
 				BodySnap:   []byte("<HTML><title>Telegram Web</title></HTML>"),
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				StatusCode: 200,
 				BodySnap:   []byte("<HTML><TITLE>Antani Web</TITLE></HTML>"),
 			},
@@ -231,14 +231,14 @@ func TestUnitProcessallWithAllGood(t *testing.T) {
 	err := tk.processall(map[string]*urlMeasurements{
 		"http://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				StatusCode: 200,
 				BodySnap:   []byte("<HTML><title>Telegram Web</title></HTML>"),
 			},
 		},
 		"https://web.telegram.org/": &urlMeasurements{
 			method: "GET",
-			results: &porcelain.HTTPDoResults{
+			results: &oonitemplates.HTTPDoResults{
 				StatusCode: 200,
 				BodySnap:   []byte("<HTML><title>Telegram Web</title></HTML>"),
 			},
