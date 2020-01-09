@@ -419,3 +419,58 @@ func sniBlockingFollowup(
 	}
 	return
 }
+
+// TCPConnectConfig contains TCPConnect settings.
+type TCPConnectConfig struct {
+	Address          string
+	DNSServerAddress string
+	DNSServerNetwork string
+	Handler          modelx.Handler
+}
+
+// TCPConnectResults contains the results of a TCPConnect
+type TCPConnectResults struct {
+	TestKeys Results
+	Error    error
+}
+
+// TCPConnect performs a TCP connect.
+func TCPConnect(
+	ctx context.Context, config TCPConnectConfig,
+) *TCPConnectResults {
+	var (
+		mu      sync.Mutex
+		results = new(TCPConnectResults)
+	)
+	channel := make(chan modelx.Measurement)
+	root := &modelx.MeasurementRoot{
+		Beginning: time.Now(),
+		Handler: &channelHandler{
+			ch: channel,
+		},
+	}
+	ctx = modelx.WithMeasurementRoot(ctx, root)
+	dialer := netx.NewDialer(handlers.NoHandler)
+	// TODO(bassosimone): tell dialer to use specific CA bundle?
+	resolver, err := configureDNS(
+		time.Now().UnixNano(),
+		config.DNSServerNetwork,
+		config.DNSServerAddress,
+	)
+	if err != nil {
+		results.Error = err
+		return results
+	}
+	dialer.SetResolver(resolver)
+	results.TestKeys.collect(channel, config.Handler, func() {
+		conn, err := dialer.DialContext(ctx, "tcp", config.Address)
+		if conn != nil {
+			defer conn.Close()
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		results.Error = err
+	})
+	results.TestKeys.Scoreboard = &root.X.Scoreboard
+	return results
+}

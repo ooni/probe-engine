@@ -256,3 +256,42 @@ func TestIntegrationBodySnapSizes(t *testing.T) {
 		}
 	}
 }
+
+func TestIntegrationTCPConnectGood(t *testing.T) {
+	ctx := context.Background()
+	results := TCPConnect(ctx, TCPConnectConfig{
+		Address: "ooni.io:443",
+	})
+	if results.Error != nil {
+		t.Fatal(results.Error)
+	}
+	if results.TestKeys.Scoreboard == nil {
+		t.Fatal("no scoreboard?!")
+	}
+}
+
+func TestIntegrationTCPConnectGoodWithDoT(t *testing.T) {
+	ctx := context.Background()
+	results := TCPConnect(ctx, TCPConnectConfig{
+		Address:          "ooni.io:443",
+		DNSServerNetwork: "dot",
+		DNSServerAddress: "9.9.9.9:853",
+	})
+	if results.Error != nil {
+		t.Fatal(results.Error)
+	}
+	if results.TestKeys.Scoreboard == nil {
+		t.Fatal("no scoreboard?!")
+	}
+}
+
+func TestIntegrationTCPConnectUnknownDNS(t *testing.T) {
+	ctx := context.Background()
+	results := TCPConnect(ctx, TCPConnectConfig{
+		Address:          "ooni.io:443",
+		DNSServerNetwork: "antani",
+	})
+	if !strings.HasSuffix(results.Error.Error(), "unsupported network value") {
+		t.Fatal("not the error that we expected")
+	}
+}
