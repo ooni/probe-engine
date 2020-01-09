@@ -19,7 +19,7 @@ type Config struct {
 	CountryCode       string
 	EnabledCategories []string
 	HTTPClient        *http.Client
-	Limit             int
+	Limit             int64
 	Logger            log.Logger
 	UserAgent         string
 }
