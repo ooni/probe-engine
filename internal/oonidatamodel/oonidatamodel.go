@@ -10,8 +10,10 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 
+	"github.com/ooni/netx/modelx"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 )
 
@@ -209,4 +211,80 @@ func NewRequestList(httpresults *oonitemplates.HTTPDoResults) RequestList {
 		out = append(out, entry)
 	}
 	return out
+}
+
+// DNSAnswerEntry is the answer to a DNS query
+type DNSAnswerEntry struct {
+	AnswerType string  `json:"answer_type"`
+	Hostname   string  `json:"hostname,omitempty"`
+	IPv4       string  `json:"ipv4,omitempty"`
+	IPv6       string  `json:"ipv6,omitempty"`
+	TTL        *uint32 `json:"ttl"`
+}
+
+// DNSQueryEntry is a DNS query with possibly an answer
+type DNSQueryEntry struct {
+	Answers          []DNSAnswerEntry `json:"answers"`
+	Engine           string           `json:"engine"`
+	Failure          *string          `json:"failure"`
+	Hostname         string           `json:"hostname"`
+	QueryType        string           `json:"query_type"`
+	ResolverHostname *string          `json:"resolver_hostname"`
+	ResolverPort     *string          `json:"resolver_port"`
+	ResolverAddress  string           `json:"resolver_address"`
+}
+
+type (
+	// DNSQueriesList is a list of DNS queries
+	DNSQueriesList []DNSQueryEntry
+	dnsQueryType   string
+)
+
+// NewDNSQueriesList returns a list of DNS queries.
+func NewDNSQueriesList(results oonitemplates.Results) DNSQueriesList {
+	// TODO(bassosimone): add support for CNAME lookups.
+	var out DNSQueriesList
+	for _, resolve := range results.Resolves {
+		for _, qtype := range []dnsQueryType{"A", "AAAA"} {
+			entry := qtype.makequeryentry(resolve)
+			for _, addr := range resolve.Addresses {
+				if qtype.ipoftype(addr) {
+					entry.Answers = append(entry.Answers, qtype.makeanswerentry(addr))
+				}
+			}
+			out = append(out, entry)
+		}
+	}
+	return out
+}
+
+func (qtype dnsQueryType) ipoftype(addr string) bool {
+	switch qtype {
+	case "A":
+		return strings.Contains(addr, ":") == false
+	case "AAAA":
+		return strings.Contains(addr, ":") == true
+	}
+	return false
+}
+
+func (qtype dnsQueryType) makeanswerentry(addr string) DNSAnswerEntry {
+	answer := DNSAnswerEntry{AnswerType: string(qtype)}
+	switch qtype {
+	case "A":
+		answer.IPv4 = addr
+	case "AAAA":
+		answer.IPv6 = addr
+	}
+	return answer
+}
+
+func (qtype dnsQueryType) makequeryentry(resolve *modelx.ResolveDoneEvent) DNSQueryEntry {
+	return DNSQueryEntry{
+		Engine:          resolve.TransportNetwork,
+		Failure:         makeFailure(resolve.Error),
+		Hostname:        resolve.Hostname,
+		QueryType:       string(qtype),
+		ResolverAddress: resolve.TransportAddress,
+	}
 }
