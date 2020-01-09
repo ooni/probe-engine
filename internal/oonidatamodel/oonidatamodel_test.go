@@ -110,57 +110,48 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 	}
 }
 
-func TestUnitNewRequestsListNil(t *testing.T) {
-	out := NewRequestList(nil)
-	if len(out) != 0 {
-		t.Fatal("unexpected output length")
-	}
-}
-
 func TestUnitNewRequestsListEmptyList(t *testing.T) {
-	out := NewRequestList(&oonitemplates.HTTPDoResults{})
+	out := NewRequestList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListGood(t *testing.T) {
-	out := NewRequestList(&oonitemplates.HTTPDoResults{
-		TestKeys: oonitemplates.Results{
-			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
-				// need two requests to test that order is inverted
-				&modelx.HTTPRoundTripDoneEvent{
-					RequestBodySnap: []byte("abcdefx"),
-					RequestHeaders: http.Header{
-						"Content-Type": []string{
-							"text/plain",
-							"foobar",
-						},
-						"Content-Length": []string{
-							"17",
-						},
+	out := NewRequestList(oonitemplates.Results{
+		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
+			// need two requests to test that order is inverted
+			&modelx.HTTPRoundTripDoneEvent{
+				RequestBodySnap: []byte("abcdefx"),
+				RequestHeaders: http.Header{
+					"Content-Type": []string{
+						"text/plain",
+						"foobar",
 					},
-					RequestMethod:    "GET",
-					RequestURL:       "http://x.org/",
-					ResponseBodySnap: []byte("abcdef"),
-					ResponseHeaders: http.Header{
-						"Content-Type": []string{
-							"application/json",
-							"foobaz",
-						},
-						"Server": []string{
-							"antani",
-						},
-						"Content-Length": []string{
-							"14",
-						},
+					"Content-Length": []string{
+						"17",
 					},
-					ResponseStatusCode: 451,
-					MaxBodySnapSize:    10,
 				},
-				&modelx.HTTPRoundTripDoneEvent{
-					Error: errors.New("antani"),
+				RequestMethod:    "GET",
+				RequestURL:       "http://x.org/",
+				ResponseBodySnap: []byte("abcdef"),
+				ResponseHeaders: http.Header{
+					"Content-Type": []string{
+						"application/json",
+						"foobaz",
+					},
+					"Server": []string{
+						"antani",
+					},
+					"Content-Length": []string{
+						"14",
+					},
 				},
+				ResponseStatusCode: 451,
+				MaxBodySnapSize:    10,
+			},
+			&modelx.HTTPRoundTripDoneEvent{
+				Error: errors.New("antani"),
 			},
 		},
 	})
@@ -332,14 +323,12 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 }
 
 func TestUnitNewRequestsSnaps(t *testing.T) {
-	out := NewRequestList(&oonitemplates.HTTPDoResults{
-		TestKeys: oonitemplates.Results{
-			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
-				&modelx.HTTPRoundTripDoneEvent{
-					RequestBodySnap:  []byte("abcd"),
-					MaxBodySnapSize:  4,
-					ResponseBodySnap: []byte("defg"),
-				},
+	out := NewRequestList(oonitemplates.Results{
+		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
+			&modelx.HTTPRoundTripDoneEvent{
+				RequestBodySnap:  []byte("abcd"),
+				MaxBodySnapSize:  4,
+				ResponseBodySnap: []byte("defg"),
 			},
 		},
 	})

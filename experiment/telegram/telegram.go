@@ -72,7 +72,7 @@ func (tk *TestKeys) processone(v *urlMeasurements) error {
 		tk.Queries, oonidatamodel.NewDNSQueriesList(r.TestKeys)...,
 	)
 	tk.Requests = append(
-		tk.Requests, oonidatamodel.NewRequestList(r)...,
+		tk.Requests, oonidatamodel.NewRequestList(r.TestKeys)...,
 	)
 	tk.TCPConnect = append(
 		tk.TCPConnect,
