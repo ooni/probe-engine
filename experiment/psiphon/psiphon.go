@@ -133,7 +133,7 @@ func (r *runner) usetunnel(
 		r.testkeys.Queries, oonidatamodel.NewDNSQueriesList(results.TestKeys)...,
 	)
 	r.testkeys.Requests = append(
-		r.testkeys.Requests, oonidatamodel.NewRequestList(results)...,
+		r.testkeys.Requests, oonidatamodel.NewRequestList(results.TestKeys)...,
 	)
 	// TODO(bassosimone): understand if there is a way to ask
 	// the tunnel the number of bytes sent and/or received

@@ -179,12 +179,9 @@ func addheaders(
 }
 
 // NewRequestList returns the list for "requests"
-func NewRequestList(httpresults *oonitemplates.HTTPDoResults) RequestList {
+func NewRequestList(results oonitemplates.Results) RequestList {
 	var out RequestList
-	if httpresults == nil {
-		return out
-	}
-	in := httpresults.TestKeys.HTTPRequests
+	in := results.HTTPRequests
 	// OONI's data format wants more recent request first
 	for idx := len(in) - 1; idx >= 0; idx-- {
 		var entry RequestEntry
