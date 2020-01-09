@@ -7,6 +7,7 @@ package oonidatamodel
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"strconv"
@@ -88,6 +89,29 @@ func (hb MaybeBinaryValue) MarshalJSON() ([]byte, error) {
 	return json.Marshal(er)
 }
 
+// UnmarshalJSON is the opposite of MarshalJSON.
+func (hb *MaybeBinaryValue) UnmarshalJSON(d []byte) error {
+	if err := json.Unmarshal(d, &hb.Value); err == nil {
+		return nil
+	}
+	er := make(map[string]string)
+	if err := json.Unmarshal(d, &er); err != nil {
+		return err
+	}
+	if v, ok := er["format"]; !ok || v != "base64" {
+		return errors.New("missing or invalid format field")
+	}
+	if _, ok := er["data"]; !ok {
+		return errors.New("missing data field")
+	}
+	b64, err := base64.StdEncoding.DecodeString(er["data"])
+	if err != nil {
+		return err
+	}
+	hb.Value = string(b64)
+	return nil
+}
+
 // HTTPBody is an HTTP body. As an implementation note, this type must be
 // an alias for the MaybeBinaryValue type, otherwise the specific serialisation
 // mechanism implemented by MaybeBinaryValue is not working.
@@ -113,6 +137,48 @@ func (hh HTTPHeader) MarshalJSON() ([]byte, error) {
 	value["format"] = "base64"
 	value["data"] = base64.StdEncoding.EncodeToString([]byte(hh.Value.Value))
 	return json.Marshal([]interface{}{hh.Key, value})
+}
+
+// UnmarshalJSON is the opposite of MarshalJSON.
+func (hh *HTTPHeader) UnmarshalJSON(d []byte) error {
+	var pair []interface{}
+	if err := json.Unmarshal(d, &pair); err != nil {
+		return err
+	}
+	if len(pair) != 2 {
+		return errors.New("unexpected pair length")
+	}
+	key, ok := pair[0].(string)
+	if !ok {
+		return errors.New("the key is not a string")
+	}
+	value, ok := pair[1].(string)
+	if !ok {
+		mapvalue, ok := pair[1].(map[string]interface{})
+		if !ok {
+			return errors.New("the value is neither a string nor a map[string]interface{}")
+		}
+		if _, ok := mapvalue["format"]; !ok {
+			return errors.New("missing format")
+		}
+		if v, ok := mapvalue["format"].(string); !ok || v != "base64" {
+			return errors.New("invalid format")
+		}
+		if _, ok := mapvalue["data"]; !ok {
+			return errors.New("missing data field")
+		}
+		v, ok := mapvalue["data"].(string)
+		if !ok {
+			return errors.New("the data field is not a string")
+		}
+		b64, err := base64.StdEncoding.DecodeString(v)
+		if err != nil {
+			return err
+		}
+		value = string(b64)
+	}
+	hh.Key, hh.Value = key, MaybeBinaryValue{Value: value}
+	return nil
 }
 
 // HTTPHeadersList is a list of headers.

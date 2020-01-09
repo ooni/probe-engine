@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/ooni/netx/modelx"
@@ -343,7 +344,7 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 	}
 }
 
-func TestMarshalHTTPBodyString(t *testing.T) {
+func TestMarshalUnmarshalHTTPBodyString(t *testing.T) {
 	mbv := HTTPBody{
 		Value: "1234",
 	}
@@ -353,6 +354,13 @@ func TestMarshalHTTPBodyString(t *testing.T) {
 	}
 	if !bytes.Equal(data, []byte(`"1234"`)) {
 		t.Fatal("result is unexpected")
+	}
+	var newbody HTTPBody
+	if err := json.Unmarshal(data, &newbody); err != nil {
+		t.Fatal(err)
+	}
+	if newbody.Value != mbv.Value {
+		t.Fatal("string value mistmatch")
 	}
 }
 
@@ -370,7 +378,7 @@ var binaryInput = []uint8{
 	0x3a, 0xa2, 0xd4, 0x40, 0x4e, 0xd7, 0x10, 0x1f,
 }
 
-func TestMarshalHTTPBodyBinary(t *testing.T) {
+func TestMarshalUnmarshalHTTPBodyBinary(t *testing.T) {
 	mbv := HTTPBody{
 		Value: string(binaryInput),
 	}
@@ -381,9 +389,64 @@ func TestMarshalHTTPBodyBinary(t *testing.T) {
 	if !bytes.Equal(data, []byte(`{"data":"V+V5+6a7DbzOvaeguqR4eBJZ7mg5pAeYxT68Vcv+NDx+G1qzIp3BLW7KW/EQJUceROItYAjqsArMBUig9Xg48Ns/nZ8lb4kAlpOvQ6xNyawT2yK+en3ZJKJSadiJwdFXqgQrotixGfbVETm7gM+G+V+djKv1xXQkOqLUQE7XEB8=","format":"base64"}`)) {
 		t.Fatal("result is unexpected")
 	}
+	var newbody HTTPBody
+	if err := json.Unmarshal(data, &newbody); err != nil {
+		t.Fatal(err)
+	}
+	if newbody.Value != mbv.Value {
+		t.Fatal("string value mistmatch")
+	}
 }
 
-func TestMarshalHTTPHeaderString(t *testing.T) {
+func TestUnitMaybeBinaryValueUnmarshalJSON(t *testing.T) {
+	t.Run("when the code is not a map or string", func(t *testing.T) {
+		var (
+			mbv   MaybeBinaryValue
+			input = []byte("[1, 2, 3, 4]")
+		)
+		if err := json.Unmarshal(input, &mbv); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the format field is missing", func(t *testing.T) {
+		var (
+			mbv   MaybeBinaryValue
+			input = []byte("{}")
+		)
+		if err := json.Unmarshal(input, &mbv); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the format field is invalid", func(t *testing.T) {
+		var (
+			mbv   MaybeBinaryValue
+			input = []byte(`{"format":"antani"}`)
+		)
+		if err := json.Unmarshal(input, &mbv); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is missing", func(t *testing.T) {
+		var (
+			mbv   MaybeBinaryValue
+			input = []byte(`{"format":"base64"}`)
+		)
+		if err := json.Unmarshal(input, &mbv); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is not base64", func(t *testing.T) {
+		var (
+			mbv   MaybeBinaryValue
+			input = []byte(`{"format":"base64","data":"antani"}`)
+		)
+		if err := json.Unmarshal(input, &mbv); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+}
+
+func TestMarshalUnmarshalHTTPHeaderString(t *testing.T) {
 	mbh := HTTPHeadersList{
 		HTTPHeader{
 			Key: "Content-Type",
@@ -414,9 +477,16 @@ func TestMarshalHTTPHeaderString(t *testing.T) {
 	if !bytes.Equal(data, expected) {
 		t.Fatal("result is unexpected")
 	}
+	var newlist HTTPHeadersList
+	if err := json.Unmarshal(data, &newlist); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(mbh, newlist) {
+		t.Fatal("result mismatch")
+	}
 }
 
-func TestMarshalHTTPHeaderBinary(t *testing.T) {
+func TestMarshalUnmarshalHTTPHeaderBinary(t *testing.T) {
 	mbh := HTTPHeadersList{
 		HTTPHeader{
 			Key: "Content-Type",
@@ -447,6 +517,115 @@ func TestMarshalHTTPHeaderBinary(t *testing.T) {
 	if !bytes.Equal(data, expected) {
 		t.Fatal("result is unexpected")
 	}
+	var newlist HTTPHeadersList
+	if err := json.Unmarshal(data, &newlist); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(mbh, newlist) {
+		t.Fatal("result mismatch")
+	}
+}
+
+func TestUnitHTTPHeaderUnmarshalJSON(t *testing.T) {
+	t.Run("when the code is not a list", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`{"foo":1}`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the pair length is not two", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte("[1,2,3]")
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the first element is not a string", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`[1, "antani"]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the second element is not map[string]interface{}", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", ["base64", "foo"]]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the format field is missing", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the format field is not a string", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":1}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the format field is invalid", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":"antani"}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is missing", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":"base64"}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is not a string", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":"base64","data":10}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is not base64", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":"base64","data":"antani"}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the data field is not base64", func(t *testing.T) {
+		var (
+			hh    HTTPHeader
+			input = []byte(`["antani", {"format":"base64","data":"antani"}]`)
+		)
+		if err := json.Unmarshal(input, &hh); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
 }
 
 func TestUnitNewDNSQueriesListEmpty(t *testing.T) {
