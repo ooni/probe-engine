@@ -8,9 +8,9 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )

@@ -1,8 +1,8 @@
 // Package oonitemplates contains templates for experiments.
 //
 // Every experiment should possibly be based on code inside of
-// this package. In the future we should probably unify the code
-// in here with the code in oodatamodel.
+// this package. In the future we should perhaps unify the code
+// in here with the code in oonidatamodel.
 //
 // This has been forked from ooni/netx/x/porcelain because it was
 // causing too much changes to keep this code in there.

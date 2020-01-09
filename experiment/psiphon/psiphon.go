@@ -20,8 +20,8 @@ import (
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
-	"github.com/ooni/probe-engine/experiment/oodatamodel"
 	"github.com/ooni/probe-engine/internal/netxlogger"
+	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
@@ -59,7 +59,7 @@ type TestKeys struct {
 	MaxRuntime float64 `json:"max_runtime"`
 
 	// Requests contains HTTP measurements
-	Requests oodatamodel.RequestList `json:"requests"`
+	Requests oonidatamodel.RequestList `json:"requests"`
 
 	// SOCKSProxy is the address of the proxy we're using.
 	SOCKSProxy string `json:"socksproxy"`
@@ -127,7 +127,7 @@ func (r *runner) usetunnel(
 		UserAgent: httpheader.RandomUserAgent(),
 	})
 	r.testkeys.Requests = append(
-		r.testkeys.Requests, oodatamodel.NewRequestList(results)...,
+		r.testkeys.Requests, oonidatamodel.NewRequestList(results)...,
 	)
 	// TODO(bassosimone): understand if there is a way to ask
 	// the tunnel the number of bytes sent and/or received

@@ -17,8 +17,8 @@ import (
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
-	"github.com/ooni/probe-engine/experiment/oodatamodel"
 	"github.com/ooni/probe-engine/internal/netxlogger"
+	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -34,12 +34,12 @@ type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
-	Requests             oodatamodel.RequestList    `json:"requests"`
-	TCPConnect           oodatamodel.TCPConnectList `json:"tcp_connect"`
-	TelegramHTTPBlocking bool                       `json:"telegram_http_blocking"`
-	TelegramTCPBlocking  bool                       `json:"telegram_tcp_blocking"`
-	TelegramWebFailure   *string                    `json:"telegram_web_failure"`
-	TelegramWebStatus    string                     `json:"telegram_web_status"`
+	Requests             oonidatamodel.RequestList    `json:"requests"`
+	TCPConnect           oonidatamodel.TCPConnectList `json:"tcp_connect"`
+	TelegramHTTPBlocking bool                         `json:"telegram_http_blocking"`
+	TelegramTCPBlocking  bool                         `json:"telegram_tcp_blocking"`
+	TelegramWebFailure   *string                      `json:"telegram_web_failure"`
+	TelegramWebStatus    string                       `json:"telegram_web_status"`
 }
 
 type urlMeasurements struct {
@@ -66,11 +66,11 @@ func (tk *TestKeys) processone(v *urlMeasurements) error {
 	}
 	// update the requests and tcp-connect entries
 	tk.Requests = append(
-		tk.Requests, oodatamodel.NewRequestList(r)...,
+		tk.Requests, oonidatamodel.NewRequestList(r)...,
 	)
 	tk.TCPConnect = append(
 		tk.TCPConnect,
-		oodatamodel.NewTCPConnectList(r.TestKeys)...,
+		oonidatamodel.NewTCPConnectList(r.TestKeys)...,
 	)
 	// process access points first
 	if v.method != "GET" {
