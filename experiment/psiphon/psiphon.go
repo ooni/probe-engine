@@ -30,7 +30,7 @@ import (
 
 const (
 	testName    = "psiphon"
-	testVersion = "0.3.0"
+	testVersion = "0.3.1"
 )
 
 // Config contains the experiment's configuration.
@@ -57,6 +57,9 @@ type TestKeys struct {
 	// MaxRuntime is the number of seconds after which we
 	// interrupt the psiphon experiment.
 	MaxRuntime float64 `json:"max_runtime"`
+
+	// Queries contains the DNS queries.
+	Queries oonidatamodel.DNSQueriesList `json:"queries"`
 
 	// Requests contains HTTP measurements
 	Requests oonidatamodel.RequestList `json:"requests"`
@@ -126,6 +129,9 @@ func (r *runner) usetunnel(
 		URL:       "https://www.google.com/humans.txt",
 		UserAgent: httpheader.RandomUserAgent(),
 	})
+	r.testkeys.Queries = append(
+		r.testkeys.Queries, oonidatamodel.NewDNSQueriesList(results.TestKeys)...,
+	)
 	r.testkeys.Requests = append(
 		r.testkeys.Requests, oonidatamodel.NewRequestList(results)...,
 	)

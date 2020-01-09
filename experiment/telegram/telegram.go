@@ -26,7 +26,7 @@ import (
 
 const (
 	testName    = "telegram"
-	testVersion = "0.0.3"
+	testVersion = "0.0.4"
 )
 
 // Config contains the experiment config.
@@ -34,6 +34,8 @@ type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
+	Agent                string                       `json:"agent"`
+	Queries              oonidatamodel.DNSQueriesList `json:"queries"`
 	Requests             oonidatamodel.RequestList    `json:"requests"`
 	TCPConnect           oonidatamodel.TCPConnectList `json:"tcp_connect"`
 	TelegramHTTPBlocking bool                         `json:"telegram_http_blocking"`
@@ -64,7 +66,11 @@ func (tk *TestKeys) processone(v *urlMeasurements) error {
 	if r == nil {
 		return errors.New("passed nil results")
 	}
+	tk.Agent = "redirect"
 	// update the requests and tcp-connect entries
+	tk.Queries = append(
+		tk.Queries, oonidatamodel.NewDNSQueriesList(r.TestKeys)...,
+	)
 	tk.Requests = append(
 		tk.Requests, oonidatamodel.NewRequestList(r)...,
 	)

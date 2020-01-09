@@ -1,4 +1,4 @@
-package oonidatamodel_test
+package oonidatamodel
 
 import (
 	"bytes"
@@ -8,19 +8,18 @@ import (
 	"testing"
 
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 )
 
 func TestUnitNewTCPConnectListEmpty(t *testing.T) {
-	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{})
+	out := NewTCPConnectList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewTCPConnectListSuccess(t *testing.T) {
-	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -60,7 +59,7 @@ func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListFailure(t *testing.T) {
-	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -86,7 +85,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
-	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8",
@@ -112,21 +111,21 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 }
 
 func TestUnitNewRequestsListNil(t *testing.T) {
-	out := oonidatamodel.NewRequestList(nil)
+	out := NewRequestList(nil)
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListEmptyList(t *testing.T) {
-	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{})
+	out := NewRequestList(&oonitemplates.HTTPDoResults{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListGood(t *testing.T) {
-	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+	out := NewRequestList(&oonitemplates.HTTPDoResults{
 		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				// need two requests to test that order is inverted
@@ -216,40 +215,40 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 		t.Fatal("unexpected out[1].Request.Headers Content-Length value")
 	}
 	var (
-		request_has_text_plain     bool
-		request_has_foobar         bool
-		request_has_content_length bool
-		request_has_other          int64
+		requestHasTextPlain     bool
+		requestHasFoobar        bool
+		requestHasContentLength bool
+		requestHasOther         int64
 	)
 	for _, header := range out[1].Request.HeadersList {
 		if header.Key == "Content-Type" {
 			if header.Value.Value == "text/plain" {
-				request_has_text_plain = true
+				requestHasTextPlain = true
 			} else if header.Value.Value == "foobar" {
-				request_has_foobar = true
+				requestHasFoobar = true
 			} else {
-				request_has_other++
+				requestHasOther++
 			}
 		} else if header.Key == "Content-Length" {
 			if header.Value.Value == "17" {
-				request_has_content_length = true
+				requestHasContentLength = true
 			} else {
-				request_has_other++
+				requestHasOther++
 			}
 		} else {
-			request_has_other++
+			requestHasOther++
 		}
 	}
-	if !request_has_text_plain {
+	if !requestHasTextPlain {
 		t.Fatal("missing text/plain for request")
 	}
-	if !request_has_foobar {
+	if !requestHasFoobar {
 		t.Fatal("missing foobar for request")
 	}
-	if !request_has_content_length {
+	if !requestHasContentLength {
 		t.Fatal("missing content_length for request")
 	}
-	if request_has_other != 0 {
+	if requestHasOther != 0 {
 		t.Fatal("seen something unexpected")
 	}
 	if out[1].Request.Method != "GET" {
@@ -281,50 +280,50 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 		t.Fatal("unexpected out[1].Response.Headers Content-Length value")
 	}
 	var (
-		response_has_application_json bool
-		response_has_foobaz           bool
-		response_has_server           bool
-		response_has_content_length   bool
-		response_has_other            int64
+		responseHasApplicationJSON bool
+		responseHasFoobaz          bool
+		responseHasServer          bool
+		responseHasContentLength   bool
+		responseHasOther           int64
 	)
 	for _, header := range out[1].Response.HeadersList {
 		if header.Key == "Content-Type" {
 			if header.Value.Value == "application/json" {
-				response_has_application_json = true
+				responseHasApplicationJSON = true
 			} else if header.Value.Value == "foobaz" {
-				response_has_foobaz = true
+				responseHasFoobaz = true
 			} else {
-				response_has_other++
+				responseHasOther++
 			}
 		} else if header.Key == "Content-Length" {
 			if header.Value.Value == "14" {
-				response_has_content_length = true
+				responseHasContentLength = true
 			} else {
-				response_has_other++
+				responseHasOther++
 			}
 		} else if header.Key == "Server" {
 			if header.Value.Value == "antani" {
-				response_has_server = true
+				responseHasServer = true
 			} else {
-				response_has_other++
+				responseHasOther++
 			}
 		} else {
-			response_has_other++
+			responseHasOther++
 		}
 	}
-	if !response_has_application_json {
+	if !responseHasApplicationJSON {
 		t.Fatal("missing application/json for response")
 	}
-	if !response_has_foobaz {
+	if !responseHasFoobaz {
 		t.Fatal("missing foobaz for response")
 	}
-	if !response_has_content_length {
+	if !responseHasContentLength {
 		t.Fatal("missing content_length for response")
 	}
-	if !response_has_server {
+	if !responseHasServer {
 		t.Fatal("missing server for response")
 	}
-	if response_has_other != 0 {
+	if responseHasOther != 0 {
 		t.Fatal("seen something unexpected")
 	}
 	if out[1].Response.BodyIsTruncated != false {
@@ -333,7 +332,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 }
 
 func TestUnitNewRequestsSnaps(t *testing.T) {
-	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+	out := NewRequestList(&oonitemplates.HTTPDoResults{
 		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				&modelx.HTTPRoundTripDoneEvent{
@@ -356,7 +355,7 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 }
 
 func TestMarshalHTTPBodyString(t *testing.T) {
-	mbv := oonidatamodel.HTTPBody{
+	mbv := HTTPBody{
 		Value: "1234",
 	}
 	data, err := json.Marshal(mbv)
@@ -383,7 +382,7 @@ var binaryInput = []uint8{
 }
 
 func TestMarshalHTTPBodyBinary(t *testing.T) {
-	mbv := oonidatamodel.HTTPBody{
+	mbv := HTTPBody{
 		Value: string(binaryInput),
 	}
 	data, err := json.Marshal(mbv)
@@ -396,22 +395,22 @@ func TestMarshalHTTPBodyBinary(t *testing.T) {
 }
 
 func TestMarshalHTTPHeaderString(t *testing.T) {
-	mbh := oonidatamodel.HTTPHeadersList{
-		oonidatamodel.HTTPHeader{
+	mbh := HTTPHeadersList{
+		HTTPHeader{
 			Key: "Content-Type",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: "application/json",
 			},
 		},
-		oonidatamodel.HTTPHeader{
+		HTTPHeader{
 			Key: "Content-Type",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: "antani",
 			},
 		},
-		oonidatamodel.HTTPHeader{
+		HTTPHeader{
 			Key: "Content-Length",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: "17",
 			},
 		},
@@ -429,22 +428,22 @@ func TestMarshalHTTPHeaderString(t *testing.T) {
 }
 
 func TestMarshalHTTPHeaderBinary(t *testing.T) {
-	mbh := oonidatamodel.HTTPHeadersList{
-		oonidatamodel.HTTPHeader{
+	mbh := HTTPHeadersList{
+		HTTPHeader{
 			Key: "Content-Type",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: "application/json",
 			},
 		},
-		oonidatamodel.HTTPHeader{
+		HTTPHeader{
 			Key: "Content-Type",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: string(binaryInput),
 			},
 		},
-		oonidatamodel.HTTPHeader{
+		HTTPHeader{
 			Key: "Content-Length",
-			Value: oonidatamodel.MaybeBinaryValue{
+			Value: MaybeBinaryValue{
 				Value: "17",
 			},
 		},
@@ -458,5 +457,172 @@ func TestMarshalHTTPHeaderBinary(t *testing.T) {
 	)
 	if !bytes.Equal(data, expected) {
 		t.Fatal("result is unexpected")
+	}
+}
+
+func TestUnitNewDNSQueriesListEmpty(t *testing.T) {
+	out := NewDNSQueriesList(oonitemplates.Results{})
+	if len(out) != 0 {
+		t.Fatal("unexpected output length")
+	}
+}
+
+func TestUnitNewDNSQueriesListSuccess(t *testing.T) {
+	out := NewDNSQueriesList(oonitemplates.Results{
+		Resolves: []*modelx.ResolveDoneEvent{
+			&modelx.ResolveDoneEvent{
+				Addresses: []string{
+					"8.8.4.4", "2001:4860:4860::8888",
+				},
+				Hostname:         "dns.google",
+				TransportNetwork: "system",
+			},
+			&modelx.ResolveDoneEvent{
+				Error:            errors.New("dns_nxdomain_error"),
+				Hostname:         "dns.googlex",
+				TransportNetwork: "system",
+			},
+		},
+	})
+	if len(out) != 4 {
+		t.Fatal("unexpected output length")
+	}
+	var (
+		foundDNSGoogleA    bool
+		foundDNSGoogleAAAA bool
+		foundErrorA        bool
+		foundErrorAAAA     bool
+		foundOther         bool
+	)
+	for _, e := range out {
+		switch e.Hostname {
+		case "dns.google":
+			switch e.QueryType {
+			case "A":
+				foundDNSGoogleA = true
+				if err := dnscheckgood(e); err != nil {
+					t.Fatal(err)
+				}
+			case "AAAA":
+				foundDNSGoogleAAAA = true
+				if err := dnscheckgood(e); err != nil {
+					t.Fatal(err)
+				}
+			default:
+				foundOther = true
+			}
+		case "dns.googlex":
+			switch e.QueryType {
+			case "A":
+				foundErrorA = true
+				if err := dnscheckbad(e); err != nil {
+					t.Fatal(err)
+				}
+			case "AAAA":
+				foundErrorAAAA = true
+				if err := dnscheckbad(e); err != nil {
+					t.Fatal(err)
+				}
+			default:
+				foundOther = true
+			}
+		default:
+			foundOther = true
+		}
+	}
+	if foundDNSGoogleA == false {
+		t.Fatal("missing A for dns.google")
+	}
+	if foundDNSGoogleAAAA == false {
+		t.Fatal("missing AAAA for dns.google")
+	}
+	if foundErrorA == false {
+		t.Fatal("missing A for invalid domain")
+	}
+	if foundErrorAAAA == false {
+		t.Fatal("missing AAAA for invalid domain")
+	}
+	if foundOther == true {
+		t.Fatal("seen something unexpected")
+	}
+}
+
+func dnscheckgood(e DNSQueryEntry) error {
+	if len(e.Answers) != 1 {
+		return errors.New("unexpected number of answers")
+	}
+	if e.Engine != "system" {
+		return errors.New("invalid engine")
+	}
+	if e.Failure != nil {
+		return errors.New("invalid failure")
+	}
+	if e.Hostname != "dns.google" {
+		return errors.New("invalid hostname")
+	}
+	switch e.QueryType {
+	case "A", "AAAA":
+	default:
+		return errors.New("invalid query type")
+	}
+	if e.Answers[0].AnswerType != e.QueryType {
+		return errors.New("AnswerType mismatch")
+	}
+	switch e.QueryType {
+	case "A":
+		if e.Answers[0].IPv4 != "8.8.4.4" {
+			return errors.New("unexpected IPv4 entry")
+		}
+	case "AAAA":
+		if e.Answers[0].IPv6 != "2001:4860:4860::8888" {
+			return errors.New("unexpected IPv6 entry")
+		}
+	}
+	if e.ResolverHostname != nil {
+		return errors.New("invalid resolver hostname")
+	}
+	if e.ResolverPort != nil {
+		return errors.New("invalid resolver port")
+	}
+	if e.ResolverAddress != "" {
+		return errors.New("invalid resolver address")
+	}
+	return nil
+}
+
+func dnscheckbad(e DNSQueryEntry) error {
+	if len(e.Answers) != 0 {
+		return errors.New("unexpected number of answers")
+	}
+	if e.Engine != "system" {
+		return errors.New("invalid engine")
+	}
+	if *e.Failure != "dns_nxdomain_error" {
+		return errors.New("invalid failure")
+	}
+	if e.Hostname != "dns.googlex" {
+		return errors.New("invalid hostname")
+	}
+	switch e.QueryType {
+	case "A", "AAAA":
+	default:
+		return errors.New("invalid query type")
+	}
+	if e.ResolverHostname != nil {
+		return errors.New("invalid resolver hostname")
+	}
+	if e.ResolverPort != nil {
+		return errors.New("invalid resolver port")
+	}
+	if e.ResolverAddress != "" {
+		return errors.New("invalid resolver address")
+	}
+	return nil
+}
+
+func TestUnitDNSQueryTypeIPOfType(t *testing.T) {
+	qtype := dnsQueryType("ANTANI")
+	if qtype.ipoftype("8.8.8.8") == true {
+		t.Fatal("ipoftype misbehaving")
 	}
 }
