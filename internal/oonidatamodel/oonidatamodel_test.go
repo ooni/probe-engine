@@ -1,4 +1,4 @@
-package oodatamodel_test
+package oonidatamodel_test
 
 import (
 	"bytes"
@@ -8,19 +8,19 @@ import (
 	"testing"
 
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/probe-engine/experiment/oodatamodel"
+	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 )
 
 func TestUnitNewTCPConnectListEmpty(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{})
+	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewTCPConnectListSuccess(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -60,7 +60,7 @@ func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListFailure(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
@@ -86,7 +86,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 }
 
 func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
-	out := oodatamodel.NewTCPConnectList(oonitemplates.Results{
+	out := oonidatamodel.NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8",
@@ -112,21 +112,21 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 }
 
 func TestUnitNewRequestsListNil(t *testing.T) {
-	out := oodatamodel.NewRequestList(nil)
+	out := oonidatamodel.NewRequestList(nil)
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListEmptyList(t *testing.T) {
-	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{})
+	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
 func TestUnitNewRequestsListGood(t *testing.T) {
-	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
 		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				// need two requests to test that order is inverted
@@ -333,7 +333,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 }
 
 func TestUnitNewRequestsSnaps(t *testing.T) {
-	out := oodatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
+	out := oonidatamodel.NewRequestList(&oonitemplates.HTTPDoResults{
 		TestKeys: oonitemplates.Results{
 			HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 				&modelx.HTTPRoundTripDoneEvent{
@@ -356,7 +356,7 @@ func TestUnitNewRequestsSnaps(t *testing.T) {
 }
 
 func TestMarshalHTTPBodyString(t *testing.T) {
-	mbv := oodatamodel.HTTPBody{
+	mbv := oonidatamodel.HTTPBody{
 		Value: "1234",
 	}
 	data, err := json.Marshal(mbv)
@@ -383,7 +383,7 @@ var binaryInput = []uint8{
 }
 
 func TestMarshalHTTPBodyBinary(t *testing.T) {
-	mbv := oodatamodel.HTTPBody{
+	mbv := oonidatamodel.HTTPBody{
 		Value: string(binaryInput),
 	}
 	data, err := json.Marshal(mbv)
@@ -396,22 +396,22 @@ func TestMarshalHTTPBodyBinary(t *testing.T) {
 }
 
 func TestMarshalHTTPHeaderString(t *testing.T) {
-	mbh := oodatamodel.HTTPHeadersList{
-		oodatamodel.HTTPHeader{
+	mbh := oonidatamodel.HTTPHeadersList{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Type",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: "application/json",
 			},
 		},
-		oodatamodel.HTTPHeader{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Type",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: "antani",
 			},
 		},
-		oodatamodel.HTTPHeader{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Length",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: "17",
 			},
 		},
@@ -429,22 +429,22 @@ func TestMarshalHTTPHeaderString(t *testing.T) {
 }
 
 func TestMarshalHTTPHeaderBinary(t *testing.T) {
-	mbh := oodatamodel.HTTPHeadersList{
-		oodatamodel.HTTPHeader{
+	mbh := oonidatamodel.HTTPHeadersList{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Type",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: "application/json",
 			},
 		},
-		oodatamodel.HTTPHeader{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Type",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: string(binaryInput),
 			},
 		},
-		oodatamodel.HTTPHeader{
+		oonidatamodel.HTTPHeader{
 			Key: "Content-Length",
-			Value: oodatamodel.MaybeBinaryValue{
+			Value: oonidatamodel.MaybeBinaryValue{
 				Value: "17",
 			},
 		},
