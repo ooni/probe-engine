@@ -12,7 +12,7 @@ import (
 type TestListsURLsConfig struct {
 	BaseURL    string   // URL to use (empty means default)
 	Categories []string // Categories to query for (empty means all)
-	Limit      int      // Max number of URLs (<= 0 means no limit)
+	Limit      int64    // Max number of URLs (<= 0 means no limit)
 }
 
 // AddCategory adds a category to the list of categories to query. Not
