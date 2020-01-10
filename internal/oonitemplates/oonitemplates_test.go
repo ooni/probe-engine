@@ -110,6 +110,17 @@ func TestIntegrationHTTPDoUnknownDNS(t *testing.T) {
 	}
 }
 
+func TestIntegrationHTTPDoForceSkipVerify(t *testing.T) {
+	ctx := context.Background()
+	results := HTTPDo(ctx, HTTPDoConfig{
+		URL:                "https://self-signed.badssl.com/",
+		InsecureSkipVerify: true,
+	})
+	if results.Error != nil {
+		t.Fatal(results.Error)
+	}
+}
+
 func TestIntegrationHTTPDoRoundTripError(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
@@ -182,6 +193,17 @@ func TestIntegrationTLSConnectUnknownDNS(t *testing.T) {
 	})
 	if !strings.HasSuffix(results.Error.Error(), "unsupported network value") {
 		t.Fatal("not the error that we expected")
+	}
+}
+
+func TestIntegrationTLSConnectForceSkipVerify(t *testing.T) {
+	ctx := context.Background()
+	results := TLSConnect(ctx, TLSConnectConfig{
+		Address:            "self-signed.badssl.com:443",
+		InsecureSkipVerify: true,
+	})
+	if results.Error != nil {
+		t.Fatal(results.Error)
 	}
 }
 

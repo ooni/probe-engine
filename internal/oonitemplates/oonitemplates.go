@@ -219,16 +219,17 @@ func DNSLookup(
 
 // HTTPDoConfig contains HTTPDo settings.
 type HTTPDoConfig struct {
-	Accept           string
-	AcceptLanguage   string
-	Body             []byte
-	DNSServerAddress string
-	DNSServerNetwork string
-	Handler          modelx.Handler
-	Method           string
-	ProxyFunc        func(*http.Request) (*url.URL, error)
-	URL              string
-	UserAgent        string
+	Accept             string
+	AcceptLanguage     string
+	Body               []byte
+	DNSServerAddress   string
+	DNSServerNetwork   string
+	Handler            modelx.Handler
+	InsecureSkipVerify bool
+	Method             string
+	ProxyFunc          func(*http.Request) (*url.URL, error)
+	URL                string
+	UserAgent          string
 
 	// MaxEventsBodySnapSize controls the snap size that
 	// we're using for bodies returned as modelx.Measurement.
@@ -282,6 +283,9 @@ func HTTPDo(
 		return results
 	}
 	client.SetResolver(resolver)
+	if config.InsecureSkipVerify {
+		client.ForceSkipVerify()
+	}
 	// TODO(bassosimone): implement sending body
 	req, err := http.NewRequest(config.Method, config.URL, nil)
 	if err != nil {
@@ -329,11 +333,12 @@ func HTTPDo(
 
 // TLSConnectConfig contains TLSConnect settings.
 type TLSConnectConfig struct {
-	Address          string
-	DNSServerAddress string
-	DNSServerNetwork string
-	Handler          modelx.Handler
-	SNI              string
+	Address            string
+	DNSServerAddress   string
+	DNSServerNetwork   string
+	Handler            modelx.Handler
+	InsecureSkipVerify bool
+	SNI                string
 }
 
 // TLSConnectResults contains the results of a TLSConnect
@@ -370,6 +375,9 @@ func TLSConnect(
 		return results
 	}
 	dialer.SetResolver(resolver)
+	if config.InsecureSkipVerify {
+		dialer.ForceSkipVerify()
+	}
 	// TODO(bassosimone): can this call really fail?
 	dialer.ForceSpecificSNI(config.SNI)
 	results.TestKeys.collect(channel, config.Handler, func() {
