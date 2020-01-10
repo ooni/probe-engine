@@ -195,8 +195,6 @@ func TestEndToEnd(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				t.Log(string(data), len(data))
-				t.Log(string(sdata), len(sdata))
 				if !bytes.Equal(data, sdata) {
 					panic("mismatch between submission and disk")
 				}
