@@ -121,8 +121,7 @@ func (tk *TestKeys) processone(v *urlMeasurements) error {
 
 func (tk *TestKeys) processall(m map[string]*urlMeasurements) error {
 	for _, v := range m {
-		err := tk.processone(v)
-		if err != nil {
+		if err := tk.processone(v); err != nil {
 			return err
 		}
 	}
@@ -134,9 +133,7 @@ type measurer struct {
 }
 
 func newMeasurer(config Config) *measurer {
-	return &measurer{
-		config: config,
-	}
+	return &measurer{config: config}
 }
 
 func (m *measurer) measure(
@@ -167,6 +164,7 @@ func (m *measurer) measure(
 	// run all measurements in parallel
 	var (
 		completed     int64
+		mu            sync.Mutex
 		receivedBytes int64
 		sentBytes     int64
 		waitgroup     sync.WaitGroup
@@ -183,8 +181,9 @@ func (m *measurer) measure(
 			case <-ctx.Done():
 				return
 			}
-			// No races because each goroutine writes its entry
+			mu.Lock()
 			entry := urlmeasurements[key]
+			mu.Unlock()
 			entry.results = oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 				Accept:         httpheader.RandomAccept(),
 				AcceptLanguage: httpheader.RandomAcceptLanguage(),
