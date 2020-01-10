@@ -136,7 +136,7 @@ func (h *Handler) OnMeasurement(m modelx.Measurement) {
 			m.HTTPResponseStart.TransactionID,
 		)
 	}
-	if m.HTTPRoundTripDone != nil {
+	if m.HTTPRoundTripDone != nil && m.HTTPRoundTripDone.Error == nil {
 		h.logger.Debugf(
 			"[httpTxID: %d] < %s %d %s",
 			m.HTTPRoundTripDone.TransactionID,
