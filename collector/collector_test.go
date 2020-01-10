@@ -19,7 +19,7 @@ type fakeTestKeys struct {
 
 func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    "0.3.1",
+		DataFormatVersion:    collector.DefaultDataFormatVersion,
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementRuntime:   5.0565230846405,
 		MeasurementStartTime: "2018-11-01 15:33:20",
