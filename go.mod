@@ -3,6 +3,7 @@ module github.com/ooni/probe-engine
 go 1.13
 
 require (
+	git.torproject.org/pluggable-transports/goptlib.git v1.1.0
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
 	github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
@@ -11,7 +12,6 @@ require (
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
 	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.10-0.20191118182123-b319ae807616+incompatible
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20190321174524-b5083341bf6c // indirect
-	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/apex/log v1.1.1
 	github.com/aristanetworks/goarista v0.0.0-20191106175434-873d404c7f40 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20190211145416-68259f75880e // indirect
@@ -55,6 +55,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
+	gitlab.com/yawning/obfs4.git v0.0.0-20190621002404-c357dd56dfa6
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.10.0 // indirect

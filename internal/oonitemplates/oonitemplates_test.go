@@ -2,14 +2,18 @@ package oonitemplates
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
 	"github.com/ooni/netx/handlers"
 	"github.com/ooni/netx/modelx"
 	"github.com/ooni/netx/x/scoreboard"
+	"gitlab.com/yawning/obfs4.git/transports"
+	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )
 
 func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
@@ -316,4 +320,110 @@ func TestIntegrationTCPConnectUnknownDNS(t *testing.T) {
 	if !strings.HasSuffix(results.Error.Error(), "unsupported network value") {
 		t.Fatal("not the error that we expected")
 	}
+}
+
+func obfs4config() OBFS4ConnectConfig {
+	// TODO(bassosimone): this is a public working bridge we have found
+	// with @hellais. We should ask @phw whether there is some obfs4 bridge
+	// dedicated to integration testing that we should use instead.
+	return OBFS4ConnectConfig{
+		Address:      "109.105.109.165:10527",
+		StateBaseDir: "../../testdata/",
+		Params: map[string][]string{
+			"cert": []string{
+				"Bvg/itxeL4TWKLP6N1MaQzSOC6tcRIBv6q57DYAZc3b2AzuM+/TfB7mqTFEfXILCjEwzVA",
+			},
+			"iat-mode": []string{"1"},
+		},
+	}
+}
+
+func TestIntegrationOBFS4ConnectGood(t *testing.T) {
+	ctx := context.Background()
+	results := OBFS4Connect(ctx, obfs4config())
+	if results.Error != nil {
+		t.Fatal(results.Error)
+	}
+	if results.TestKeys.Scoreboard == nil {
+		t.Fatal("no scoreboard?!")
+	}
+}
+
+func TestIntegrationOBFS4ConnectGoodWithDoT(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	config.DNSServerNetwork = "dot"
+	config.DNSServerAddress = "9.9.9.9:853"
+	results := OBFS4Connect(ctx, config)
+	if results.Error != nil {
+		t.Fatal(results.Error)
+	}
+	if results.TestKeys.Scoreboard == nil {
+		t.Fatal("no scoreboard?!")
+	}
+}
+
+func TestIntegrationOBFS4ConnectUnknownDNS(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	config.DNSServerNetwork = "antani"
+	results := OBFS4Connect(ctx, config)
+	if !strings.HasSuffix(results.Error.Error(), "unsupported network value") {
+		t.Fatal("not the error that we expected")
+	}
+}
+
+func TestIntegrationOBFS4IoutilTempDirError(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	expected := errors.New("mocked error")
+	config.ioutilTempDir = func(dir, prefix string) (string, error) {
+		return "", expected
+	}
+	results := OBFS4Connect(ctx, config)
+	if !errors.Is(results.Error, expected) {
+		t.Fatal("not the error that we expected")
+	}
+}
+
+func TestIntegrationOBFS4ClientFactoryError(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	config.transportsGet = func(name string) obfs4base.Transport {
+		txp := transports.Get(name)
+		if name == "obfs4" && txp != nil {
+			txp = &faketransport{txp: txp}
+		}
+		return txp
+	}
+	results := OBFS4Connect(ctx, config)
+	if results.Error.Error() != "mocked ClientFactory error" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestIntegrationOBFS4ParseArgsError(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	config.Params = make(map[string][]string) // cause ParseArgs error
+	results := OBFS4Connect(ctx, config)
+	if results.Error.Error() != "missing argument 'node-id'" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+type faketransport struct {
+	txp obfs4base.Transport
+}
+
+func (txp *faketransport) Name() string {
+	return txp.Name()
+}
+
+func (txp *faketransport) ClientFactory(stateDir string) (obfs4base.ClientFactory, error) {
+	return nil, errors.New("mocked ClientFactory error")
+}
+
+func (txp *faketransport) ServerFactory(stateDir string, args *goptlib.Args) (obfs4base.ServerFactory, error) {
+	return txp.ServerFactory(stateDir, args)
 }
