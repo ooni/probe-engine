@@ -62,6 +62,7 @@ func (h *channelHandler) OnMeasurement(m modelx.Measurement) {
 type Results struct {
 	Connects      []*modelx.ConnectEvent
 	HTTPRequests  []*modelx.HTTPRoundTripDoneEvent
+	NetworkEvents []*modelx.Measurement
 	Resolves      []*modelx.ResolveDoneEvent
 	TLSHandshakes []*modelx.TLSHandshakeDoneEvent
 
@@ -70,9 +71,12 @@ type Results struct {
 	ReceivedBytes int64
 }
 
-func (r *Results) onMeasurement(m modelx.Measurement) {
+func (r *Results) onMeasurement(m modelx.Measurement, lowLevel bool) {
 	if m.Connect != nil {
 		r.Connects = append(r.Connects, m.Connect)
+		if lowLevel {
+			r.NetworkEvents = append(r.NetworkEvents, &m)
+		}
 	}
 	if m.HTTPRoundTripDone != nil {
 		r.HTTPRequests = append(r.HTTPRequests, m.HTTPRoundTripDone)
@@ -85,9 +89,15 @@ func (r *Results) onMeasurement(m modelx.Measurement) {
 	}
 	if m.Read != nil {
 		r.ReceivedBytes += m.Read.NumBytes // overflow unlikely
+		if lowLevel {
+			r.NetworkEvents = append(r.NetworkEvents, &m)
+		}
 	}
 	if m.Write != nil {
 		r.SentBytes += m.Write.NumBytes // overflow unlikely
+		if lowLevel {
+			r.NetworkEvents = append(r.NetworkEvents, &m)
+		}
 	}
 }
 
@@ -95,6 +105,7 @@ func (r *Results) collect(
 	output <-chan modelx.Measurement,
 	handler modelx.Handler,
 	main func(),
+	lowLevel bool,
 ) {
 	if handler == nil {
 		handler = handlers.NoHandler
@@ -108,7 +119,7 @@ func (r *Results) collect(
 		select {
 		case m := <-output:
 			handler.OnMeasurement(m)
-			r.onMeasurement(m)
+			r.onMeasurement(m, lowLevel)
 		case <-done:
 			return
 		}
@@ -216,7 +227,7 @@ func DNSLookup(
 		mu.Lock()
 		defer mu.Unlock()
 		results.Addresses, results.Error = addrs, err
-	})
+	}, false)
 	results.TestKeys.Scoreboard = &root.X.Scoreboard
 	return results
 }
@@ -327,7 +338,7 @@ func HTTPDo(
 		mu.Lock()
 		results.BodySnap, results.Error = data, err
 		mu.Unlock()
-	})
+	}, false)
 	results.TestKeys.Scoreboard = &root.X.Scoreboard
 	results.SNIBlockingFollowup = maybeRunTLSChecks(
 		origCtx, config.Handler, &root.X,
@@ -392,7 +403,7 @@ func TLSConnect(
 		mu.Lock()
 		defer mu.Unlock()
 		results.Error = err
-	})
+	}, true)
 	results.TestKeys.Scoreboard = &root.X.Scoreboard
 	return results
 }
@@ -482,7 +493,7 @@ func TCPConnect(
 		mu.Lock()
 		defer mu.Unlock()
 		results.Error = err
-	})
+	}, false)
 	results.TestKeys.Scoreboard = &root.X.Scoreboard
 	return results
 }
@@ -594,7 +605,7 @@ func OBFS4Connect(
 		mu.Lock()
 		defer mu.Unlock()
 		results.Error = err
-	})
+	}, true)
 	results.TestKeys.Scoreboard = &root.X.Scoreboard
 	return results
 }
