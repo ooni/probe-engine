@@ -499,8 +499,10 @@ type OBFS4ConnectConfig struct {
 	Handler          modelx.Handler
 	Params           goptlib.Args
 	StateBaseDir     string
-	transportsGet    func(name string) obfs4base.Transport
+	Timeout          time.Duration
 	ioutilTempDir    func(dir string, prefix string) (string, error)
+	transportsGet    func(name string) obfs4base.Transport
+	setDeadline      func(net.Conn, time.Time) error
 }
 
 // OBFS4ConnectResults contains the results of a OBFS4Connect
@@ -563,7 +565,27 @@ func OBFS4Connect(
 	}
 	results.TestKeys.collect(channel, config.Handler, func() {
 		dialfunc := func(network, address string) (net.Conn, error) {
-			return dialer.DialContext(ctx, network, address)
+			conn, err := dialer.DialContext(ctx, network, address)
+			if err != nil {
+				return nil, err
+			}
+			// I didn't immediately see an API for limiting in time the
+			// duration of the handshake, so let's set a deadline.
+			timeout := config.Timeout
+			if timeout == 0 {
+				timeout = 30 * time.Second
+			}
+			setDeadline := config.setDeadline
+			if setDeadline == nil {
+				setDeadline = func(conn net.Conn, t time.Time) error {
+					return conn.SetDeadline(t)
+				}
+			}
+			if err := setDeadline(conn, time.Now().Add(timeout)); err != nil {
+				conn.Close()
+				return nil, err
+			}
+			return conn, nil
 		}
 		conn, err := factory.Dial("tcp", config.Address, dialfunc, parsedargs)
 		if conn != nil {

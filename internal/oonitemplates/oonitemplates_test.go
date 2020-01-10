@@ -3,6 +3,7 @@ package oonitemplates
 import (
 	"context"
 	"errors"
+	"net"
 	"strings"
 	"sync"
 	"testing"
@@ -408,6 +409,28 @@ func TestIntegrationOBFS4ParseArgsError(t *testing.T) {
 	config.Params = make(map[string][]string) // cause ParseArgs error
 	results := OBFS4Connect(ctx, config)
 	if results.Error.Error() != "missing argument 'node-id'" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestIntegrationOBFS4DialContextError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // should cause DialContex to fail
+	config := obfs4config()
+	results := OBFS4Connect(ctx, config)
+	if !strings.HasSuffix(results.Error.Error(), "operation was canceled") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestIntegrationOBFS4SetDeadlineError(t *testing.T) {
+	ctx := context.Background()
+	config := obfs4config()
+	config.setDeadline = func(net.Conn, time.Time) error {
+		return errors.New("mocked error")
+	}
+	results := OBFS4Connect(ctx, config)
+	if !strings.HasSuffix(results.Error.Error(), "mocked error") {
 		t.Fatal("not the error we expected")
 	}
 }
