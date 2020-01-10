@@ -39,7 +39,7 @@ require (
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2 // indirect
 	github.com/montanaflynn/stats v0.5.0
 	github.com/neubot/dash v0.4.1
-	github.com/ooni/netx v0.0.0-20200108142619-570799475703
+	github.com/ooni/netx v0.0.0-20200109143038-9c81a8088bb3
 	github.com/oschwald/geoip2-golang v1.3.0
 	github.com/oschwald/maxminddb-golang v1.5.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -58,4 +58,5 @@ require (
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.10.0 // indirect
+	golang.org/x/crypto v0.0.0-20200108215511-5d647ca15757 // indirect
 )
