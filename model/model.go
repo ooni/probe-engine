@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 )
 
 // Measurement is a OONI measurement.
@@ -31,6 +32,11 @@ type Measurement struct {
 
 	// MeasurementStartTime is the time when the measurement started
 	MeasurementStartTime string `json:"measurement_start_time"`
+
+	// MeasurementStartTimeSaved is the moment in time when we
+	// started the measurement. This is not included into the JSON
+	// and is only used within probe-engine as a "zero" time.
+	MeasurementStartTimeSaved time.Time `json:"-"`
 
 	// MeasurementRuntime contains the measurement runtime. The JSON name
 	// is test_runtime because this is the name expected by the OONI backend

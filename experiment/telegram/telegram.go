@@ -187,6 +187,7 @@ func (m *measurer) measure(
 			entry.results = oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 				Accept:         httpheader.RandomAccept(),
 				AcceptLanguage: httpheader.RandomAcceptLanguage(),
+				Beginning:      measurement.MeasurementStartTimeSaved,
 				Handler:        netxlogger.NewHandler(sess.Logger),
 				Method:         entry.method,
 				URL:            key,

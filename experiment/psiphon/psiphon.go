@@ -69,6 +69,7 @@ type TestKeys struct {
 }
 
 type runner struct {
+	beginning      time.Time
 	callbacks      handler.Callbacks
 	config         Config
 	ioutilReadFile func(filename string) ([]byte, error)
@@ -77,8 +78,12 @@ type runner struct {
 	testkeys       *TestKeys
 }
 
-func newRunner(config Config, callbacks handler.Callbacks) *runner {
+func newRunner(
+	config Config, callbacks handler.Callbacks,
+	beginning time.Time,
+) *runner {
 	return &runner{
+		beginning:      beginning,
 		callbacks:      callbacks,
 		config:         config,
 		ioutilReadFile: ioutil.ReadFile,
@@ -118,6 +123,7 @@ func (r *runner) usetunnel(
 	results := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 		Accept:         httpheader.RandomAccept(),
 		AcceptLanguage: httpheader.RandomAcceptLanguage(),
+		Beginning:      r.beginning,
 		Handler:        netxlogger.NewHandler(logger),
 		Method:         "GET",
 		ProxyFunc: func(req *http.Request) (*url.URL, error) {
@@ -220,7 +226,7 @@ func (m *measurer) measure(
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
-	r := newRunner(m.config, callbacks)
+	r := newRunner(m.config, callbacks, measurement.MeasurementStartTimeSaved)
 	measurement.TestKeys = r.testkeys
 	r.testkeys.MaxRuntime = maxruntime
 	err = r.run(ctx, sess.Logger, clnt.FetchPsiphonConfig)

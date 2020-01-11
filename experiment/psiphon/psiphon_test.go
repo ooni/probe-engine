@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
@@ -53,7 +54,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirEmptyWorkingDir(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	r.config.WorkDir = ""
 	workdir, err := r.makeworkingdir()
 	if err == nil {
@@ -65,7 +66,7 @@ func TestUnitMakeWorkingDirEmptyWorkingDir(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirOsRemoveAllError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	expected := errors.New("mocked error")
 	r.osRemoveAll = func(path string) error {
 		return expected
@@ -80,7 +81,7 @@ func TestUnitMakeWorkingDirOsRemoveAllError(t *testing.T) {
 }
 
 func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	expected := errors.New("mocked error")
 	r.osMkdirAll = func(path string, perm os.FileMode) error {
 		return expected
@@ -95,7 +96,7 @@ func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
 }
 
 func TestUnitRunFetchPsiphonConfigError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	expected := errors.New("mocked error")
 	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
 		return nil, expected
@@ -106,7 +107,7 @@ func TestUnitRunFetchPsiphonConfigError(t *testing.T) {
 }
 
 func TestUnitRunMakeworkingdirError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	expected := errors.New("mocked error")
 	r.osRemoveAll = func(path string) error {
 		return expected
@@ -122,7 +123,7 @@ func TestUnitRunMakeworkingdirError(t *testing.T) {
 }
 
 func TestUnitRunStartTunnelError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
 		return []byte("{"), nil
 	})
@@ -164,7 +165,7 @@ func TestIntegration(t *testing.T) {
 }
 
 func TestUnitUsetunnel(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log))
+	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so should fail immediately
 	err := r.usetunnel(ctx, 8080, log.Log)
