@@ -9,16 +9,7 @@ import (
 	"strings"
 
 	"github.com/ooni/probe-engine/log"
-)
-
-var (
-	tlsVersion = map[uint16]string{
-		tls.VersionSSL30: "SSLv3",
-		tls.VersionTLS10: "TLSv1",
-		tls.VersionTLS11: "TLSv1.1",
-		tls.VersionTLS12: "TLSv1.2",
-		tls.VersionTLS13: "TLSv1.3",
-	}
+	"github.com/ooni/probe-engine/internal/tlsx"
 )
 
 // RoundTripLogger is a httptracex.Handler that logs events.
@@ -76,7 +67,7 @@ func (rtl *RoundTripLogger) TLSHandshakeDone(
 	}
 	rtl.Logger.Debug("tls: handshake OK")
 	rtl.Logger.Debugf("- negotiated protocol: %s", state.NegotiatedProtocol)
-	rtl.Logger.Debugf("- version: %s", tlsVersion[state.Version])
+	rtl.Logger.Debugf("- version: %s", tlsx.VersionString(state.Version))
 }
 
 // ConnectionReady is called when a connection is ready to be used.
