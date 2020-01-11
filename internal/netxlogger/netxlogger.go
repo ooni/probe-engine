@@ -5,21 +5,11 @@
 package netxlogger
 
 import (
-	"crypto/tls"
 	"net/http"
 	"strings"
 
 	"github.com/ooni/netx/modelx"
-)
-
-var (
-	tlsVersion = map[uint16]string{
-		tls.VersionSSL30: "SSLv3",
-		tls.VersionTLS10: "TLSv1",
-		tls.VersionTLS11: "TLSv1.1",
-		tls.VersionTLS12: "TLSv1.2",
-		tls.VersionTLS13: "TLSv1.3",
-	}
+	"github.com/ooni/probe-engine/internal/tlsx"
 )
 
 // Logger is the interface we expect from a logger
@@ -81,7 +71,7 @@ func (h *Handler) OnMeasurement(m modelx.Measurement) {
 			"[httpTxID: %d] TLS done: %s, %s (alpn='%s')",
 			m.TLSHandshakeDone.TransactionID,
 			fmtError(m.TLSHandshakeDone.Error),
-			tlsVersionString(m.TLSHandshakeDone.ConnectionState.Version),
+			tlsx.VersionString(m.TLSHandshakeDone.ConnectionState.Version),
 			m.TLSHandshakeDone.ConnectionState.NegotiatedProtocol,
 		)
 	}
@@ -172,11 +162,6 @@ func (h *Handler) OnMeasurement(m modelx.Measurement) {
 			m.HTTPResponseDone.TransactionID,
 		)
 	}
-}
-
-func tlsVersionString(d uint16) string {
-	s, _ := tlsVersion[d]
-	return s
 }
 
 func fmtError(err error) (s string) {
