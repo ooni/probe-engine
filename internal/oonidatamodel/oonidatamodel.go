@@ -28,12 +28,13 @@ type TCPConnectStatus struct {
 // TCPConnectEntry contains one of the entries that are part
 // of the "tcp_connect" key of a OONI report.
 type TCPConnectEntry struct {
-	ConnID int64            `json:"conn_id,optional"`
-	DialID int64            `json:"dial_id,optional"`
-	IP     string           `json:"ip"`
-	Port   int              `json:"port"`
-	Status TCPConnectStatus `json:"status"`
-	T      float64          `json:"t"`
+	ConnID        int64            `json:"conn_id,omitempty"`
+	DialID        int64            `json:"dial_id,omitempty"`
+	IP            string           `json:"ip"`
+	Port          int              `json:"port"`
+	Status        TCPConnectStatus `json:"status"`
+	T             float64          `json:"t"`
+	TransactionID int64            `json:"transaction_id,omitempty"`
 }
 
 // TCPConnectList is a list of TCPConnectEntry
@@ -55,7 +56,8 @@ func NewTCPConnectList(results oonitemplates.Results) TCPConnectList {
 				Failure: makeFailure(connect.Error),
 				Success: connect.Error == nil,
 			},
-			T: connect.DurationSinceBeginning.Seconds(),
+			T:             connect.DurationSinceBeginning.Seconds(),
+			TransactionID: connect.TransactionID,
 		})
 	}
 	return out
@@ -222,9 +224,10 @@ type HTTPResponse struct {
 // RequestEntry is one of the entries that are part of
 // the "requests" key of a OONI report.
 type RequestEntry struct {
-	Failure  *string      `json:"failure"`
-	Request  HTTPRequest  `json:"request"`
-	Response HTTPResponse `json:"response"`
+	Failure       *string      `json:"failure"`
+	Request       HTTPRequest  `json:"request"`
+	Response      HTTPResponse `json:"response"`
+	TransactionID int64        `json:"transaction_id,omitempty"`
 }
 
 // RequestList is a list of RequestEntry
@@ -278,6 +281,7 @@ func NewRequestList(results oonitemplates.Results) RequestList {
 		entry.Response.Body.Value = string(in[idx].ResponseBodySnap)
 		entry.Response.BodyIsTruncated = in[idx].MaxBodySnapSize > 0 &&
 			int64(len(in[idx].ResponseBodySnap)) >= in[idx].MaxBodySnapSize
+		entry.TransactionID = in[idx].TransactionID
 		out = append(out, entry)
 	}
 	return out
@@ -295,7 +299,7 @@ type DNSAnswerEntry struct {
 // DNSQueryEntry is a DNS query with possibly an answer
 type DNSQueryEntry struct {
 	Answers          []DNSAnswerEntry `json:"answers"`
-	DialID           int64            `json:"dial_id,optional"`
+	DialID           int64            `json:"dial_id,omitempty"`
 	Engine           string           `json:"engine"`
 	Failure          *string          `json:"failure"`
 	Hostname         string           `json:"hostname"`
@@ -304,6 +308,7 @@ type DNSQueryEntry struct {
 	ResolverPort     *string          `json:"resolver_port"`
 	ResolverAddress  string           `json:"resolver_address"`
 	T                float64          `json:"t"`
+	TransactionID    int64            `json:"transaction_id,omitempty"`
 }
 
 type (
@@ -360,19 +365,21 @@ func (qtype dnsQueryType) makequeryentry(resolve *modelx.ResolveDoneEvent) DNSQu
 		QueryType:       string(qtype),
 		ResolverAddress: resolve.TransportAddress,
 		T:               resolve.DurationSinceBeginning.Seconds(),
+		TransactionID:   resolve.TransactionID,
 	}
 }
 
 // NetworkEvent is a network event.
 type NetworkEvent struct {
-	Address   string  `json:"address,omitempty"`
-	ConnID    int64   `json:"conn_id,optional"`
-	DialID    int64   `json:"dial_id,optional"`
-	Failure   *string `json:"failure"`
-	NumBytes  int64   `json:"num_bytes,omitempty"`
-	Operation string  `json:"operation"`
-	Proto     string  `json:"proto"`
-	T         float64 `json:"t"`
+	Address       string  `json:"address,omitempty"`
+	ConnID        int64   `json:"conn_id,omitempty"`
+	DialID        int64   `json:"dial_id,omitempty"`
+	Failure       *string `json:"failure"`
+	NumBytes      int64   `json:"num_bytes,omitempty"`
+	Operation     string  `json:"operation"`
+	Proto         string  `json:"proto"`
+	T             float64 `json:"t"`
+	TransactionID int64   `json:"transaction_id,omitempty"`
 }
 
 // NetworkEventsList is a list of network events.
@@ -389,13 +396,14 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 	for _, in := range results.NetworkEvents {
 		if in.Connect != nil {
 			out = append(out, &NetworkEvent{
-				Address:   in.Connect.RemoteAddress,
-				ConnID:    in.Connect.ConnID,
-				DialID:    in.Connect.DialID,
-				Failure:   makeFailure(in.Connect.Error),
-				Operation: "connect",
-				Proto:     protocolName[in.Connect.ConnID >= 0],
-				T:         in.Connect.DurationSinceBeginning.Seconds(),
+				Address:       in.Connect.RemoteAddress,
+				ConnID:        in.Connect.ConnID,
+				DialID:        in.Connect.DialID,
+				Failure:       makeFailure(in.Connect.Error),
+				Operation:     "connect",
+				Proto:         protocolName[in.Connect.ConnID >= 0],
+				T:             in.Connect.DurationSinceBeginning.Seconds(),
+				TransactionID: in.Connect.TransactionID,
 			})
 			// fallthrough
 		}
@@ -434,6 +442,7 @@ type TLSHandshake struct {
 	PeerCertificates   []MaybeBinaryValue `json:"peer_certificates"`
 	T                  float64            `json:"t"`
 	TLSVersion         string             `json:"tls_version"`
+	TransactionID      int64              `json:"transaction_id,omitempty"`
 }
 
 // TLSHandshakesList is a list of TLS handshakes
@@ -451,6 +460,7 @@ func NewTLSHandshakesList(results oonitemplates.Results) TLSHandshakesList {
 			PeerCertificates:   makePeerCerts(in.ConnectionState.PeerCertificates),
 			T:                  in.DurationSinceBeginning.Seconds(),
 			TLSVersion:         tlsx.VersionString(in.ConnectionState.Version),
+			TransactionID:      in.TransactionID,
 		})
 	}
 	return out
