@@ -184,6 +184,7 @@ func configureDNS(seed int64, network, address string) (modelx.DNSResolver, erro
 
 // DNSLookupConfig contains DNSLookup settings.
 type DNSLookupConfig struct {
+	Beginning     time.Time
 	Handler       modelx.Handler
 	Hostname      string
 	ServerAddress string
@@ -205,9 +206,12 @@ func DNSLookup(
 		mu      sync.Mutex
 		results = new(DNSLookupResults)
 	)
+	if config.Beginning.IsZero() {
+		config.Beginning = time.Now()
+	}
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
+		Beginning: config.Beginning,
 		Handler: &channelHandler{
 			ch: channel,
 		},
@@ -236,6 +240,7 @@ func DNSLookup(
 type HTTPDoConfig struct {
 	Accept             string
 	AcceptLanguage     string
+	Beginning          time.Time
 	Body               []byte
 	DNSServerAddress   string
 	DNSServerNetwork   string
@@ -277,10 +282,13 @@ func HTTPDo(
 		mu      sync.Mutex
 		results = new(HTTPDoResults)
 	)
+	if config.Beginning.IsZero() {
+		config.Beginning = time.Now()
+	}
 	channel := make(chan modelx.Measurement)
 	// TODO(bassosimone): tell client to use specific CA bundle?
 	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
+		Beginning: config.Beginning,
 		Handler: &channelHandler{
 			ch: channel,
 		},
@@ -349,6 +357,7 @@ func HTTPDo(
 // TLSConnectConfig contains TLSConnect settings.
 type TLSConnectConfig struct {
 	Address            string
+	Beginning          time.Time
 	DNSServerAddress   string
 	DNSServerNetwork   string
 	Handler            modelx.Handler
@@ -370,9 +379,12 @@ func TLSConnect(
 		mu      sync.Mutex
 		results = new(TLSConnectResults)
 	)
+	if config.Beginning.IsZero() {
+		config.Beginning = time.Now()
+	}
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
+		Beginning: config.Beginning,
 		Handler: &channelHandler{
 			ch: channel,
 		},
@@ -446,6 +458,7 @@ func sniBlockingFollowup(
 // TCPConnectConfig contains TCPConnect settings.
 type TCPConnectConfig struct {
 	Address          string
+	Beginning        time.Time
 	DNSServerAddress string
 	DNSServerNetwork string
 	Handler          modelx.Handler
@@ -465,9 +478,12 @@ func TCPConnect(
 		mu      sync.Mutex
 		results = new(TCPConnectResults)
 	)
+	if config.Beginning.IsZero() {
+		config.Beginning = time.Now()
+	}
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
+		Beginning: config.Beginning,
 		Handler: &channelHandler{
 			ch: channel,
 		},
@@ -505,6 +521,7 @@ func init() {
 // OBFS4ConnectConfig contains OBFS4Connect settings.
 type OBFS4ConnectConfig struct {
 	Address          string
+	Beginning        time.Time
 	DNSServerAddress string
 	DNSServerNetwork string
 	Handler          modelx.Handler
@@ -530,9 +547,12 @@ func OBFS4Connect(
 		mu      sync.Mutex
 		results = new(OBFS4ConnectResults)
 	)
+	if config.Beginning.IsZero() {
+		config.Beginning = time.Now()
+	}
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
+		Beginning: config.Beginning,
 		Handler: &channelHandler{
 			ch: channel,
 		},
