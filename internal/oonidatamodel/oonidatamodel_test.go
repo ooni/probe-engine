@@ -2,11 +2,13 @@ package oonidatamodel
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/ooni/netx/modelx"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
@@ -792,5 +794,363 @@ func TestUnitDNSQueryTypeIPOfType(t *testing.T) {
 	qtype := dnsQueryType("ANTANI")
 	if qtype.ipoftype("8.8.8.8") == true {
 		t.Fatal("ipoftype misbehaving")
+	}
+}
+
+func TestUnitNewNetworkEventsListEmpty(t *testing.T) {
+	out := NewNetworkEventsList(oonitemplates.Results{})
+	if len(out) != 0 {
+		t.Fatal("unexpected output length")
+	}
+}
+
+func TestUnitNewNetworkEventsListNoSuitableEvents(t *testing.T) {
+	out := NewNetworkEventsList(oonitemplates.Results{
+		NetworkEvents: []*modelx.Measurement{
+			&modelx.Measurement{},
+			&modelx.Measurement{},
+			&modelx.Measurement{},
+		},
+	})
+	if len(out) != 0 {
+		t.Fatal("unexpected output length")
+	}
+}
+
+func TestUnitNewNetworkEventsListGood(t *testing.T) {
+	out := NewNetworkEventsList(oonitemplates.Results{
+		NetworkEvents: []*modelx.Measurement{
+			&modelx.Measurement{
+				Connect: &modelx.ConnectEvent{
+					ConnID:                 555,
+					DurationSinceBeginning: 10 * time.Millisecond,
+					DialID:                 17,
+					RemoteAddress:          "1.1.1.1:443",
+				},
+			},
+			&modelx.Measurement{
+				Read: &modelx.ReadEvent{
+					ConnID:                 555,
+					DurationSinceBeginning: 20 * time.Millisecond,
+					NumBytes:               1789,
+				},
+			},
+			&modelx.Measurement{
+				Write: &modelx.WriteEvent{
+					ConnID:                 555,
+					DurationSinceBeginning: 30 * time.Millisecond,
+					NumBytes:               17714,
+				},
+			},
+		},
+	})
+	if len(out) != 3 {
+		t.Fatal("unexpected output length")
+	}
+
+	if out[0].Address != "1.1.1.1:443" {
+		t.Fatal("wrong out[0].Address")
+	}
+	if out[0].ConnID != 555 {
+		t.Fatal("wrong out[0].ConnID")
+	}
+	if out[0].DialID != 17 {
+		t.Fatal("wrong out[0].DialID")
+	}
+	if out[0].Failure != nil {
+		t.Fatal("wrong out[0].Failure")
+	}
+	if out[0].NumBytes != 0 {
+		t.Fatal("wrong out[0].NumBytes")
+	}
+	if out[0].Operation != "connect" {
+		t.Fatal("wrong out[0].Operation")
+	}
+	if out[0].Proto != "tcp" {
+		t.Fatal("wrong out[0].Proto")
+	}
+	if !floatEquals(out[0].T, 0.010) {
+		t.Fatal("wrong out[0].T")
+	}
+
+	if out[1].Address != "" {
+		t.Fatal("wrong out[1].Address")
+	}
+	if out[1].ConnID != 555 {
+		t.Fatal("wrong out[1].ConnID")
+	}
+	if out[1].DialID != 0 {
+		t.Fatal("wrong out[1].DialID")
+	}
+	if out[1].Failure != nil {
+		t.Fatal("wrong out[1].Failure")
+	}
+	if out[1].NumBytes != 1789 {
+		t.Fatal("wrong out[1].NumBytes")
+	}
+	if out[1].Operation != "read" {
+		t.Fatal("wrong out[1].Operation")
+	}
+	if out[1].Proto != "tcp" {
+		t.Fatal("wrong out[1].Proto")
+	}
+	if !floatEquals(out[1].T, 0.020) {
+		t.Fatal("wrong out[1].T")
+	}
+
+	if out[2].Address != "" {
+		t.Fatal("wrong out[2].Address")
+	}
+	if out[2].ConnID != 555 {
+		t.Fatal("wrong out[2].ConnID")
+	}
+	if out[2].DialID != 0 {
+		t.Fatal("wrong out[2].DialID")
+	}
+	if out[2].Failure != nil {
+		t.Fatal("wrong out[2].Failure")
+	}
+	if out[2].NumBytes != 17714 {
+		t.Fatal("wrong out[2].NumBytes")
+	}
+	if out[2].Operation != "write" {
+		t.Fatal("wrong out[2].Operation")
+	}
+	if out[2].Proto != "tcp" {
+		t.Fatal("wrong out[2].Proto")
+	}
+	if !floatEquals(out[2].T, 0.030) {
+		t.Fatal("wrong out[2].T")
+	}
+}
+
+func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
+	out := NewNetworkEventsList(oonitemplates.Results{
+		NetworkEvents: []*modelx.Measurement{
+			&modelx.Measurement{
+				Connect: &modelx.ConnectEvent{
+					ConnID:                 -555,
+					DurationSinceBeginning: 10 * time.Millisecond,
+					DialID:                 17,
+					Error:                  errors.New("mocked error"),
+					RemoteAddress:          "1.1.1.1:443",
+				},
+			},
+			&modelx.Measurement{
+				Read: &modelx.ReadEvent{
+					ConnID:                 -555,
+					DurationSinceBeginning: 20 * time.Millisecond,
+					Error:                  errors.New("mocked error"),
+					NumBytes:               1789,
+				},
+			},
+			&modelx.Measurement{
+				Write: &modelx.WriteEvent{
+					ConnID:                 -555,
+					DurationSinceBeginning: 30 * time.Millisecond,
+					Error:                  errors.New("mocked error"),
+					NumBytes:               17714,
+				},
+			},
+		},
+	})
+	if len(out) != 3 {
+		t.Fatal("unexpected output length")
+	}
+
+	if out[0].Address != "1.1.1.1:443" {
+		t.Fatal("wrong out[0].Address")
+	}
+	if out[0].ConnID != -555 {
+		t.Fatal("wrong out[0].ConnID")
+	}
+	if out[0].DialID != 17 {
+		t.Fatal("wrong out[0].DialID")
+	}
+	if *out[0].Failure != "mocked error" {
+		t.Fatal("wrong out[0].Failure")
+	}
+	if out[0].NumBytes != 0 {
+		t.Fatal("wrong out[0].NumBytes")
+	}
+	if out[0].Operation != "connect" {
+		t.Fatal("wrong out[0].Operation")
+	}
+	if out[0].Proto != "udp" {
+		t.Fatal("wrong out[0].Proto")
+	}
+	if !floatEquals(out[0].T, 0.010) {
+		t.Fatal("wrong out[0].T")
+	}
+
+	if out[1].Address != "" {
+		t.Fatal("wrong out[1].Address")
+	}
+	if out[1].ConnID != -555 {
+		t.Fatal("wrong out[1].ConnID")
+	}
+	if out[1].DialID != 0 {
+		t.Fatal("wrong out[1].DialID")
+	}
+	if *out[1].Failure != "mocked error" {
+		t.Fatal("wrong out[1].Failure")
+	}
+	if out[1].NumBytes != 1789 {
+		t.Fatal("wrong out[1].NumBytes")
+	}
+	if out[1].Operation != "read" {
+		t.Fatal("wrong out[1].Operation")
+	}
+	if out[1].Proto != "udp" {
+		t.Fatal("wrong out[1].Proto")
+	}
+	if !floatEquals(out[1].T, 0.020) {
+		t.Fatal("wrong out[1].T")
+	}
+
+	if out[2].Address != "" {
+		t.Fatal("wrong out[2].Address")
+	}
+	if out[2].ConnID != -555 {
+		t.Fatal("wrong out[2].ConnID")
+	}
+	if out[2].DialID != 0 {
+		t.Fatal("wrong out[2].DialID")
+	}
+	if *out[2].Failure != "mocked error" {
+		t.Fatal("wrong out[2].Failure")
+	}
+	if out[2].NumBytes != 17714 {
+		t.Fatal("wrong out[2].NumBytes")
+	}
+	if out[2].Operation != "write" {
+		t.Fatal("wrong out[2].Operation")
+	}
+	if out[2].Proto != "udp" {
+		t.Fatal("wrong out[2].Proto")
+	}
+	if !floatEquals(out[2].T, 0.030) {
+		t.Fatal("wrong out[2].T")
+	}
+}
+
+func floatEquals(a, b float64) bool {
+	const c = 1e-03
+	return (a-b) < c && (b-a) < c
+}
+
+func TestUnitNewTLSHandshakesListEmpty(t *testing.T) {
+	out := NewTLSHandshakesList(oonitemplates.Results{})
+	if len(out) != 0 {
+		t.Fatal("unexpected output length")
+	}
+}
+
+func TestUnitNewTLSHandshakesListSuccess(t *testing.T) {
+	out := NewTLSHandshakesList(oonitemplates.Results{
+		TLSHandshakes: []*modelx.TLSHandshakeDoneEvent{
+			&modelx.TLSHandshakeDoneEvent{},
+			&modelx.TLSHandshakeDoneEvent{
+				ConnID: 12345,
+				Error:  errors.New("mocked error"),
+			},
+			&modelx.TLSHandshakeDoneEvent{
+				ConnectionState: modelx.TLSConnectionState{
+					CipherSuite:        tls.TLS_AES_128_GCM_SHA256,
+					NegotiatedProtocol: "h2",
+					PeerCertificates: []modelx.X509Certificate{
+						modelx.X509Certificate{
+							Data: []byte("deadbeef"),
+						},
+						modelx.X509Certificate{
+							Data: []byte("abad1dea"),
+						},
+					},
+					Version: tls.VersionTLS11,
+				},
+				DurationSinceBeginning: 10 * time.Millisecond,
+			},
+		},
+	})
+	if len(out) != 3 {
+		t.Fatal("unexpected output length")
+	}
+
+	if out[0].CipherSuite != "" {
+		t.Fatal("invalid out[0].CipherSuite")
+	}
+	if out[0].ConnID != 0 {
+		t.Fatal("invalid out[0].ConnID")
+	}
+	if out[0].Failure != nil {
+		t.Fatal("invalid out[0].Failure")
+	}
+	if out[0].NegotiatedProtocol != "" {
+		t.Fatal("invalid out[0].NegotiatedProtocol")
+	}
+	if len(out[0].PeerCertificates) != 0 {
+		t.Fatal("invalid out[0].PeerCertificates")
+	}
+	if !floatEquals(out[0].T, 0) {
+		t.Fatal("invalid out[0].T")
+	}
+	if out[0].TLSVersion != "" {
+		t.Fatal("invalid out[0].TLSVersion")
+	}
+
+	if out[1].CipherSuite != "" {
+		t.Fatal("invalid out[1].CipherSuite")
+	}
+	if out[1].ConnID != 12345 {
+		t.Fatal("invalid out[1].ConnID")
+	}
+	if *out[1].Failure != "mocked error" {
+		t.Fatal("invalid out[1].Failure")
+	}
+	if out[1].NegotiatedProtocol != "" {
+		t.Fatal("invalid out[1].NegotiatedProtocol")
+	}
+	if len(out[1].PeerCertificates) != 0 {
+		t.Fatal("invalid out[1].PeerCertificates")
+	}
+	if !floatEquals(out[1].T, 0) {
+		t.Fatal("invalid out[1].T")
+	}
+	if out[1].TLSVersion != "" {
+		t.Fatal("invalid out[1].TLSVersion")
+	}
+
+	if out[2].CipherSuite != "TLS_AES_128_GCM_SHA256" {
+		t.Fatal("invalid out[2].CipherSuite")
+	}
+	if out[2].ConnID != 0 {
+		t.Fatal("invalid out[2].ConnID")
+	}
+	if out[2].Failure != nil {
+		t.Fatal("invalid out[2].Failure")
+	}
+	if out[2].NegotiatedProtocol != "h2" {
+		t.Fatal("invalid out[2].NegotiatedProtocol")
+	}
+	if len(out[2].PeerCertificates) != 2 {
+		t.Fatal("invalid out[2].PeerCertificates")
+	}
+	if !floatEquals(out[2].T, 0.010) {
+		t.Fatal("invalid out[2].T")
+	}
+	if out[2].TLSVersion != "TLSv1.1" {
+		t.Fatal("invalid out[2].TLSVersion")
+	}
+
+	for idx, mbv := range out[2].PeerCertificates {
+		if idx == 0 && mbv.Value != "deadbeef" {
+			t.Fatal("invalid first certificate")
+		}
+		if idx == 1 && mbv.Value != "abad1dea" {
+			t.Fatal("invalid second certificate")
+		}
+		if idx < 0 || idx > 1 {
+			t.Fatal("invalid index")
+		}
 	}
 }
