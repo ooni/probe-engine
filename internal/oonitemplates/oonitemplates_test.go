@@ -450,3 +450,22 @@ func (txp *faketransport) ClientFactory(stateDir string) (obfs4base.ClientFactor
 func (txp *faketransport) ServerFactory(stateDir string, args *goptlib.Args) (obfs4base.ServerFactory, error) {
 	return txp.ServerFactory(stateDir, args)
 }
+
+func TestUnitConnmapper(t *testing.T) {
+	var mapper connmapper
+	if mapper.scramble(-1) >= 0 {
+		t.Fatal("unexpected value for negative input")
+	}
+	if mapper.scramble(1234) != 2 {
+		t.Fatal("unexpected first value")
+	}
+	if mapper.scramble(12) != 3 {
+		t.Fatal("unexpected second value")
+	}
+	if mapper.scramble(12) != mapper.scramble(12) {
+		t.Fatal("not idempotent")
+	}
+	if mapper.scramble(0) != 0 {
+		t.Fatal("unexpected value for zero input")
+	}
+}
