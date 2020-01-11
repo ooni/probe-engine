@@ -114,22 +114,24 @@ func (e *Experiment) ReportID() string {
 }
 
 func (e *Experiment) newMeasurement(input string) model.Measurement {
+	utctimenow := time.Now().UTC()
 	return model.Measurement{
-		DataFormatVersion:    collector.DefaultDataFormatVersion,
-		Input:                input,
-		MeasurementStartTime: formatTimeNowUTC(),
-		ProbeIP:              e.Session.ProbeIP(),
-		ProbeASN:             e.Session.ProbeASNString(),
-		ProbeCC:              e.Session.ProbeCC(),
-		ReportID:             e.ReportID(),
-		ResolverASN:          e.Session.ResolverASNString(),
-		ResolverIP:           e.Session.ResolverIP(),
-		ResolverNetworkName:  e.Session.ResolverNetworkName(),
-		SoftwareName:         e.Session.SoftwareName,
-		SoftwareVersion:      e.Session.SoftwareVersion,
-		TestName:             e.TestName,
-		TestStartTime:        e.TestStartTime,
-		TestVersion:          e.TestVersion,
+		DataFormatVersion:         collector.DefaultDataFormatVersion,
+		Input:                     input,
+		MeasurementStartTime:      utctimenow.Format(dateFormat),
+		MeasurementStartTimeSaved: utctimenow,
+		ProbeIP:                   e.Session.ProbeIP(),
+		ProbeASN:                  e.Session.ProbeASNString(),
+		ProbeCC:                   e.Session.ProbeCC(),
+		ReportID:                  e.ReportID(),
+		ResolverASN:               e.Session.ResolverASNString(),
+		ResolverIP:                e.Session.ResolverIP(),
+		ResolverNetworkName:       e.Session.ResolverNetworkName(),
+		SoftwareName:              e.Session.SoftwareName,
+		SoftwareVersion:           e.Session.SoftwareVersion,
+		TestName:                  e.TestName,
+		TestStartTime:             e.TestStartTime,
+		TestVersion:               e.TestVersion,
 	}
 }
 
