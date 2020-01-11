@@ -30,7 +30,7 @@ import (
 
 const (
 	testName    = "psiphon"
-	testVersion = "0.3.1"
+	testVersion = "0.3.2"
 )
 
 // Config contains the experiment's configuration.
@@ -45,27 +45,14 @@ type Config struct {
 // This is what will end up into the Measurement.TestKeys field
 // when you run this experiment.
 type TestKeys struct {
-	// Agent is the HTTP agent we're using.
-	Agent string `json:"agent"`
-
-	// BootstrapTime is the seconds it took to bootstrap Psiphon.
-	BootstrapTime float64 `json:"bootstrap_time"`
-
-	// Failure contains the failure that occurred.
-	Failure *string `json:"failure"`
-
-	// MaxRuntime is the number of seconds after which we
-	// interrupt the psiphon experiment.
-	MaxRuntime float64 `json:"max_runtime"`
-
-	// Queries contains the DNS queries.
-	Queries oonidatamodel.DNSQueriesList `json:"queries"`
-
-	// Requests contains HTTP measurements
-	Requests oonidatamodel.RequestList `json:"requests"`
-
-	// SOCKSProxy is the address of the proxy we're using.
-	SOCKSProxy string `json:"socksproxy"`
+	Agent         string                          `json:"agent"`
+	BootstrapTime float64                         `json:"bootstrap_time"`
+	Failure       *string                         `json:"failure"`
+	MaxRuntime    float64                         `json:"max_runtime"`
+	Queries       oonidatamodel.DNSQueriesList    `json:"queries"`
+	Requests      oonidatamodel.RequestList       `json:"requests"`
+	SOCKSProxy    string                          `json:"socksproxy"`
+	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
 type runner struct {
@@ -141,8 +128,11 @@ func (r *runner) usetunnel(
 	r.testkeys.Requests = append(
 		r.testkeys.Requests, oonidatamodel.NewRequestList(results.TestKeys)...,
 	)
+	r.testkeys.TLSHandshakes = append(
+		r.testkeys.TLSHandshakes, oonidatamodel.NewTLSHandshakesList(results.TestKeys)...,
+	)
 	// TODO(bassosimone): understand if there is a way to ask
-	// the tunnel the number of bytes sent and/or received
+	// the tunnel the number of bytes sent and received
 	receivedBytes := results.TestKeys.ReceivedBytes
 	sentBytes := results.TestKeys.SentBytes
 	r.callbacks.OnDataUsage(
