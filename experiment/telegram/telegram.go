@@ -26,7 +26,7 @@ import (
 
 const (
 	testName    = "telegram"
-	testVersion = "0.0.4"
+	testVersion = "0.0.5"
 )
 
 // Config contains the experiment config.
@@ -34,14 +34,15 @@ type Config struct{}
 
 // TestKeys contains telegram test keys.
 type TestKeys struct {
-	Agent                string                       `json:"agent"`
-	Queries              oonidatamodel.DNSQueriesList `json:"queries"`
-	Requests             oonidatamodel.RequestList    `json:"requests"`
-	TCPConnect           oonidatamodel.TCPConnectList `json:"tcp_connect"`
-	TelegramHTTPBlocking bool                         `json:"telegram_http_blocking"`
-	TelegramTCPBlocking  bool                         `json:"telegram_tcp_blocking"`
-	TelegramWebFailure   *string                      `json:"telegram_web_failure"`
-	TelegramWebStatus    string                       `json:"telegram_web_status"`
+	Agent                string                          `json:"agent"`
+	Queries              oonidatamodel.DNSQueriesList    `json:"queries"`
+	Requests             oonidatamodel.RequestList       `json:"requests"`
+	TCPConnect           oonidatamodel.TCPConnectList    `json:"tcp_connect"`
+	TelegramHTTPBlocking bool                            `json:"telegram_http_blocking"`
+	TelegramTCPBlocking  bool                            `json:"telegram_tcp_blocking"`
+	TelegramWebFailure   *string                         `json:"telegram_web_failure"`
+	TelegramWebStatus    string                          `json:"telegram_web_status"`
+	TLSHandshakes        oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
 type urlMeasurements struct {
@@ -77,6 +78,10 @@ func (tk *TestKeys) processone(v *urlMeasurements) error {
 	tk.TCPConnect = append(
 		tk.TCPConnect,
 		oonidatamodel.NewTCPConnectList(r.TestKeys)...,
+	)
+	tk.TLSHandshakes = append(
+		tk.TLSHandshakes,
+		oonidatamodel.NewTLSHandshakesList(r.TestKeys)...,
 	)
 	// process access points first
 	if v.method != "GET" {
