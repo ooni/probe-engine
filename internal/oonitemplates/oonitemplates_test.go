@@ -457,10 +457,10 @@ func TestUnitConnmapper(t *testing.T) {
 		t.Fatal("unexpected value for negative input")
 	}
 	if mapper.scramble(1234) != 2 {
-		t.Fatal("unexpected first value")
+		t.Fatal("unexpected second value")
 	}
 	if mapper.scramble(12) != 3 {
-		t.Fatal("unexpected second value")
+		t.Fatal("unexpected third value")
 	}
 	if mapper.scramble(12) != mapper.scramble(12) {
 		t.Fatal("not idempotent")
