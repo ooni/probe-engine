@@ -60,6 +60,15 @@ func TestRunTelegram(t *testing.T) {
 	runexperimentflow(t, builder.Build())
 }
 
+func TestRunTor(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("tor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build())
+}
+
 func TestNeedsInput(t *testing.T) {
 	sess := newSessionForTesting(t)
 	builder, err := sess.NewExperimentBuilder("web_connectivity")

@@ -257,3 +257,15 @@ type KeyValueStore interface {
 	Get(key string) (value []byte, err error)
 	Set(key string, value []byte) (err error)
 }
+
+// TorTarget is a target for the tor experiment.
+type TorTarget struct {
+	// Address is the address of the target.
+	Address string `json:"address"`
+
+	// Params contains optional params for, e.g., pluggable transports.
+	Params map[string][]string `json:"params"`
+
+	// Protocol is the protocol to use with the target.
+	Protocol string `json:"protocol"`
+}
