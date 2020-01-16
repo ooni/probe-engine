@@ -45,7 +45,7 @@ type TargetResults struct {
 
 // TestKeys contains tor test keys.
 type TestKeys struct {
-	Targets []TargetResults `json:"targets"`
+	Targets map[string]TargetResults `json:"targets"`
 }
 
 type measurer struct {
@@ -73,29 +73,34 @@ func (m *measurer) measure(
 	return err
 }
 
+type keytarget struct {
+	key    string
+	target model.TorTarget
+}
+
 func (m *measurer) measureTargets(
 	ctx context.Context,
 	sess *session.Session,
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
-	targets []model.TorTarget,
+	targets map[string]model.TorTarget,
 ) error {
 	// run measurements in parallel
 	var waitgroup sync.WaitGroup
 	rc := newResultsCollector(sess, measurement, callbacks)
 	waitgroup.Add(len(targets))
-	workch := make(chan model.TorTarget)
+	workch := make(chan keytarget)
 	const parallelism = 2
 	for i := 0; i < parallelism; i++ {
-		go func(ch <-chan model.TorTarget, total int) {
-			for target := range ch {
-				rc.measureSingleTarget(ctx, target, total)
+		go func(ch <-chan keytarget, total int) {
+			for kt := range ch {
+				rc.measureSingleTarget(ctx, kt, total)
 				waitgroup.Done()
 			}
 		}(workch, len(targets))
 	}
-	for _, target := range targets {
-		workch <- target
+	for key, target := range targets {
+		workch <- keytarget{key: key, target: target}
 	}
 	close(workch)
 	waitgroup.Wait()
@@ -118,7 +123,7 @@ type resultsCollector struct {
 	receivedBytes   int64
 	sentBytes       int64
 	sess            *session.Session
-	targetresults   []TargetResults
+	targetresults   map[string]TargetResults
 }
 
 func newResultsCollector(
@@ -127,30 +132,31 @@ func newResultsCollector(
 	callbacks handler.Callbacks,
 ) *resultsCollector {
 	rc := &resultsCollector{
-		callbacks:   callbacks,
-		measurement: measurement,
-		sess:        sess,
+		callbacks:     callbacks,
+		measurement:   measurement,
+		sess:          sess,
+		targetresults: make(map[string]TargetResults),
 	}
 	rc.flexibleConnect = rc.defaultFlexibleConnect
 	return rc
 }
 
 func (rc *resultsCollector) measureSingleTarget(
-	ctx context.Context, target model.TorTarget, total int,
+	ctx context.Context, kt keytarget, total int,
 ) {
-	tk, err := rc.flexibleConnect(ctx, target)
+	tk, err := rc.flexibleConnect(ctx, kt.target)
 	rc.mu.Lock()
-	rc.targetresults = append(rc.targetresults, TargetResults{
+	rc.targetresults[kt.key] = TargetResults{
 		Agent:          "redirect",
 		Failure:        setFailure(err),
 		NetworkEvents:  oonidatamodel.NewNetworkEventsList(tk),
 		Queries:        oonidatamodel.NewDNSQueriesList(tk),
 		Requests:       oonidatamodel.NewRequestList(tk),
-		TargetAddress:  target.Address,
-		TargetProtocol: target.Protocol,
+		TargetAddress:  kt.target.Address,
+		TargetProtocol: kt.target.Protocol,
 		TCPConnect:     oonidatamodel.NewTCPConnectList(tk),
 		TLSHandshakes:  oonidatamodel.NewTLSHandshakesList(tk),
-	})
+	}
 	rc.mu.Unlock()
 	atomic.AddInt64(&rc.sentBytes, tk.SentBytes)
 	atomic.AddInt64(&rc.receivedBytes, tk.ReceivedBytes)
@@ -160,7 +166,7 @@ func (rc *resultsCollector) measureSingleTarget(
 		percentage = float64(sofar) / float64(total)
 	}
 	rc.callbacks.OnProgress(percentage, fmt.Sprintf(
-		"tor: access %s/%s: %s", target.Address, target.Protocol,
+		"tor: access %s/%s: %s", kt.target.Address, kt.target.Protocol,
 		errString(err),
 	))
 }

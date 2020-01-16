@@ -10,25 +10,22 @@ import (
 // Config contains settings.
 type Config struct{}
 
-var staticTestingTargets = []model.TorTarget{
-	// TODO(bassosimone): this is a public working bridge we have found
-	// with @hellais. We should ask @phw whether there is some obfs4 bridge
-	// dedicated to integration testing that we should use instead.
-	model.TorTarget{
-		Address: "109.105.109.165:10527",
+var staticTestingTargets = map[string]model.TorTarget{
+	"f372c264e9a470335d9ac79fe780847bda052aa3b6a9ee5ff497cb6501634f9f": model.TorTarget{
+		Address: "38.229.1.78:80",
 		Params: map[string][]string{
 			"cert": []string{
-				"Bvg/itxeL4TWKLP6N1MaQzSOC6tcRIBv6q57DYAZc3b2AzuM+/TfB7mqTFEfXILCjEwzVA",
+				"Hmyfd2ev46gGY7NoVxA9ngrPF2zCZtzskRTzoWXbxNkzeVnGFPWmrTtILRyqCTjHR+s9dg",
 			},
 			"iat-mode": []string{"1"},
 		},
 		Protocol: "obfs4",
 	},
-	model.TorTarget{
+	"66bb51cfeaa6f3fc2694438a49f9245a2c35b994989b3986a09474088a4ea119": model.TorTarget{
 		Address:  "66.111.2.131:9030",
 		Protocol: "dir_port",
 	},
-	model.TorTarget{
+	"11b0b9ce802244f7c2ebf5df315f40fb509ff1e1b445a52a5f0ff1190fd6dd09": model.TorTarget{
 		Address:  "66.111.2.131:9001",
 		Protocol: "or_port",
 	},
@@ -36,7 +33,7 @@ var staticTestingTargets = []model.TorTarget{
 
 // Query retrieves the tor experiment targets. This function will either
 // return a nonzero list of targets or an error.
-func Query(ctx context.Context, config Config) ([]model.TorTarget, error) {
+func Query(ctx context.Context, config Config) (map[string]model.TorTarget, error) {
 	// TODO(bassosimone): fetch targets from orchestra
 	return staticTestingTargets, nil
 }
