@@ -17,7 +17,6 @@ import (
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
-	testlists "github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -65,12 +64,16 @@ func (m *measurer) measure(
 	ctx, cancel := context.WithTimeout(origCtx, 60*time.Second)
 	defer cancel()
 	// fetch experiment targets
-	targets, err := testlists.Query(ctx, testlists.Config{})
-	if err == nil {
-		// measure targets
-		err = m.measureTargets(origCtx, sess, measurement, callbacks, targets)
+	clnt, err := sess.NewOrchestraClient(ctx)
+	if err != nil {
+		return err
 	}
-	return err
+	targets, err := clnt.FetchTorTargets(ctx)
+	if err != nil {
+		return err
+	}
+	// TODO(bassosimone): need to add unit test for empty targets list
+	return m.measureTargets(origCtx, sess, measurement, callbacks, targets)
 }
 
 type keytarget struct {

@@ -16,8 +16,10 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/register"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
+	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
 	"github.com/ooni/probe-engine/internal/orchestra/update"
 	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for OONI orchestra
@@ -150,6 +152,21 @@ func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 		return nil, err
 	}
 	return psiphon.Query(ctx, psiphon.Config{
+		Auth:       auth,
+		BaseURL:    c.OrchestrateBaseURL,
+		HTTPClient: c.HTTPClient,
+		Logger:     c.Logger,
+		UserAgent:  c.UserAgent,
+	})
+}
+
+// FetchTorTargets returns the targets for the tor experiment.
+func (c *Client) FetchTorTargets(ctx context.Context) (map[string]model.TorTarget, error) {
+	_, auth, err := c.getCredsAndAuth()
+	if err != nil {
+		return nil, err
+	}
+	return tor.Query(ctx, tor.Config{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,
