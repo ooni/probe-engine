@@ -19,6 +19,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/telegram"
+	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/model"
@@ -359,6 +360,16 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				return telegram.NewExperiment(session.session, *config.(*telegram.Config))
 			},
 			config:     &telegram.Config{},
+			needsInput: false,
+		}
+	},
+
+	"tor": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return tor.NewExperiment(session.session, *config.(*tor.Config))
+			},
+			config:     &tor.Config{},
 			needsInput: false,
 		}
 	},
