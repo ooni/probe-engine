@@ -117,14 +117,11 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 }
 
 var staticTestingTargets = []model.TorTarget{
-	// TODO(bassosimone): this is a public working bridge we have found
-	// with @hellais. We should ask @phw whether there is some obfs4 bridge
-	// dedicated to integration testing that we should use instead.
 	model.TorTarget{
-		Address: "109.105.109.165:10527",
+		Address: "192.95.36.142:443",
 		Params: map[string][]string{
 			"cert": []string{
-				"Bvg/itxeL4TWKLP6N1MaQzSOC6tcRIBv6q57DYAZc3b2AzuM+/TfB7mqTFEfXILCjEwzVA",
+				"qUVQ0srL1JI/vO6V6m/24anYXiJD3QP2HgzUKQtQ7GRqqUvs7P+tG43RtAqdhLOALP7DJQ",
 			},
 			"iat-mode": []string{"1"},
 		},

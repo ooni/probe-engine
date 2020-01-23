@@ -22,8 +22,7 @@ type Config struct {
 	UserAgent  string
 }
 
-// Query retrieves the tor experiment targets. This function will either
-// return a nonzero list of targets or an error.
+// Query retrieves the tor experiment targets.
 func Query(ctx context.Context, config Config) (result map[string]model.TorTarget, err error) {
 	if config.Auth == nil {
 		return nil, errors.New("config.Auth is nil")

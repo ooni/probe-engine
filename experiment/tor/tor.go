@@ -23,14 +23,20 @@ import (
 )
 
 const (
-	testName    = "tor"
+	// parallelism is the number of parallel threads we use for this experiment
+	parallelism = 2
+
+	// testName is the name of this experiment
+	testName = "tor"
+
+	// testVersion is th version of this experiment
 	testVersion = "0.0.1"
 )
 
 // Config contains the experiment config.
 type Config struct{}
 
-// TargetResults contains the results of a target.
+// TargetResults contains the results of measuring a target.
 type TargetResults struct {
 	Agent          string                          `json:"agent"`
 	Failure        *string                         `json:"failure"`
@@ -88,6 +94,7 @@ func (m *measurer) measure(
 	return nil
 }
 
+// keytarget contains a key and the related target
 type keytarget struct {
 	key    string
 	target model.TorTarget
@@ -105,7 +112,6 @@ func (m *measurer) measureTargets(
 	rc := newResultsCollector(sess, measurement, callbacks)
 	waitgroup.Add(len(targets))
 	workch := make(chan keytarget)
-	const parallelism = 2
 	for i := 0; i < parallelism; i++ {
 		go func(ch <-chan keytarget, total int) {
 			for kt := range ch {
@@ -195,7 +201,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			Path:   "/tor/status-vote/current/consensus.z",
 			Scheme: "http",
 		}
-		const snapshotsize = 1 << 10 // no need to include all in report
+		const snapshotsize = 1 << 16 // no need to include all in report
 		r := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 			Accept:                  httpheader.RandomAccept(),
 			AcceptLanguage:          httpheader.RandomAcceptLanguage(),
@@ -212,7 +218,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 		r := oonitemplates.TLSConnect(ctx, oonitemplates.TLSConnectConfig{
 			Address:            target.Address,
 			Beginning:          rc.measurement.MeasurementStartTimeSaved,
-			InsecureSkipVerify: true, // TODO(bassosimone): can we avoid it?
+			InsecureSkipVerify: true,
 			Handler:            netxlogger.NewHandler(rc.sess.Logger),
 		})
 		tk, err = r.TestKeys, r.Error
