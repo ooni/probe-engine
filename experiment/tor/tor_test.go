@@ -10,6 +10,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -31,31 +32,87 @@ func TestUnitNewExperiment(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureWithCancelledContext(t *testing.T) {
-	measurement := new(model.Measurement)
-	m := newMeasurer(Config{})
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	err := m.measure(
-		ctx,
+func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
+	measurer := newMeasurer(Config{})
+	expected := errors.New("mocked error")
+	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+		return nil, expected
+	}
+	err := measurer.measure(
+		context.Background(),
 		&session.Session{
 			Logger: log.Log,
 		},
-		measurement,
+		new(model.Measurement),
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
+	measurer := newMeasurer(Config{})
+	expected := errors.New("mocked error")
+	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+		return new(orchestra.Client), nil
+	}
+	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+		return nil, expected
+	}
+	err := measurer.measure(
+		context.Background(),
+		&session.Session{
+			Logger: log.Log,
+		},
+		new(model.Measurement),
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitMeasurerMeasureGood(t *testing.T) {
+	measurer := newMeasurer(Config{})
+	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+		return new(orchestra.Client), nil
+	}
+	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+		return nil, nil
+	}
+	err := measurer.measure(
+		context.Background(),
+		&session.Session{
+			Logger: log.Log,
+		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, entry := range measurement.TestKeys.(*TestKeys).Targets {
-		if entry.Failure == nil {
-			t.Fatal("expected an error here")
-		}
-		good := (strings.HasSuffix(*entry.Failure, "operation was canceled") ||
-			strings.HasSuffix(*entry.Failure, "context canceled"))
-		if !good {
-			t.Fatal("not the error we expected")
-		}
+}
+
+func TestIntegrationMeasurerMeasureGood(t *testing.T) {
+	measurer := newMeasurer(Config{})
+	sess := session.New(
+		log.Log,
+		"ooniprobe-engine",
+		"0.1.0-dev",
+		"../../testdata/",
+		nil, nil,
+		"../../testdata/",
+		kvstore.NewMemoryKeyValueStore(),
+	)
+	err := measurer.measure(
+		context.Background(),
+		sess,
+		new(model.Measurement),
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -82,9 +139,55 @@ var staticTestingTargets = []model.TorTarget{
 		Protocol: "or_port",
 	},
 	model.TorTarget{
-		Address:  "www.google.com:80",
+		Address:  "1.1.1.1:80",
 		Protocol: "tcp",
 	},
+}
+
+func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
+	var measurement model.Measurement
+	measurer := new(measurer)
+	measurer.measureTargets(
+		context.Background(),
+		&session.Session{
+			Logger: log.Log,
+		},
+		&measurement,
+		handler.NewPrinterCallbacks(log.Log),
+		nil,
+	)
+	if len(measurement.TestKeys.(*TestKeys).Targets) != 0 {
+		t.Fatal("expected no measurements here")
+	}
+}
+
+func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we don't actually do anything
+	var measurement model.Measurement
+	measurer := new(measurer)
+	measurer.measureTargets(
+		ctx,
+		&session.Session{
+			Logger: log.Log,
+		},
+		&measurement,
+		handler.NewPrinterCallbacks(log.Log),
+		map[string]model.TorTarget{
+			"xx": staticTestingTargets[0],
+		},
+	)
+	targets := measurement.TestKeys.(*TestKeys).Targets
+	if len(targets) != 1 {
+		t.Fatal("expected single measurements here")
+	}
+	if _, found := targets["xx"]; !found {
+		t.Fatal("the target we expected is missing")
+	}
+	tgt := targets["xx"]
+	if !strings.HasSuffix(*tgt.Failure, "operation was canceled") {
+		t.Fatal("not the error we expected")
+	}
 }
 
 func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
@@ -102,7 +205,10 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 		}, nil
 	}
 	rc.measureSingleTarget(
-		context.Background(), staticTestingTargets[0],
+		context.Background(), keytarget{
+			key:    "xx", // using an super simple key; should work anyway
+			target: staticTestingTargets[0],
+		},
 		len(staticTestingTargets),
 	)
 	if len(rc.targetresults) != 1 {
@@ -110,16 +216,16 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	}
 	// Implementation note: here we won't bother with checking that
 	// oonidatamodel works correctly because we already test that.
-	if rc.targetresults[0].Agent != "redirect" {
+	if rc.targetresults["xx"].Agent != "redirect" {
 		t.Fatal("agent is invalid")
 	}
-	if rc.targetresults[0].Failure != nil {
+	if rc.targetresults["xx"].Failure != nil {
 		t.Fatal("failure is invalid")
 	}
-	if rc.targetresults[0].TargetAddress != staticTestingTargets[0].Address {
+	if rc.targetresults["xx"].TargetAddress != staticTestingTargets[0].Address {
 		t.Fatal("target address is invalid")
 	}
-	if rc.targetresults[0].TargetProtocol != staticTestingTargets[0].Protocol {
+	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
 	}
 	if rc.sentBytes != 10 {
@@ -142,7 +248,10 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 		return oonitemplates.Results{}, errors.New("mocked error")
 	}
 	rc.measureSingleTarget(
-		context.Background(), staticTestingTargets[0],
+		context.Background(), keytarget{
+			key:    "xx", // using an super simple key; should work anyway
+			target: staticTestingTargets[0],
+		},
 		len(staticTestingTargets),
 	)
 	if len(rc.targetresults) != 1 {
@@ -150,16 +259,16 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	}
 	// Implementation note: here we won't bother with checking that
 	// oonidatamodel works correctly because we already test that.
-	if rc.targetresults[0].Agent != "redirect" {
+	if rc.targetresults["xx"].Agent != "redirect" {
 		t.Fatal("agent is invalid")
 	}
-	if *rc.targetresults[0].Failure != "mocked error" {
+	if *rc.targetresults["xx"].Failure != "mocked error" {
 		t.Fatal("failure is invalid")
 	}
-	if rc.targetresults[0].TargetAddress != staticTestingTargets[0].Address {
+	if rc.targetresults["xx"].TargetAddress != staticTestingTargets[0].Address {
 		t.Fatal("target address is invalid")
 	}
-	if rc.targetresults[0].TargetProtocol != staticTestingTargets[0].Protocol {
+	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
 	}
 	if rc.sentBytes != 0 {
@@ -256,11 +365,12 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "operation was canceled") {
-		t.Fatal("not the error we expected")
+	if !strings.HasSuffix(err.Error(), "operation was canceled") &&
+		!strings.HasSuffix(err.Error(), "context canceled") {
+		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if tk.Connects == nil {
-		t.Fatal("expected connects data here")
+		t.Fatalf("expected connects data here, found: %+v", tk.Connects)
 	}
 }
 

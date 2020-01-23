@@ -17,6 +17,7 @@ import (
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -48,32 +49,43 @@ type TestKeys struct {
 }
 
 type measurer struct {
-	config Config
+	config             Config
+	fetchTorTargets    func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error)
+	newOrchestraClient func(ctx context.Context, sess *session.Session) (*orchestra.Client, error)
 }
 
 func newMeasurer(config Config) *measurer {
-	return &measurer{config: config}
+	return &measurer{
+		config: config,
+		fetchTorTargets: func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+			return clnt.FetchTorTargets(ctx)
+		},
+		newOrchestraClient: func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+			return sess.NewOrchestraClient(ctx)
+		},
+	}
 }
 
 func (m *measurer) measure(
-	origCtx context.Context,
+	ctx context.Context,
 	sess *session.Session,
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {
-	ctx, cancel := context.WithTimeout(origCtx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	// fetch experiment targets
-	clnt, err := sess.NewOrchestraClient(ctx)
+	clnt, err := m.newOrchestraClient(ctx, sess)
 	if err != nil {
 		return err
 	}
-	targets, err := clnt.FetchTorTargets(ctx)
+	targets, err := m.fetchTorTargets(ctx, clnt)
 	if err != nil {
 		return err
 	}
-	// TODO(bassosimone): need to add unit test for empty targets list
-	return m.measureTargets(origCtx, sess, measurement, callbacks, targets)
+	// run the measurement
+	m.measureTargets(ctx, sess, measurement, callbacks, targets)
+	return nil
 }
 
 type keytarget struct {
@@ -87,7 +99,7 @@ func (m *measurer) measureTargets(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 	targets map[string]model.TorTarget,
-) error {
+) {
 	// run measurements in parallel
 	var waitgroup sync.WaitGroup
 	rc := newResultsCollector(sess, measurement, callbacks)
@@ -114,7 +126,6 @@ func (m *measurer) measureTargets(
 		float64(rc.receivedBytes)/1024.0, // downloaded
 		float64(rc.sentBytes)/1024.0,     // uploaded
 	)
-	return nil
 }
 
 type resultsCollector struct {
