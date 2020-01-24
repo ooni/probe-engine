@@ -76,44 +76,8 @@ go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
 Then you need to clone `psiphon-tunnel-core` and generate a `go.mod` for
 it by running `go mod init && go mod tidy` in its toplevel dir.
 
-Lastly, generate the commands to update using this script:
+Lastly, write a new `go.mod` containing only your indirect dependencies
+followed by the exact content of `psiphon-tunnel-core`'s `go.mod`. Using
+this procedure we should be able to correctly pin dependencies.
 
-```Python
-import distutils.version
-import sys
-
-def slurp(path):
-    deps = {}
-    with open(path, "r") as filep:
-        for line in filep:
-            if not line.startswith("\t"):
-                continue
-            line = line.strip()
-            if "// indirect" in line:
-                index = line.find("// indirect")
-                line = line[:index]
-                line = line.strip()
-            name, version = line.strip().split()
-            deps[name] = version
-    return deps
-
-def main():
-    if len(sys.argv) != 3:
-        sys.exit("usage: %s /our/go.mod /psiphon/go.mod" % sys.argv[0])
-    ourdict = slurp(sys.argv[1])
-    theirdict = slurp(sys.argv[2])
-    for key in theirdict:
-        if key not in ourdict:
-            continue
-        ourver = distutils.version.LooseVersion(ourdict[key])
-        theirver = distutils.version.LooseVersion(theirdict[key])
-        if theirver <= ourver:
-            continue
-        print("#", key, theirdict[key], ourdict[key])
-        print("go get -v %s@%s" % (key, theirdict[key]))
-
-if __name__ == "__main__":
-    main()
-```
-
-Run the emitted commands and finally `go mod tidy`.
+Finally, run `go mod tidy`.
