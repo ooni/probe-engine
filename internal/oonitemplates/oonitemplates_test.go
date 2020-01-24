@@ -10,9 +10,7 @@ import (
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
-	"github.com/ooni/netx/handlers"
 	"github.com/ooni/netx/modelx"
-	"github.com/ooni/netx/x/scoreboard"
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )
@@ -44,9 +42,6 @@ func TestIntegrationDNSLookupGood(t *testing.T) {
 	}
 	if len(results.Addresses) < 1 {
 		t.Fatal("no addresses returned?!")
-	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
 	}
 }
 
@@ -98,9 +93,6 @@ func TestIntegrationHTTPDoGood(t *testing.T) {
 	}
 	if len(results.BodySnap) < 1 {
 		t.Fatal("no body?!")
-	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
 	}
 }
 
@@ -154,9 +146,6 @@ func TestIntegrationTLSConnectGood(t *testing.T) {
 	if results.Error != nil {
 		t.Fatal(results.Error)
 	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
-	}
 }
 
 func TestIntegrationTLSConnectGoodWithDoT(t *testing.T) {
@@ -168,9 +157,6 @@ func TestIntegrationTLSConnectGoodWithDoT(t *testing.T) {
 	})
 	if results.Error != nil {
 		t.Fatal(results.Error)
-	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
 	}
 }
 
@@ -212,39 +198,6 @@ func TestIntegrationTLSConnectForceSkipVerify(t *testing.T) {
 	}
 }
 
-func TestMaybeRunTLSChecks(t *testing.T) {
-	out := maybeRunTLSChecks(
-		context.Background(), handlers.NoHandler,
-		&modelx.XResults{
-			Scoreboard: scoreboard.Board{
-				TLSHandshakeReset: []scoreboard.TLSHandshakeReset{
-					scoreboard.TLSHandshakeReset{
-						Domain: "ooni.io",
-						RecommendedFollowups: []string{
-							"sni_blocking",
-						},
-					},
-				},
-			},
-		},
-	)
-	if out == nil {
-		t.Fatal("unexpected nil return value")
-	}
-	if out.Connects == nil {
-		t.Fatal("no connects?!")
-	}
-	if out.HTTPRequests != nil {
-		t.Fatal("http requests?!")
-	}
-	if out.Resolves == nil {
-		t.Fatal("no queries?!")
-	}
-	if out.TLSHandshakes == nil {
-		t.Fatal("no TLS handshakes?!")
-	}
-}
-
 func TestIntegrationBodySnapSizes(t *testing.T) {
 	const (
 		maxEventsBodySnapSize   = 1 << 7
@@ -268,9 +221,6 @@ func TestIntegrationBodySnapSizes(t *testing.T) {
 	if len(results.BodySnap) != maxResponseBodySnapSize {
 		t.Fatal("invalid response body snap size")
 	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
-	}
 	if results.TestKeys.HTTPRequests == nil {
 		t.Fatal("no HTTPRequests?!")
 	}
@@ -292,9 +242,6 @@ func TestIntegrationTCPConnectGood(t *testing.T) {
 	if results.Error != nil {
 		t.Fatal(results.Error)
 	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
-	}
 }
 
 func TestIntegrationTCPConnectGoodWithDoT(t *testing.T) {
@@ -306,9 +253,6 @@ func TestIntegrationTCPConnectGoodWithDoT(t *testing.T) {
 	})
 	if results.Error != nil {
 		t.Fatal(results.Error)
-	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
 	}
 }
 
@@ -345,9 +289,6 @@ func TestIntegrationOBFS4ConnectGood(t *testing.T) {
 	if results.Error != nil {
 		t.Fatal(results.Error)
 	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
-	}
 }
 
 func TestIntegrationOBFS4ConnectGoodWithDoT(t *testing.T) {
@@ -358,9 +299,6 @@ func TestIntegrationOBFS4ConnectGoodWithDoT(t *testing.T) {
 	results := OBFS4Connect(ctx, config)
 	if results.Error != nil {
 		t.Fatal(results.Error)
-	}
-	if results.TestKeys.Scoreboard == nil {
-		t.Fatal("no scoreboard?!")
 	}
 }
 
