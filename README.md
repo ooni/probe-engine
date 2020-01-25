@@ -51,14 +51,7 @@ instruction for installing Measurement Kit and building.
 
 ## Updating dependencies
 
-Updating dependencies is more complex than `go get -u ./...` until our
-direct dependency Psiphon migrates to `go.mod`. In turn, they cannot
-migrate to `go.mod` until they have support for that in `gomobile`. In
-turn `gomobile` with `go.mod` [is in progress](
-https://github.com/golang/go/issues/27234). So, we expect to use this
-procedure for updating for a few months.
-
-To update direct dependencies use:
+1. update direct dependencies using:
 
 ```bash
 for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
@@ -66,18 +59,19 @@ for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
 done
 ```
 
-Then update Psiphon. We track the `staging-client` branch. Find the commit
-hash of such branch and then run:
+2. pin to a specific psiphon version (we usually track the
+`staging-client` branch) using:
 
 ```bash
 go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
 ```
 
-Then you need to clone `psiphon-tunnel-core` and generate a `go.mod` for
-it by running `go mod init && go mod tidy` in its toplevel dir.
+3. clone `psiphon-tunnel-core` and generate a `go.mod` by running
+`go mod init && go mod tidy` in the toplevel dir
 
-Lastly, write a new `go.mod` containing only your indirect dependencies
-followed by the exact content of `psiphon-tunnel-core`'s `go.mod`. Using
-this procedure we should be able to correctly pin dependencies.
+4. rewrite `go.mod` such that it contains only your direct dependencies
+followed by the exact content of `psiphon-tunnel-core`'s `go.mod`
 
-Finally, run `go mod tidy`.
+5. run `go mod tidy`
+
+This allows us to pin all psiphon dependencies precisely.
