@@ -30,7 +30,7 @@ const (
 	testName = "tor"
 
 	// testVersion is th version of this experiment
-	testVersion = "0.0.1"
+	testVersion = "0.1.0"
 )
 
 // Config contains the experiment config.
