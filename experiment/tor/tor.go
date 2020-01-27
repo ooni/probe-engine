@@ -51,7 +51,35 @@ type TargetResults struct {
 
 // TestKeys contains tor test keys.
 type TestKeys struct {
-	Targets map[string]TargetResults `json:"targets"`
+	DirPortTotal      int64                    `json:"dir_port_total"`
+	DirPortAccessible int64                    `json:"dir_port_accessible"`
+	OBFS4Total        int64                    `json:"obfs4_total"`
+	OBFS4Accessible   int64                    `json:"obfs4_accessible"`
+	ORPortTotal       int64                    `json:"or_port_total"`
+	ORPortAccessible  int64                    `json:"or_port_accessible"`
+	Targets           map[string]TargetResults `json:"targets"`
+}
+
+func (tk *TestKeys) fillToplevelKeys() {
+	for _, value := range tk.Targets {
+		switch value.TargetProtocol {
+		case "dir_port":
+			tk.DirPortTotal++
+			if value.Failure == nil {
+				tk.DirPortAccessible++
+			}
+		case "obfs4":
+			tk.OBFS4Total++
+			if value.Failure == nil {
+				tk.OBFS4Accessible++
+			}
+		case "or_port":
+			tk.ORPortTotal++
+			if value.Failure == nil {
+				tk.ORPortAccessible++
+			}
+		}
+	}
 }
 
 type measurer struct {
@@ -127,6 +155,7 @@ func (m *measurer) measureTargets(
 	waitgroup.Wait()
 	// fill the measurement entry
 	testkeys := &TestKeys{Targets: rc.targetresults}
+	testkeys.fillToplevelKeys()
 	measurement.TestKeys = testkeys
 	callbacks.OnDataUsage(
 		float64(rc.receivedBytes)/1024.0, // downloaded
