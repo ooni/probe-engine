@@ -17,7 +17,7 @@ import (
 
 const (
 	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
+	softwareVersion = "0.0.2"
 )
 
 func TestUnitNewExperiment(t *testing.T) {
