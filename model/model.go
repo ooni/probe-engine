@@ -263,6 +263,9 @@ type TorTarget struct {
 	// Address is the address of the target.
 	Address string `json:"address"`
 
+	// Name is the name of the target.
+	Name string `json:"name"`
+
 	// Params contains optional params for, e.g., pluggable transports.
 	Params map[string][]string `json:"params"`
 
