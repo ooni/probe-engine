@@ -44,6 +44,7 @@ type TargetResults struct {
 	Queries        oonidatamodel.DNSQueriesList    `json:"queries"`
 	Requests       oonidatamodel.RequestList       `json:"requests"`
 	TargetAddress  string                          `json:"target_address"`
+	TargetName     string                          `json:"target_name,omitempty"`
 	TargetProtocol string                          `json:"target_protocol"`
 	TCPConnect     oonidatamodel.TCPConnectList    `json:"tcp_connect"`
 	TLSHandshakes  oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
@@ -51,13 +52,15 @@ type TargetResults struct {
 
 // TestKeys contains tor test keys.
 type TestKeys struct {
-	DirPortTotal      int64                    `json:"dir_port_total"`
-	DirPortAccessible int64                    `json:"dir_port_accessible"`
-	OBFS4Total        int64                    `json:"obfs4_total"`
-	OBFS4Accessible   int64                    `json:"obfs4_accessible"`
-	ORPortTotal       int64                    `json:"or_port_total"`
-	ORPortAccessible  int64                    `json:"or_port_accessible"`
-	Targets           map[string]TargetResults `json:"targets"`
+	DirPortTotal            int64                    `json:"dir_port_total"`
+	DirPortAccessible       int64                    `json:"dir_port_accessible"`
+	OBFS4Total              int64                    `json:"obfs4_total"`
+	OBFS4Accessible         int64                    `json:"obfs4_accessible"`
+	ORPortDirauthTotal      int64                    `json:"or_port_dirauth_total"`
+	ORPortDirauthAccessible int64                    `json:"or_port_dirauth_accessible"`
+	ORPortTotal             int64                    `json:"or_port_total"`
+	ORPortAccessible        int64                    `json:"or_port_accessible"`
+	Targets                 map[string]TargetResults `json:"targets"`
 }
 
 func (tk *TestKeys) fillToplevelKeys() {
@@ -72,6 +75,11 @@ func (tk *TestKeys) fillToplevelKeys() {
 			tk.OBFS4Total++
 			if value.Failure == nil {
 				tk.OBFS4Accessible++
+			}
+		case "or_port_dirauth":
+			tk.ORPortDirauthTotal++
+			if value.Failure == nil {
+				tk.ORPortDirauthAccessible++
 			}
 		case "or_port":
 			tk.ORPortTotal++
@@ -202,6 +210,7 @@ func (rc *resultsCollector) measureSingleTarget(
 		Queries:        oonidatamodel.NewDNSQueriesList(tk),
 		Requests:       oonidatamodel.NewRequestList(tk),
 		TargetAddress:  kt.target.Address,
+		TargetName:     kt.target.Name,
 		TargetProtocol: kt.target.Protocol,
 		TCPConnect:     oonidatamodel.NewTCPConnectList(tk),
 		TLSHandshakes:  oonidatamodel.NewTLSHandshakesList(tk),
@@ -230,7 +239,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			Path:   "/tor/status-vote/current/consensus.z",
 			Scheme: "http",
 		}
-		const snapshotsize = 1 << 16 // no need to include all in report
+		const snapshotsize = 1 << 8 // no need to include all in report
 		r := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
 			Accept:                  httpheader.RandomAccept(),
 			AcceptLanguage:          httpheader.RandomAcceptLanguage(),
@@ -243,7 +252,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			UserAgent:               httpheader.RandomUserAgent(),
 		})
 		tk, err = r.TestKeys, r.Error
-	case "or_port":
+	case "or_port", "or_port_dirauth":
 		r := oonitemplates.TLSConnect(ctx, oonitemplates.TLSConnectConfig{
 			Address:            target.Address,
 			Beginning:          rc.measurement.MeasurementStartTimeSaved,
