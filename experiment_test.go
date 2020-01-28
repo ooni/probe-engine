@@ -30,7 +30,7 @@ func TestRunDASH(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
 }
 
 func TestRunExample(t *testing.T) {
@@ -39,7 +39,7 @@ func TestRunExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
 }
 
 func TestRunPsiphon(t *testing.T) {
@@ -48,7 +48,16 @@ func TestRunPsiphon(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
+}
+
+func TestRunSNIBlocking(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("sni_blocking")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.Build(), "kernel.org")
 }
 
 func TestRunTelegram(t *testing.T) {
@@ -57,7 +66,7 @@ func TestRunTelegram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
 }
 
 func TestRunTor(t *testing.T) {
@@ -66,7 +75,7 @@ func TestRunTor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
 }
 
 func TestNeedsInput(t *testing.T) {
@@ -234,10 +243,10 @@ func TestRunHHFM(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build())
+	runexperimentflow(t, builder.Build(), "")
 }
 
-func runexperimentflow(t *testing.T, experiment *Experiment) {
+func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	err := experiment.OpenReport()
 	if err != nil {
 		t.Fatal(err)
@@ -245,7 +254,7 @@ func runexperimentflow(t *testing.T, experiment *Experiment) {
 	if experiment.ReportID() == "" {
 		t.Fatal("reportID should not be empty here")
 	}
-	measurement, err := experiment.Measure("")
+	measurement, err := experiment.Measure(input)
 	if err != nil {
 		t.Fatal(err)
 	}
