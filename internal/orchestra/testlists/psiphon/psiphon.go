@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ooni/probe-engine/httpx/fetch"
+	"github.com/ooni/probe-engine/internal/fetch"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/urlpath"
 	"github.com/ooni/probe-engine/log"

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/resources"
 )
 
@@ -20,7 +20,7 @@ func TestEnsure(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := resources.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
@@ -43,7 +43,7 @@ func TestEnsureFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := resources.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
@@ -63,7 +63,7 @@ func TestEnsureFailAllComparisons(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := resources.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
@@ -106,7 +106,7 @@ func TestEnsureFailGzipNewReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := resources.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
@@ -136,7 +136,7 @@ func TestEnsureFailIoUtilReadAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := resources.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,

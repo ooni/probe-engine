@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/ooni/probe-engine/httpx/fetch"
+	"github.com/ooni/probe-engine/internal/fetch"
 	"github.com/ooni/probe-engine/log"
 )
 

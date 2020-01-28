@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"net"
-
-	"github.com/ooni/probe-engine/httpx/retryx"
 )
 
 // HostLookupper is an interface that looks up the name of a host.
@@ -19,10 +17,7 @@ func All(ctx context.Context, resolver HostLookupper) (ips []string, err error) 
 	if resolver == nil {
 		resolver = &net.Resolver{}
 	}
-	err = retryx.Do(ctx, func() error {
-		ips, err = resolver.LookupHost(ctx, "whoami.akamai.net")
-		return err
-	})
+	ips, err = resolver.LookupHost(ctx, "whoami.akamai.net")
 	return
 }
 

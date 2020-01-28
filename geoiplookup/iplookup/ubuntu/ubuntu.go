@@ -6,7 +6,7 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/ooni/probe-engine/httpx/fetch"
+	"github.com/ooni/probe-engine/internal/fetch"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )

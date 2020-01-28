@@ -7,24 +7,14 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/httpx/fetch"
-	"github.com/ooni/probe-engine/httpx/httplog"
-	"github.com/ooni/probe-engine/httpx/httptracex"
+	"github.com/ooni/probe-engine/internal/fetch"
 )
 
 func TestFetchIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Fetch(ctx, "http://facebook.com/robots.txt")
@@ -40,16 +30,8 @@ func TestFetchExpiredContext(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Fetch(ctx, "http://facebook.com/robots.txt")
@@ -64,16 +46,8 @@ func TestFetchExpiredContext(t *testing.T) {
 func TestFetchAndVerifyIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchAndVerify(
@@ -92,16 +66,8 @@ func TestFetchAndVerifyIntegration(t *testing.T) {
 func TestFetchInvalidURL(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Fetch(ctx, "http://\t/robots.txt")
@@ -122,18 +88,11 @@ func TestFetch400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
-		Logger:     log.Log,
-		UserAgent:  "ooniprobe-engine/0.1.0",
+		Authorization: "foobar",
+		HTTPClient:    http.DefaultClient,
+		Logger:        log.Log,
+		UserAgent:     "ooniprobe-engine/0.1.0",
 	}).Fetch(ctx, server.URL)
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -152,16 +111,8 @@ func TestFetchAndVerify400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchAndVerify(ctx, server.URL, "abcde")
@@ -176,16 +127,8 @@ func TestFetchAndVerify400(t *testing.T) {
 func TestFetchAndVerifyInvalidSHA256(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	client := &http.Client{
-		Transport: &httptracex.Measurer{
-			RoundTripper: http.DefaultTransport,
-			Handler: &httplog.RoundTripLogger{
-				Logger: log.Log,
-			},
-		},
-	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchAndVerify(

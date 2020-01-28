@@ -33,7 +33,7 @@ type Client struct {
 	UserAgent string
 }
 
-func (c *Client) makeRequestWithBody(
+func (c *Client) makeRequestWithJSONBody(
 	ctx context.Context, method, resourcePath string,
 	query url.Values, body interface{},
 ) (*http.Request, error) {
@@ -73,8 +73,13 @@ func (c *Client) makeRequest(
 	return request.WithContext(ctx), nil
 }
 
-func (c *Client) do(request *http.Request, output interface{}) error {
-	response, err := c.HTTPClient.Do(request)
+func (c *Client) dox(
+	do func(req *http.Request) (*http.Response, error),
+	readall func(r io.Reader) ([]byte, error),
+	request *http.Request,
+	output interface{},
+) error {
+	response, err := do(request)
 	if err != nil {
 		return err
 	}
@@ -82,12 +87,20 @@ func (c *Client) do(request *http.Request, output interface{}) error {
 	if response.StatusCode >= 400 {
 		return fmt.Errorf("Request failed: %s", response.Status)
 	}
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := readall(response.Body)
 	if err != nil {
 		return err
 	}
 	c.Logger.Debugf("jsonapi: response body: %s", string(data))
 	return json.Unmarshal(data, output)
+}
+
+func (c *Client) do(request *http.Request, output interface{}) error {
+	return c.dox(
+		c.HTTPClient.Do,
+		ioutil.ReadAll,
+		request, output,
+	)
 }
 
 // Read reads the JSON resource at resourcePath and unmarshals the
@@ -96,11 +109,7 @@ func (c *Client) do(request *http.Request, output interface{}) error {
 func (c *Client) Read(
 	ctx context.Context, resourcePath string, output interface{},
 ) error {
-	request, err := c.makeRequest(ctx, "GET", resourcePath, nil, nil)
-	if err != nil {
-		return err
-	}
-	return c.do(request, output)
+	return c.ReadWithQuery(ctx, resourcePath, nil, output)
 }
 
 // ReadWithQuery is like Read but also has a query.
@@ -122,7 +131,7 @@ func (c *Client) ReadWithQuery(
 func (c *Client) Create(
 	ctx context.Context, resourcePath string, input, output interface{},
 ) error {
-	request, err := c.makeRequestWithBody(ctx, "POST", resourcePath, nil, input)
+	request, err := c.makeRequestWithJSONBody(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
@@ -134,7 +143,7 @@ func (c *Client) Create(
 func (c *Client) Update(
 	ctx context.Context, resourcePath string, input, output interface{},
 ) error {
-	request, err := c.makeRequestWithBody(ctx, "PUT", resourcePath, nil, input)
+	request, err := c.makeRequestWithJSONBody(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}

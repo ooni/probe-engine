@@ -5,7 +5,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/httpx/jsonapi"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/log"
 )
