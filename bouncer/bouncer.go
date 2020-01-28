@@ -8,7 +8,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/httpx/jsonapi"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
