@@ -18,6 +18,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
+	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
@@ -351,6 +352,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				WorkDir: session.session.TempDir,
 			},
 			needsInput: false,
+		}
+	},
+
+	"sni_blocking": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return sniblocking.NewExperiment(session.session, *config.(*sniblocking.Config))
+			},
+			config: &sniblocking.Config{
+				ControlSNI: "ps.ooni.io",
+			},
+			needsInput: true,
 		}
 	},
 
