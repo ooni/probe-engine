@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/fetch"
 	"github.com/ooni/probe-engine/httpx/httplog"
 	"github.com/ooni/probe-engine/httpx/httptracex"
+	"github.com/ooni/probe-engine/internal/fetch"
 )
 
 func TestFetchIntegration(t *testing.T) {
@@ -131,9 +131,10 @@ func TestFetch400(t *testing.T) {
 		},
 	}
 	data, err := (&fetch.Client{
-		HTTPClient: client,
-		Logger:     log.Log,
-		UserAgent:  "ooniprobe-engine/0.1.0",
+		Authorization: "foobar",
+		HTTPClient:    client,
+		Logger:        log.Log,
+		UserAgent:     "ooniprobe-engine/0.1.0",
 	}).Fetch(ctx, server.URL)
 	if err == nil {
 		t.Fatal("expected an error here")
