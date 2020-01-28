@@ -2,19 +2,19 @@ package iplookup_test
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/invalid"
-	"github.com/ooni/probe-engine/httpx/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ip, err := (&iplookup.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Do(context.Background())
@@ -29,7 +29,7 @@ func TestAllFailed(t *testing.T) {
 	cancel() // immediately cancel to cause Do() to fail
 	log.SetLevel(log.DebugLevel)
 	ip, err := (&iplookup.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Do(ctx)
@@ -45,7 +45,7 @@ func TestInvalidIP(t *testing.T) {
 	ctx := context.Background()
 	log.SetLevel(log.DebugLevel)
 	ip, err := (&iplookup.Client{
-		HTTPClient: httpx.NewTracingProxyingClient(log.Log, nil, nil),
+		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).DoWithCustomFunc(ctx, invalid.Do)
