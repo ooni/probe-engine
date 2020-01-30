@@ -36,6 +36,11 @@ const (
 // Config contains the experiment config.
 type Config struct{}
 
+// Summary contains a summary of what happened.
+type Summary struct {
+	Failure *string `json:"failure"`
+}
+
 // TargetResults contains the results of measuring a target.
 type TargetResults struct {
 	Agent          string                          `json:"agent"`
@@ -43,11 +48,41 @@ type TargetResults struct {
 	NetworkEvents  oonidatamodel.NetworkEventsList `json:"network_events"`
 	Queries        oonidatamodel.DNSQueriesList    `json:"queries"`
 	Requests       oonidatamodel.RequestList       `json:"requests"`
+	Summary        map[string]Summary              `json:"summary"`
 	TargetAddress  string                          `json:"target_address"`
 	TargetName     string                          `json:"target_name,omitempty"`
 	TargetProtocol string                          `json:"target_protocol"`
 	TCPConnect     oonidatamodel.TCPConnectList    `json:"tcp_connect"`
 	TLSHandshakes  oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
+}
+
+// fillSummary fills the Summary field used by the UI.
+func (tr *TargetResults) fillSummary() {
+	tr.Summary = make(map[string]Summary)
+	if len(tr.TCPConnect) < 1 {
+		return
+	}
+	tr.Summary["connect"] = Summary{
+		Failure: tr.TCPConnect[0].Status.Failure,
+	}
+	switch tr.TargetProtocol {
+	case "dir_port":
+		// The UI currently doesn't care about this protocol
+		// as long as drawing a table is concerned.
+	case "obfs4":
+		// We currently only perform an OBFS4 handshake, hence
+		// the final Failure is the handshake result
+		tr.Summary["handshake"] = Summary{
+			Failure: tr.Failure,
+		}
+	case "or_port_dirauth", "or_port":
+		if len(tr.TLSHandshakes) < 1 {
+			return
+		}
+		tr.Summary["handshake"] = Summary{
+			Failure: tr.TLSHandshakes[0].Failure,
+		}
+	}
 }
 
 // TestKeys contains tor test keys.
@@ -203,7 +238,7 @@ func (rc *resultsCollector) measureSingleTarget(
 ) {
 	tk, err := rc.flexibleConnect(ctx, kt.target)
 	rc.mu.Lock()
-	rc.targetresults[kt.key] = TargetResults{
+	tr := TargetResults{
 		Agent:          "redirect",
 		Failure:        setFailure(err),
 		NetworkEvents:  oonidatamodel.NewNetworkEventsList(tk),
@@ -215,6 +250,8 @@ func (rc *resultsCollector) measureSingleTarget(
 		TCPConnect:     oonidatamodel.NewTCPConnectList(tk),
 		TLSHandshakes:  oonidatamodel.NewTLSHandshakesList(tk),
 	}
+	tr.fillSummary()
+	rc.targetresults[kt.key] = tr
 	rc.mu.Unlock()
 	atomic.AddInt64(&rc.sentBytes, tk.SentBytes)
 	atomic.AddInt64(&rc.receivedBytes, tk.ReceivedBytes)
