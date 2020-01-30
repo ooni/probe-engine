@@ -9,6 +9,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
@@ -377,5 +378,103 @@ func TestUnitErrString(t *testing.T) {
 	}
 	if errString(errors.New("antani")) != "antani" {
 		t.Fatal("not working with error")
+	}
+}
+
+func TestUnitSummary(t *testing.T) {
+	t.Run("without any piece of data", func(t *testing.T) {
+		tr := new(TargetResults)
+		tr.fillSummary()
+		if len(tr.Summary) != 0 {
+			t.Fatal("summary must be empty")
+		}
+	})
+
+	t.Run("with a TCP connect and nothing else", func(t *testing.T) {
+		tr := new(TargetResults)
+		failure := "mocked_error"
+		tr.TCPConnect = append(tr.TCPConnect, oonidatamodel.TCPConnectEntry{
+			Status: oonidatamodel.TCPConnectStatus{
+				Success: true,
+				Failure: &failure,
+			},
+		})
+		tr.fillSummary()
+		if len(tr.Summary) != 1 {
+			t.Fatal("cannot find expected entry")
+		}
+		if *tr.Summary["connect"].Failure != failure {
+			t.Fatal("invalid failure")
+		}
+	})
+
+	t.Run("for OBFS4", func(t *testing.T) {
+		tr := new(TargetResults)
+		tr.TCPConnect = append(tr.TCPConnect, oonidatamodel.TCPConnectEntry{
+			Status: oonidatamodel.TCPConnectStatus{
+				Success: true,
+			},
+		})
+		failure := "mocked_error"
+		tr.TargetProtocol = "obfs4"
+		tr.Failure = &failure
+		tr.fillSummary()
+		if len(tr.Summary) != 2 {
+			t.Fatal("cannot find expected entry")
+		}
+		if tr.Summary["connect"].Failure != nil {
+			t.Fatal("invalid failure")
+		}
+		if *tr.Summary["handshake"].Failure != failure {
+			t.Fatal("invalid failure")
+		}
+	})
+
+	t.Run("for or_port/or_port_dirauth", func(t *testing.T) {
+		doit := func(targetProtocol string, handshake *oonidatamodel.TLSHandshake) {
+			tr := new(TargetResults)
+			tr.TCPConnect = append(tr.TCPConnect, oonidatamodel.TCPConnectEntry{
+				Status: oonidatamodel.TCPConnectStatus{
+					Success: true,
+				},
+			})
+			tr.TargetProtocol = targetProtocol
+			if handshake != nil {
+				tr.TLSHandshakes = append(tr.TLSHandshakes, *handshake)
+			}
+			tr.fillSummary()
+			if len(tr.Summary) < 1 {
+				t.Fatal("cannot find expected entry")
+			}
+			if tr.Summary["connect"].Failure != nil {
+				t.Fatal("invalid failure")
+			}
+			if handshake == nil {
+				if len(tr.Summary) != 1 {
+					t.Fatal("unexpected summary length")
+				}
+				return
+			}
+			if len(tr.Summary) != 2 {
+				t.Fatal("unexpected summary length")
+			}
+			if tr.Summary["handshake"].Failure != handshake.Failure {
+				t.Fatal("the failure value is unexpected")
+			}
+		}
+		doit("or_port_dirauth", nil)
+		doit("or_port", nil)
+	})
+}
+
+func TestUnitFillToplevelKeys(t *testing.T) {
+	var tr TargetResults
+	tr.TargetProtocol = "or_port"
+	tk := new(TestKeys)
+	tk.Targets = make(map[string]TargetResults)
+	tk.Targets["xxx"] = tr
+	tk.fillToplevelKeys()
+	if tk.ORPortTotal != 1 {
+		t.Fatal("unexpected ORPortTotal value")
 	}
 }
