@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	// DefaultDataFormatVersion is the default data format version
-	DefaultDataFormatVersion = "0.3.4"
+	// DefaultDataFormatVersion is the default data format version.
+	//
+	// See https://github.com/ooni/spec/tree/master/data-formats#history.
+	DefaultDataFormatVersion = "0.4.0"
 
 	// DefaultFormat is the default format
 	DefaultFormat = "json"
