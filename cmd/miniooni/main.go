@@ -314,14 +314,16 @@ func main() {
 		measurement, err := experiment.Measure(input)
 		if err != nil {
 			log.WithError(err).Warn("measurement failed")
-			continue
+			// fallthrough and try to submit what we have anyway. Even if it
+			// has failed badly, we'd rather see it.
 		}
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			log.Infof("submitting measurement to OONI collector")
 			if err := experiment.SubmitAndUpdateMeasurement(measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
-				continue
+				// fallthrough and save to disk what we have. Not saving is
+				// worst because it means we cannot eventually resubmit.
 			}
 		}
 		if !globalOptions.noJSON {
@@ -332,7 +334,7 @@ func main() {
 				measurement, globalOptions.reportfile,
 			); err != nil {
 				log.WithError(err).Warn("saving measurement failed")
-				continue
+				// fallthrough because we're at the bottom of the loop
 			}
 		}
 	}
