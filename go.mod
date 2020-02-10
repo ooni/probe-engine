@@ -6,7 +6,7 @@ require (
 	git.torproject.org/pluggable-transports/goptlib.git v1.1.0
 	github.com/AndreasBriese/bbloom v0.0.0-20170702084017-28f7e881ca57 // indirect
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
-	github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e // indirect
+	github.com/Psiphon-Labs/bolt v0.0.0-20200203172706-f3d58e369264 // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
@@ -22,7 +22,7 @@ require (
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea // indirect
-	github.com/creack/goselect v0.0.0-20160714172859-1bd5ca702c61 // indirect
+	github.com/creack/goselect v0.1.1 // indirect
 	github.com/deckarep/golang-set v0.0.0-20171013212420-1d4478f51bed // indirect
 	github.com/dgraph-io/badger v1.5.4-0.20180815194500-3a87f6d9c273 // indirect
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
