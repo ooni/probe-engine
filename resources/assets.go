@@ -14,7 +14,7 @@ const (
 	CountryDatabaseName = "country.mmdb"
 
 	// RepositoryURL is the asset's repository URL
-	RepositoryURL = "http://github.com/ooni/probe-assets"
+	RepositoryURL = "https://github.com/ooni/probe-assets"
 )
 
 // ResourceInfo contains information on a resource.
