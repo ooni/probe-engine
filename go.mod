@@ -7,18 +7,19 @@ require (
 	github.com/AndreasBriese/bbloom v0.0.0-20170702084017-28f7e881ca57 // indirect
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
 	github.com/Psiphon-Labs/bolt v0.0.0-20200203172706-f3d58e369264 // indirect
+	github.com/Psiphon-Labs/chacha20 v0.2.1-0.20200128191310-899a4be52863 // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.10-0.20200122032119-5e7e7f3eddd2+incompatible
-	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200116022806-abf539ac596a // indirect
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.10+incompatible
+	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200128193928-738e15bfe6c3 // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20191206190901-78f52e6d6243 // indirect
-	github.com/apex/log v1.1.1
-	github.com/aristanetworks/goarista v0.0.0-20200124011733-f6bb3fedfb04 // indirect
+	github.com/apex/log v1.1.2
+	github.com/aristanetworks/goarista v0.0.0-20200206021550-59c4040ef2d3 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
-	github.com/avast/retry-go v2.4.3+incompatible
+	github.com/avast/retry-go v2.5.0+incompatible
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea // indirect
@@ -54,4 +55,5 @@ require (
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 )
