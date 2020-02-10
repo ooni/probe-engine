@@ -28,8 +28,6 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/DataDog/zstd v1.3.6-0.20190409195224-796139022798/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 h1:6IRS6D+hXUqTS/aPqYMRwj2pan6gGnEi1KuYREk5sMQ=
 github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9/go.mod h1:ZdY5pBfat/WVzw3eXbIf7N1nZN0XD5H5+X8ZMDWbCs4=
-github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e h1:2zxppKeojJOuiO2aRjvVTD13hTPb+0RCia+TbGZX4Dg=
-github.com/Psiphon-Labs/bolt v0.0.0-20190731171712-94750aa2185e/go.mod h1:nYj8s6HxsjYV7vZjTiH3tMcVjj/x+R702DXT89PomgE=
 github.com/Psiphon-Labs/bolt v0.0.0-20200203172706-f3d58e369264 h1:HE/SqHaxiGrMq8u7/MZOVRmeFz1lkMazsXI4xA5ygGE=
 github.com/Psiphon-Labs/bolt v0.0.0-20200203172706-f3d58e369264/go.mod h1:JRYGUlpSqM4W5cdQu2oUVfNoAw1XJ79ibUQ+OHc1QiE=
 github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc h1:W+dNJivdYUujm+mhvmSDn3847jbzar8J7qzjj/w4U6I=
@@ -88,8 +86,6 @@ github.com/cheekybits/genny v1.0.0/go.mod h1:+tQajlRqAUrPI7DOSpB0XAqZYtQakVtB7wX
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea h1:9C2rdYRp8Vzwhm3sbFX0yYfB+70zKFRjn7cnPCucHSw=
 github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea/go.mod h1:MdyNkAe06D7xmJsf+MsLvbZKYNXuOHLKJrvw+x4LlcQ=
-github.com/creack/goselect v0.0.0-20160714172859-1bd5ca702c61 h1:T/S5GeXYV5O0wg3dbi+sxqvvSMAt2sOKodHjQkZUWNY=
-github.com/creack/goselect v0.0.0-20160714172859-1bd5ca702c61/go.mod h1:gHrIcH/9UZDn2qgeTUeW5K9eZsVYCH6/60J/FHysWyE=
 github.com/creack/goselect v0.1.1 h1:tiSSgKE1eJtxs1h/VgGQWuXUP0YS4CDIFMp6vaI1ls0=
 github.com/creack/goselect v0.1.1/go.mod h1:a/NhLweNvqIYMuxcMOuWY516Cimucms3DglDzQP3hKY=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
