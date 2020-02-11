@@ -13,9 +13,9 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
-      - env:
-          CGO_ENABLED=0
       - run: go test -v -race -coverprofile=probe-engine.cov -coverpkg=./... ./...
+        env:
+          CGO_ENABLED: 0
       - name: Send coverage
         uses: shogo82148/actions-goveralls@v1
         with:
