@@ -18,25 +18,18 @@
 extern "C" {
 #endif
 
-typedef struct ooni_task_ ooni_task_t;
-
+typedef struct ooni_task_  ooni_task_t;
 typedef struct ooni_event_ ooni_event_t;
 
-extern ooni_task_t *ooni_task_start(const char *settings);
-
+extern ooni_task_t  *ooni_task_start(const char *settings);
 extern ooni_event_t *ooni_task_wait_for_next_event(ooni_task_t *task);
-
-extern int ooni_task_is_done(ooni_task_t *task);
-
-extern void ooni_task_interrupt(ooni_task_t *task);
+extern int           ooni_task_is_done(ooni_task_t *task);
+extern void          ooni_task_interrupt(ooni_task_t *task);
+extern void          ooni_task_destroy(ooni_task_t *task);
 
 extern const char *ooni_event_serialization(ooni_event_t *event);
-
-extern size_t ooni_event_serialization_size(ooni_event_t *event);
-
-extern void ooni_event_destroy(ooni_event_t *event);
-
-extern void ooni_task_destroy(ooni_task_t *task);
+extern size_t      ooni_event_serialization_size(ooni_event_t *event);
+extern void        ooni_event_destroy(ooni_event_t *event);
 
 #ifdef __cplusplus
 }
