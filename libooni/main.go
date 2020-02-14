@@ -1,0 +1,143 @@
+package main
+
+// #include <limits.h>
+// #include <stdint.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+import "C"
+
+import (
+	"encoding/json"
+	"sync"
+)
+
+// TaskManager is a task manager
+type TaskManager struct {
+	index C.intptr_t
+	lck   sync.Mutex
+	tasks map[C.intptr_t]*Task
+}
+
+// NewTaskManager creates a new TaskManager
+func NewTaskManager() *TaskManager {
+	return &TaskManager{index: 1, tasks: make(map[C.intptr_t]*Task)}
+}
+
+// StartTask starts a new task
+func (tm *TaskManager) StartTask(csettings *C.char) C.intptr_t {
+	if csettings == nil {
+		return 0
+	}
+	gosettings := []byte(C.GoString(csettings))
+	var settings Settings
+	if err := json.Unmarshal(gosettings, &settings); err != nil {
+		return 0
+	}
+	taskptr, err := StartTask(settings)
+	if err != nil {
+		return 0
+	}
+	tm.lck.Lock()
+	defer tm.lck.Unlock()
+	handle := tm.index
+	tm.index++
+	tm.tasks[handle] = taskptr
+	return handle
+}
+
+// TaskWaitForNextEvent waits for the next event.
+func (tm *TaskManager) TaskWaitForNextEvent(
+	handle C.intptr_t, base **C.char, length *C.size_t,
+) C.int {
+	if handle == 0 || base == nil || length == nil {
+		return 0
+	}
+	tm.lck.Lock()
+	taskptr := tm.tasks[handle]
+	tm.lck.Unlock()
+	eventptr, err := taskptr.WaitForNextEvent() // null is handled
+	if err != nil {
+		return 0
+	}
+	if eventptr == nil {
+		// Rationale: we used to return `null` when done. But then I figured that
+		// this could break people code, because they need to write conditional
+		// coding for handling both an ordinary event and `null`. So, to ease the
+		// integrator's life, we now return a dummy, well formed event.
+		eventptr = &Event{Key: "task_terminated"}
+	}
+	data, err := json.Marshal(eventptr)
+	if err != nil {
+		return 0
+	}
+	sdata := string(data)
+	if len(sdata) <= 0 || uint64(len(sdata)) > uint64(C.SIZE_MAX) {
+		return 0
+	}
+	*base = C.CString(sdata)
+	*length = C.size_t(len(sdata))
+	return 1
+}
+
+// TaskIsDone returns whether the task is done
+func (tm *TaskManager) TaskIsDone(handle C.intptr_t) C.int {
+	tm.lck.Lock()
+	taskptr := tm.tasks[handle]
+	tm.lck.Unlock()
+	if taskptr.IsDone() { // null is handled
+		return 1
+	}
+	return 0
+}
+
+// TaskInterrupt interrupts a running task
+func (tm *TaskManager) TaskInterrupt(handle C.intptr_t) {
+	tm.lck.Lock()
+	taskptr := tm.tasks[handle]
+	tm.lck.Unlock()
+	taskptr.Interrupt() // null is handled
+}
+
+// TaskDestroy destroys a task
+func (tm *TaskManager) TaskDestroy(handle C.intptr_t) {
+	tm.lck.Lock()
+	taskptr := tm.tasks[handle]
+	delete(tm.tasks, handle)
+	tm.lck.Unlock()
+	// null is handled by the following code
+	taskptr.Interrupt()
+	for !taskptr.IsDone() {
+		taskptr.WaitForNextEvent()
+	}
+}
+
+var tm = NewTaskManager()
+
+//export ooni_go_task_start
+func ooni_go_task_start(csettings *C.char) C.intptr_t {
+	return tm.StartTask(csettings)
+}
+
+//export ooni_go_task_wait_for_next_event
+func ooni_go_task_wait_for_next_event(
+	handle C.intptr_t, base **C.char, length *C.size_t,
+) C.int {
+	return tm.TaskWaitForNextEvent(handle, base, length)
+}
+
+//export ooni_go_task_is_done
+func ooni_go_task_is_done(handle C.intptr_t) C.int {
+	return tm.TaskIsDone(handle)
+}
+
+//export ooni_go_task_interrupt
+func ooni_go_task_interrupt(handle C.intptr_t) {
+	tm.TaskInterrupt(handle)
+}
+
+//export ooni_go_task_destroy
+func ooni_go_task_destroy(handle C.intptr_t) {
+	tm.TaskDestroy(handle)
+}
+
+func main() {}
