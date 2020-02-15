@@ -1,3 +1,5 @@
+// +build mk
+
 package measurementkit
 
 import (

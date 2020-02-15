@@ -1,5 +1,3 @@
-// +build !cgo
-
 package measurementkit
 
 import "errors"
