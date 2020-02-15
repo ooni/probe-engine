@@ -1,3 +1,8 @@
+// libooni exposes ooni/probe-engine as a C library. The API exposed
+// by this library is ABI compatible with MK v0.10.x and should therefore
+// allow consumers to easily migrate away from MK.
+//
+// See https://github.com/measurement-kit/measurement-kit/tree/v0.10.9/include/measurement_kit
 package main
 
 // #include <limits.h>

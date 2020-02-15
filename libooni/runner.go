@@ -59,6 +59,46 @@ func (r *Runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup("InputFilepaths: not supported")
 		return
 	}
+	if r.settings.Options.Backend != "" {
+		r.emitter.EmitFailureStartup("Options.Backend: not supported")
+		return
+	}
+	if r.settings.Options.CaBundlePath != "" {
+		r.emitter.EmitFailureStartup("Options.CaBundlePath: not supported")
+		return
+	}
+	if r.settings.Options.GeoIPASNPath != "" {
+		r.emitter.EmitFailureStartup("Options.GeoIPASNPath: not supported")
+		return
+	}
+	if r.settings.Options.GeoIPCountryPath != "" {
+		r.emitter.EmitFailureStartup("Options.GeoIPCountryPath: not supported")
+		return
+	}
+	if r.settings.Options.NoFileReport != nil {
+		r.emitter.EmitFailureStartup("Options.NoFileReport: not supported")
+		return
+	}
+	if r.settings.Options.ProbeASN != "" {
+		r.emitter.EmitFailureStartup("Options.ProbeASN: not supported")
+		return
+	}
+	if r.settings.Options.ProbeCC != "" {
+		r.emitter.EmitFailureStartup("Options.ProbeCC: not supported")
+		return
+	}
+	if r.settings.Options.ProbeIP != "" {
+		r.emitter.EmitFailureStartup("Options.ProbeIP: not supported")
+		return
+	}
+	if r.settings.Options.ProbeNetworkName != "" {
+		r.emitter.EmitFailureStartup("Options.ProbeNetworkName: not supported")
+		return
+	}
+	if r.settings.Options.RandomizeInput != nil {
+		r.emitter.EmitFailureStartup("Options.RandomizeInput: not supported")
+		return
+	}
 	if r.settings.OutputFilePath != "" {
 		r.emitter.EmitFailureStartup("OutputFilePath: not supported")
 		return
@@ -130,7 +170,7 @@ func (r *Runner) Run(ctx context.Context) {
 		}
 		r.emitter.EmitStatusProgress(0.1, "contacted bouncer")
 	}
-	if !r.settings.Options.NoCollector {
+	if !r.settings.Options.NoGeoIP && !r.settings.Options.NoResolverLookup {
 		logger.Info("Looking up your location")
 		if err := sess.MaybeLookupLocation(); err != nil {
 			r.emitter.EmitFailure(failureIPLookup, err.Error())
@@ -152,6 +192,11 @@ func (r *Runner) Run(ctx context.Context) {
 			ResolverIP:          sess.ResolverIP(),
 			ResolverNetworkName: sess.ResolverNetworkName(),
 		})
+	} else if r.settings.Options.NoGeoIP && r.settings.Options.NoResolverLookup {
+		logger.Warn("Not looking up your location")
+	} else {
+		r.emitter.EmitFailureStartup("Inconsistent NoGeoIP and NoResolverLookup options")
+		return
 	}
 
 	if len(r.settings.Inputs) <= 0 {
@@ -173,7 +218,7 @@ func (r *Runner) Run(ctx context.Context) {
 			ReportID: experiment.ReportID(),
 		})
 	}
-	if r.settings.Options.MaxRuntime > 0 {
+	if r.settings.Options.MaxRuntime >= 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(
 			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
