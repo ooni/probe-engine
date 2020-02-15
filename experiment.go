@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/iancoleman/strcase"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
@@ -151,7 +152,7 @@ func (b *ExperimentBuilder) Build() *Experiment {
 }
 
 func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, error) {
-	factory, _ := experimentsByName[name]
+	factory, _ := experimentsByName[strcase.ToSnake(name)]
 	if factory == nil {
 		return nil, errors.New("no such experiment")
 	}
