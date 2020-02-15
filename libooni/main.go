@@ -23,7 +23,8 @@ func NewTaskManager() *TaskManager {
 	return &TaskManager{index: 1, tasks: make(map[C.intptr_t]*Task)}
 }
 
-// StartTask starts a new task
+// StartTask starts a new task. Returns a nonzero task
+// handle on success, zero on failure.
 func (tm *TaskManager) StartTask(csettings *C.char) C.intptr_t {
 	if csettings == nil {
 		return 0
@@ -38,10 +39,10 @@ func (tm *TaskManager) StartTask(csettings *C.char) C.intptr_t {
 		return 0
 	}
 	tm.lck.Lock()
-	defer tm.lck.Unlock()
 	handle := tm.index
 	tm.index++
 	tm.tasks[handle] = taskptr
+	tm.lck.Unlock()
 	return handle
 }
 
@@ -55,7 +56,7 @@ func (tm *TaskManager) TaskWaitForNextEvent(
 	tm.lck.Lock()
 	taskptr := tm.tasks[handle]
 	tm.lck.Unlock()
-	eventptr, err := taskptr.WaitForNextEvent() // null is handled
+	eventptr, err := taskptr.WaitForNextEvent() // gracefully handles nil
 	if err != nil {
 		return 0
 	}
@@ -84,7 +85,7 @@ func (tm *TaskManager) TaskIsDone(handle C.intptr_t) C.int {
 	tm.lck.Lock()
 	taskptr := tm.tasks[handle]
 	tm.lck.Unlock()
-	if taskptr.IsDone() { // null is handled
+	if taskptr.IsDone() { // gracefully handles nil
 		return 1
 	}
 	return 0
@@ -95,7 +96,7 @@ func (tm *TaskManager) TaskInterrupt(handle C.intptr_t) {
 	tm.lck.Lock()
 	taskptr := tm.tasks[handle]
 	tm.lck.Unlock()
-	taskptr.Interrupt() // null is handled
+	taskptr.Interrupt() // gracefully handles nil
 }
 
 // TaskDestroy destroys a task
@@ -104,7 +105,7 @@ func (tm *TaskManager) TaskDestroy(handle C.intptr_t) {
 	taskptr := tm.tasks[handle]
 	delete(tm.tasks, handle)
 	tm.lck.Unlock()
-	// null is handled by the following code
+	// the following code gracefully handles nil
 	taskptr.Interrupt()
 	for !taskptr.IsDone() {
 		taskptr.WaitForNextEvent()

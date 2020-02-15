@@ -27,6 +27,8 @@ type Settings struct {
 	OutputFilePath string `json:"output_filepath,omitempty"`
 }
 
+// TODO(bassosimone): restructure to have single "home" directory?
+
 // Options contains the settings options
 type Options struct {
 	// AssetsDir is the directory where to store assets
@@ -44,7 +46,7 @@ type Options struct {
 	// CollectorBaseURL contains the collector base URL
 	CollectorBaseURL string `json:"collector_base_url,omitempty"`
 
-	// DataDir is the directory where to store persitent data
+	// DataDir is the directory where to store persistent data
 	DataDir string `json:"data_dir"`
 
 	// GeoIPCountryPath is the country database path
@@ -53,7 +55,7 @@ type Options struct {
 	// GeoIPASNPath is the ASN database path
 	GeoIPASNPath string `json:"geoip_asn_path,omitempty"`
 
-	// MaxRuntime is the maximum runtime
+	// MaxRuntime is the maximum runtime in seconds
 	MaxRuntime float32 `json:"max_runtime,omitempty"`
 
 	// NoBouncer indicates whether to use a bouncer

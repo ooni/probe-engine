@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+// TODO(bassosimone): event correctness wrt fields
+
 // Emitter emits event on a channel
 type Emitter struct {
 	disabled map[string]bool
