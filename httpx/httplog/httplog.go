@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/internal/tlsx"
+	"github.com/ooni/probe-engine/log"
 )
 
 // RoundTripLogger is a httptracex.Handler that logs events.
