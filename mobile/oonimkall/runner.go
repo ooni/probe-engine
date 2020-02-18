@@ -21,6 +21,7 @@ const (
 	failureResolverLookup        = "failure.resolver_lookup"
 	failureStartup               = "failure.startup"
 	measurement                  = "measurement"
+	statusEnd                    = "status.end"
 	statusGeoIPLookup            = "status.geoip_lookup"
 	statusMeasurementDone        = "status.measurement_done"
 	statusMeasurementStart       = "status.measurement_start"
@@ -42,10 +43,56 @@ type runner struct {
 // newRunner creates a new task runner
 func newRunner(settings *settingsRecord, out chan<- *eventRecord) *runner {
 	return &runner{
-		emitter:  newEventEmitter(settings, out),
+		emitter:  newEventEmitter(settings.DisabledEvents, out),
 		out:      out,
 		settings: settings,
 	}
+}
+
+func (r *runner) hasUnsupportedSettings() (unsupported bool) {
+	sadly := func(why string) {
+		r.emitter.EmitFailureStartup(why)
+		unsupported = true
+	}
+	if r.settings.InputFilepaths != nil {
+		sadly("InputFilepaths: not supported")
+	}
+	if r.settings.Options.Backend != "" {
+		sadly("Options.Backend: not supported")
+	}
+	if r.settings.Options.CaBundlePath != "" {
+		sadly("Options.CaBundlePath: not supported")
+	}
+	if r.settings.Options.GeoIPASNPath != "" {
+		sadly("Options.GeoIPASNPath: not supported")
+	}
+	if r.settings.Options.GeoIPCountryPath != "" {
+		sadly("Options.GeoIPCountryPath: not supported")
+	}
+	if r.settings.Options.NoFileReport != nil {
+		sadly("Options.NoFileReport: not supported")
+	}
+	if r.settings.Options.ProbeASN != "" {
+		sadly("Options.ProbeASN: not supported")
+	}
+	if r.settings.Options.ProbeCC != "" {
+		sadly("Options.ProbeCC: not supported")
+	}
+	if r.settings.Options.ProbeIP != "" {
+		sadly("Options.ProbeIP: not supported")
+	}
+	if r.settings.Options.ProbeNetworkName != "" {
+		sadly("Options.ProbeNetworkName: not supported")
+	}
+	if r.settings.Options.RandomizeInput != nil {
+		sadly("Options.RandomizeInput: not supported")
+	}
+	if r.settings.OutputFilePath != "" {
+		sadly("OutputFilePath: not supported")
+	}
+	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
+	// return a failure if such variable is true.
+	return
 }
 
 // Run runs the runner until completion
@@ -54,57 +101,11 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
 
+	defer r.emitter.Emit(statusEnd, eventValue{})
 	r.emitter.Emit(statusQueued, eventValue{})
-	if r.settings.InputFilepaths != nil {
-		r.emitter.EmitFailureStartup("InputFilepaths: not supported")
+	if r.hasUnsupportedSettings() {
 		return
 	}
-	if r.settings.Options.Backend != "" {
-		r.emitter.EmitFailureStartup("Options.Backend: not supported")
-		return
-	}
-	if r.settings.Options.CaBundlePath != "" {
-		r.emitter.EmitFailureStartup("Options.CaBundlePath: not supported")
-		return
-	}
-	if r.settings.Options.GeoIPASNPath != "" {
-		r.emitter.EmitFailureStartup("Options.GeoIPASNPath: not supported")
-		return
-	}
-	if r.settings.Options.GeoIPCountryPath != "" {
-		r.emitter.EmitFailureStartup("Options.GeoIPCountryPath: not supported")
-		return
-	}
-	if r.settings.Options.NoFileReport != nil {
-		r.emitter.EmitFailureStartup("Options.NoFileReport: not supported")
-		return
-	}
-	if r.settings.Options.ProbeASN != "" {
-		r.emitter.EmitFailureStartup("Options.ProbeASN: not supported")
-		return
-	}
-	if r.settings.Options.ProbeCC != "" {
-		r.emitter.EmitFailureStartup("Options.ProbeCC: not supported")
-		return
-	}
-	if r.settings.Options.ProbeIP != "" {
-		r.emitter.EmitFailureStartup("Options.ProbeIP: not supported")
-		return
-	}
-	if r.settings.Options.ProbeNetworkName != "" {
-		r.emitter.EmitFailureStartup("Options.ProbeNetworkName: not supported")
-		return
-	}
-	if r.settings.Options.RandomizeInput != nil {
-		r.emitter.EmitFailureStartup("Options.RandomizeInput: not supported")
-		return
-	}
-	if r.settings.OutputFilePath != "" {
-		r.emitter.EmitFailureStartup("OutputFilePath: not supported")
-		return
-	}
-	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
-	// return a failure if such variable is true.
 	r.emitter.Emit(statusStarted, eventValue{})
 
 	logger := newChanLogger(r.emitter, r.settings, r.out)
@@ -122,7 +123,7 @@ func (r *runner) Run(ctx context.Context) {
 		}
 	}
 	if r.settings.StateDir == "" {
-		r.emitter.EmitFailureStartup("options.data_dir is emtpy")
+		r.emitter.EmitFailureStartup("options.state_dir is emtpy")
 		return
 	}
 	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)

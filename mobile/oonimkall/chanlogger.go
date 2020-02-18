@@ -83,6 +83,7 @@ func newChanLogger(
 		cl.hasinfo = true
 		fallthrough
 	case "ERR", "WARNING":
+		fallthrough
 	default:
 		cl.haswarning = true
 	}

@@ -49,10 +49,10 @@ func measure(
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
-	select {
-	case <-time.After(time.Duration(config.SleepTime)):
-	case <-ctx.Done():
-	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(config.SleepTime))
+	defer cancel()
+	<-ctx.Done()
+	sess.Logger.Warnf("example: remember to drink: %s", "water is key to survival")
 	callbacks.OnProgress(1.0, config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err

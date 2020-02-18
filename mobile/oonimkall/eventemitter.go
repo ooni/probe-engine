@@ -1,6 +1,7 @@
 package oonimkall
 
 import (
+	"sync/atomic"
 	"time"
 )
 
@@ -10,15 +11,14 @@ import (
 type eventEmitter struct {
 	disabled map[string]bool
 	out      chan<- *eventRecord
+	timeouts int64
 }
 
 // newEventEmitter creates a new Emitter
-func newEventEmitter(
-	settings *settingsRecord,
-	out chan<- *eventRecord,
-) *eventEmitter {
+func newEventEmitter(disabledEvents []string, out chan<- *eventRecord) *eventEmitter {
 	ee := &eventEmitter{out: out}
-	for _, eventname := range settings.DisabledEvents {
+	ee.disabled = make(map[string]bool)
+	for _, eventname := range disabledEvents {
 		ee.disabled[eventname] = true
 	}
 	return ee
@@ -46,6 +46,7 @@ func (ee *eventEmitter) Emit(key string, value eventValue) {
 	}
 	select {
 	case <-time.After(250 * time.Millisecond):
+		atomic.AddInt64(&ee.timeouts, 1)
 	case ee.out <- &eventRecord{Key: key, Value: value}:
 	}
 }
