@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -151,10 +152,22 @@ func (b *ExperimentBuilder) Build() *Experiment {
 	}
 }
 
+// canonicalizeExperimentName allows code to provide experiment names
+// in a more flexible way. There is a special case for ndt7 where we
+// get `ndt_7` but we would actually want `ndt7`.
+func canonicalizeExperimentName(name string) string {
+	switch name = strcase.ToSnake(name); name {
+	case "ndt_7":
+		name = "ndt7"
+	default:
+	}
+	return name
+}
+
 func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, error) {
-	factory, _ := experimentsByName[strcase.ToSnake(name)]
+	factory, _ := experimentsByName[canonicalizeExperimentName(name)]
 	if factory == nil {
-		return nil, errors.New("no such experiment")
+		return nil, fmt.Errorf("no such experiment: %s", name)
 	}
 	builder := factory(session)
 	builder.callbacks = handler.NewPrinterCallbacks(session.session.Logger)
