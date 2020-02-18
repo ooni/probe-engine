@@ -323,6 +323,20 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"example_with_failure": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return example.NewExperiment(session.session, *config.(*example.Config))
+			},
+			config: &example.Config{
+				Message:     "Good day from the example with failure experiment!",
+				ReturnError: true,
+				SleepTime:   int64(5 * time.Second),
+			},
+			needsInput: false,
+		}
+	},
+
 	"facebook_messenger": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {

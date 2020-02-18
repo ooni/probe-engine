@@ -32,9 +32,10 @@ const (
 
 // runner runs a specific task
 type runner struct {
-	emitter  *eventEmitter
-	out      chan<- *eventRecord
-	settings *settingsRecord
+	emitter             *eventEmitter
+	maybeLookupLocation func(*engine.Session) error
+	out                 chan<- *eventRecord
+	settings            *settingsRecord
 }
 
 // newRunner creates a new task runner
@@ -154,7 +155,13 @@ func (r *runner) Run(ctx context.Context) {
 	}
 	if !r.settings.Options.NoGeoIP && !r.settings.Options.NoResolverLookup {
 		logger.Info("Looking up your location")
-		if err := sess.MaybeLookupLocation(); err != nil {
+		maybeLookupLocation := r.maybeLookupLocation
+		if maybeLookupLocation == nil {
+			maybeLookupLocation = func(sess *engine.Session) error {
+				return sess.MaybeLookupLocation()
+			}
+		}
+		if err := maybeLookupLocation(sess); err != nil {
 			r.emitter.EmitFailure(failureIPLookup, err.Error())
 			r.emitter.EmitFailure(failureASNLookup, err.Error())
 			r.emitter.EmitFailure(failureCCLookup, err.Error())
@@ -230,23 +237,31 @@ func (r *runner) Run(ctx context.Context) {
 			JSONStr: string(data),
 		})
 		if !r.settings.Options.NoCollector {
-			if err := experiment.SubmitAndUpdateMeasurement(m); err != nil {
-				r.emitter.Emit(failureMeasurementSubmission, eventValue{
-					Idx:     int64(idx),
-					Input:   input,
-					JSONStr: string(data),
-					Failure: err.Error(),
-				})
-			} else {
-				r.emitter.Emit(statusMeasurementSubmission, eventValue{
-					Idx:   int64(idx),
-					Input: input,
-				})
-			}
+			err := experiment.SubmitAndUpdateMeasurement(m)
+			r.emitter.Emit(measurementSubmissionEventName(err), eventValue{
+				Idx:     int64(idx),
+				Input:   input,
+				JSONStr: string(data),
+				Failure: measurementSubmissionFailure(err),
+			})
 		}
 		r.emitter.Emit(statusMeasurementDone, eventValue{
 			Idx:   int64(idx),
 			Input: input,
 		})
 	}
+}
+
+func measurementSubmissionEventName(err error) string {
+	if err != nil {
+		return failureMeasurementSubmission
+	}
+	return statusMeasurementSubmission
+}
+
+func measurementSubmissionFailure(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }

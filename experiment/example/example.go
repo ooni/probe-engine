@@ -22,8 +22,8 @@ const (
 // This contains all the settings that user can set to modify the behaviour
 // of this experiment.
 type Config struct {
-	ReturnError bool   `ooni:"Toogle to return a mocked error"`
 	Message     string `ooni:"Message to emit at test completion"`
+	ReturnError bool   `ooni:"Toogle to return a mocked error"`
 	SleepTime   int64  `ooni:"Amount of time to sleep for"`
 }
 

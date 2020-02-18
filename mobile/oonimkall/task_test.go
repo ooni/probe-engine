@@ -76,11 +76,6 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// interrupt the task so we also exercise this functionality
-	go func() {
-		<-time.After(time.Second)
-		task.Interrupt()
-	}()
 	for !task.IsDone() {
 		eventstr := task.WaitForNextEvent()
 		var event eventlike
@@ -89,19 +84,32 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 		}
 		t.Logf("%+v", event)
 	}
-	// make sure we only see task_terminated at this point
-	for {
+}
+
+func TestIntegrationWithMeasurementFailure(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../../testdata/oonimkall/assets",
+		"log_level": "DEBUG",
+		"name": "ExampleWithFailure",
+		"options": {
+			"no_geoip": true,
+			"no_resolver_lookup": true,
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../../testdata/oonimkall/state",
+		"temp_dir": "../../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for !task.IsDone() {
 		eventstr := task.WaitForNextEvent()
-		fmt.Printf("%s\n", eventstr)
 		var event eventlike
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("%s\n", eventstr)
-		if event.Key != "task_terminated" {
-			t.Fatalf("unexpected event.Key: %s", event.Key)
-		}
-		break
+		t.Logf("%+v", event)
 	}
 }
 
