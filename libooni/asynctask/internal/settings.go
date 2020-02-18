@@ -1,4 +1,4 @@
-package asynctask
+package internal
 
 // Settings contains MK v0.10.x settings.
 type Settings struct {
