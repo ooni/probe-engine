@@ -11,13 +11,13 @@ We want to write experiments in Go. This reduces our burden
 compared to writing them using C/C++ code.
 
 Go consumers of probe-engine shall directly use its Go API. We
-will discuss this in a future revision of this spec.
+will discuss the Go API in a future revision of this spec.
 
-For mobile apps, we want to replace these APIs:
+For mobile apps, we want to replace these MK APIs:
 
-- [android-libs](https://github.com/measurement-kit/android-libs)
+- [measurement-kit/android-libs](https://github.com/measurement-kit/android-libs)
 
-- [mkall-ios](https://github.com/measurement-kit/mkall-ios)
+- [measurement-kit/mkall-ios](https://github.com/measurement-kit/mkall-ios)
 
 We also want consumers of [measurement-kit's FFI API](https://git.io/Jv4Rv)
 to be able to replace measurement-kit with probe-engine.
