@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/measurementkit/mkcgo"
 )
 
-func Start(settings []byte) (<-chan []byte, error) {
+func start(settings []byte) (<-chan []byte, error) {
 	return mkcgo.Start(settings)
 }
 
