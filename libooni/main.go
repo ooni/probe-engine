@@ -1,8 +1,8 @@
 // libooni exposes ooni/probe-engine as a C library. The API exposed
-// by this library is ABI compatible with MK v0.10.x and should therefore
-// allow consumers to easily migrate away from MK.
+// by this library is API/ABI compatible with MK v0.10.x. Thus, it will
+// allow MK integrators to easily migrate away from MK.
 //
-// See https://github.com/measurement-kit/measurement-kit/tree/v0.10.9/include/measurement_kit
+// See https://git.io/Jv4Rv (measurement-kit/measurement-kit @v0.10.9).
 package main
 
 // #include <limits.h>
@@ -120,29 +120,27 @@ func (tm *TaskManager) TaskDestroy(handle C.intptr_t) {
 var tm = NewTaskManager()
 
 //export ooni_go_task_start
-func ooni_go_task_start(csettings *C.char) C.intptr_t {
+func OONIGoTaskStart(csettings *C.char) C.intptr_t {
 	return tm.StartTask(csettings)
 }
 
 //export ooni_go_task_wait_for_next_event
-func ooni_go_task_wait_for_next_event(
-	handle C.intptr_t, base **C.char, length *C.size_t,
-) C.int {
+func OONIGoTaskWaitForNextEvent(handle C.intptr_t, base **C.char, length *C.size_t) C.int {
 	return tm.TaskWaitForNextEvent(handle, base, length)
 }
 
 //export ooni_go_task_is_done
-func ooni_go_task_is_done(handle C.intptr_t) C.int {
+func OONIGoTaskIsDone(handle C.intptr_t) C.int {
 	return tm.TaskIsDone(handle)
 }
 
 //export ooni_go_task_interrupt
-func ooni_go_task_interrupt(handle C.intptr_t) {
+func OONIGoTaskInterrupt(handle C.intptr_t) {
 	tm.TaskInterrupt(handle)
 }
 
 //export ooni_go_task_destroy
-func ooni_go_task_destroy(handle C.intptr_t) {
+func OONIGoTaskDestroy(handle C.intptr_t) {
 	tm.TaskDestroy(handle)
 }
 
