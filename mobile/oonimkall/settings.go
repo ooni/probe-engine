@@ -52,8 +52,6 @@ type settingsRecord struct {
 	TempDir string `json:"temp_dir"`
 }
 
-// TODO(bassosimone): restructure to have single "home" directory?
-
 // settingsOptions contains the settings options
 type settingsOptions struct {
 	// Backend is a test helper for a nettest. This

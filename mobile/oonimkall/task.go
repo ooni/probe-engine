@@ -2,6 +2,9 @@
 //
 // See https://git.io/Jv4Rv (measurement-kit/measurement-kit@v0.10.9)
 // for a comprehensive description of MK's FFI API.
+//
+// See also https://github.com/ooni/probe-engine/pull/347 for the
+// design document describing this API.
 package oonimkall
 
 import (

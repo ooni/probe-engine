@@ -127,11 +127,8 @@ func (r *runner) Run(ctx context.Context) {
 		return
 	}
 
-	// TODO(bassosimone):
-	//
-	// 1. set experiment options here
-	//
-	// 2. we should probably also set callbacks here?
+	// TODO(bassosimone): set experiment options here
+	// TODO(bassosimone): we should probably also set callbacks here?
 	builder, err := sess.NewExperimentBuilder(r.settings.Name)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
