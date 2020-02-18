@@ -55,6 +55,9 @@ EOF
 }
 
 if [ "$1" = "android" ]; then
+	#1013  sdkmanager --install 'build-tools;29.0.3'
+# 1014  sdkmanager --list|grep platforms
+# 1015  sdkmanager --install 'platforms;android-29'
   if [ -z $OONI_ANDROID_TOOLCHAIN ]; then
     missing_ooni_android_toolchain_error
     exit 1
