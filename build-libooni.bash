@@ -33,16 +33,20 @@ function build_libooni() {
   verbose rm -f $libdir/libooni.h
 }
 
-if [ "$1" = "macos" ]; then
+if [ "$1" = "linux" ]; then
+  verbose export GOOS=linux
+  verbose export GOARCH=amd64
+  build_libooni dist/$GOOS/$GOARCH c-shared libooni.so
+elif [ "$1" = "macos" ]; then
   verbose export GOOS=darwin
   verbose export GOARCH=amd64
-  build_libooni dist/macos/amd64 c-shared libooni.dylib
+  build_libooni dist/macos/$GOARCH c-shared libooni.dylib
 elif [ "$1" = "windows" ]; then
   verbose export CC=x86_64-w64-mingw32-gcc
   verbose export CGO_ENABLED=1
   verbose export GOOS=windows
   verbose export GOARCH=amd64
-  build_libooni dist/windows/amd64 c-shared libooni.dll
+  build_libooni dist/$GOOS/$GOARCH c-shared libooni.dll
 else
     echo "usage: $0 macos" 1>&2
     exit 1
