@@ -11,7 +11,7 @@ type chanLogger struct {
 	hasinfo    bool
 	haswarning bool
 	out        chan<- *Event
-	settings   Settings
+	settings   *Settings
 }
 
 // Debug implements Logger.Debug
@@ -67,7 +67,7 @@ func (cl *chanLogger) Warnf(format string, v ...interface{}) {
 
 // newChanLogger creates a new ChanLogger instance.
 func newChanLogger(
-	emitter *eventEmitter, settings Settings,
+	emitter *eventEmitter, settings *Settings,
 	out chan<- *Event,
 ) *chanLogger {
 	cl := &chanLogger{

@@ -36,11 +36,11 @@ const (
 type runner struct {
 	emitter  *eventEmitter
 	out      chan<- *Event
-	settings Settings
+	settings *Settings
 }
 
 // newRunner creates a new task runner
-func newRunner(settings Settings, out chan<- *Event) *runner {
+func newRunner(settings *Settings, out chan<- *Event) *runner {
 	return &runner{
 		emitter:  newEventEmitter(settings, out),
 		out:      out,

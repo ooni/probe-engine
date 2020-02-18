@@ -6,10 +6,9 @@ package asynctask
 
 import (
 	"encoding/json"
-	"sync"
 
 	"github.com/m-lab/go/rtx"
-	"github.com/ooni/probe-engine/libooni/asynctask/internal"
+	"github.com/ooni/probe-engine/asynctask/internal"
 )
 
 // Task is an asynchronous task.
@@ -22,11 +21,11 @@ type Task struct {
 func Start(input string) (*Task, error) {
 	var settings internal.Settings
 	if err := json.Unmarshal([]byte(input), &settings); err != nil {
-		return 0, err
+		return nil, err
 	}
-	taskptr, err := internal.StartTask(settings)
+	taskptr, err := internal.StartTask(&settings)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	return &Task{Task: taskptr}, nil
 }
@@ -44,12 +43,12 @@ func (t *Task) WaitForNextEvent() string {
 	return string(data)
 }
 
-// IsDone returns true if the task is done. 
+// IsDone returns true if the task is done.
 func (t *Task) IsDone() bool {
 	return t.Task.IsDone()
 }
 
 // Interrupt interrupts the task.
-func Interrupt() {
+func (t *Task) Interrupt() {
 	t.Task.Interrupt()
 }

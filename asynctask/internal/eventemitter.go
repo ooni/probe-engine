@@ -14,7 +14,7 @@ type eventEmitter struct {
 
 // newEventEmitter creates a new Emitter
 func newEventEmitter(
-	settings Settings,
+	settings *Settings,
 	out chan<- *Event,
 ) *eventEmitter {
 	ee := &eventEmitter{out: out}
