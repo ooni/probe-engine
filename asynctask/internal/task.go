@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 )
 
-// Task is a measurementkit async task.
+// Task is a measurementkit-like async task.
 type Task struct {
 	cancel context.CancelFunc
 	isdone int64
@@ -15,7 +15,7 @@ type Task struct {
 	wg     *sync.WaitGroup
 }
 
-// StartTask stars a new async task.
+// StartTask stars a new task.
 func StartTask(settings *Settings) (*Task, error) {
 	if settings == nil {
 		return nil, errors.New("passed nil settings")

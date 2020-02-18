@@ -1,6 +1,7 @@
-// Package asynctask implements measurement-kit's async task API.
+// Package asynctask implements measurement-kit's v0.10.9 API.
 //
-// See https://git.io/Jv4Rv (measurement-kit/measurement-kit@v0.10.9).
+// See https://git.io/Jv4Rv (measurement-kit/measurement-kit@v0.10.9)
+// for a comprehensive description of such MK API.
 package asynctask
 
 import (
@@ -11,14 +12,14 @@ import (
 	"github.com/ooni/probe-engine/libooni/asynctask/internal"
 )
 
-var (
-	idx int64 = 1
-	m = make(map[int64]*internal.Task)
-	mu sync.Mutex
-)
+// Task is an asynchronous task.
+type Task struct {
+	*internal.Task
+}
 
-// Start starts an OONI task.
-func Start(input string) (int64, error) {
+// Start starts an asynchronous task. The input argument is a
+// serialized JSON conforming to MK v0.10.9's API.
+func Start(input string) (*Task, error) {
 	var settings internal.Settings
 	if err := json.Unmarshal([]byte(input), &settings); err != nil {
 		return 0, err
@@ -27,24 +28,14 @@ func Start(input string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	mu.Lock()
-	task := idx
-	idx++
-	m[task] = taskptr
-	mu.Unlock()
-	return task, nil
+	return &Task{Task: taskptr}, nil
 }
 
-// WaitForNextEvent blocks until the next event occurs.
-func WaitForNextEvent(task int64) string {
-	const terminated = `{"key":"task_terminated","value":{}}`
-	mu.Lock()
-	taskptr := m[task]
-	mu.Unlock()
-	if taskptr == nil {
-		return terminated
-	}
-	evp := taskptr.WaitForNextEvent()
+// WaitForNextEvent blocks until the next event occurs. The returned
+// string is a serialized JSON following MK v0.10.9's API.
+func (t *Task) WaitForNextEvent() string {
+	const terminated = `{"key":"task_terminated","value":{}}` // like MK
+	evp := t.Task.WaitForNextEvent()
 	if evp == nil {
 		return terminated
 	}
@@ -54,33 +45,11 @@ func WaitForNextEvent(task int64) string {
 }
 
 // IsDone returns true if the task is done. 
-func IsDone(task int64) (isdone bool) {
-	mu.Lock()
-	taskptr := m[task]
-	isdone = (taskptr == nil || taskptr.IsDone())
-	mu.Unlock()
-	return
+func (t *Task) IsDone() bool {
+	return t.Task.IsDone()
 }
 
-// Interrupt interrupts a running task.
-func Interrupt(task int64) {
-	mu.Lock()
-	if taskptr := m[task]; taskptr != nil {
-		taskptr.Interrupt()
-	}
-	mu.Unlock()
-}
-
-// Stop stops a running task.
-func Stop(task int64) {
-	mu.Lock()
-	taskptr := m[task]
-	mu.Unlock()
-	if taskptr == nil {
-		return
-	}
-	taskptr.Interrupt()
-	for !taskptr.IsDone() {
-		taskptr.WaitForNextEvent()
-	}
+// Interrupt interrupts the task.
+func Interrupt() {
+	t.Task.Interrupt()
 }
