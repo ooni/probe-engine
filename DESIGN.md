@@ -65,7 +65,7 @@ import (
 var (
   idx int64 = 1
   m         = make(map[int64]*oonimkall.Task)
-  mu  sync.Mutex
+  mu        sync.Mutex
 )
 
 //export ooni_task_start
