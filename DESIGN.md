@@ -59,7 +59,7 @@ import (
 	"C"
 	"sync"
 
-	"github.com/ooni/probe-engine/mobile/oonimkall"
+	"github.com/ooni/probe-engine/oonimkall"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/mobile/oonimkall"
+	"github.com/ooni/probe-engine/oonimkall"
 )
 
 type eventlike struct {
