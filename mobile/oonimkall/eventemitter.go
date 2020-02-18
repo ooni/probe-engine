@@ -1,4 +1,4 @@
-package internal
+package oonimkall
 
 import (
 	"time"
@@ -9,13 +9,13 @@ import (
 // eventEmitter emits event on a channel
 type eventEmitter struct {
 	disabled map[string]bool
-	out      chan<- *Event
+	out      chan<- *eventRecord
 }
 
 // newEventEmitter creates a new Emitter
 func newEventEmitter(
-	settings *Settings,
-	out chan<- *Event,
+	settings *settingsRecord,
+	out chan<- *eventRecord,
 ) *eventEmitter {
 	ee := &eventEmitter{out: out}
 	for _, eventname := range settings.DisabledEvents {
@@ -31,21 +31,21 @@ func (ee *eventEmitter) EmitFailureStartup(failure string) {
 
 // EmitFailure emits a failure event
 func (ee *eventEmitter) EmitFailure(name, failure string) {
-	ee.Emit(name, EventValue{Failure: failure})
+	ee.Emit(name, eventValue{Failure: failure})
 }
 
 // EmitStatusProgress emits the status.Progress event
 func (ee *eventEmitter) EmitStatusProgress(percentage float64, message string) {
-	ee.Emit(statusProgress, EventValue{Message: message, Percentage: percentage})
+	ee.Emit(statusProgress, eventValue{Message: message, Percentage: percentage})
 }
 
 // Emit emits the specified event
-func (ee *eventEmitter) Emit(key string, value EventValue) {
+func (ee *eventEmitter) Emit(key string, value eventValue) {
 	if ee.disabled[key] == true {
 		return
 	}
 	select {
 	case <-time.After(250 * time.Millisecond):
-	case ee.out <- &Event{Key: key, Value: value}:
+	case ee.out <- &eventRecord{Key: key, Value: value}:
 	}
 }

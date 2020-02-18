@@ -1,13 +1,19 @@
-package internal
+package oonimkall
 
-// Settings contains MK v0.10.x settings.
-type Settings struct {
+// settingsRecord contains settings for a task. This structure extends the one
+// described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
+type settingsRecord struct {
 	// Annotations contains the annotations to be added
 	// to every measurements performed by the task.
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// DisabledEvents contains disabled events. See MK
-	// v0.10.x docs for the events names.
+	// AssetsDir is the directory where to store assets. This
+	// field is an extension of MK's specification. If
+	// this field is empty, the task won't start.
+	AssetsDir string `json:"assets_dir"`
+
+	// DisabledEvents contains disabled events. See
+	// https://git.io/Jv4Rv for the events names.
 	DisabledEvents []string `json:"disabled_events,omitempty"`
 
 	// Inputs contains the inputs. The task will fail if it
@@ -19,30 +25,37 @@ type Settings struct {
 	// to set it will cause a startup error.
 	InputFilepaths []string `json:"input_filepaths,omitempty"`
 
-	// LogLevel contains the logs level. See MK v0.10.x docs
+	// LogLevel contains the logs level. See https://git.io/Jv4Rv
 	// for the names of the available log levels.
 	LogLevel string `json:"log_level,omitempty"`
 
-	// Name contains the task name. By MK v0.10.x docs the names
-	// of the nettests are in camel case, e.g. `Ndt`.
+	// Name contains the task name. By https://git.io/Jv4Rv the
+	// names are in camel case, e.g. `Ndt`.
 	Name string `json:"name"`
 
 	// Options contains the task options.
-	Options Options `json:"options"`
+	Options settingsOptions `json:"options"`
 
 	// OutputFilepath contains the output filepath. This
 	// setting is not implemented by this library. Attempting
 	// to set it will cause a startup error.
 	OutputFilePath string `json:"output_filepath,omitempty"`
+
+	// StateDir is the directory where to store persistent data. This
+	// field is an extension of MK's specification. If
+	// this field is empty, the task won't start.
+	StateDir string `json:"state_dir"`
+
+	// TempDir is the temporary directory. This
+	// field is an extension of MK's specification. If
+	// this field is empty, the task won't start.
+	TempDir string `json:"temp_dir"`
 }
 
 // TODO(bassosimone): restructure to have single "home" directory?
 
-// Options contains the settings options
-type Options struct {
-	// AssetsDir is the directory where to store assets
-	AssetsDir string `json:"assets_dir"`
-
+// settingsOptions contains the settings options
+type settingsOptions struct {
 	// Backend is a test helper for a nettest. This
 	// option is not implemented by this library. Attempting
 	// to set it will cause a startup error.
@@ -58,9 +71,6 @@ type Options struct {
 
 	// CollectorBaseURL contains the collector base URL
 	CollectorBaseURL string `json:"collector_base_url,omitempty"`
-
-	// DataDir is the directory where to store persistent data
-	DataDir string `json:"data_dir"`
 
 	// GeoIPASNPath is the ASN database path. This
 	// option is not implemented by this library. Attempting
@@ -139,7 +149,4 @@ type Options struct {
 	// SoftwareVersion is the software version. If this option is not
 	// present, then the library startup will fail.
 	SoftwareVersion string `json:"software_version,omitempty"`
-
-	// TempDir is the temporary directory
-	TempDir string `json:"temp_dir"`
 }

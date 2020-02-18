@@ -1,4 +1,4 @@
-package internal
+package oonimkall
 
 import (
 	"fmt"
@@ -10,14 +10,14 @@ type chanLogger struct {
 	hasdebug   bool
 	hasinfo    bool
 	haswarning bool
-	out        chan<- *Event
-	settings   *Settings
+	out        chan<- *eventRecord
+	settings   *settingsRecord
 }
 
 // Debug implements Logger.Debug
 func (cl *chanLogger) Debug(msg string) {
 	if cl.hasdebug {
-		cl.emitter.Emit("log", EventValue{
+		cl.emitter.Emit("log", eventValue{
 			LogLevel: "DEBUG",
 			Message:  msg,
 		})
@@ -34,7 +34,7 @@ func (cl *chanLogger) Debugf(format string, v ...interface{}) {
 // Info implements Logger.Info
 func (cl *chanLogger) Info(msg string) {
 	if cl.hasinfo {
-		cl.emitter.Emit("log", EventValue{
+		cl.emitter.Emit("log", eventValue{
 			LogLevel: "INFO",
 			Message:  msg,
 		})
@@ -51,7 +51,7 @@ func (cl *chanLogger) Infof(format string, v ...interface{}) {
 // Warn implements Logger.Warn
 func (cl *chanLogger) Warn(msg string) {
 	if cl.haswarning {
-		cl.emitter.Emit("log", EventValue{
+		cl.emitter.Emit("log", eventValue{
 			LogLevel: "WARNING",
 			Message:  msg,
 		})
@@ -67,8 +67,8 @@ func (cl *chanLogger) Warnf(format string, v ...interface{}) {
 
 // newChanLogger creates a new ChanLogger instance.
 func newChanLogger(
-	emitter *eventEmitter, settings *Settings,
-	out chan<- *Event,
+	emitter *eventEmitter, settings *settingsRecord,
+	out chan<- *eventRecord,
 ) *chanLogger {
 	cl := &chanLogger{
 		emitter:  emitter,

@@ -1,7 +1,7 @@
-package internal
+package oonimkall
 
-// EventValue are all the possible value keys
-type EventValue struct {
+// eventValue are all the possible value keys
+type eventValue struct {
 	// DownloadedKB is the amount of downloaded KiBs
 	DownloadedKB float64 `json:"downloaded_kb,omitempty"`
 
@@ -54,11 +54,12 @@ type EventValue struct {
 	UploadedKB float64 `json:"uploaded_kb,omitempty"`
 }
 
-// Event is a Measurement Kit event
-type Event struct {
+// eventRecord is an event emitted by a task. This structure extends the event
+// described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
+type eventRecord struct {
 	// Is the key for the event
 	Key string `json:"key"`
 
 	// Contains the value for the event
-	Value EventValue `json:"value"`
+	Value eventValue `json:"value"`
 }

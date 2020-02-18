@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/internal/fetch"
@@ -33,6 +34,9 @@ type Client struct {
 
 // Ensure ensures that resources are downloaded and current.
 func (c *Client) Ensure(ctx context.Context) error {
+	if err := os.MkdirAll(c.WorkDir, 0700); err != nil {
+		return err
+	}
 	for name, resource := range All {
 		if err := c.EnsureForSingleResource(
 			ctx, name, resource, func(real, expected string) bool {

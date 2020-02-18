@@ -304,7 +304,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
-				SleepTime: int64(2 * time.Second),
+				SleepTime: int64(5 * time.Second),
 			},
 			needsInput: false,
 		}

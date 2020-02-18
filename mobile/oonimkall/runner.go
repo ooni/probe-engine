@@ -1,4 +1,4 @@
-package internal
+package oonimkall
 
 import (
 	"context"
@@ -35,12 +35,12 @@ const (
 // runner runs a specific task
 type runner struct {
 	emitter  *eventEmitter
-	out      chan<- *Event
-	settings *Settings
+	out      chan<- *eventRecord
+	settings *settingsRecord
 }
 
 // newRunner creates a new task runner
-func newRunner(settings *Settings, out chan<- *Event) *runner {
+func newRunner(settings *settingsRecord, out chan<- *eventRecord) *runner {
 	return &runner{
 		emitter:  newEventEmitter(settings, out),
 		out:      out,
@@ -54,7 +54,7 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
 
-	r.emitter.Emit(statusQueued, EventValue{})
+	r.emitter.Emit(statusQueued, eventValue{})
 	if r.settings.InputFilepaths != nil {
 		r.emitter.EmitFailureStartup("InputFilepaths: not supported")
 		return
@@ -105,7 +105,7 @@ func (r *runner) Run(ctx context.Context) {
 	}
 	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
 	// return a failure if such variable is true.
-	r.emitter.Emit(statusStarted, EventValue{})
+	r.emitter.Emit(statusStarted, eventValue{})
 
 	logger := newChanLogger(r.emitter, r.settings, r.out)
 	tlsconf := new(tls.Config)
@@ -121,23 +121,23 @@ func (r *runner) Run(ctx context.Context) {
 			return
 		}
 	}
-	if r.settings.Options.DataDir == "" {
+	if r.settings.StateDir == "" {
 		r.emitter.EmitFailureStartup("options.data_dir is emtpy")
 		return
 	}
-	kvstore, err := engine.NewFileSystemKVStore(r.settings.Options.DataDir)
+	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
 	sess, err := engine.NewSession(engine.SessionConfig{
-		AssetsDir:       r.settings.Options.AssetsDir,
+		AssetsDir:       r.settings.AssetsDir,
 		KVStore:         kvstore,
 		Logger:          logger,
 		SoftwareName:    r.settings.Options.SoftwareName,
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TLSConfig:       tlsconf,
-		TempDir:         r.settings.Options.TempDir,
+		TempDir:         r.settings.TempDir,
 	})
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
@@ -181,13 +181,13 @@ func (r *runner) Run(ctx context.Context) {
 		}
 		r.emitter.EmitStatusProgress(0.2, "geoip lookup")
 		r.emitter.EmitStatusProgress(0.3, "resolver lookup")
-		r.emitter.Emit(statusGeoIPLookup, EventValue{
+		r.emitter.Emit(statusGeoIPLookup, eventValue{
 			ProbeIP:          sess.ProbeIP(),
 			ProbeASN:         sess.ProbeASNString(),
 			ProbeCC:          sess.ProbeCC(),
 			ProbeNetworkName: sess.ProbeNetworkName(),
 		})
-		r.emitter.Emit(statusResolverLookup, EventValue{
+		r.emitter.Emit(statusResolverLookup, eventValue{
 			ResolverASN:         sess.ResolverASNString(),
 			ResolverIP:          sess.ResolverIP(),
 			ResolverNetworkName: sess.ResolverNetworkName(),
@@ -214,7 +214,7 @@ func (r *runner) Run(ctx context.Context) {
 		}
 		defer experiment.CloseReport()
 		r.emitter.EmitStatusProgress(0.4, "open report")
-		r.emitter.Emit(statusReportCreate, EventValue{
+		r.emitter.Emit(statusReportCreate, eventValue{
 			ReportID: experiment.ReportID(),
 		})
 	}
@@ -226,14 +226,14 @@ func (r *runner) Run(ctx context.Context) {
 		defer cancel()
 	}
 	for idx, input := range r.settings.Inputs {
-		r.emitter.Emit(statusMeasurementStart, EventValue{
+		r.emitter.Emit(statusMeasurementStart, eventValue{
 			Idx:   int64(idx),
 			Input: input,
 		})
 		m, err := experiment.Measure(input)
 		m.AddAnnotations(r.settings.Annotations)
 		if err != nil {
-			r.emitter.Emit(failureMeasurement, EventValue{
+			r.emitter.Emit(failureMeasurement, eventValue{
 				Failure: err.Error(),
 				Idx:     int64(idx),
 				Input:   input,
@@ -242,27 +242,27 @@ func (r *runner) Run(ctx context.Context) {
 		}
 		data, err := m.MarshalJSON()
 		rtx.PanicOnError(err, "measurement.MarshalJSON failed")
-		r.emitter.Emit(measurement, EventValue{
+		r.emitter.Emit(measurement, eventValue{
 			Idx:     int64(idx),
 			Input:   input,
 			JSONStr: string(data),
 		})
 		if !r.settings.Options.NoCollector {
 			if err := experiment.SubmitAndUpdateMeasurement(m); err != nil {
-				r.emitter.Emit(failureMeasurementSubmission, EventValue{
+				r.emitter.Emit(failureMeasurementSubmission, eventValue{
 					Idx:     int64(idx),
 					Input:   input,
 					JSONStr: string(data),
 					Failure: err.Error(),
 				})
 			} else {
-				r.emitter.Emit(statusMeasurementSubmission, EventValue{
+				r.emitter.Emit(statusMeasurementSubmission, eventValue{
 					Idx:   int64(idx),
 					Input: input,
 				})
 			}
 		}
-		r.emitter.Emit(statusMeasurementDone, EventValue{
+		r.emitter.Emit(statusMeasurementDone, eventValue{
 			Idx:   int64(idx),
 			Input: input,
 		})
