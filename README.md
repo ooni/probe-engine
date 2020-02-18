@@ -28,10 +28,9 @@ and requires Go v1.13+. We also depend on [Measurement Kit](
 https://github.com/measurement-kit/measurement-kit), a C++14 library
 implementing many OONI tests.
 
-Note that `export CGO_ENABLED=0` will disable C/C++ extensions and
-therefore will prevent Measurement Kit tests from being linked into
-the resulting Go binaries. You may want that in some cases, e.g. when
-you only want to use OONI tests written in Go.
+Note that passing the `-tags nomk` flag to Go will disable linking
+Measurement Kit into the resulting Go binaries. You may want that in
+cases where you only want to use experiments written in Go.
 
 We plan on gradually rewriting all OONI tests in Go, therefore the
 dependency on Measurement Kit will eventually be removed.
