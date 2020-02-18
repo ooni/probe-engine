@@ -32,7 +32,39 @@ function build_libooni() {
   verbose rm -f $libdir/libooni.h
 }
 
-if [ "$1" = "linux" ]; then
+function missing_ooni_android_toolchain_error() {
+  cat << EOF
+You're missing the OONI_ANDROID_TOOLCHAIN environment variable. This variable
+must point to the precompiled clang binary in your Android toolchain.
+
+On macOS, follow these steps to install:
+
+1. brew install android-sdk
+2. brew tap adoptopenjdk/openjdk
+3. brew cask install adoptopenjdk8
+4. sdkmanager --install ndk-bundle
+
+Once you have installed, run:
+
+1. sdkmanager --update
+
+To properly set OONI_ANDROID_TOOLCHAIN, run:
+
+export OONI_ANDROID_TOOLCHAIN=\$(dirname \$(dirname \$(find /usr/local/Caskroom/android-sdk/ -type f -name clang)))
+EOF
+}
+
+if [ "$1" = "android" ]; then
+  if [ -z $OONI_ANDROID_TOOLCHAIN ]; then
+    missing_ooni_android_toolchain_error
+    exit 1
+  fi
+  verbose export CGO_ENABLED=1
+  verbose export CC=$OONI_ANDROID_TOOLCHAIN/bin/aarch64-linux-android21-clang
+  verbose export GOOS=android
+  verbose export GOARCH=arm64
+  build_libooni dist/$GOOS/$GOARCH c-shared libooni.so
+elif [ "$1" = "linux" ]; then
   verbose export GOOS=linux
   verbose export GOARCH=amd64
   build_libooni dist/$GOOS/$GOARCH c-shared libooni.so
@@ -47,6 +79,6 @@ elif [ "$1" = "windows" ]; then
   verbose export GOARCH=amd64
   build_libooni dist/$GOOS/$GOARCH c-shared libooni.dll
 else
-    echo "usage: $0 macos" 1>&2
-    exit 1
+  echo "usage: $0 android|linux|macos|windows" 1>&2
+  exit 1
 fi
