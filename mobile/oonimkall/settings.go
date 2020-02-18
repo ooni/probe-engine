@@ -64,10 +64,10 @@ type settingsOptions struct {
 	// BouncerBaseURL contains the bouncer base URL
 	BouncerBaseURL string `json:"bouncer_base_url,omitempty"`
 
-	// CaBundlePath contains the CA bundle path. This
+	// CABundlePath contains the CA bundle path. This
 	// option is not implemented by this library. Attempting
 	// to set it will cause a startup error.
-	CaBundlePath string `json:"net/ca_bundle_path,omitempty"`
+	CABundlePath string `json:"net/ca_bundle_path,omitempty"`
 
 	// CollectorBaseURL contains the collector base URL
 	CollectorBaseURL string `json:"collector_base_url,omitempty"`

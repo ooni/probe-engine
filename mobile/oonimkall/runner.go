@@ -2,9 +2,6 @@ package oonimkall
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
 	"time"
 
 	"github.com/m-lab/go/rtx"
@@ -60,8 +57,8 @@ func (r *runner) hasUnsupportedSettings() (unsupported bool) {
 	if r.settings.Options.Backend != "" {
 		sadly("Options.Backend: not supported")
 	}
-	if r.settings.Options.CaBundlePath != "" {
-		sadly("Options.CaBundlePath: not supported")
+	if r.settings.Options.CABundlePath != "" {
+		sadly("Options.CABundlePath: not supported")
 	}
 	if r.settings.Options.GeoIPASNPath != "" {
 		sadly("Options.GeoIPASNPath: not supported")
@@ -95,6 +92,21 @@ func (r *runner) hasUnsupportedSettings() (unsupported bool) {
 	return
 }
 
+func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
+	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
+	if err != nil {
+		return nil, err
+	}
+	return engine.NewSession(engine.SessionConfig{
+		AssetsDir:       r.settings.AssetsDir,
+		KVStore:         kvstore,
+		Logger:          logger,
+		SoftwareName:    r.settings.Options.SoftwareName,
+		SoftwareVersion: r.settings.Options.SoftwareVersion,
+		TempDir:         r.settings.TempDir,
+	})
+}
+
 // Run runs the runner until completion
 func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): accurately count bytes
@@ -107,39 +119,8 @@ func (r *runner) Run(ctx context.Context) {
 		return
 	}
 	r.emitter.Emit(statusStarted, eventValue{})
-
 	logger := newChanLogger(r.emitter, r.settings, r.out)
-	tlsconf := new(tls.Config)
-	if r.settings.Options.CaBundlePath != "" {
-		certdata, err := ioutil.ReadFile(r.settings.Options.CaBundlePath)
-		if err != nil {
-			r.emitter.EmitFailureStartup(err.Error())
-			return
-		}
-		pool := x509.NewCertPool()
-		if !pool.AppendCertsFromPEM(certdata) {
-			r.emitter.EmitFailureStartup("AppendCertsFromPEM failed")
-			return
-		}
-	}
-	if r.settings.StateDir == "" {
-		r.emitter.EmitFailureStartup("options.state_dir is emtpy")
-		return
-	}
-	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
-	if err != nil {
-		r.emitter.EmitFailureStartup(err.Error())
-		return
-	}
-	sess, err := engine.NewSession(engine.SessionConfig{
-		AssetsDir:       r.settings.AssetsDir,
-		KVStore:         kvstore,
-		Logger:          logger,
-		SoftwareName:    r.settings.Options.SoftwareName,
-		SoftwareVersion: r.settings.Options.SoftwareVersion,
-		TLSConfig:       tlsconf,
-		TempDir:         r.settings.TempDir,
-	})
+	sess, err := r.newsession(logger)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
 		return

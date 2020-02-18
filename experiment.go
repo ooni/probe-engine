@@ -310,6 +310,19 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"example_with_input": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return example.NewExperiment(session.session, *config.(*example.Config))
+			},
+			config: &example.Config{
+				Message:   "Good day from the example with input experiment!",
+				SleepTime: int64(5 * time.Second),
+			},
+			needsInput: true,
+		}
+	},
+
 	"facebook_messenger": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
