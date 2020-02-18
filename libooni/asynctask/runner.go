@@ -1,4 +1,4 @@
-package main
+package asynctask
 
 import (
 	"context"
@@ -32,24 +32,24 @@ const (
 	statusStarted                = "status.started"
 )
 
-// Runner runs a specific task
-type Runner struct {
-	emitter  *Emitter
+// runner runs a specific task
+type runner struct {
+	emitter  *eventEmitter
 	out      chan<- *Event
 	settings Settings
 }
 
-// NewRunner creates a new task runner
-func NewRunner(settings Settings, out chan<- *Event) *Runner {
-	return &Runner{
-		emitter:  NewEmitter(settings, out),
+// newRunner creates a new task runner
+func newRunner(settings Settings, out chan<- *Event) *runner {
+	return &runner{
+		emitter:  newEventEmitter(settings, out),
 		out:      out,
 		settings: settings,
 	}
 }
 
 // Run runs the runner until completion
-func (r *Runner) Run(ctx context.Context) {
+func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): accurately count bytes
 	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
@@ -107,7 +107,7 @@ func (r *Runner) Run(ctx context.Context) {
 	// return a failure if such variable is true.
 	r.emitter.Emit(statusStarted, EventValue{})
 
-	logger := NewChanLogger(r.emitter, r.settings, r.out)
+	logger := newChanLogger(r.emitter, r.settings, r.out)
 	tlsconf := new(tls.Config)
 	if r.settings.Options.CaBundlePath != "" {
 		certdata, err := ioutil.ReadFile(r.settings.Options.CaBundlePath)

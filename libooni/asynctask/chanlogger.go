@@ -1,12 +1,12 @@
-package main
+package asynctask
 
 import (
 	"fmt"
 )
 
-// ChanLogger is a logger targeting a channel
-type ChanLogger struct {
-	emitter    *Emitter
+// chanLogger is a logger targeting a channel
+type chanLogger struct {
+	emitter    *eventEmitter
 	hasdebug   bool
 	hasinfo    bool
 	haswarning bool
@@ -15,7 +15,7 @@ type ChanLogger struct {
 }
 
 // Debug implements Logger.Debug
-func (cl *ChanLogger) Debug(msg string) {
+func (cl *chanLogger) Debug(msg string) {
 	if cl.hasdebug {
 		cl.emitter.Emit("log", EventValue{
 			LogLevel: "DEBUG",
@@ -25,14 +25,14 @@ func (cl *ChanLogger) Debug(msg string) {
 }
 
 // Debugf implements Logger.Debugf
-func (cl *ChanLogger) Debugf(format string, v ...interface{}) {
+func (cl *chanLogger) Debugf(format string, v ...interface{}) {
 	if cl.hasdebug {
 		cl.Debug(fmt.Sprintf(format, v...))
 	}
 }
 
 // Info implements Logger.Info
-func (cl *ChanLogger) Info(msg string) {
+func (cl *chanLogger) Info(msg string) {
 	if cl.hasinfo {
 		cl.emitter.Emit("log", EventValue{
 			LogLevel: "INFO",
@@ -42,14 +42,14 @@ func (cl *ChanLogger) Info(msg string) {
 }
 
 // Infof implements Logger.Infof
-func (cl *ChanLogger) Infof(format string, v ...interface{}) {
+func (cl *chanLogger) Infof(format string, v ...interface{}) {
 	if cl.hasinfo {
 		cl.Info(fmt.Sprintf(format, v...))
 	}
 }
 
 // Warn implements Logger.Warn
-func (cl *ChanLogger) Warn(msg string) {
+func (cl *chanLogger) Warn(msg string) {
 	if cl.haswarning {
 		cl.emitter.Emit("log", EventValue{
 			LogLevel: "WARNING",
@@ -59,18 +59,18 @@ func (cl *ChanLogger) Warn(msg string) {
 }
 
 // Warnf implements Logger.Warnf
-func (cl *ChanLogger) Warnf(format string, v ...interface{}) {
+func (cl *chanLogger) Warnf(format string, v ...interface{}) {
 	if cl.haswarning {
 		cl.Warn(fmt.Sprintf(format, v...))
 	}
 }
 
-// NewChanLogger creates a new ChanLogger instance.
-func NewChanLogger(
-	emitter *Emitter, settings Settings,
+// newChanLogger creates a new ChanLogger instance.
+func newChanLogger(
+	emitter *eventEmitter, settings Settings,
 	out chan<- *Event,
-) *ChanLogger {
-	cl := &ChanLogger{
+) *chanLogger {
+	cl := &chanLogger{
 		emitter:  emitter,
 		out:      out,
 		settings: settings,

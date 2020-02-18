@@ -1,4 +1,4 @@
-package main
+package asynctask
 
 // EventValue are all the possible value keys
 type EventValue struct {

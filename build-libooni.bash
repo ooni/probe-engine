@@ -27,8 +27,8 @@ function build_libooni() {
   local buildmode=$2
   local libooni_name=$3
   local output=$libdir/$libooni_name
-  verbose cp ./libooni/ffi.h $includedir
-  verbose go build -v -tags nomk -ldflags="-s -w" -buildmode=$buildmode -o $output ./libooni
+  verbose cp ./libooni/libooni/ffi.h $includedir
+  verbose go build -v -tags nomk -ldflags="-s -w" -buildmode=$buildmode -o $output ./libooni/libooni
   verbose rm -f $libdir/libooni.h
 }
 

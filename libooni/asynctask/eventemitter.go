@@ -1,4 +1,4 @@
-package main
+package asynctask
 
 import (
 	"time"
@@ -6,18 +6,18 @@ import (
 
 // TODO(bassosimone): event correctness wrt fields
 
-// Emitter emits event on a channel
-type Emitter struct {
+// eventEmitter emits event on a channel
+type eventEmitter struct {
 	disabled map[string]bool
 	out      chan<- *Event
 }
 
-// NewEmitter creates a new Emitter
-func NewEmitter(
+// newEventEmitter creates a new Emitter
+func newEventEmitter(
 	settings Settings,
 	out chan<- *Event,
-) *Emitter {
-	ee := &Emitter{out: out}
+) *eventEmitter {
+	ee := &eventEmitter{out: out}
 	for _, eventname := range settings.DisabledEvents {
 		ee.disabled[eventname] = true
 	}
@@ -25,22 +25,22 @@ func NewEmitter(
 }
 
 // EmitFailureStartup emits the failureStartup event
-func (ee *Emitter) EmitFailureStartup(failure string) {
+func (ee *eventEmitter) EmitFailureStartup(failure string) {
 	ee.EmitFailure(failureStartup, failure)
 }
 
 // EmitFailure emits a failure event
-func (ee *Emitter) EmitFailure(name, failure string) {
+func (ee *eventEmitter) EmitFailure(name, failure string) {
 	ee.Emit(name, EventValue{Failure: failure})
 }
 
 // EmitStatusProgress emits the status.Progress event
-func (ee *Emitter) EmitStatusProgress(percentage float64, message string) {
+func (ee *eventEmitter) EmitStatusProgress(percentage float64, message string) {
 	ee.Emit(statusProgress, EventValue{Message: message, Percentage: percentage})
 }
 
 // Emit emits the specified event
-func (ee *Emitter) Emit(key string, value EventValue) {
+func (ee *eventEmitter) Emit(key string, value EventValue) {
 	if ee.disabled[key] == true {
 		return
 	}

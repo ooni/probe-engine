@@ -14,18 +14,20 @@ import "C"
 import (
 	"encoding/json"
 	"sync"
+
+	"github.com/ooni/probe-engine/libooni/asynctask"
 )
 
 // TaskManager is a task manager
 type TaskManager struct {
 	index C.intptr_t
 	lck   sync.Mutex
-	tasks map[C.intptr_t]*Task
+	tasks map[C.intptr_t]*asynctask.Task
 }
 
 // NewTaskManager creates a new TaskManager
 func NewTaskManager() *TaskManager {
-	return &TaskManager{index: 1, tasks: make(map[C.intptr_t]*Task)}
+	return &TaskManager{index: 1, tasks: make(map[C.intptr_t]*asynctask.Task)}
 }
 
 // StartTask starts a new task. Returns a nonzero task
@@ -35,11 +37,11 @@ func (tm *TaskManager) StartTask(csettings *C.char) C.intptr_t {
 		return 0
 	}
 	gosettings := []byte(C.GoString(csettings))
-	var settings Settings
+	var settings asynctask.Settings
 	if err := json.Unmarshal(gosettings, &settings); err != nil {
 		return 0
 	}
-	taskptr, err := StartTask(settings)
+	taskptr, err := asynctask.StartTask(settings)
 	if err != nil {
 		return 0
 	}
@@ -70,7 +72,7 @@ func (tm *TaskManager) TaskWaitForNextEvent(
 		// this could break people code, because they need to write conditional
 		// coding for handling both an ordinary event and `null`. So, to ease the
 		// integrator's life, we now return a dummy, well formed event.
-		eventptr = &Event{Key: "task_terminated"}
+		eventptr = &asynctask.Event{Key: "task_terminated"}
 	}
 	data, err := json.Marshal(eventptr)
 	if err != nil {

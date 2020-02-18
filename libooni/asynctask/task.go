@@ -1,4 +1,4 @@
-package main
+package asynctask
 
 import (
 	"context"
@@ -28,7 +28,7 @@ func StartTask(settings Settings) (*Task, error) {
 		defer close(task.out)
 		defer wg.Done()
 		defer atomic.AddInt64(&task.isdone, 1)
-		r := NewRunner(settings, task.out)
+		r := newRunner(settings, task.out)
 		r.Run(ctx)
 	}()
 	return task, nil
