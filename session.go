@@ -15,13 +15,13 @@ import (
 // SessionConfig contains the Session config
 type SessionConfig struct {
 	AssetsDir       string
-	Logger          log.Logger
 	KVStore         KVStore
+	Logger          log.Logger
 	ProxyURL        *url.URL
 	SoftwareName    string
 	SoftwareVersion string
-	TempDir         string
 	TLSConfig       *tls.Config
+	TempDir         string
 }
 
 // Session is a measurement session
