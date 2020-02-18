@@ -300,7 +300,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(session.session, *config.(*example.Config))
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example",
+				)
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
@@ -313,7 +316,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example_with_input": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(session.session, *config.(*example.Config))
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example_with_input",
+				)
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
@@ -326,7 +332,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example_with_failure": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(session.session, *config.(*example.Config))
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example_with_failure",
+				)
 			},
 			config: &example.Config{
 				Message:     "Good day from the example with failure experiment!",

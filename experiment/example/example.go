@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	testName    = "example"
 	testVersion = "0.0.1"
 )
 
@@ -64,7 +63,7 @@ func measure(
 // Once you have created an instance, you can use directly the
 // generic experiment API.
 func NewExperiment(
-	sess *session.Session, config Config,
+	sess *session.Session, config Config, testName string,
 ) *experiment.Experiment {
 	return experiment.New(
 		sess, testName, testVersion,
