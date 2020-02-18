@@ -300,11 +300,47 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(session.session, *config.(*example.Config))
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example",
+				)
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
 				SleepTime: int64(5 * time.Second),
+			},
+			needsInput: false,
+		}
+	},
+
+	"example_with_input": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example_with_input",
+				)
+			},
+			config: &example.Config{
+				Message:   "Good day from the example with input experiment!",
+				SleepTime: int64(5 * time.Second),
+			},
+			needsInput: true,
+		}
+	},
+
+	"example_with_failure": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *experiment.Experiment {
+				return example.NewExperiment(
+					session.session, *config.(*example.Config),
+					"example_with_failure",
+				)
+			},
+			config: &example.Config{
+				Message:     "Good day from the example with failure experiment!",
+				ReturnError: true,
+				SleepTime:   int64(5 * time.Second),
 			},
 			needsInput: false,
 		}

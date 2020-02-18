@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	testName    = "example"
 	testVersion = "0.0.1"
 )
 
@@ -22,8 +21,8 @@ const (
 // This contains all the settings that user can set to modify the behaviour
 // of this experiment.
 type Config struct {
-	ReturnError bool   `ooni:"Toogle to return a mocked error"`
 	Message     string `ooni:"Message to emit at test completion"`
+	ReturnError bool   `ooni:"Toogle to return a mocked error"`
 	SleepTime   int64  `ooni:"Amount of time to sleep for"`
 }
 
@@ -49,10 +48,10 @@ func measure(
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
-	select {
-	case <-time.After(time.Duration(config.SleepTime)):
-	case <-ctx.Done():
-	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(config.SleepTime))
+	defer cancel()
+	<-ctx.Done()
+	sess.Logger.Warnf("example: remember to drink: %s", "water is key to survival")
 	callbacks.OnProgress(1.0, config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err
@@ -64,7 +63,7 @@ func measure(
 // Once you have created an instance, you can use directly the
 // generic experiment API.
 func NewExperiment(
-	sess *session.Session, config Config,
+	sess *session.Session, config Config, testName string,
 ) *experiment.Experiment {
 	return experiment.New(
 		sess, testName, testVersion,

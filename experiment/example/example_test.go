@@ -33,6 +33,7 @@ func TestIntegration(t *testing.T) {
 
 	experiment := example.NewExperiment(
 		sess, example.Config{SleepTime: int64(2 * time.Second)},
+		"example",
 	)
 	if err := experiment.OpenReport(ctx); err != nil {
 		t.Fatal(err)
@@ -60,6 +61,7 @@ func TestIntegrationFailure(t *testing.T) {
 			SleepTime:   int64(2 * time.Second),
 			ReturnError: true,
 		},
+		"example",
 	)
 	if _, err := experiment.Measure(ctx, ""); err == nil {
 		t.Fatal("expected an error here")
