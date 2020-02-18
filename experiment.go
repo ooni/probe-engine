@@ -246,11 +246,6 @@ type Measurement struct {
 	m model.Measurement
 }
 
-// MarshalJSON marshals the measurement as JSON
-func (m *Measurement) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.m)
-}
-
 // AddAnnotations adds annotation to the measurement
 func (m *Measurement) AddAnnotations(annotations map[string]string) {
 	m.m.AddAnnotations(annotations)
