@@ -119,27 +119,27 @@ func (tm *TaskManager) TaskDestroy(handle C.intptr_t) {
 
 var tm = NewTaskManager()
 
-//export ooni_go_task_start
+//export OONIGoTaskStart
 func OONIGoTaskStart(csettings *C.char) C.intptr_t {
 	return tm.StartTask(csettings)
 }
 
-//export ooni_go_task_wait_for_next_event
+//export OONIGoTaskWaitForNextEvent
 func OONIGoTaskWaitForNextEvent(handle C.intptr_t, base **C.char, length *C.size_t) C.int {
 	return tm.TaskWaitForNextEvent(handle, base, length)
 }
 
-//export ooni_go_task_is_done
+//export OONIGoTaskIsDone
 func OONIGoTaskIsDone(handle C.intptr_t) C.int {
 	return tm.TaskIsDone(handle)
 }
 
-//export ooni_go_task_interrupt
+//export OONIGoTaskInterrupt
 func OONIGoTaskInterrupt(handle C.intptr_t) {
 	tm.TaskInterrupt(handle)
 }
 
-//export ooni_go_task_destroy
+//export OONIGoTaskDestroy
 func OONIGoTaskDestroy(handle C.intptr_t) {
 	tm.TaskDestroy(handle)
 }

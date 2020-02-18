@@ -1,4 +1,7 @@
-package measurementkit
+// +build cgo
+
+// Package mkcgo contains CGO bindings to Measurement Kit.
+package mkcgo
 
 import (
 	// #include <measurement_kit/ffi.h>
@@ -75,7 +78,8 @@ func taskstart(settings []byte) *C.mk_task_t {
 	return C.mk_task_start(settingsp)
 }
 
-func start(settings []byte) (<-chan []byte, error) {
+// Start starts a Measurement Kit task.
+func Start(settings []byte) (<-chan []byte, error) {
 	taskp := taskstart(settings)
 	if taskp == nil {
 		return nil, errors.New("C.mk_task_start failed")
@@ -83,8 +87,4 @@ func start(settings []byte) (<-chan []byte, error) {
 	out := make(chan []byte)
 	go taskloop(taskp, out)
 	return out, nil
-}
-
-func available() bool {
-	return true
 }

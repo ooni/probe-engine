@@ -21,7 +21,7 @@ ooni_task_t *ooni_task_start(const char *settings) {
 	if (tap == NULL) {
 		return NULL;
 	}
-	if ((tap->handle = ooni_go_task_start((char *)settings)) == 0) {
+	if ((tap->handle = OONIGoTaskStart((char *)settings)) == 0) {
 		free(tap);
 		return NULL;
 	}
@@ -36,7 +36,7 @@ ooni_event_t *ooni_task_wait_for_next_event(ooni_task_t *tap) {
 	if (evp == NULL) {
 		return NULL;
 	}
-	if (ooni_go_task_wait_for_next_event(
+	if (OONIGoTaskWaitForNextEvent(
 				tap->handle, &evp->base, &evp->length) == 0) {
 		free(evp);
 		return NULL;
@@ -45,12 +45,12 @@ ooni_event_t *ooni_task_wait_for_next_event(ooni_task_t *tap) {
 }
 
 int ooni_task_is_done(ooni_task_t *tap) {
-	return (tap != NULL) ? ooni_go_task_is_done(tap->handle) : 1;
+	return (tap != NULL) ? OONIGoTaskIsDone(tap->handle) : 1;
 }
 
 void ooni_task_interrupt(ooni_task_t *tap) {
 	if (tap != NULL) {
-		ooni_go_task_interrupt(tap->handle);
+		OONIGoTaskInterrupt(tap->handle);
 	}
 }
 
@@ -71,7 +71,7 @@ void ooni_event_destroy(ooni_event_t *evp) {
 
 void ooni_task_destroy(ooni_task_t *tap) {
 	if (tap != NULL) {
-		ooni_go_task_destroy(tap->handle);
+		OONIGoTaskDestroy(tap->handle);
 		free(tap);
 	}
 }
