@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/internal/fetch"
@@ -24,6 +25,9 @@ type Client struct {
 	// Logger is the logger to use.
 	Logger log.Logger
 
+	// OSMkdirAll allows testing os.MkdirAll failures.
+	OSMkdirAll func(path string, perm os.FileMode) error
+
 	// UserAgent is the user agent to use.
 	UserAgent string
 
@@ -33,6 +37,13 @@ type Client struct {
 
 // Ensure ensures that resources are downloaded and current.
 func (c *Client) Ensure(ctx context.Context) error {
+	mkdirall := c.OSMkdirAll
+	if mkdirall == nil {
+		mkdirall = os.MkdirAll
+	}
+	if err := mkdirall(c.WorkDir, 0700); err != nil {
+		return err
+	}
 	for name, resource := range All {
 		if err := c.EnsureForSingleResource(
 			ctx, name, resource, func(real, expected string) bool {

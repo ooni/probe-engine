@@ -20,9 +20,9 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
+	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/resources"
 )
 
 // Session contains information on a measurement session.

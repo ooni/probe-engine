@@ -301,11 +301,11 @@ type HTTPDoConfig struct {
 
 // HTTPDoResults contains the results of a HTTPDo
 type HTTPDoResults struct {
-	TestKeys            Results
-	StatusCode          int64
-	Headers             http.Header
-	BodySnap            []byte
-	Error               error
+	TestKeys   Results
+	StatusCode int64
+	Headers    http.Header
+	BodySnap   []byte
+	Error      error
 }
 
 // HTTPDo performs a HTTP request

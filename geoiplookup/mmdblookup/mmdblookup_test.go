@@ -7,8 +7,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
+	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/resources"
 )
 
 const (
