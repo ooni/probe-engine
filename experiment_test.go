@@ -261,6 +261,13 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	measurement.AddAnnotations(map[string]string{
 		"probe-engine-ci": "yes",
 	})
+	data, err := measurement.MarshalJSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data == nil {
+		t.Fatal("data is nil")
+	}
 	t.Log(measurement.MakeGenericTestKeys())
 	err = experiment.SubmitAndUpdateMeasurement(measurement)
 	if err != nil {
