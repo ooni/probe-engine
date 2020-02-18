@@ -49,10 +49,7 @@ func measure(
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
-	select {
-	case <-time.After(time.Duration(config.SleepTime)):
-	case <-ctx.Done():
-	}
+	time.Sleep(time.Duration(config.SleepTime))
 	callbacks.OnProgress(1.0, config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err
