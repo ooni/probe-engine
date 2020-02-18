@@ -25,7 +25,7 @@ type Client struct {
 	// Logger is the logger to use.
 	Logger log.Logger
 
-	// OSMkdirAll allows testing os/MkdirAll failures.
+	// OSMkdirAll allows testing os.MkdirAll failures.
 	OSMkdirAll func(path string, perm os.FileMode) error
 
 	// UserAgent is the user agent to use.
