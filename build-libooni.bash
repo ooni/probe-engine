@@ -24,7 +24,6 @@ function build_libooni() {
   verbose install -d $includedir
   local libdir=$destdir/lib
   verbose rm -rf $libdir
-  verbose install -d libdir
   local buildmode=$2
   local libooni_name=$3
   local output=$libdir/$libooni_name
