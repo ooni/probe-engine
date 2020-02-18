@@ -37,15 +37,14 @@ func Start(input string) (int64, error) {
 
 // WaitForNextEvent blocks until the next event occurs.
 func WaitForNextEvent(task int64) string {
+	const terminated = `{"key":"task_terminated","value":{}}`
 	mu.Lock()
 	taskptr := m[task]
 	mu.Unlock()
-	const terminated = `{"key":"task_terminated","value":{}}`
 	if taskptr == nil {
 		return terminated
 	}
-	// TODO(bassosimone): no need to have error here
-	evp, _ := taskptr.WaitForNextEvent()
+	evp := taskptr.WaitForNextEvent()
 	if evp == nil {
 		return terminated
 	}

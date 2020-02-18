@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 )
@@ -15,7 +16,10 @@ type Task struct {
 }
 
 // StartTask stars a new async task.
-func StartTask(settings Settings) (*Task, error) {
+func StartTask(settings *Settings) (*Task, error) {
+	if settings == nil {
+		return nil, errors.New("passed nil settings")
+	}
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -35,24 +39,16 @@ func StartTask(settings Settings) (*Task, error) {
 }
 
 // WaitForNextEvent waits for next event.
-func (task *Task) WaitForNextEvent() (ev *Event, err error) {
-	if task != nil {
-		ev = <-task.out
-	}
-	return
+func (task *Task) WaitForNextEvent() *Event {
+	return <-task.out
 }
 
 // IsDone returns whether the task is done.
 func (task *Task) IsDone() (done bool) {
-	if task != nil {
-		done = task.isdone != 0
-	}
-	return
+	return task.isdone != 0
 }
 
 // Interrupt interrupts the task.
 func (task *Task) Interrupt() {
-	if task != nil {
-		task.cancel()
-	}
+	task.cancel()
 }
