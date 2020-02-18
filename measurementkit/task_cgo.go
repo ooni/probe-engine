@@ -26,18 +26,20 @@ import (
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_extra.a
 	// #cgo windows,amd64 LDFLAGS: -lws2_32
 	//
-	// #cgo linux,amd64 LDFLAGS: -static
-	// #cgo linux,amd64 LDFLAGS: /usr/local/lib/libmeasurement_kit.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libmaxminddb.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libcurl.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libnghttp2.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libevent_openssl.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libssl.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libcrypto.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libevent_core.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libevent_extra.a
-	// #cgo linux,amd64 LDFLAGS: /usr/lib/libevent_pthreads.a
-	// #cgo linux,amd64 LDFLAGS: /lib/libz.a
+	// #cgo linux,amd64,ooni LDFLAGS: -static
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/local/lib/libmeasurement_kit.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libmaxminddb.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libcurl.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libnghttp2.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libevent_openssl.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libssl.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libcrypto.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libevent_core.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libevent_extra.a
+	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libevent_pthreads.a
+	// #cgo linux,amd64,ooni LDFLAGS: /lib/libz.a
+	//
+	// #cgo linux,!ooni LDFLAGS: -lmeasurement_kit
 	"C"
 	"errors"
 	"unsafe"
