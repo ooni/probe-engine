@@ -7,11 +7,30 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/resources"
 )
+
+func TestEnsureMkdirAllFailure(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	expected := errors.New("mocked error")
+	client := resources.Client{
+		HTTPClient: http.DefaultClient,
+		Logger:     log.Log,
+		OSMkdirAll: func(string, os.FileMode) error {
+			return expected
+		},
+		UserAgent: "ooniprobe-engine/0.1.0",
+		WorkDir:   "/foobar",
+	}
+	err := client.Ensure(context.Background())
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
 
 func TestEnsure(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
