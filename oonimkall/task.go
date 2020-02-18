@@ -5,6 +5,8 @@
 //
 // See also https://github.com/ooni/probe-engine/pull/347 for the
 // design document describing this API.
+//
+// See also https://github.com/ooni/probe-engine/blob/master/DESIGN.md.
 package oonimkall
 
 import (
