@@ -1,4 +1,4 @@
-name: go test
+name: golang
 on: [push, pull_request]
 jobs:
   test:
