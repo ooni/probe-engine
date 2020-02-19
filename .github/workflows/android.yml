@@ -1,0 +1,28 @@
+name: android
+on: [push]
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        go: ["1.13"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: brew cask install android-sdk
+      - run: echo y | sdkmanager --install "platforms;android-29" ndk-bundle
+      - run: ./build-android.bash
+        env:
+          ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
+      - uses: actions/upload-artifact@v1
+        with:
+          name: oonimkall.aar
+          path: ./MOBILE/dist/oonimkall.aar
+      - uses: actions/upload-artifact@v1
+        with:
+          name: oonimkall-sources.jar
+          path: ./MOBILE/dist/oonimkall-sources.jar
