@@ -1,4 +1,5 @@
 /.vscode
+/GOPATH
 /asn.mmdb
 /ca-bundle.pem
 /country.mmdb
@@ -6,3 +7,5 @@
 /miniooni.exe
 /oonipsiphon/
 /report.jsonl
+/oonimkall-*.aar
+/oonimkall-*.jar
