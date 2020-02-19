@@ -17,4 +17,4 @@ jobs:
       - run: sdkmanager install 'platform;29.0.3' ndk-bundle
       - run: ./build-android.bash
         env:
-          ANDROID_HOME=/usr/local/Caskroom/android-sdk/4333796
+          ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
