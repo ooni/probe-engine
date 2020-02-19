@@ -20,9 +20,9 @@ jobs:
           ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
       - uses: actions/upload-artifact@v1
         with:
-          name: oonimkall-android.aar
-          path: ./MOBILE/dist/oonimkall-android.aar
+          name: oonimkall.aar
+          path: ./MOBILE/dist/oonimkall.aar
       - uses: actions/upload-artifact@v1
         with:
-          name: oonimkall-android-sources.jar
-          path: ./MOBILE/dist/oonimkall-android-sources.jar
+          name: oonimkall-sources.jar
+          path: ./MOBILE/dist/oonimkall-sources.jar
