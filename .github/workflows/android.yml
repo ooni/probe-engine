@@ -1,0 +1,20 @@
+name: android
+on: [push]
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        go: ["1.13"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: brew cask install android-sdk
+      - run: sdkmanager install 'platform;29.0.3' ndk-bundle
+      - run: ./build-android.bash
+        env:
+          ANDROID_HOME=/usr/local/Caskroom/android-sdk/4333796

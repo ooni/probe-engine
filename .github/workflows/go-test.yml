@@ -1,4 +1,4 @@
-name: Build
+name: go test ./...
 on: [push, pull_request]
 jobs:
   test:
@@ -16,8 +16,7 @@ jobs:
       - run: go test -tags nomk -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
         env:
           CGO_ENABLED: 0
-      - name: Send coverage
-        uses: shogo82148/actions-goveralls@v1
+      - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: probe-engine.cov
           parallel: true
