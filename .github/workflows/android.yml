@@ -18,3 +18,11 @@ jobs:
       - run: ./build-android.bash
         env:
           ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
+      - uses: actions/upload-artifact@v1
+        with:
+          name: oonimkall-android.aar
+          path: ./MOBILE/dist/oonimkall-android.aar
+      - uses: actions/upload-artifact@v1
+        with:
+          name: oonimkall-android-sources.jar
+          path: ./MOBILE/dist/oonimkall-android-sources.jar

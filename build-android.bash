@@ -27,11 +27,7 @@ set -x
 export GOPATH=$topdir/MOBILE/gopath
 export PATH=$GOPATH/bin:$PATH
 export GO111MODULE=off
-GITHUB_SHA=${GITHUB_SHA:-git rev-parse HEAD}
-GITHUB_RUN_ID=${GITHUB_RUN_ID:0}
-timestamp=$(date -u +%Y%m%dT%H%M%SZ)
-version="$(echo $GITHUB_SHA|cut -c-10)-$GITHUB_RUN_ID-$timestamp"
-output=MOBILE/dist/oonimkall-$version.aar
+output=MOBILE/dist/oonimkall.aar
 go get -u golang.org/x/mobile/cmd/gomobile
 gomobile init
 export GO111MODULE=on
