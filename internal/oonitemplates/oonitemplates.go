@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
@@ -32,7 +31,6 @@ import (
 
 type channelHandler struct {
 	ch         chan<- modelx.Measurement
-	lateWrites int64
 }
 
 func (h *channelHandler) OnMeasurement(m modelx.Measurement) {
@@ -44,7 +42,12 @@ func (h *channelHandler) OnMeasurement(m modelx.Measurement) {
 	select {
 	case h.ch <- m:
 	case <-time.After(100 * time.Millisecond):
-		atomic.AddInt64(&h.lateWrites, 1)
+		// We use to have code here but that caused crashes on
+		// the Android simulator under x86 and on devices. We
+		// don't have a solid theory of why it happens, but we
+		// know that _not_ putting code here prevents this from
+		// happening. The issue for tracking this bug was:
+		// https://github.com/ooni/probe-engine/issues/355.
 	}
 }
 
