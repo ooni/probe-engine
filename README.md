@@ -65,12 +65,20 @@ done
 go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
 ```
 
-3. clone `psiphon-tunnel-core` and generate a `go.mod` by running
-`go mod init && go mod tidy` in the toplevel dir
+3. clone `psiphon-tunnel-core`, checkout the tip of the `staging-client`
+branch and generate a `go.mod` by running `go mod init && go mod tidy` in
+the toplevel dir
 
 4. rewrite `go.mod` such that it contains only your direct dependencies
 followed by the exact content of `psiphon-tunnel-core`'s `go.mod`
 
 5. run `go mod tidy`
+
+6. make sure you don't downgrade `bolt` and `goselect` because this
+will break downstream builds on MIPS:
+
+```bash
+go get -u -v github.com/Psiphon-Labs/bolt github.com/creack/goselect
+```
 
 This allows us to pin all psiphon dependencies precisely.
