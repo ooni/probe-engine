@@ -4,49 +4,60 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"strings"
 	"testing"
 
 	engine "github.com/ooni/probe-engine"
 )
 
 func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
-	var noFileReport, randomizeInput bool
 	out := make(chan *eventRecord)
 	settings := &settingsRecord{
 		InputFilepaths: []string{"foo"},
+		Name:           "example",
 		Options: settingsOptions{
 			Backend:          "foo",
 			CABundlePath:     "foo",
 			GeoIPASNPath:     "foo",
 			GeoIPCountryPath: "foo",
-			NoFileReport:     &noFileReport,
+			NoFileReport:     false,
 			ProbeASN:         "AS0",
 			ProbeCC:          "ZZ",
 			ProbeIP:          "127.0.0.1",
 			ProbeNetworkName: "XXX",
-			RandomizeInput:   &randomizeInput,
+			RandomizeInput:   true,
 		},
-		OutputFilePath: "foo",
+		OutputFilepath: "foo",
 	}
-	numseen := make(chan int)
 	go func() {
-		var count int
-		for ev := range out {
-			if ev.Key != "failure.startup" {
-				panic(fmt.Sprintf("invalid key: %s", ev.Key))
-			}
-			count++
+		defer close(out)
+		r := newRunner(settings, out)
+		logger := newChanLogger(r.emitter, "WARNING", r.out)
+		if r.hasUnsupportedSettings(logger) != true {
+			panic("expected to see unsupported settings")
 		}
-		numseen <- count
 	}()
-	r := newRunner(settings, out)
-	if r.hasUnsupportedSettings() != true {
-		t.Fatal("expected to see unsupported settings")
+	var seen []string
+	for ev := range out {
+		switch ev.Key {
+		case "failure.startup":
+			if strings.HasSuffix("not supported", ev.Value.Failure) {
+				log.Fatalf("invalid value: %s", ev.Value.Failure)
+			}
+			seen = append(seen, ev.Value.Failure)
+		case "log":
+			if strings.HasSuffix("not supported", ev.Value.Message) {
+				log.Fatalf("invalid value: %s", ev.Value.Message)
+			}
+			seen = append(seen, ev.Value.Message)
+		default:
+			log.Fatalf("invalid key: %s", ev.Key)
+		}
 	}
-	close(out)
-	const expected = 12
-	if n := <-numseen; n != expected {
-		t.Fatalf("expected: %d; seen %d", expected, n)
+	const expected = 11
+	if len(seen) != expected {
+		t.Fatalf("expected: %d; seen %+v", expected, seen)
 	}
 }
 

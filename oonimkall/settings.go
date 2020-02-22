@@ -38,8 +38,9 @@ type settingsRecord struct {
 
 	// OutputFilepath contains the output filepath. This
 	// setting is not implemented by this library. Attempting
-	// to set it will cause a startup error.
-	OutputFilePath string `json:"output_filepath,omitempty"`
+	// to set it will cause a startup error unless the
+	// Options.NoFileReport setting is true.
+	OutputFilepath string `json:"output_filepath,omitempty"`
 
 	// StateDir is the directory where to store persistent data. This
 	// field is an extension of MK's specification. If
@@ -64,7 +65,8 @@ type settingsOptions struct {
 
 	// CABundlePath contains the CA bundle path. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	CABundlePath string `json:"net/ca_bundle_path,omitempty"`
 
 	// CollectorBaseURL contains the collector base URL
@@ -72,12 +74,14 @@ type settingsOptions struct {
 
 	// GeoIPASNPath is the ASN database path. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	GeoIPASNPath string `json:"geoip_asn_path,omitempty"`
 
 	// GeoIPCountryPath is the country database path. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	GeoIPCountryPath string `json:"geoip_country_path,omitempty"`
 
 	// MaxRuntime is the maximum runtime expressed. A negative
@@ -91,10 +95,11 @@ type settingsOptions struct {
 	// NoCollector indicates whether to use a collector
 	NoCollector bool `json:"no_collector,omitempty"`
 
-	// NoFileReport indicates whether to write a report file. This
-	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
-	NoFileReport *bool `json:"no_file_report,omitempty"`
+	// NoFileReport indicates whether to write a report file. Saving
+	// the report to file is currently not implemented by this
+	// library. Hence, if NoFileReport is false and OutputFilepath
+	// is not empty, there will be a startup error.
+	NoFileReport bool `json:"no_file_report,omitempty"`
 
 	// NoGeoIP indicates whether to perform a GeoIP lookup. This
 	// library fails if NoGeoIP and NoResolverLookup have different
@@ -108,28 +113,32 @@ type settingsOptions struct {
 
 	// ProbeASN is the AS number. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	ProbeASN string `json:"probe_asn,omitempty"`
 
 	// ProbeCC is the probe country code. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	ProbeCC string `json:"probe_cc,omitempty"`
 
 	// ProbeIP is the probe IP. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	ProbeIP string `json:"probe_ip,omitempty"`
 
 	// ProbeNetworkName is the probe network name. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
+	// to set it will cause a startup warning, and the
+	// library will otherwise ignore this setting.
 	ProbeNetworkName string `json:"probe_network_name,omitempty"`
 
 	// RandomizeInput indicates whether to randomize inputs. This
 	// option is not implemented by this library. Attempting
-	// to set it will cause a startup error.
-	RandomizeInput *bool `json:"randomize_input,omitempty"`
+	// to set it to true will cause a startup error.
+	RandomizeInput bool `json:"randomize_input,omitempty"`
 
 	// SaveRealProbeIP indicates whether to save the real probe IP
 	SaveRealProbeIP bool `json:"save_real_probe_ip,omitempty"`
