@@ -47,7 +47,7 @@ func newRunner(settings *settingsRecord, out chan<- *eventRecord) *runner {
 	}
 }
 
-func (r *runner) hasUnsupportedSettings() (unsupported bool) {
+func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	sadly := func(why string) {
 		r.emitter.EmitFailureStartup(why)
 		unsupported = true
@@ -59,34 +59,31 @@ func (r *runner) hasUnsupportedSettings() (unsupported bool) {
 		sadly("Options.Backend: not supported")
 	}
 	if r.settings.Options.CABundlePath != "" {
-		sadly("Options.CABundlePath: not supported")
+		logger.Warn("Options.CABundlePath: not supported")
 	}
 	if r.settings.Options.GeoIPASNPath != "" {
-		sadly("Options.GeoIPASNPath: not supported")
+		logger.Warn("Options.GeoIPASNPath: not supported")
 	}
 	if r.settings.Options.GeoIPCountryPath != "" {
-		sadly("Options.GeoIPCountryPath: not supported")
-	}
-	if r.settings.Options.NoFileReport != nil {
-		sadly("Options.NoFileReport: not supported")
+		logger.Warn("Options.GeoIPCountryPath: not supported")
 	}
 	if r.settings.Options.ProbeASN != "" {
-		sadly("Options.ProbeASN: not supported")
+		logger.Warn("Options.ProbeASN: not supported")
 	}
 	if r.settings.Options.ProbeCC != "" {
-		sadly("Options.ProbeCC: not supported")
+		logger.Warn("Options.ProbeCC: not supported")
 	}
 	if r.settings.Options.ProbeIP != "" {
-		sadly("Options.ProbeIP: not supported")
+		logger.Warn("Options.ProbeIP: not supported")
 	}
 	if r.settings.Options.ProbeNetworkName != "" {
-		sadly("Options.ProbeNetworkName: not supported")
+		logger.Warn("Options.ProbeNetworkName: not supported")
 	}
-	if r.settings.Options.RandomizeInput != nil {
+	if r.settings.Options.RandomizeInput != false {
 		sadly("Options.RandomizeInput: not supported")
 	}
-	if r.settings.OutputFilePath != "" {
-		sadly("OutputFilePath: not supported")
+	if r.settings.OutputFilepath != "" && r.settings.Options.NoFileReport == false {
+		sadly("OutputFilepath && !NoFileReport: not supported")
 	}
 	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
 	// return a failure if such variable is true.
@@ -114,13 +111,13 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
 
+	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
 	defer r.emitter.Emit(statusEnd, eventValue{})
 	r.emitter.Emit(statusQueued, eventValue{})
-	if r.hasUnsupportedSettings() {
+	if r.hasUnsupportedSettings(logger) {
 		return
 	}
 	r.emitter.Emit(statusStarted, eventValue{})
-	logger := newChanLogger(r.emitter, r.settings, r.out)
 	sess, err := r.newsession(logger)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
