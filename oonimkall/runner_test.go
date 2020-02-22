@@ -15,7 +15,6 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	out := make(chan *eventRecord)
 	settings := &settingsRecord{
 		InputFilepaths: []string{"foo"},
-		Name:           "example",
 		Options: settingsOptions{
 			Backend:          "foo",
 			CABundlePath:     "foo",
