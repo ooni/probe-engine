@@ -12,11 +12,11 @@ require (
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.10+incompatible
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.11-0.20200220203753-39322c546da8+incompatible
 	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200128193928-738e15bfe6c3 // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20191206190901-78f52e6d6243 // indirect
 	github.com/apex/log v1.1.2
-	github.com/aristanetworks/goarista v0.0.0-20200206021550-59c4040ef2d3 // indirect
+	github.com/aristanetworks/goarista v0.0.0-20200214154357-2151774b0d85 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/avast/retry-go v2.5.0+incompatible
@@ -30,6 +30,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
+	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
@@ -37,9 +38,9 @@ require (
 	github.com/m-lab/go v1.2.2
 	github.com/m-lab/ndt7-client-go v0.2.0
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
-	github.com/montanaflynn/stats v0.5.0
+	github.com/montanaflynn/stats v0.6.3
 	github.com/neubot/dash v0.4.1
-	github.com/ooni/netx v0.0.0-20200113102411-24ca17149d15
+	github.com/ooni/netx v0.0.0-20200211124352-4f8d645bce64
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
@@ -56,5 +57,7 @@ require (
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
-	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
+	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6 // indirect
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
+	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 )
