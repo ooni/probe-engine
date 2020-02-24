@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: openobservatory/mk-alpine:latest
+      volumes:
+      - .:/mk
     steps:
       - run: apk add --no-progress git go
-      - run: go test -v -race -coverpkg=./... ./...
+      - run: cd /mk && go test -v -race ./...
