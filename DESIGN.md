@@ -2,7 +2,7 @@
 
 | Author       | Simone Basso |
 |--------------|--------------|
-| Last-Updated | 2020-02-18   |
+| Last-Updated | 2020-02-24   |
 | Status       | under review |
 
 ## Introduction
@@ -129,4 +129,6 @@ We currently don't have plans for replacing other APIs.
 https://github.com/measurement-kit/engine/blob/master/DESIGN.md)
 lived in the measurement-kit namespace at GitHub. It discussed
 a bunch of broad, extra topics, e.g., code bloat that are not
-discussed in this document.
+discussed in this document. More details regarding the migration
+from MK to probe-engine are at [measurement-kit/measurement-kit#1913](
+https://github.com/measurement-kit/measurement-kit/issues/1913).
