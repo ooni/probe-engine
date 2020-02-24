@@ -5,8 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - container:
-          image: openobservatory/mk-alpine:latest
-        run: |
-          apk add --no-progress git go
-          go test -v -race ./...
+      - run: docker run -v`pwd`:/mk -w/mk -it openobservatory/mk-alpine:latest 'apk add --no-progress git go && go test -v -race ./...'
