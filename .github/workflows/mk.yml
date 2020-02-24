@@ -3,10 +3,10 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: openobservatory/mk-alpine:latest
     steps:
-      - run: apk add --no-progress git go
-      - run: pwd
-      - run: ls
-      - run: go test -v -race ./...
+      - uses: actions/checkout@v2
+      - container:
+          image: openobservatory/mk-alpine:latest
+        run: |
+          apk add --no-progress git go
+          go test -v -race ./...
