@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/geoiplookup/iplookup/akamai"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/avast"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/ubuntu"
 	"github.com/ooni/probe-engine/log"
@@ -31,10 +30,6 @@ type method struct {
 
 var (
 	methods = []method{
-		{
-			name: "akamai",
-			fn:   akamai.Do,
-		},
 		{
 			name: "avast",
 			fn:   avast.Do,
