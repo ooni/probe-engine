@@ -1,0 +1,10 @@
+name: mk
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: openobservatory/mk-alpine:latest
+    steps:
+      - run: apk add --no-progress git go
+      - run: go test -v -race -coverpkg=./... ./...
