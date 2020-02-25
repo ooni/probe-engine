@@ -4,7 +4,9 @@
 package mkcgo
 
 import (
+	// #include <measurement_kit/common/version.h>
 	// #include <measurement_kit/ffi.h>
+	//
 	// #include <stdlib.h>
 	//
 	// #cgo darwin,amd64 LDFLAGS: /usr/local/lib/libmeasurement_kit.a
@@ -43,6 +45,10 @@ import (
 	// #cgo linux,amd64,ooni LDFLAGS: /lib/libz.a
 	//
 	// #cgo linux,!ooni LDFLAGS: -lmeasurement_kit
+	//
+	// #if MK_VERSION_NUMERIC != 0x00000000010000101LL
+	// #error "Wrong measurement-kit version, please recompile measurement-kit"
+	// #endif
 	"C"
 	"errors"
 	"unsafe"
