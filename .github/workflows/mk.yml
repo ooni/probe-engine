@@ -1,0 +1,8 @@
+name: mk
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker run -v`pwd`:/mk -w/mk openobservatory/mk-alpine:latest /mk/.github/workflows/mk.sh
