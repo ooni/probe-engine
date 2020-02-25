@@ -2,7 +2,7 @@ package resources
 
 const (
 	// Version contains the assets version.
-	Version = 20191226162429
+	Version = 20200225143707
 
 	// ASNDatabaseName is the ASN-DB file name
 	ASNDatabaseName = "asn.mmdb"
@@ -33,18 +33,18 @@ type ResourceInfo struct {
 // All contains info on all known assets.
 var All = map[string]ResourceInfo{
 	"asn.mmdb": ResourceInfo{
-		URLPath:  "/releases/download/20191226162429/asn.mmdb.gz",
+		URLPath:  "/releases/download/20200225143707/asn.mmdb.gz",
 		GzSHA256: "f4be54217b08761aa61315680eba2a9371b5b68aeb037e0c901773c43481530c",
 		SHA256:   "479218cd19f52f9826bc836646a4bec1b04022e3fc42015d2aa577cdf2017f1a",
 	},
 	"ca-bundle.pem": ResourceInfo{
-		URLPath:  "/releases/download/20191226162429/ca-bundle.pem.gz",
-		GzSHA256: "790ad79619bbfc75e4c8b4aef8fe6371d10f36f6071ec774d8cc0c27a848222a",
-		SHA256:   "0d98a1a961aab523c9dc547e315e1d79e887dea575426ff03567e455fc0b66b4",
+		URLPath:  "/releases/download/20200225143707/ca-bundle.pem.gz",
+		GzSHA256: "08070cbe24c8895d18bb20ccd746ff7409f1947094a1a47aa59993f588474485",
+		SHA256:   "adf770dfd574a0d6026bfaa270cb6879b063957177a991d453ff1d302c02081f",
 	},
 	"country.mmdb": ResourceInfo{
-		URLPath:  "/releases/download/20191226162429/country.mmdb.gz",
-		GzSHA256: "e694431e766fdf76105b5c14ed43551bc9b4ca2e3bd282a41c3c36175e17a7e4",
-		SHA256:   "9aedbe59990318581ec5d880716d3415e40bfc07280107112d6d7328c771e059",
+		URLPath:  "/releases/download/20200225143707/country.mmdb.gz",
+		GzSHA256: "e82eed4d73ebd4f47a73d15a6c5c53aaec45f2d6faf50c87f8a7a8e66fb57910",
+		SHA256:   "48bf9c397d1d8af6a89c30ca047401cc04bb0d768b93bb682f48a13ca1455ac5",
 	},
 }

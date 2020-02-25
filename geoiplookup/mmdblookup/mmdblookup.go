@@ -49,8 +49,11 @@ func LookupCC(
 		return
 	}
 	logger.Debugf("mmdblookup: Country: %+v", record)
-	if record.RegisteredCountry.IsoCode != "" {
-		cc = record.RegisteredCountry.IsoCode
+	// With MaxMind DB we used record.RegisteredCountry.IsoCode but that does
+	// not seem to work with the db-ip.com database. The record is empty, at
+	// least for my own IP address in Italy. --Simone (2020-02-25)
+	if record.Country.IsoCode != "" {
+		cc = record.Country.IsoCode
 	}
 	return
 }
