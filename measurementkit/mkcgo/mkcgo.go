@@ -23,19 +23,17 @@ import (
 	// #cgo windows,amd64 CFLAGS: -I/usr/local/opt/mingw-w64-measurement-kit/include/
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-measurement-kit/lib/libmeasurement_kit.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libmaxminddb/lib/libmaxminddb.a
-	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-curl/lib/libcurl.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_openssl.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libressl/lib/libssl.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libressl/lib/libcrypto.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_core.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_extra.a
 	// #cgo windows,amd64 LDFLAGS: -lws2_32
+	// #cgo windows,amd64 LDFLAGS: -fstack-protector-strong
 	//
 	// #cgo linux,amd64,ooni LDFLAGS: -static
 	// #cgo linux,amd64,ooni LDFLAGS: /usr/local/lib/libmeasurement_kit.a
 	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libmaxminddb.a
-	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libcurl.a
-	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libnghttp2.a
 	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libevent_openssl.a
 	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libssl.a
 	// #cgo linux,amd64,ooni LDFLAGS: /usr/lib/libcrypto.a
@@ -46,7 +44,7 @@ import (
 	//
 	// #cgo linux,!ooni LDFLAGS: -lmeasurement_kit
 	//
-	// #if MK_VERSION_NUMERIC != 0x00000000010000101LL
+	// #if MK_VERSION_NUMERIC != 0x00000000010000111LL
 	// #error "Wrong measurement-kit version, please recompile measurement-kit"
 	// #endif
 	"C"
