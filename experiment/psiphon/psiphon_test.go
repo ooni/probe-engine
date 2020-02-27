@@ -48,7 +48,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "All IP lookuppers failed") {
+	if !strings.HasSuffix(err.Error(), "context canceled") {
 		t.Fatal("not the error we expected")
 	}
 }
