@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -118,22 +117,6 @@ func TestIntegrationNewOrchestraClient(t *testing.T) {
 	}
 	if clnt == nil {
 		t.Fatal("expected non nil client here")
-	}
-}
-
-func TestUnitNewOrchestraMaybeLookupLocationError(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // so we fail immediately
-	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
-		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
-	)
-	clnt, err := sess.NewOrchestraClient(ctx)
-	if !strings.HasSuffix(err.Error(), "All IP lookuppers failed") {
-		t.Fatal("not the error we expected")
-	}
-	if clnt != nil {
-		t.Fatal("expected nil client here")
 	}
 }
 

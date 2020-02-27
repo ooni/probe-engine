@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
@@ -228,18 +227,19 @@ func (s *Session) initOrchestraClient(
 	clnt *orchestra.Client,
 	maybeLogin func(ctx context.Context) error,
 ) (*orchestra.Client, error) {
+	// The original implementation has as its only use case that we
+	// were registering and logging in for sending an update regarding
+	// the probe whereabouts. Yet here in probe-engine, the orchestra
+	// is currently only used to fetch inputs. For this purpose, we don't
+	// need to communicate any specific information. The code that will
+	// perform an update should be responsible of doing that.
 	meta := metadata.Metadata{
-		Platform:        platform.Name(),
-		ProbeASN:        s.ProbeASNString(),
-		ProbeCC:         s.ProbeCC(),
-		SoftwareName:    s.SoftwareName,
-		SoftwareVersion: s.SoftwareVersion,
-		SupportedTests: []string{
-			// TODO(bassosimone): do we need to declare more tests
-			// here? I believe we're not using this functionality of
-			// orchestra for now. Plus, we can always change later.
-			"web_connectivity",
-		},
+		Platform:        "miniooni",
+		ProbeASN:        "AS0",
+		ProbeCC:         "ZZ",
+		SoftwareName:    "miniooni",
+		SoftwareVersion: "0.1.0-dev",
+		SupportedTests:  []string{"web_connectivity"},
 	}
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
@@ -259,10 +259,6 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, er
 		s.UserAgent(),
 		statefile.New(s.KVStore),
 	)
-	// Make sure we have location info so we can fill metadata
-	if err := s.MaybeLookupLocation(ctx); err != nil {
-		return nil, err
-	}
 	return s.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
 	)
