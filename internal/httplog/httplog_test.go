@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/httpx/httplog"
-	"github.com/ooni/probe-engine/httpx/httptracex"
+	"github.com/ooni/probe-engine/internal/httplog"
+	"github.com/ooni/probe-engine/internal/httptracex"
 )
 
 func TestGet(t *testing.T) {

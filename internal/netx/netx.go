@@ -5,7 +5,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/ooni/probe-engine/httpx/retryx"
+	"github.com/ooni/probe-engine/internal/retryx"
 )
 
 // RetryingDialer is a dialer where we retry dialing for

@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/probe-engine/httpx/httplog"
-	"github.com/ooni/probe-engine/httpx/httptracex"
-	"github.com/ooni/probe-engine/httpx/netx"
+	"github.com/ooni/probe-engine/internal/httplog"
+	"github.com/ooni/probe-engine/internal/httptracex"
+	"github.com/ooni/probe-engine/internal/netx"
 	"github.com/ooni/probe-engine/log"
 )
 
