@@ -6,7 +6,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/discard"
-	"github.com/ooni/netx/httpx"
+	"github.com/ooni/probe-engine/netx/httpx"
 )
 
 func TestIntegration(t *testing.T) {
