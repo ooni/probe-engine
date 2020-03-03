@@ -41,15 +41,17 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	for ev := range out {
 		switch ev.Key {
 		case "failure.startup":
-			if strings.HasSuffix("not supported", ev.Value.Failure) {
-				log.Fatalf("invalid value: %s", ev.Value.Failure)
+			evv := ev.Value.(eventFailureGeneric)
+			if strings.HasSuffix("not supported", evv.Failure) {
+				log.Fatalf("invalid value: %s", evv.Failure)
 			}
-			seen = append(seen, ev.Value.Failure)
+			seen = append(seen, evv.Failure)
 		case "log":
-			if strings.HasSuffix("not supported", ev.Value.Message) {
-				log.Fatalf("invalid value: %s", ev.Value.Message)
+			evv := ev.Value.(eventLog)
+			if strings.HasSuffix("not supported", evv.Message) {
+				log.Fatalf("invalid value: %s", evv.Message)
 			}
-			seen = append(seen, ev.Value.Message)
+			seen = append(seen, evv.Message)
 		default:
 			log.Fatalf("invalid key: %s", ev.Key)
 		}
@@ -99,7 +101,8 @@ func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
 				"failure.cc_lookup", "failure.resolver_lookup":
 				seen++
 			case "status.progress":
-				if ev.Value.Percentage >= 0.2 {
+				evv := ev.Value.(eventStatusProgress)
+				if evv.Percentage >= 0.2 {
 					panic(fmt.Sprintf("too much progress: %+v", ev))
 				}
 			case "status.queued", "status.started", "status.end":

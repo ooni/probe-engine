@@ -112,12 +112,12 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
-	defer r.emitter.Emit(statusEnd, eventValue{})
-	r.emitter.Emit(statusQueued, eventValue{})
+	defer r.emitter.Emit(statusEnd, eventStatusEnd{})
+	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
 		return
 	}
-	r.emitter.Emit(statusStarted, eventValue{})
+	r.emitter.Emit(statusStarted, eventEmpty{})
 	sess, err := r.newsession(logger)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
@@ -156,21 +156,21 @@ func (r *runner) Run(ctx context.Context) {
 			}
 		}
 		if err := maybeLookupLocation(sess); err != nil {
-			r.emitter.EmitFailure(failureIPLookup, err.Error())
-			r.emitter.EmitFailure(failureASNLookup, err.Error())
-			r.emitter.EmitFailure(failureCCLookup, err.Error())
-			r.emitter.EmitFailure(failureResolverLookup, err.Error())
+			r.emitter.EmitFailureGeneric(failureIPLookup, err.Error())
+			r.emitter.EmitFailureGeneric(failureASNLookup, err.Error())
+			r.emitter.EmitFailureGeneric(failureCCLookup, err.Error())
+			r.emitter.EmitFailureGeneric(failureResolverLookup, err.Error())
 			return
 		}
 		r.emitter.EmitStatusProgress(0.2, "geoip lookup")
 		r.emitter.EmitStatusProgress(0.3, "resolver lookup")
-		r.emitter.Emit(statusGeoIPLookup, eventValue{
+		r.emitter.Emit(statusGeoIPLookup, eventStatusGeoIPLookup{
 			ProbeIP:          sess.ProbeIP(),
 			ProbeASN:         sess.ProbeASNString(),
 			ProbeCC:          sess.ProbeCC(),
 			ProbeNetworkName: sess.ProbeNetworkName(),
 		})
-		r.emitter.Emit(statusResolverLookup, eventValue{
+		r.emitter.Emit(statusResolverLookup, eventStatusResolverLookup{
 			ResolverASN:         sess.ResolverASNString(),
 			ResolverIP:          sess.ResolverIP(),
 			ResolverNetworkName: sess.ResolverNetworkName(),
@@ -192,12 +192,12 @@ func (r *runner) Run(ctx context.Context) {
 	experiment := builder.Build()
 	if !r.settings.Options.NoCollector {
 		if err := experiment.OpenReport(); err != nil {
-			r.emitter.EmitFailure(failureReportCreate, err.Error())
+			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
 			return
 		}
 		defer experiment.CloseReport()
 		r.emitter.EmitStatusProgress(0.4, "open report")
-		r.emitter.Emit(statusReportCreate, eventValue{
+		r.emitter.Emit(statusReportCreate, eventStatusReportGeneric{
 			ReportID: experiment.ReportID(),
 		})
 	}
@@ -209,14 +209,14 @@ func (r *runner) Run(ctx context.Context) {
 		defer cancel()
 	}
 	for idx, input := range r.settings.Inputs {
-		r.emitter.Emit(statusMeasurementStart, eventValue{
+		r.emitter.Emit(statusMeasurementStart, eventMeasurementGeneric{
 			Idx:   int64(idx),
 			Input: input,
 		})
 		m, err := experiment.Measure(input)
 		m.AddAnnotations(r.settings.Annotations)
 		if err != nil {
-			r.emitter.Emit(failureMeasurement, eventValue{
+			r.emitter.Emit(failureMeasurement, eventMeasurementGeneric{
 				Failure: err.Error(),
 				Idx:     int64(idx),
 				Input:   input,
@@ -225,21 +225,21 @@ func (r *runner) Run(ctx context.Context) {
 		}
 		data, err := m.MarshalJSON()
 		rtx.PanicOnError(err, "measurement.MarshalJSON failed")
-		r.emitter.Emit(measurement, eventValue{
+		r.emitter.Emit(measurement, eventMeasurementGeneric{
 			Idx:     int64(idx),
 			Input:   input,
 			JSONStr: string(data),
 		})
 		if !r.settings.Options.NoCollector {
 			err := experiment.SubmitAndUpdateMeasurement(m)
-			r.emitter.Emit(measurementSubmissionEventName(err), eventValue{
+			r.emitter.Emit(measurementSubmissionEventName(err), eventMeasurementGeneric{
 				Idx:     int64(idx),
 				Input:   input,
 				JSONStr: string(data),
 				Failure: measurementSubmissionFailure(err),
 			})
 		}
-		r.emitter.Emit(statusMeasurementDone, eventValue{
+		r.emitter.Emit(statusMeasurementDone, eventMeasurementGeneric{
 			Idx:   int64(idx),
 			Input: input,
 		})
