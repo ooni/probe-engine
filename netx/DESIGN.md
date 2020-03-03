@@ -314,11 +314,11 @@ allows to set a specific CA bundle, and `ForceSkipVerify`
 allows to disable certificate verification. All these funcs
 MUST NOT be invoked once you're using the dialer.
 
-The `github.com/ooni/probe-engine/netx/httpx` package MUST contain
+The `github.com/ooni/probe-engine/netx` package MUST contain
 code so that we can do:
 
 ```Go
-t := httpx.NewHTTPTransportWithProxyFunc(
+t := netx.NewHTTPTransportWithProxyFunc(
     http.ProxyFromEnvironment,
 )
 t.SetResolver(resolver)

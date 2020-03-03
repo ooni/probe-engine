@@ -6,12 +6,12 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/discard"
-	"github.com/ooni/probe-engine/netx/httpx"
+	"github.com/ooni/probe-engine/netx"
 )
 
 func TestIntegration(t *testing.T) {
 	log.SetHandler(discard.Default)
-	client := httpx.NewClient(NewHandler(log.Log))
+	client := netx.NewHTTPClient(NewHandler(log.Log))
 	client.ConfigureDNS("udp", "dns.google.com:53")
 	resp, err := client.HTTPClient.Get("http://www.facebook.com")
 	if err != nil {

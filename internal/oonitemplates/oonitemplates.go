@@ -23,7 +23,6 @@ import (
 	"github.com/m-lab/go/rtx"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/httpx"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
@@ -332,7 +331,7 @@ func HTTPDo(
 		MaxBodySnapSize: config.MaxEventsBodySnapSize,
 	}
 	ctx := modelx.WithMeasurementRoot(origCtx, root)
-	client := httpx.NewClientWithProxyFunc(handlers.NoHandler, config.ProxyFunc)
+	client := netx.NewHTTPClientWithProxyFunc(handlers.NoHandler, config.ProxyFunc)
 	resolver, err := configureDNS(
 		time.Now().UnixNano(),
 		config.DNSServerNetwork,

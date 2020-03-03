@@ -2,12 +2,14 @@
 //
 // This package provides a replacement for net.Dialer that can Dial,
 // DialContext, and DialTLS. During its lifecycle this modified Dialer
-// will emit network level events on a channel.
+// will emit network level events using a specific emitter.
 package netx
 
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/ooni/probe-engine/netx/handlers"
@@ -144,4 +146,145 @@ func (d *Dialer) ForceSkipVerify() error {
 // we can fallback to the secondary if primary is broken.
 func ChainResolvers(primary, secondary modelx.DNSResolver) modelx.DNSResolver {
 	return internal.ChainResolvers(primary, secondary)
+}
+
+// HTTPTransport performs measurements during HTTP round trips.
+type HTTPTransport struct {
+	dialer    *internal.Dialer
+	transport *internal.HTTPTransport
+}
+
+func newTransport(
+	beginning time.Time, handler modelx.Handler,
+	proxyFunc func(*http.Request) (*url.URL, error),
+) *HTTPTransport {
+	t := new(HTTPTransport)
+	t.dialer = internal.NewDialer(beginning, handler)
+	t.transport = internal.NewHTTPTransport(
+		beginning,
+		handler,
+		t.dialer,
+		false, // DisableKeepAlives
+		proxyFunc,
+	)
+	return t
+}
+
+// NewHTTPTransportWithProxyFunc creates a transport without any
+// handler attached using the specified proxy func.
+func NewHTTPTransportWithProxyFunc(
+	proxyFunc func(*http.Request) (*url.URL, error),
+) *HTTPTransport {
+	return newTransport(time.Now(), handlers.NoHandler, proxyFunc)
+}
+
+// NewHTTPTransport creates a new Transport. The beginning argument is
+// the time to use as zero for computing the elapsed time.
+func NewHTTPTransport(beginning time.Time, handler modelx.Handler) *HTTPTransport {
+	return newTransport(beginning, handler, http.ProxyFromEnvironment)
+}
+
+// RoundTrip executes a single HTTP transaction, returning
+// a Response for the provided Request.
+func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return t.transport.RoundTrip(req)
+}
+
+// CloseIdleConnections closes any connections which were previously connected
+// from previous requests but are now sitting idle in a "keep-alive" state. It
+// does not interrupt any connections currently in use.
+func (t *HTTPTransport) CloseIdleConnections() {
+	t.transport.CloseIdleConnections()
+}
+
+// ConfigureDNS is exactly like netx.Dialer.ConfigureDNS.
+func (t *HTTPTransport) ConfigureDNS(network, address string) error {
+	return t.dialer.ConfigureDNS(network, address)
+}
+
+// SetResolver is exactly like netx.Dialer.SetResolver.
+func (t *HTTPTransport) SetResolver(r modelx.DNSResolver) {
+	t.dialer.SetResolver(r)
+}
+
+// SetCABundle internally calls netx.Dialer.SetCABundle and
+// therefore it has the same caveats and limitations.
+func (t *HTTPTransport) SetCABundle(path string) error {
+	return t.dialer.SetCABundle(path)
+}
+
+// ForceSpecificSNI forces using a specific SNI.
+func (t *HTTPTransport) ForceSpecificSNI(sni string) error {
+	return t.dialer.ForceSpecificSNI(sni)
+}
+
+// ForceSkipVerify forces to skip certificate verification
+func (t *HTTPTransport) ForceSkipVerify() error {
+	return t.dialer.ForceSkipVerify()
+}
+
+// HTTPClient is a replacement for http.HTTPClient.
+type HTTPClient struct {
+	// HTTPClient is the underlying client. Pass this client to existing code
+	// that expects an *http.HTTPClient. For this reason we can't embed it.
+	HTTPClient *http.Client
+
+	// Transport is the transport configured by NewClient to be used
+	// by the HTTPClient field.
+	Transport *HTTPTransport
+}
+
+// NewHTTPClientWithProxyFunc creates a new client using the
+// specified proxyFunc for handling proxying.
+func NewHTTPClientWithProxyFunc(
+	handler modelx.Handler,
+	proxyFunc func(*http.Request) (*url.URL, error),
+) *HTTPClient {
+	transport := newTransport(time.Now(), handler, proxyFunc)
+	return &HTTPClient{
+		HTTPClient: &http.Client{
+			Transport: transport,
+		},
+		Transport: transport,
+	}
+}
+
+// NewHTTPClient creates a new client instance.
+func NewHTTPClient(handler modelx.Handler) *HTTPClient {
+	return NewHTTPClientWithProxyFunc(handler, http.ProxyFromEnvironment)
+}
+
+// NewHTTPClientWithoutProxy creates a client without any
+// configured proxy attached to it. This is suitable
+// for measurements where you don't want a proxy to be
+// in the middle and alter the measurements.
+func NewHTTPClientWithoutProxy(handler modelx.Handler) *HTTPClient {
+	return NewHTTPClientWithProxyFunc(handler, nil)
+}
+
+// ConfigureDNS internally calls netx.Dialer.ConfigureDNS and
+// therefore it has the same caveats and limitations.
+func (c *HTTPClient) ConfigureDNS(network, address string) error {
+	return c.Transport.ConfigureDNS(network, address)
+}
+
+// SetResolver internally calls netx.Dialer.SetResolver
+func (c *HTTPClient) SetResolver(r modelx.DNSResolver) {
+	c.Transport.SetResolver(r)
+}
+
+// SetCABundle internally calls netx.Dialer.SetCABundle and
+// therefore it has the same caveats and limitations.
+func (c *HTTPClient) SetCABundle(path string) error {
+	return c.Transport.SetCABundle(path)
+}
+
+// ForceSpecificSNI forces using a specific SNI.
+func (c *HTTPClient) ForceSpecificSNI(sni string) error {
+	return c.Transport.ForceSpecificSNI(sni)
+}
+
+// ForceSkipVerify forces to skip certificate verification
+func (c *HTTPClient) ForceSkipVerify() error {
+	return c.Transport.ForceSkipVerify()
 }
