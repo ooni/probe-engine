@@ -14,9 +14,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ooni/netx/modelx"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/tlsx"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // TCPConnectStatus contains the TCP connect status.

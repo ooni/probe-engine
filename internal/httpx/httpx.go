@@ -6,9 +6,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
-	"net"
 	"time"
 
 	"github.com/ooni/probe-engine/internal/httplog"

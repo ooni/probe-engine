@@ -12,13 +12,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/netx/modelx"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/session"
 )
 
