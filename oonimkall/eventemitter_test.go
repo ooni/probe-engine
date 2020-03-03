@@ -9,7 +9,7 @@ func TestUnitDisabledEvents(t *testing.T) {
 	out := make(chan *eventRecord)
 	emitter := newEventEmitter([]string{"log"}, out)
 	go func() {
-		emitter.Emit("log", eventValue{Message: "foo"})
+		emitter.Emit("log", eventLog{Message: "foo"})
 		close(out)
 	}()
 	var count int64
@@ -32,8 +32,11 @@ func TestUnitEmitFailureStartup(t *testing.T) {
 	}()
 	var found bool
 	for ev := range out {
-		if ev.Key == "failure.startup" && ev.Value.Failure == "mocked error" {
-			found = true
+		if ev.Key == "failure.startup" {
+			evv := ev.Value.(eventFailureGeneric) // panic if not castable
+			if evv.Failure == "mocked error" {
+				found = true
+			}
 		}
 	}
 	if !found {
@@ -50,8 +53,11 @@ func TestUnitEmitStatusProgress(t *testing.T) {
 	}()
 	var found bool
 	for ev := range out {
-		if ev.Key == "status.progress" && ev.Value.Message == "foo" && ev.Value.Percentage == 0.7 {
-			found = true
+		if ev.Key == "status.progress" {
+			evv := ev.Value.(eventStatusProgress) // panic if not castable
+			if evv.Message == "foo" && evv.Percentage == 0.7 {
+				found = true
+			}
 		}
 	}
 	if !found {
@@ -65,7 +71,7 @@ func TestUnitEmitNonblocking(t *testing.T) {
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 	go func() {
-		emitter.Emit("log", eventValue{Message: "foo"})
+		emitter.Emit("log", eventLog{Message: "foo"})
 		wg.Done()
 	}()
 	wg.Wait()

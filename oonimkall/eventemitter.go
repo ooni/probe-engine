@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-// TODO(bassosimone): event correctness wrt fields
-
 // eventEmitter emits event on a channel
 type eventEmitter struct {
 	disabled map[string]bool
@@ -26,21 +24,21 @@ func newEventEmitter(disabledEvents []string, out chan<- *eventRecord) *eventEmi
 
 // EmitFailureStartup emits the failureStartup event
 func (ee *eventEmitter) EmitFailureStartup(failure string) {
-	ee.EmitFailure(failureStartup, failure)
+	ee.EmitFailureGeneric(failureStartup, failure)
 }
 
 // EmitFailure emits a failure event
-func (ee *eventEmitter) EmitFailure(name, failure string) {
-	ee.Emit(name, eventValue{Failure: failure})
+func (ee *eventEmitter) EmitFailureGeneric(name, failure string) {
+	ee.Emit(name, eventFailureGeneric{Failure: failure})
 }
 
 // EmitStatusProgress emits the status.Progress event
 func (ee *eventEmitter) EmitStatusProgress(percentage float64, message string) {
-	ee.Emit(statusProgress, eventValue{Message: message, Percentage: percentage})
+	ee.Emit(statusProgress, eventStatusProgress{Message: message, Percentage: percentage})
 }
 
 // Emit emits the specified event
-func (ee *eventEmitter) Emit(key string, value eventValue) {
+func (ee *eventEmitter) Emit(key string, value interface{}) {
 	if ee.disabled[key] == true {
 		return
 	}

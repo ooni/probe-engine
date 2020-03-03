@@ -1,65 +1,54 @@
 package oonimkall
 
-// eventValue are all the possible value keys
-type eventValue struct {
-	// DownloadedKB is the amount of downloaded KiBs
-	DownloadedKB float64 `json:"downloaded_kb,omitempty"`
+type eventEmpty struct{}
 
-	// Failure is the failure that occurred
+type eventFailureGeneric struct {
+	Failure string `json:"failure"`
+}
+
+type eventLog struct {
+	LogLevel string `json:"log_level"`
+	Message  string `json:"message"`
+}
+
+type eventMeasurementGeneric struct {
 	Failure string `json:"failure,omitempty"`
-
-	// Idx is the measurement index
-	Idx int64 `json:"idx,omitempty"`
-
-	// Input is the input to which this event is related
-	Input string `json:"input,omitempty"`
-
-	// JSONStr is a serialized measurement
+	Idx     int64  `json:"idx"`
+	Input   string `json:"input"`
 	JSONStr string `json:"json_str,omitempty"`
+}
 
-	// LogLevel is the log level
-	LogLevel string `json:"log_level,omitempty"`
+type eventStatusEnd struct {
+	DownloadedKB float64 `json:"downloaded_kb"`
+	Failure      string  `json:"failure"`
+	UploadedKB   float64 `json:"uploaded_kb"`
+}
 
-	// Message is the log message
-	Message string `json:"message,omitempty"`
+type eventStatusGeoIPLookup struct {
+	ProbeASN         string `json:"probe_asn"`
+	ProbeCC          string `json:"probe_cc"`
+	ProbeIP          string `json:"probe_ip"`
+	ProbeNetworkName string `json:"probe_network_name"`
+}
 
-	// Percentage is the task progress
-	Percentage float64 `json:"percentage,omitempty"`
+type eventStatusProgress struct {
+	Message    string  `json:"message"`
+	Percentage float64 `json:"percentage"`
+}
 
-	// ProbeASN is the probe ASN
-	ProbeASN string `json:"probe_asn,omitempty"`
+type eventStatusReportGeneric struct {
+	ReportID string `json:"report_id"`
+}
 
-	// ProbeCC is the probe CC
-	ProbeCC string `json:"probe_cc,omitempty"`
-
-	// ProbeIP is the probe IP
-	ProbeIP string `json:"probe_ip,omitempty"`
-
-	// ProbeNetworkName is the probe network name
-	ProbeNetworkName string `json:"probe_network_name,omitempty"`
-
-	// ReportID is the report ID
-	ReportID string `json:"report_id,omitempty"`
-
-	// ResolverASN is the resolver ASN
-	ResolverASN string `json:"resolver_asn,omitempty"`
-
-	// ResolverIP is the resolver IP
-	ResolverIP string `json:"resolver_ip,omitempty"`
-
-	// ResolverNetworkName is the resolver network name
-	ResolverNetworkName string `json:"resolver_network_name,omitempty"`
-
-	// UploadedKB is the amount of uploaded KiBs
-	UploadedKB float64 `json:"uploaded_kb,omitempty"`
+type eventStatusResolverLookup struct {
+	ResolverASN         string `json:"resolver_asn"`
+	ResolverIP          string `json:"resolver_ip"`
+	ResolverNetworkName string `json:"resolver_network_name"`
 }
 
 // eventRecord is an event emitted by a task. This structure extends the event
 // described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
 type eventRecord struct {
-	// Is the key for the event
-	Key string `json:"key"`
-
-	// Contains the value for the event
-	Value eventValue `json:"value"`
+	Key   string      `json:"key"`
+	Value interface{} `json:"value"`
 }
