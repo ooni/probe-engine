@@ -15,7 +15,7 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
-	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"

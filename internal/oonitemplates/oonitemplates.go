@@ -30,7 +30,7 @@ import (
 )
 
 type channelHandler struct {
-	ch         chan<- modelx.Measurement
+	ch chan<- modelx.Measurement
 }
 
 func (h *channelHandler) OnMeasurement(m modelx.Measurement) {

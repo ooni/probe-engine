@@ -17,7 +17,7 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/httpx/httpx"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/pborman/getopt/v2"
 )
 

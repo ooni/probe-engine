@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ooni/probe-engine/httpx/netx"
+	"github.com/ooni/probe-engine/internal/netx"
 )
 
 func TestDialContext(t *testing.T) {
