@@ -8,11 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"net"
 	"time"
 
 	"github.com/ooni/probe-engine/internal/httplog"
 	"github.com/ooni/probe-engine/internal/httptracex"
-	"github.com/ooni/probe-engine/internal/netx"
 	"github.com/ooni/probe-engine/log"
 )
 
@@ -28,7 +28,7 @@ func NewTransport(
 		Proxy: proxy,
 		// We use a custom dialer that retries failed
 		// dialing attempts for extra robustness.
-		DialContext:     (&netx.RetryingDialer{}).DialContext,
+		DialContext:     (&net.Dialer{}).DialContext,
 		TLSClientConfig: tlsConfig,
 		// These are the same settings of Go stdlib.
 		MaxIdleConns:        100,
