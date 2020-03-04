@@ -21,7 +21,7 @@ func TestIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupBackends(ctx); err != nil {
@@ -53,7 +53,7 @@ func TestIntegrationFailure(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	experiment := example.NewExperiment(

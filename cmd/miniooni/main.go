@@ -2,7 +2,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -17,14 +16,12 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/pborman/getopt/v2"
 )
 
 type options struct {
 	annotations  []string
 	bouncerURL   string
-	caBundlePath string
 	collectorURL string
 	inputs       []string
 	extraOptions []string
@@ -53,10 +50,6 @@ func init() {
 	)
 	getopt.FlagLong(
 		&globalOptions.bouncerURL, "bouncer", 'b', "Set bouncer base URL", "URL",
-	)
-	getopt.FlagLong(
-		&globalOptions.caBundlePath, "ca-bundle-path", 0,
-		"Set CA bundle path", "PATH",
 	)
 	getopt.FlagLong(
 		&globalOptions.collectorURL, "collector", 'c',
@@ -112,14 +105,6 @@ func mustMakeMap(input []string) (output map[string]string) {
 		output[key] = value
 	}
 	return
-}
-
-func mustParseCA(caBundlePath string) *tls.Config {
-	config, err := httpx.NewTLSConfigWithCABundle(caBundlePath)
-	if err != nil {
-		log.WithError(err).Fatal("cannot load CA bundle")
-	}
-	return config
 }
 
 func mustParseURL(URL string) *url.URL {
@@ -201,10 +186,6 @@ func main() {
 	}
 	log.Debugf("miniooni temporary directory: %s", tempDir)
 
-	var tlsConfig *tls.Config
-	if globalOptions.caBundlePath != "" {
-		tlsConfig = mustParseCA(globalOptions.caBundlePath)
-	}
 	var proxyURL *url.URL
 	if globalOptions.proxy != "" {
 		proxyURL = mustParseURL(globalOptions.proxy)
@@ -224,7 +205,6 @@ func main() {
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
 		TempDir:         tempDir,
-		TLSConfig:       tlsConfig,
 	})
 	if err != nil {
 		log.WithError(err).Fatal("cannot create measurement session")

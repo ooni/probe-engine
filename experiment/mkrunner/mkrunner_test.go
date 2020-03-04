@@ -17,7 +17,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		measurementkit.Settings{},
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
-			"../../testdata", nil, nil, "../../testdata",
+			"../../testdata", nil, "../../testdata",
 			kvstore.NewMemoryKeyValueStore(),
 		),
 		&model.Measurement{},
@@ -34,7 +34,7 @@ func TestIntegrationFailure(t *testing.T) {
 		measurementkit.Settings{},
 		session.New(
 			apexlog.Log, "ooniprobe-engine", "0.1.0",
-			"../../testdata", nil, nil, "../../testdata",
+			"../../testdata", nil, "../../testdata",
 			kvstore.NewMemoryKeyValueStore(),
 		),
 		&model.Measurement{},

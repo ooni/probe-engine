@@ -211,7 +211,7 @@ func TestUnitMaybeURLToSNI(t *testing.T) {
 func newsession() *session.Session {
 	return session.New(
 		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, nil, "../../testdata",
+		"../../testdata", nil, "../../testdata",
 		kvstore.NewMemoryKeyValueStore(),
 	)
 }

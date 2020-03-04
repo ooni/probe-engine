@@ -25,7 +25,7 @@ func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", nil,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 
@@ -108,7 +108,7 @@ func TestIntegration(t *testing.T) {
 func TestIntegrationNewOrchestraClient(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", nil,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt, err := sess.NewOrchestraClient(ctx)
@@ -124,7 +124,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", nil,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt := orchestra.NewClient(
@@ -147,7 +147,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	ctx := context.Background()
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", nil,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	clnt := orchestra.NewClient(
@@ -188,7 +188,7 @@ func TestBouncerError(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", URL, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", URL,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 
@@ -205,7 +205,7 @@ func TestLookupLocationError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause operations to fail
 	sess := New(
-		log.Log, softwareName, softwareVersion, "../testdata", nil, nil,
+		log.Log, softwareName, softwareVersion, "../testdata", nil,
 		"../../testdata/", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupLocation(ctx); err == nil {

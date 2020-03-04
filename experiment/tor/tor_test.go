@@ -24,7 +24,7 @@ const (
 func TestUnitNewExperiment(t *testing.T) {
 	sess := session.New(
 		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, nil, "../../testdata",
+		"../../testdata", nil, "../../testdata",
 		kvstore.NewMemoryKeyValueStore(),
 	)
 	experiment := NewExperiment(sess, Config{})
@@ -102,7 +102,7 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 		"ooniprobe-engine",
 		"0.1.0-dev",
 		"../../testdata/",
-		nil, nil,
+		nil,
 		"../../testdata/",
 		kvstore.NewMemoryKeyValueStore(),
 	)

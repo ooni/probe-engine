@@ -23,7 +23,7 @@ const (
 func TestUnitNewExperiment(t *testing.T) {
 	sess := session.New(
 		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, nil, "../../testdata",
+		"../../testdata", nil, "../../testdata",
 		kvstore.NewMemoryKeyValueStore(),
 	)
 	experiment := NewExperiment(sess, Config{})

@@ -3,25 +3,27 @@ package session
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/m-lab/go/rtx"
 	"github.com/ooni/probe-engine/bouncer"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
-	"github.com/ooni/probe-engine/internal/httpx"
+	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // Session contains information on a measurement session.
@@ -68,11 +70,36 @@ type Session struct {
 	// TempDir is the directory where to store temporary files
 	TempDir string
 
-	// TLSConfig contains the TLS config
-	TLSConfig *tls.Config
-
 	// location is the probe location.
 	location *model.LocationInfo
+}
+
+func newHTTPClient(proxy *url.URL, logger log.Logger) *http.Client {
+	txp := netx.NewHTTPTransportWithProxyFunc(func(req *http.Request) (*url.URL, error) {
+		if proxy != nil {
+			return proxy, nil
+		}
+		return http.ProxyFromEnvironment(req)
+	})
+	return &http.Client{Transport: &loggingHTTPTransport{
+		beginning: time.Now(),
+		logger:    logger,
+		transport: txp,
+	}}
+}
+
+type loggingHTTPTransport struct {
+	beginning time.Time
+	logger    log.Logger
+	transport *netx.HTTPTransport
+}
+
+func (t *loggingHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.WithContext(modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
+		Beginning: t.beginning,
+		Handler:   netxlogger.NewHandler(t.logger),
+	}))
+	return t.transport.RoundTrip(req)
 }
 
 // New creates a new experiments session. The logger is the logger
@@ -95,33 +122,17 @@ type Session struct {
 // the latter case, we'll keep track of the fact that we've
 // an explicit proxy, and will do our best to avoid confusing
 // services like mlab-ns, that may be confused by a proxy.
-//
-// Regarding tlsConfig, passing nil will always be a good idea,
-// as in that case Go is more flexible in upgrading to http2, while
-// with a custom CA it will not use http2. Yet, there may also be
-// cases where a specific CA is still required. See the documention
-// of httpx.NewTransport for more information on this.
 func New(
 	logger log.Logger, softwareName, softwareVersion, assetsDir string,
-	proxy *url.URL, tlsConfig *tls.Config, tempDir string,
-	kvstore model.KeyValueStore,
+	proxy *url.URL, tempDir string, kvstore model.KeyValueStore,
 ) *Session {
 	return &Session{
-		AssetsDir:     assetsDir,
-		ExplicitProxy: proxy != nil,
-		HTTPDefaultClient: httpx.NewTracingProxyingClient(
-			logger, func(req *http.Request) (*url.URL, error) {
-				if proxy != nil {
-					return proxy, nil
-				}
-				return http.ProxyFromEnvironment(req)
-			}, tlsConfig,
-		),
-		HTTPNoProxyClient: httpx.NewTracingProxyingClient(
-			logger, nil, tlsConfig,
-		),
-		KVStore: kvstore,
-		Logger:  logger,
+		AssetsDir:         assetsDir,
+		ExplicitProxy:     proxy != nil,
+		HTTPDefaultClient: newHTTPClient(proxy, logger),
+		HTTPNoProxyClient: newHTTPClient(nil, logger),
+		KVStore:           kvstore,
+		Logger:            logger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
@@ -129,7 +140,6 @@ func New(
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
 		TempDir:         tempDir,
-		TLSConfig:       tlsConfig,
 	}
 }
 
