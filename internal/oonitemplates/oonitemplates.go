@@ -169,7 +169,7 @@ type dnsFallback struct {
 }
 
 func configureDNS(seed int64, network, address string) (modelx.DNSResolver, error) {
-	resolver, err := netx.NewResolver(handlers.NoHandler, network, address)
+	resolver, err := netx.NewResolver(network, address)
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +209,7 @@ func configureDNS(seed int64, network, address string) (modelx.DNSResolver, erro
 			continue
 		}
 		var fallback modelx.DNSResolver
-		fallback, err = netx.NewResolver(
-			handlers.NoHandler, fallbacks[i].network,
-			fallbacks[i].address,
-		)
+		fallback, err = netx.NewResolver(fallbacks[i].network, fallbacks[i].address)
 		rtx.PanicOnError(err, "porcelain: invalid fallbacks table")
 		resolver = netx.ChainResolvers(resolver, fallback)
 		configured++
@@ -255,11 +252,7 @@ func DNSLookup(
 		},
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	resolver, err := netx.NewResolver(
-		handlers.NoHandler,
-		config.ServerNetwork,
-		config.ServerAddress,
-	)
+	resolver, err := netx.NewResolver(config.ServerNetwork, config.ServerAddress)
 	if err != nil {
 		results.Error = err
 		return results
@@ -331,7 +324,7 @@ func HTTPDo(
 		MaxBodySnapSize: config.MaxEventsBodySnapSize,
 	}
 	ctx := modelx.WithMeasurementRoot(origCtx, root)
-	client := netx.NewHTTPClientWithProxyFunc(handlers.NoHandler, config.ProxyFunc)
+	client := netx.NewHTTPClientWithProxyFunc(config.ProxyFunc)
 	resolver, err := configureDNS(
 		time.Now().UnixNano(),
 		config.DNSServerNetwork,
@@ -422,7 +415,7 @@ func TLSConnect(
 		},
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	dialer := netx.NewDialer(handlers.NoHandler)
+	dialer := netx.NewDialer()
 	// TODO(bassosimone): tell dialer to use specific CA bundle?
 	resolver, err := configureDNS(
 		time.Now().UnixNano(),
@@ -485,7 +478,7 @@ func TCPConnect(
 		},
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	dialer := netx.NewDialer(handlers.NoHandler)
+	dialer := netx.NewDialer()
 	// TODO(bassosimone): tell dialer to use specific CA bundle?
 	resolver, err := configureDNS(
 		time.Now().UnixNano(),
@@ -553,7 +546,7 @@ func OBFS4Connect(
 		},
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	dialer := netx.NewDialer(handlers.NoHandler)
+	dialer := netx.NewDialer()
 	// TODO(bassosimone): tell dialer to use specific CA bundle?
 	resolver, err := configureDNS(
 		time.Now().UnixNano(),
