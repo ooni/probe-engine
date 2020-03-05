@@ -6,9 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 const testVersion = "0.0.1"
@@ -48,7 +46,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	var err error
 	if m.config.ReturnError {
@@ -66,6 +64,6 @@ func (m *measurer) Run(
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
-func NewExperimentMeasurer(config Config, testName string) model2.ExperimentMeasurer {
+func NewExperimentMeasurer(config Config, testName string) model.ExperimentMeasurer {
 	return &measurer{config: config, testName: testName}
 }

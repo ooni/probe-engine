@@ -6,11 +6,9 @@ package dash
 import (
 	"context"
 
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkrunner"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 const (
@@ -38,7 +36,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	settings := measurementkit.NewSettings(
 		"Dash", sess.SoftwareName(), sess.SoftwareVersion(),
@@ -51,6 +49,6 @@ func (m *measurer) Run(
 }
 
 // NewExperimentMeasurer creates a new experiment measurer
-func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &measurer{config: config}
 }

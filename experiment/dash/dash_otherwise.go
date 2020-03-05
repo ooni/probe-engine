@@ -16,9 +16,7 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/neubot/dash/client"
 	neubotModel "github.com/neubot/dash/model"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 const (
@@ -52,7 +50,7 @@ type dashClient interface {
 }
 
 type runner struct {
-	callbacks   handler.Callbacks
+	callbacks   model.ExperimentCallbacks
 	client      dashClient
 	jsonMarshal func(v interface{}) ([]byte, error)
 	logger      model.Logger
@@ -61,7 +59,7 @@ type runner struct {
 
 func newRunner(
 	logger model.Logger, client dashClient,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 	jsonMarshal func(v interface{}) ([]byte, error),
 ) *runner {
 	return &runner{
@@ -188,7 +186,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	client := client.New(sess.SoftwareName(), sess.SoftwareVersion())
 	r := newRunner(sess.Logger(), client, callbacks, json.Marshal)
@@ -200,6 +198,6 @@ func (m *measurer) Run(
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
-func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &measurer{config: config}
 }

@@ -17,13 +17,11 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 const (
@@ -55,7 +53,7 @@ type TestKeys struct {
 
 type runner struct {
 	beginning      time.Time
-	callbacks      handler.Callbacks
+	callbacks      model.ExperimentCallbacks
 	config         Config
 	ioutilReadFile func(filename string) ([]byte, error)
 	osMkdirAll     func(path string, perm os.FileMode) error
@@ -64,7 +62,7 @@ type runner struct {
 }
 
 func newRunner(
-	config Config, callbacks handler.Callbacks,
+	config Config, callbacks model.ExperimentCallbacks,
 	beginning time.Time,
 ) *runner {
 	return &runner{
@@ -190,7 +188,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) printprogress(
 	ctx context.Context, wg *sync.WaitGroup,
-	maxruntime int, callbacks handler.Callbacks,
+	maxruntime int, callbacks model.ExperimentCallbacks,
 ) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -211,7 +209,7 @@ func (m *measurer) printprogress(
 
 func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	clnt, err := sess.NewOrchestraClient(ctx)
 	if err != nil {
@@ -232,6 +230,6 @@ func (m *measurer) Run(
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
-func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &measurer{config: config}
 }

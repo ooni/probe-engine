@@ -4,7 +4,6 @@ package mkrunner
 import (
 	"errors"
 
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkevent"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
@@ -16,7 +15,7 @@ func Do(
 	settings measurementkit.Settings,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 	startEx func(
 		settings measurementkit.Settings, logger model.Logger,
 	) (<-chan measurementkit.Event, error),

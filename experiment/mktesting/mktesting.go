@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
-	"github.com/ooni/probe-engine/model2"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -18,7 +18,7 @@ const (
 )
 
 // Run runs the specified experiment.
-func Run(input string, factory func() model2.ExperimentMeasurer) error {
+func Run(input string, factory func() model.ExperimentMeasurer) error {
 	if !measurementkit.Available() {
 		return nil
 	}

@@ -14,13 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 const (
@@ -148,7 +146,7 @@ func (m *measurer) Run(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -224,7 +222,7 @@ func (m *measurer) Run(
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
-func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &measurer{config: config}
 }
 

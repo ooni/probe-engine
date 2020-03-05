@@ -11,7 +11,6 @@ import (
 	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -24,10 +23,10 @@ func formatTimeNowUTC() string {
 // Experiment is a network experiment.
 type Experiment struct {
 	// Callbacks handles experiment events.
-	Callbacks handler.Callbacks
+	Callbacks model.ExperimentCallbacks
 
 	// Measurer is the experiment's measurer.
-	Measurer model2.ExperimentMeasurer
+	Measurer model.ExperimentMeasurer
 
 	// Report is the report used by this experiment.
 	Report *collector.Report
@@ -50,7 +49,7 @@ type Experiment struct {
 // inside of the experiment package, e.g., `.../experiment/ndt7`.
 func New(
 	sess *session.Session, testName, testVersion string,
-	measurer model2.ExperimentMeasurer,
+	measurer model.ExperimentMeasurer,
 ) *Experiment {
 	return &Experiment{
 		Callbacks:     handler.NewPrinterCallbacks(sess.Logger()),

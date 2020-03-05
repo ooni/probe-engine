@@ -322,3 +322,29 @@ type ExperimentSession interface {
 	TempDir() string
 	UserAgent() string
 }
+
+// ExperimentCallbacks contains event handling callbacks
+type ExperimentCallbacks interface {
+	// OnDataUsage provides information about data usage.
+	OnDataUsage(dloadKiB, uploadKiB float64)
+
+	// OnProgress provides information about an experiment progress.
+	OnProgress(percentage float64, message string)
+}
+
+// ExperimentMeasurer is the interface that allows to run a
+// measurement for a specific experiment.
+type ExperimentMeasurer interface {
+	// ExperimentName returns the experiment name.
+	ExperimentName() string
+
+	// ExperimentVersion returns the experiment version.
+	ExperimentVersion() string
+
+	// Run runs the experiment with the specified context, session,
+	// measurement, and experiment calbacks.
+	Run(
+		ctx context.Context, sess ExperimentSession,
+		measurement *Measurement, callbacks ExperimentCallbacks,
+	) error
+}

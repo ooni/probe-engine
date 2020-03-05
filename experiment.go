@@ -26,12 +26,11 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/model2"
 )
 
 // Callbacks contains event handling callbacks
 //
-// This is a copy of experiment/handler.Callbacks. Go will make sure
+// This is a copy of experiment/model.ExperimentCallbacks. Go will make sure
 // the interface will match for us. This means we can have this set of
 // callbacks as part of the toplevel engine API.
 type Callbacks interface {
@@ -175,7 +174,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 	return builder, nil
 }
 
-func newExperiment(session *Session, measurer model2.ExperimentMeasurer) *experiment.Experiment {
+func newExperiment(session *Session, measurer model.ExperimentMeasurer) *experiment.Experiment {
 	return experiment.New(session.session, measurer.ExperimentName(),
 		measurer.ExperimentVersion(), measurer)
 }

@@ -13,7 +13,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -192,7 +191,7 @@ func (am *antaniMeasurer) ExperimentVersion() string {
 
 func (am *antaniMeasurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	return nil
 }

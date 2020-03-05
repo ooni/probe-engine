@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 )
@@ -15,7 +14,7 @@ func Handle(
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
 	event measurementkit.Event,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 ) {
 	if event.Key == "measurement" {
 		// We reparse the measurement and overwrite it. This is how we manage to
