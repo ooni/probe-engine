@@ -13,7 +13,7 @@ import (
 
 func TestNoHelpers(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var settings measurementkit.Settings
@@ -27,7 +27,7 @@ func TestNoHelpers(t *testing.T) {
 
 func TestNoSuitableHelper(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{
@@ -49,7 +49,7 @@ func TestNoSuitableHelper(t *testing.T) {
 
 func TestGoodHelper(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	sess.AvailableTestHelpers = map[string][]model.Service{

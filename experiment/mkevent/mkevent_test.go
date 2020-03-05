@@ -14,7 +14,7 @@ import (
 
 func TestIntegrationMeasurementSuccess(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
@@ -34,7 +34,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 		}
 	}()
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
@@ -49,7 +49,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 
 func TestIntegrationLog(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
@@ -79,7 +79,7 @@ func TestIntegrationLog(t *testing.T) {
 
 func TestIntegrationStatusProgress(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
@@ -95,7 +95,7 @@ func TestIntegrationStatusProgress(t *testing.T) {
 
 func TestIntegrationStatusEnd(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement
@@ -111,7 +111,7 @@ func TestIntegrationStatusEnd(t *testing.T) {
 
 func TestIntegrationOtherEvent(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	var m model.Measurement

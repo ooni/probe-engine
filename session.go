@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"net/url"
 
@@ -20,7 +19,6 @@ type SessionConfig struct {
 	ProxyURL        *url.URL
 	SoftwareName    string
 	SoftwareVersion string
-	TLSConfig       *tls.Config
 	TempDir         string
 }
 
@@ -55,7 +53,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.SoftwareVersion,
 		config.AssetsDir,
 		config.ProxyURL,
-		config.TLSConfig,
 		config.TempDir,
 		config.KVStore,
 	)

@@ -103,7 +103,7 @@ func TestOpenReportFailure(t *testing.T) {
 
 func TestMeasureLookupLocationFailure(t *testing.T) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	exp := experiment.New(
@@ -169,7 +169,7 @@ func TestSaveMeasurementErrors(t *testing.T) {
 
 func newExperiment(ctx context.Context) (*experiment.Experiment, error) {
 	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil, nil,
+		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupBackends(ctx); err != nil {

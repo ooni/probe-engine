@@ -71,9 +71,6 @@ func measure(
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
 	client := upstream.NewClient(sess.SoftwareName, sess.SoftwareVersion)
-	if sess.TLSConfig != nil {
-		client.Dialer.TLSClientConfig = sess.TLSConfig
-	}
 	FQDN, err := discover(ctx, sess)
 	if err != nil {
 		testkeys.Failure = err.Error()
