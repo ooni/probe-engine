@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/internal/fetch"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/urlpath"
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Config contains configs for fetching psiphon config
@@ -19,7 +19,7 @@ type Config struct {
 	Auth       *login.Auth
 	BaseURL    string
 	HTTPClient *http.Client
-	Logger     log.Logger
+	Logger     model.Logger
 	UserAgent  string
 }
 

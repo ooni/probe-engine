@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -20,7 +19,7 @@ type Config struct {
 	EnabledCategories []string
 	HTTPClient        *http.Client
 	Limit             int64
-	Logger            log.Logger
+	Logger            model.Logger
 	UserAgent         string
 }
 

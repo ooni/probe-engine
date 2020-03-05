@@ -18,7 +18,6 @@ import (
 	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -57,12 +56,12 @@ type runner struct {
 	callbacks   handler.Callbacks
 	client      dashClient
 	jsonMarshal func(v interface{}) ([]byte, error)
-	logger      log.Logger
+	logger      model.Logger
 	tk          *TestKeys
 }
 
 func newRunner(
-	logger log.Logger, client dashClient,
+	logger model.Logger, client dashClient,
 	callbacks handler.Callbacks,
 	jsonMarshal func(v interface{}) ([]byte, error),
 ) *runner {
@@ -144,7 +143,7 @@ func (tk *TestKeys) analyze() error {
 
 // printSummary just prints a debug-level summary. We cannot use the info
 // level because that is reserved for the OONI Probe CLI.
-func (tk *TestKeys) printSummary(logger log.Logger) {
+func (tk *TestKeys) printSummary(logger model.Logger) {
 	logger.Debugf("Test Summary: ")
 	logger.Debugf("Connect latency: %s",
 		// convert to nanoseconds

@@ -23,7 +23,6 @@ import (
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
 )
@@ -103,7 +102,7 @@ func (r *runner) starttunnel(
 }
 
 func (r *runner) usetunnel(
-	ctx context.Context, port int, logger log.Logger,
+	ctx context.Context, port int, logger model.Logger,
 ) error {
 	r.testkeys.Agent = "redirect"
 	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
@@ -149,7 +148,7 @@ func (r *runner) usetunnel(
 
 func (r *runner) run(
 	ctx context.Context,
-	logger log.Logger,
+	logger model.Logger,
 	fetchPsiphonConfig func(ctx context.Context) ([]byte, error),
 ) error {
 	configJSON, err := fetchPsiphonConfig(ctx)

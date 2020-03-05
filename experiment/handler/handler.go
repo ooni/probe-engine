@@ -2,7 +2,7 @@
 package handler
 
 import (
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Callbacks contains event handling callbacks
@@ -16,11 +16,11 @@ type Callbacks interface {
 
 // PrinterCallbacks is the default event handler
 type PrinterCallbacks struct {
-	log.Logger
+	model.Logger
 }
 
 // NewPrinterCallbacks returns a new default callback handler
-func NewPrinterCallbacks(logger log.Logger) PrinterCallbacks {
+func NewPrinterCallbacks(logger model.Logger) PrinterCallbacks {
 	return PrinterCallbacks{Logger: logger}
 }
 

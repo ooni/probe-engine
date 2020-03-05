@@ -7,14 +7,14 @@ import (
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Config contains configs for registering to OONI orchestra.
 type Config struct {
 	BaseURL    string
 	HTTPClient *http.Client
-	Logger     log.Logger
+	Logger     model.Logger
 	Metadata   metadata.Metadata
 	Password   string
 	UserAgent  string

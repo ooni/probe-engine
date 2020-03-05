@@ -6,7 +6,6 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkevent"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/session"
@@ -20,7 +19,7 @@ func Do(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 	startEx func(
-		settings measurementkit.Settings, logger log.Logger,
+		settings measurementkit.Settings, logger model.Logger,
 	) (<-chan measurementkit.Event, error),
 ) error {
 	out, err := startEx(settings, sess.Logger)
@@ -43,7 +42,7 @@ func Do(
 // DoNothingStartEx is a replacement for measurementkit.StartEx that
 // does nearly nothing apart emitting a fake measurement.
 func DoNothingStartEx(
-	settings measurementkit.Settings, logger log.Logger,
+	settings measurementkit.Settings, logger model.Logger,
 ) (<-chan measurementkit.Event, error) {
 	out := make(chan measurementkit.Event)
 	go func() {
@@ -61,7 +60,7 @@ func DoNothingStartEx(
 // FailingStartEx is a replacement for measurementkit.StartEx that
 // returns an error immediately.
 func FailingStartEx(
-	settings measurementkit.Settings, logger log.Logger,
+	settings measurementkit.Settings, logger model.Logger,
 ) (<-chan measurementkit.Event, error) {
 	return nil, errors.New("fail immediately")
 }

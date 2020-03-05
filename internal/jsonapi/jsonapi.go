@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for a JSON API.
@@ -27,7 +27,7 @@ type Client struct {
 	HTTPClient *http.Client
 
 	// Logger is the logger to use.
-	Logger log.Logger
+	Logger model.Logger
 
 	// UserAgent is the user agent to use.
 	UserAgent string

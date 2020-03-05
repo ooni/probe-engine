@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/ooni/probe-engine/internal/fetch"
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for fetching resources.
@@ -23,7 +23,7 @@ type Client struct {
 	HTTPClient *http.Client
 
 	// Logger is the logger to use.
-	Logger log.Logger
+	Logger model.Logger
 
 	// OSMkdirAll allows testing os.MkdirAll failures.
 	OSMkdirAll func(path string, perm os.FileMode) error

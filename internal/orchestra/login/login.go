@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Config contains configs for logging in with the OONI orchestra.
@@ -15,7 +15,7 @@ type Config struct {
 	BaseURL     string
 	Credentials Credentials
 	HTTPClient  *http.Client
-	Logger      log.Logger
+	Logger      model.Logger
 	UserAgent   string
 }
 

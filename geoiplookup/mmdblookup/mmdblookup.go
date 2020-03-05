@@ -4,7 +4,6 @@ package mmdblookup
 import (
 	"net"
 
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/oschwald/geoip2-golang"
 )
@@ -14,7 +13,7 @@ import (
 // the IP is not valid, this function will fail with an error
 // complaining that geoip2 was passed a nil IP.
 func LookupASN(
-	path, ip string, logger log.Logger,
+	path, ip string, logger model.Logger,
 ) (asn uint, org string, err error) {
 	asn, org = model.DefaultProbeASN, model.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
@@ -36,7 +35,7 @@ func LookupASN(
 
 // LookupCC is like LookupASN but for the country code.
 func LookupCC(
-	path, ip string, logger log.Logger,
+	path, ip string, logger model.Logger,
 ) (cc string, err error) {
 	cc = model.DefaultProbeCC
 	db, err := geoip2.Open(path)

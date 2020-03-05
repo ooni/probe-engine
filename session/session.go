@@ -20,7 +20,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/resources"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -55,7 +54,7 @@ type Session struct {
 	KVStore model.KeyValueStore
 
 	// Logger is the log emitter.
-	Logger log.Logger
+	Logger model.Logger
 
 	// PrivacySettings contains the collector privacy settings. The default
 	// is to only redact the user's IP address from results.
@@ -74,7 +73,7 @@ type Session struct {
 	location *model.LocationInfo
 }
 
-func newHTTPClient(proxy *url.URL, logger log.Logger) *http.Client {
+func newHTTPClient(proxy *url.URL, logger model.Logger) *http.Client {
 	txp := netx.NewHTTPTransportWithProxyFunc(func(req *http.Request) (*url.URL, error) {
 		if proxy != nil {
 			return proxy, nil
@@ -90,7 +89,7 @@ func newHTTPClient(proxy *url.URL, logger log.Logger) *http.Client {
 
 type loggingHTTPTransport struct {
 	beginning time.Time
-	logger    log.Logger
+	logger    model.Logger
 	transport *netx.HTTPTransport
 }
 
@@ -123,7 +122,7 @@ func (t *loggingHTTPTransport) RoundTrip(req *http.Request) (*http.Response, err
 // an explicit proxy, and will do our best to avoid confusing
 // services like mlab-ns, that may be confused by a proxy.
 func New(
-	logger log.Logger, softwareName, softwareVersion, assetsDir string,
+	logger model.Logger, softwareName, softwareVersion, assetsDir string,
 	proxy *url.URL, tempDir string, kvstore model.KeyValueStore,
 ) *Session {
 	return &Session{
