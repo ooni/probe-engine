@@ -1,15 +1,14 @@
-// +build cgo
-
-package dash_test
+// Package mktesting contains common code to run MK based tests.
+package mktesting
 
 import (
 	"context"
-	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/dash"
+	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/measurementkit"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -18,9 +17,10 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestIntegration(t *testing.T) {
+// Run runs the specified experiment.
+func Run(input string, factory func() model2.ExperimentMeasurer) error {
 	if !measurementkit.Available() {
-		t.Skip("Measurement Kit not available; skipping")
+		return nil
 	}
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
@@ -30,23 +30,28 @@ func TestIntegration(t *testing.T) {
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
 	if err := sess.MaybeLookupBackends(ctx); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	if err := sess.MaybeLookupLocation(ctx); err != nil {
-		t.Fatal(err)
+		return err
 	}
 
-	experiment := dash.NewExperiment(sess, dash.Config{})
+	measurer := factory()
+	experiment := experiment.New(
+		sess, measurer.ExperimentName(),
+		measurer.ExperimentVersion(), measurer,
+	)
 	if err := experiment.OpenReport(ctx); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	defer experiment.CloseReport(ctx)
 
-	measurement, err := experiment.Measure(ctx, "")
+	measurement, err := experiment.Measure(ctx, input)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
 	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
-		t.Fatal(err)
+		return err
 	}
+	return nil
 }

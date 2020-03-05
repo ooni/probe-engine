@@ -24,15 +24,13 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, makeconfig())
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "psiphon" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.3.2" {
+		t.Fatal("unexpected version")
 	}
 }
 
@@ -40,7 +38,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	m := &measurer{config: makeconfig()}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
-	err := m.measure(
+	err := m.Run(
 		ctx, newsession(),
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -154,7 +152,7 @@ func newclient() (*orchestra.Client, error) {
 
 func TestIntegration(t *testing.T) {
 	m := &measurer{config: makeconfig()}
-	if err := m.measure(
+	if err := m.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),

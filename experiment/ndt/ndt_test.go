@@ -1,50 +1,18 @@
 package ndt_test
 
 import (
-	"context"
 	"testing"
 
-	"github.com/apex/log"
+	"github.com/ooni/probe-engine/experiment/mktesting"
 	"github.com/ooni/probe-engine/experiment/ndt"
-	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/measurementkit"
-	"github.com/ooni/probe-engine/session"
-)
-
-const (
-	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
+	"github.com/ooni/probe-engine/model2"
 )
 
 func TestIntegration(t *testing.T) {
-	if !measurementkit.Available() {
-		t.Skip("Measurement Kit not available; skipping")
-	}
-	log.SetLevel(log.DebugLevel)
-	ctx := context.Background()
-
-	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	if err := sess.MaybeLookupBackends(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.MaybeLookupLocation(ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	experiment := ndt.NewExperiment(sess, ndt.Config{})
-	if err := experiment.OpenReport(ctx); err != nil {
-		t.Fatal(err)
-	}
-	defer experiment.CloseReport(ctx)
-
-	measurement, err := experiment.Measure(ctx, "")
+	err := mktesting.Run("", func() model2.ExperimentMeasurer {
+		return ndt.NewExperimentMeasurer(ndt.Config{})
+	})
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }

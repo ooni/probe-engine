@@ -21,15 +21,13 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "tor" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.1.0" {
+		t.Fatal("unexpected version")
 	}
 }
 
@@ -39,7 +37,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
 		return nil, expected
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		&session.Session{
 			Logger: log.Log,
@@ -61,7 +59,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
 		return nil, expected
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		&session.Session{
 			Logger: log.Log,
@@ -82,7 +80,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		&session.Session{
 			Logger: log.Log,
@@ -106,7 +104,7 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 		"../../testdata/",
 		kvstore.NewMemoryKeyValueStore(),
 	)
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		sess,
 		new(model.Measurement),

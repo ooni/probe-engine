@@ -11,6 +11,7 @@ import (
 	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -20,19 +21,13 @@ func formatTimeNowUTC() string {
 	return time.Now().UTC().Format(dateFormat)
 }
 
-// MeasureFunc is the function that performs a measurement.
-type MeasureFunc func(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks,
-) error
-
 // Experiment is a network experiment.
 type Experiment struct {
-	// DoMeasure fills a measurement.
-	DoMeasure MeasureFunc
-
 	// Callbacks handles experiment events.
 	Callbacks handler.Callbacks
+
+	// Measurer is the experiment's measurer.
+	Measurer model2.ExperimentMeasurer
 
 	// Report is the report used by this experiment.
 	Report *collector.Report
@@ -54,11 +49,12 @@ type Experiment struct {
 // rather you should do <package>.NewExperiment where <package> is a subpackage
 // inside of the experiment package, e.g., `.../experiment/ndt7`.
 func New(
-	sess *session.Session, testName, testVersion string, measure MeasureFunc,
+	sess *session.Session, testName, testVersion string,
+	measurer model2.ExperimentMeasurer,
 ) *Experiment {
 	return &Experiment{
-		DoMeasure:     measure,
 		Callbacks:     handler.NewPrinterCallbacks(sess.Logger),
+		Measurer:      measurer,
 		Session:       sess,
 		TestName:      testName,
 		TestStartTime: formatTimeNowUTC(),
@@ -152,7 +148,7 @@ func (e *Experiment) Measure(
 	}
 	measurement = e.newMeasurement(input)
 	start := time.Now()
-	err = e.DoMeasure(ctx, e.Session, &measurement, e.Callbacks)
+	err = e.Measurer.Run(ctx, e.Session, &measurement, e.Callbacks)
 	stop := time.Now()
 	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
 	scrubErr := e.Session.PrivacySettings.Apply(

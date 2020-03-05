@@ -12,12 +12,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/session"
 )
@@ -61,8 +61,12 @@ type measurer struct {
 	config Config
 }
 
-func newMeasurer(config Config) *measurer {
-	return &measurer{config: config}
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
 }
 
 func measureone(
@@ -177,7 +181,7 @@ func maybeURLToSNI(input string) (string, error) {
 	return parsed.Hostname(), nil
 }
 
-func (m *measurer) measure(
+func (m *measurer) Run(
 	ctx context.Context,
 	sess *session.Session,
 	measurement *model.Measurement,
@@ -209,12 +213,9 @@ func (m *measurer) measure(
 	return nil
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion,
-		newMeasurer(config).measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+	return &measurer{config: config}
 }
 
 func asString(failure *string) (result string) {

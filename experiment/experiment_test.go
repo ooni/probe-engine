@@ -106,16 +106,11 @@ func TestMeasureLookupLocationFailure(t *testing.T) {
 		log.Log, "ooniprobe-engine", "0.1.0", "../testdata", nil,
 		"../../testdata", kvstore.NewMemoryKeyValueStore(),
 	)
+	measurer := new(antaniMeasurer)
 	exp := experiment.New(
-		sess, "antani", "0.1.1",
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return nil
-		})
+		sess, measurer.ExperimentName(),
+		measurer.ExperimentVersion(), measurer,
+	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	if _, err := exp.Measure(ctx, "xx"); err == nil {
@@ -178,14 +173,26 @@ func newExperiment(ctx context.Context) (*experiment.Experiment, error) {
 	if err := sess.MaybeLookupLocation(ctx); err != nil {
 		return nil, err
 	}
+	measurer := new(antaniMeasurer)
 	return experiment.New(
-		sess, "antani", "0.1.1",
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return nil
-		}), nil
+		sess, measurer.ExperimentName(),
+		measurer.ExperimentVersion(), measurer,
+	), nil
+}
+
+type antaniMeasurer struct{}
+
+func (am *antaniMeasurer) ExperimentName() string {
+	return "antani"
+}
+
+func (am *antaniMeasurer) ExperimentVersion() string {
+	return "0.1.1"
+}
+
+func (am *antaniMeasurer) Run(
+	ctx context.Context, sess *session.Session,
+	measurement *model.Measurement, callbacks handler.Callbacks,
+) error {
+	return nil
 }

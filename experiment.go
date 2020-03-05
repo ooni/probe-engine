@@ -26,6 +26,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 )
 
 // Callbacks contains event handling callbacks
@@ -174,6 +175,11 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 	return builder, nil
 }
 
+func newExperiment(session *Session, measurer model2.ExperimentMeasurer) *experiment.Experiment {
+	return experiment.New(session.session, measurer.ExperimentName(),
+		measurer.ExperimentVersion(), measurer)
+}
+
 // Experiment is an experiment instance.
 type Experiment struct {
 	experiment *experiment.Experiment
@@ -290,7 +296,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"dash": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return dash.NewExperiment(session.session, *config.(*dash.Config))
+				return newExperiment(session, dash.NewExperimentMeasurer(
+					*config.(*dash.Config),
+				))
 			},
 			config:     &dash.Config{},
 			needsInput: false,
@@ -300,10 +308,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example",
-				)
+				return newExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example",
+				))
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
@@ -316,10 +323,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example_with_input": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example_with_input",
-				)
+				return newExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_input",
+				))
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
@@ -332,10 +338,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"example_with_failure": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example_with_failure",
-				)
+				return newExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_failure",
+				))
 			},
 			config: &example.Config{
 				Message:     "Good day from the example with failure experiment!",
@@ -349,9 +354,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"facebook_messenger": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return fbmessenger.NewExperiment(
-					session.session, *config.(*fbmessenger.Config),
-				)
+				return newExperiment(session, fbmessenger.NewExperimentMeasurer(
+					*config.(*fbmessenger.Config),
+				))
 			},
 			config:     &fbmessenger.Config{},
 			needsInput: false,
@@ -361,7 +366,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"http_header_field_manipulation": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return hhfm.NewExperiment(session.session, *config.(*hhfm.Config))
+				return newExperiment(session, hhfm.NewExperimentMeasurer(
+					*config.(*hhfm.Config),
+				))
 			},
 			config:     &hhfm.Config{},
 			needsInput: false,
@@ -371,7 +378,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"http_invalid_request_line": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return hirl.NewExperiment(session.session, *config.(*hirl.Config))
+				return newExperiment(session, hirl.NewExperimentMeasurer(
+					*config.(*hirl.Config),
+				))
 			},
 			config:     &hirl.Config{},
 			needsInput: false,
@@ -381,7 +390,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"ndt": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return ndt.NewExperiment(session.session, *config.(*ndt.Config))
+				return newExperiment(session, ndt.NewExperimentMeasurer(
+					*config.(*ndt.Config),
+				))
 			},
 			config:     &ndt.Config{},
 			needsInput: false,
@@ -391,7 +402,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"ndt7": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return ndt7.NewExperiment(session.session, *config.(*ndt7.Config))
+				return newExperiment(session, ndt7.NewExperimentMeasurer(
+					*config.(*ndt7.Config),
+				))
 			},
 			config:     &ndt7.Config{},
 			needsInput: false,
@@ -401,7 +414,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"psiphon": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return psiphon.NewExperiment(session.session, *config.(*psiphon.Config))
+				return newExperiment(session, psiphon.NewExperimentMeasurer(
+					*config.(*psiphon.Config),
+				))
 			},
 			config: &psiphon.Config{
 				WorkDir: session.session.TempDir,
@@ -413,7 +428,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"sni_blocking": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return sniblocking.NewExperiment(session.session, *config.(*sniblocking.Config))
+				return newExperiment(session, sniblocking.NewExperimentMeasurer(
+					*config.(*sniblocking.Config),
+				))
 			},
 			config: &sniblocking.Config{
 				ControlSNI: "ps.ooni.io",
@@ -425,7 +442,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"telegram": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return telegram.NewExperiment(session.session, *config.(*telegram.Config))
+				return newExperiment(session, telegram.NewExperimentMeasurer(
+					*config.(*telegram.Config),
+				))
 			},
 			config:     &telegram.Config{},
 			needsInput: false,
@@ -435,7 +454,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"tor": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return tor.NewExperiment(session.session, *config.(*tor.Config))
+				return newExperiment(session, tor.NewExperimentMeasurer(
+					*config.(*tor.Config),
+				))
 			},
 			config:     &tor.Config{},
 			needsInput: false,
@@ -445,9 +466,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"web_connectivity": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return web_connectivity.NewExperiment(
-					session.session, *config.(*web_connectivity.Config),
-				)
+				return newExperiment(session, web_connectivity.NewExperimentMeasurer(
+					*config.(*web_connectivity.Config),
+				))
 			},
 			config:     &web_connectivity.Config{},
 			needsInput: true,
@@ -457,9 +478,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"whatsapp": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *experiment.Experiment {
-				return whatsapp.NewExperiment(
-					session.session, *config.(*whatsapp.Config),
-				)
+				return newExperiment(session, whatsapp.NewExperimentMeasurer(
+					*config.(*whatsapp.Config),
+				))
 			},
 			config:     &whatsapp.Config{},
 			needsInput: false,

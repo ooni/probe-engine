@@ -18,16 +18,19 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	experiment := NewExperiment(newsession(), Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "sni_blocking" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.0.1" {
+		t.Fatal("unexpected version")
 	}
 }
 
 func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
-	measurer := newMeasurer(Config{})
-	err := measurer.measure(
+	measurer := NewExperimentMeasurer(Config{})
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
@@ -39,10 +42,10 @@ func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
@@ -56,13 +59,13 @@ func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
 	measurement := &model.Measurement{
 		Input: "\t",
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		ctx,
 		newsession(),
 		measurement,
@@ -76,13 +79,13 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
 	measurement := &model.Measurement{
 		Input: "kernel.org",
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		ctx,
 		newsession(),
 		measurement,

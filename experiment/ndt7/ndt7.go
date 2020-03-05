@@ -14,9 +14,9 @@ import (
 	"github.com/m-lab/ndt7-client-go/mlabns"
 	"github.com/m-lab/ndt7-client-go/spec"
 
-	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -63,9 +63,21 @@ func discover(ctx context.Context, sess *session.Session) (string, error) {
 	return client.Query(ctx)
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks,
+type measurer struct {
+	config Config
+}
+
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
+	ctx context.Context, sess *session.Session,
+	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	const maxRuntime = 15.0 // second (conservative)
 	testkeys := &TestKeys{}
@@ -133,9 +145,7 @@ func measure(
 	return nil
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion, measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+	return &measurer{config: config}
 }

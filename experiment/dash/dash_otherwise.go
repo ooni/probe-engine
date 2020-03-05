@@ -1,4 +1,4 @@
-// +build !cgo
+// +build nomk
 
 // Package dash contains the dash network experiment. This file
 // in particular is a pure-Go implementation of this test.
@@ -16,9 +16,9 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/neubot/dash/client"
 	neubotModel "github.com/neubot/dash/model"
-	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -179,7 +179,15 @@ type measurer struct {
 	config Config
 }
 
-func (m *measurer) measure(
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
 	ctx context.Context, sess *session.Session,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
@@ -192,10 +200,7 @@ func (m *measurer) measure(
 	return r.do(ctx)
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	m := &measurer{config: config}
-	return experiment.New(sess, testName, testVersion, m.measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+	return &measurer{config: config}
 }

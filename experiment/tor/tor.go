@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
@@ -19,6 +18,7 @@ import (
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/session"
 )
 
@@ -143,7 +143,15 @@ func newMeasurer(config Config) *measurer {
 	}
 }
 
-func (m *measurer) measure(
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
 	ctx context.Context,
 	sess *session.Session,
 	measurement *model.Measurement,
@@ -317,12 +325,9 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 	return
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion,
-		newMeasurer(config).measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model2.ExperimentMeasurer {
+	return newMeasurer(config)
 }
 
 func errString(err error) (s string) {
