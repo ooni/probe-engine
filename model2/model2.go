@@ -8,7 +8,6 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 // ExperimentMeasurer is the interface that allows to run a
@@ -26,7 +25,7 @@ type ExperimentMeasurer interface {
 	// Run runs the experiment with the specified context, session,
 	// measurement, and experiment calbacks.
 	Run(
-		ctx context.Context, sess *session.Session,
+		ctx context.Context, sess model.ExperimentSession,
 		measurement *model.Measurement, callbacks handler.Callbacks,
 	) error
 }

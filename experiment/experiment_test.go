@@ -191,7 +191,7 @@ func (am *antaniMeasurer) ExperimentVersion() string {
 }
 
 func (am *antaniMeasurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	return nil

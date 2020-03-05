@@ -24,7 +24,6 @@ import (
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -211,7 +210,7 @@ func (m *measurer) printprogress(
 }
 
 func (m *measurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	clnt, err := sess.NewOrchestraClient(ctx)
@@ -226,7 +225,7 @@ func (m *measurer) Run(
 	r := newRunner(m.config, callbacks, measurement.MeasurementStartTimeSaved)
 	measurement.TestKeys = r.testkeys
 	r.testkeys.MaxRuntime = maxruntime
-	err = r.run(ctx, sess.Logger, clnt.FetchPsiphonConfig)
+	err = r.run(ctx, sess.Logger(), clnt.FetchPsiphonConfig)
 	cancel()
 	wg.Wait()
 	return err

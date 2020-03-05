@@ -12,8 +12,8 @@ import (
 	"github.com/montanaflynn/stats"
 	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 func TestUnitNewExperimentMeasurer(t *testing.T) {
@@ -32,8 +32,8 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	m := &measurer{}
 	err := m.Run(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(log.Log),

@@ -21,7 +21,6 @@ import (
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -147,7 +146,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) Run(
 	ctx context.Context,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {
@@ -197,7 +196,7 @@ func (m *measurer) Run(
 				Accept:         httpheader.RandomAccept(),
 				AcceptLanguage: httpheader.RandomAcceptLanguage(),
 				Beginning:      measurement.MeasurementStartTimeSaved,
-				Handler:        netxlogger.NewHandler(sess.Logger),
+				Handler:        netxlogger.NewHandler(sess.Logger()),
 				Method:         entry.method,
 				URL:            key,
 				UserAgent:      httpheader.RandomUserAgent(),

@@ -129,7 +129,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	)
 	clnt := orchestra.NewClient(
 		sess.HTTPDefaultClient,
-		sess.Logger,
+		sess.Logger(),
 		sess.UserAgent(),
 		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)
@@ -152,7 +152,7 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	)
 	clnt := orchestra.NewClient(
 		sess.HTTPDefaultClient,
-		sess.Logger,
+		sess.Logger(),
 		sess.UserAgent(),
 		statefile.New(kvstore.NewMemoryKeyValueStore()),
 	)

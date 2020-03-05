@@ -57,7 +57,7 @@ func (sess *Session) QueryTestListsURLs(
 		EnabledCategories: conf.Categories,
 		HTTPClient:        sess.session.HTTPDefaultClient,
 		Limit:             conf.Limit,
-		Logger:            sess.session.Logger,
+		Logger:            sess.session.Logger(),
 		UserAgent:         sess.session.UserAgent(),
 	})
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -38,11 +37,11 @@ func (m *measurer) ExperimentVersion() string {
 }
 
 func (m *measurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	settings := measurementkit.NewSettings(
-		"WebConnectivity", sess.SoftwareName, sess.SoftwareVersion,
+		"WebConnectivity", sess.SoftwareName(), sess.SoftwareVersion(),
 		sess.CABundlePath(), sess.ProbeASNString(), sess.ProbeCC(),
 		sess.ProbeIP(), sess.ProbeNetworkName(), m.config.LogLevel,
 	)

@@ -3,10 +3,12 @@ package model
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -293,4 +295,30 @@ type Logger interface {
 
 	// Warnf formats and emits a warning message.
 	Warnf(format string, v ...interface{})
+}
+
+// ExperimentOrchestraClient is the experiment's view of
+// a client for querying the OONI orchestra.
+type ExperimentOrchestraClient interface {
+	FetchPsiphonConfig(ctx context.Context) ([]byte, error)
+	FetchTorTargets(ctx context.Context) (map[string]TorTarget, error)
+}
+
+// ExperimentSession is the experiment's view of a session.
+type ExperimentSession interface {
+	ASNDatabasePath() string
+	CABundlePath() string
+	ExplicitProxy() bool
+	GetTestHelpersByName(name string) ([]Service, bool)
+	DefaultHTTPClient() *http.Client
+	Logger() Logger
+	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
+	ProbeASNString() string
+	ProbeCC() string
+	ProbeIP() string
+	ProbeNetworkName() string
+	SoftwareName() string
+	SoftwareVersion() string
+	TempDir() string
+	UserAgent() string
 }

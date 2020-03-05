@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -117,13 +116,13 @@ func measureone(
 }
 
 func (m *measurer) startall(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, inputs []string,
 ) <-chan Subresult {
 	outputs := make(chan Subresult, len(inputs))
 	for _, input := range inputs {
 		go measureone(
-			ctx, outputs, netxlogger.NewHandler(sess.Logger),
+			ctx, outputs, netxlogger.NewHandler(sess.Logger()),
 			measurement.MeasurementStartTimeSaved,
 			input, m.config.TestHelperAddress,
 		)
@@ -136,7 +135,7 @@ func processall(
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 	inputs []string,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	controlSNI string,
 ) *TestKeys {
 	var (
@@ -156,7 +155,7 @@ func processall(
 		sentBytes += smk.BytesSent
 		receivedBytes += smk.BytesReceived
 		current++
-		sess.Logger.Infof("sni_blocking: %s: %s", smk.SNI, asString(smk.Failure))
+		sess.Logger().Infof("sni_blocking: %s: %s", smk.SNI, asString(smk.Failure))
 		if current >= len(inputs) {
 			break
 		}
@@ -183,7 +182,7 @@ func maybeURLToSNI(input string) (string, error) {
 
 func (m *measurer) Run(
 	ctx context.Context,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 ) error {

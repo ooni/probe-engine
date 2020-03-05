@@ -9,7 +9,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const testVersion = "0.0.1"
@@ -48,7 +47,7 @@ func (m *measurer) ExperimentVersion() string {
 }
 
 func (m *measurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	var err error
@@ -60,7 +59,7 @@ func (m *measurer) Run(
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.config.SleepTime))
 	defer cancel()
 	<-ctx.Done()
-	sess.Logger.Warnf("example: remember to drink: %s", "water is key to survival")
+	sess.Logger().Warnf("example: remember to drink: %s", "water is key to survival")
 	callbacks.OnProgress(1.0, m.config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err

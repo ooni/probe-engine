@@ -8,12 +8,11 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 // Handle handles a measurementkit event
 func Handle(
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
 	event measurementkit.Event,
 	callbacks handler.Callbacks,
@@ -32,11 +31,11 @@ func Handle(
 	}
 	if event.Key == "log" {
 		if strings.HasPrefix(event.Value.LogLevel, "DEBUG") {
-			sess.Logger.Debug(event.Value.Message)
+			sess.Logger().Debug(event.Value.Message)
 		} else if event.Value.LogLevel == "INFO" {
-			sess.Logger.Info(event.Value.Message)
+			sess.Logger().Info(event.Value.Message)
 		} else {
-			sess.Logger.Warn(event.Value.Message)
+			sess.Logger().Warn(event.Value.Message)
 		}
 		return
 	}
@@ -73,5 +72,5 @@ func Handle(
 			return // We perform the lookup before calling MK
 		}
 	*/
-	sess.Logger.Debugf("mkevent: %s %+v", event.Key, event.Value)
+	sess.Logger().Debugf("mkevent: %s %+v", event.Key, event.Value)
 }

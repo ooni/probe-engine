@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -188,11 +187,11 @@ func (m *measurer) ExperimentVersion() string {
 }
 
 func (m *measurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
-	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
-	r := newRunner(sess.Logger, client, callbacks, json.Marshal)
+	client := client.New(sess.SoftwareName(), sess.SoftwareVersion())
+	r := newRunner(sess.Logger(), client, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()

@@ -171,7 +171,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 		return nil, fmt.Errorf("no such experiment: %s", name)
 	}
 	builder := factory(session)
-	builder.callbacks = handler.NewPrinterCallbacks(session.session.Logger)
+	builder.callbacks = handler.NewPrinterCallbacks(session.session.Logger())
 	return builder, nil
 }
 
@@ -419,7 +419,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config: &psiphon.Config{
-				WorkDir: session.session.TempDir,
+				WorkDir: session.session.TempDir(),
 			},
 			needsInput: false,
 		}

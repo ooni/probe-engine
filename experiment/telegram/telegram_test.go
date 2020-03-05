@@ -8,10 +8,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -35,8 +35,8 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	cancel()
 	err := m.Run(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -53,8 +53,8 @@ func TestIntegrationMeasure(t *testing.T) {
 	m := new(measurer)
 	err := m.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),

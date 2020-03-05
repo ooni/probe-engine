@@ -39,11 +39,6 @@ type Session struct {
 	// AvailableTestHelpers contains the available test helpers.
 	AvailableTestHelpers map[string][]model.Service
 
-	// ExplicitProxy indicates that the user has explicitly
-	// configured a proxy and wants us to know that. For more
-	// info, see the documentation of New.
-	ExplicitProxy bool
-
 	// HTTPDefaultClient is the default HTTP client to use.
 	HTTPDefaultClient *http.Client
 
@@ -53,24 +48,29 @@ type Session struct {
 	// KVStore is a key-value store used by this session.
 	KVStore model.KeyValueStore
 
-	// Logger is the log emitter.
-	Logger model.Logger
-
 	// PrivacySettings contains the collector privacy settings. The default
 	// is to only redact the user's IP address from results.
 	PrivacySettings model.PrivacySettings
 
-	// SoftwareName contains the software name.
-	SoftwareName string
-
-	// SoftwareVersion contains the software version.
-	SoftwareVersion string
-
-	// TempDir is the directory where to store temporary files
-	TempDir string
+	// explicitProxy indicates that the user has explicitly
+	// configured a proxy and wants us to know that. For more
+	// info, see the documentation of New.
+	explicitProxy bool
 
 	// location is the probe location.
 	location *model.LocationInfo
+
+	// logger is the log emitter.
+	logger model.Logger
+
+	// softwareName contains the software name.
+	softwareName string
+
+	// softwareVersion contains the software version.
+	softwareVersion string
+
+	// tempDir is the directory where to store temporary files
+	tempDir string
 }
 
 func newHTTPClient(proxy *url.URL, logger model.Logger) *http.Client {
@@ -127,18 +127,18 @@ func New(
 ) *Session {
 	return &Session{
 		AssetsDir:         assetsDir,
-		ExplicitProxy:     proxy != nil,
 		HTTPDefaultClient: newHTTPClient(proxy, logger),
 		HTTPNoProxyClient: newHTTPClient(nil, logger),
 		KVStore:           kvstore,
-		Logger:            logger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
 		},
-		SoftwareName:    softwareName,
-		SoftwareVersion: softwareVersion,
-		TempDir:         tempDir,
+		explicitProxy:   proxy != nil,
+		logger:          logger,
+		softwareName:    softwareName,
+		softwareVersion: softwareVersion,
+		tempDir:         tempDir,
 	}
 }
 
@@ -156,6 +156,29 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 		Address: baseURL,
 		Type:    "https",
 	})
+}
+
+// ExplicitProxy returns true if the user has explicitly set
+// a proxy (as opposed to using the HTTP_PROXY envvar).
+func (s *Session) ExplicitProxy() bool {
+	return s.explicitProxy
+}
+
+// GetTestHelpersByName returns the available test helpers that
+// use the specified name, or false if there's none.
+func (s *Session) GetTestHelpersByName(name string) ([]model.Service, bool) {
+	services, ok := s.AvailableTestHelpers[name]
+	return services, ok
+}
+
+// DefaultHTTPClient returns the session's default HTTP client.
+func (s *Session) DefaultHTTPClient() *http.Client {
+	return s.HTTPDefaultClient
+}
+
+// Logger returns the logger used by the session.
+func (s *Session) Logger() model.Logger {
+	return s.logger
 }
 
 // ProbeASNString returns the probe ASN as a string.
@@ -261,10 +284,10 @@ func (s *Session) initOrchestraClient(
 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
-func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, error) {
+func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
 	clnt := orchestra.NewClient(
 		s.HTTPDefaultClient,
-		s.Logger,
+		s.logger,
 		s.UserAgent(),
 		statefile.New(s.KVStore),
 	)
@@ -276,7 +299,7 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (*orchestra.Client, er
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
 		HTTPClient: s.HTTPDefaultClient, // proxy is OK
-		Logger:     s.Logger,
+		Logger:     s.logger,
 		UserAgent:  s.UserAgent(),
 		WorkDir:    s.AssetsDir,
 	}).Ensure(ctx)
@@ -310,9 +333,24 @@ func (s *Session) getAvailableBouncers() []model.Service {
 	}
 }
 
+// SoftwareName returns the application name.
+func (s *Session) SoftwareName() string {
+	return s.softwareName
+}
+
+// SoftwareVersion returns the application version.
+func (s *Session) SoftwareVersion() string {
+	return s.softwareVersion
+}
+
+// TempDir returns the temporary directory.
+func (s *Session) TempDir() string {
+	return s.tempDir
+}
+
 // UserAgent constructs the user agent to be used in this session.
 func (s *Session) UserAgent() string {
-	return s.SoftwareName + "/" + s.SoftwareVersion
+	return s.softwareName + "/" + s.softwareVersion
 }
 
 func (s *Session) queryBouncer(
@@ -320,19 +358,19 @@ func (s *Session) queryBouncer(
 ) error {
 	for _, e := range s.getAvailableBouncers() {
 		if e.Type != "https" {
-			s.Logger.Debugf("session: unsupported bouncer type: %s", e.Type)
+			s.logger.Debugf("session: unsupported bouncer type: %s", e.Type)
 			continue
 		}
 		err := query(&bouncer.Client{
 			BaseURL:    e.Address,
 			HTTPClient: s.HTTPDefaultClient, // proxy is OK
-			Logger:     s.Logger,
+			Logger:     s.logger,
 			UserAgent:  s.UserAgent(),
 		})
 		if err == nil {
 			return nil
 		}
-		s.Logger.Warnf("session: bouncer error: %s", err.Error())
+		s.logger.Warnf("session: bouncer error: %s", err.Error())
 	}
 	return errors.New("All available bouncers failed")
 }
@@ -377,7 +415,7 @@ func (s *Session) MaybeLookupBackends(ctx context.Context) (err error) {
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
 		HTTPClient: s.HTTPNoProxyClient, // No proxy to have the correct IP
-		Logger:     s.Logger,
+		Logger:     s.logger,
 		UserAgent:  s.UserAgent(),
 	}).Do(ctx)
 }
@@ -385,13 +423,13 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 func (s *Session) lookupASN(
 	dbPath, ip string,
 ) (uint, string, error) {
-	return mmdblookup.LookupASN(dbPath, ip, s.Logger)
+	return mmdblookup.LookupASN(dbPath, ip, s.logger)
 }
 
 func (s *Session) lookupProbeCC(
 	dbPath, probeIP string,
 ) (string, error) {
-	return mmdblookup.LookupCC(dbPath, probeIP, s.Logger)
+	return mmdblookup.LookupCC(dbPath, probeIP, s.logger)
 }
 
 func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {

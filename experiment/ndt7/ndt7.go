@@ -17,7 +17,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/model2"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -40,13 +39,13 @@ type TestKeys struct {
 	Upload []spec.Measurement `json:"upload"`
 }
 
-func discover(ctx context.Context, sess *session.Session) (string, error) {
+func discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
 	client := mlabns.NewClient("ndt7", sess.UserAgent())
 	// Basically: (1) make sure we're using our tracing and possibly proxied
 	// client rather than default; (2) if we have an explicit proxy make sure
 	// we tell mlab-ns to use our IP address rather than the proxy one.
-	client.HTTPClient = sess.HTTPDefaultClient
-	if sess.ExplicitProxy {
+	client.HTTPClient = sess.DefaultHTTPClient()
+	if sess.ExplicitProxy() {
 		client.RequestMaker = func(
 			method, url string, body io.Reader,
 		) (*http.Request, error) {
@@ -76,20 +75,20 @@ func (m *measurer) ExperimentVersion() string {
 }
 
 func (m *measurer) Run(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks handler.Callbacks,
 ) error {
 	const maxRuntime = 15.0 // second (conservative)
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
-	client := upstream.NewClient(sess.SoftwareName, sess.SoftwareVersion)
+	client := upstream.NewClient(sess.SoftwareName(), sess.SoftwareVersion())
 	FQDN, err := discover(ctx, sess)
 	if err != nil {
 		testkeys.Failure = err.Error()
 		return err
 	}
 	client.FQDN = FQDN // skip client's own mlabns call
-	sess.Logger.Debugf("ndt7: mlabns returned %s to us", FQDN)
+	sess.Logger().Debugf("ndt7: mlabns returned %s to us", FQDN)
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
 		testkeys.Failure = err.Error()
@@ -114,7 +113,7 @@ func (m *measurer) Run(
 			testkeys.Failure = err.Error()
 			return err
 		}
-		sess.Logger.Debugf("%s", string(data))
+		sess.Logger().Debugf("%s", string(data))
 	}
 	ch, err = client.StartUpload(ctx)
 	if err != nil {
@@ -139,7 +138,7 @@ func (m *measurer) Run(
 			testkeys.Failure = err.Error()
 			return err
 		}
-		sess.Logger.Debugf("%s", string(data))
+		sess.Logger().Debugf("%s", string(data))
 	}
 	callbacks.OnProgress(1, "done")
 	return nil

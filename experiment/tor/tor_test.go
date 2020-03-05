@@ -9,6 +9,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
@@ -34,13 +35,13 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	expected := errors.New("mocked error")
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return nil, expected
 	}
 	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -53,16 +54,16 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	expected := errors.New("mocked error")
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(orchestra.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, expected
 	}
 	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -74,16 +75,16 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(orchestra.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
 	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -145,8 +146,8 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	measurer := new(measurer)
 	measurer.measureTargets(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
@@ -164,8 +165,8 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	measurer := new(measurer)
 	measurer.measureTargets(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
@@ -188,8 +189,8 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 
 func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -234,8 +235,8 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 
 func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -277,8 +278,8 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -299,8 +300,8 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -324,8 +325,8 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -349,8 +350,8 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),

@@ -53,7 +53,7 @@ func New(
 	measurer model2.ExperimentMeasurer,
 ) *Experiment {
 	return &Experiment{
-		Callbacks:     handler.NewPrinterCallbacks(sess.Logger),
+		Callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
 		Measurer:      measurer,
 		Session:       sess,
 		TestName:      testName,
@@ -70,7 +70,7 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 	}
 	for _, c := range e.Session.AvailableCollectors {
 		if c.Type != "https" {
-			e.Session.Logger.Debugf(
+			e.Session.Logger().Debugf(
 				"experiment: unsupported collector type: %s", c.Type,
 			)
 			continue
@@ -78,7 +78,7 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 		client := &collector.Client{
 			BaseURL:    c.Address,
 			HTTPClient: e.Session.HTTPDefaultClient, // proxy is OK
-			Logger:     e.Session.Logger,
+			Logger:     e.Session.Logger(),
 			UserAgent:  e.Session.UserAgent(),
 		}
 		template := collector.ReportTemplate{
@@ -86,8 +86,8 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 			Format:            collector.DefaultFormat,
 			ProbeASN:          e.Session.ProbeASNString(),
 			ProbeCC:           e.Session.ProbeCC(),
-			SoftwareName:      e.Session.SoftwareName,
-			SoftwareVersion:   e.Session.SoftwareVersion,
+			SoftwareName:      e.Session.SoftwareName(),
+			SoftwareVersion:   e.Session.SoftwareVersion(),
 			TestName:          e.TestName,
 			TestVersion:       e.TestVersion,
 		}
@@ -95,7 +95,7 @@ func (e *Experiment) OpenReport(ctx context.Context) (err error) {
 		if err == nil {
 			return
 		}
-		e.Session.Logger.Debugf("experiment: collector error: %s", err.Error())
+		e.Session.Logger().Debugf("experiment: collector error: %s", err.Error())
 	}
 	err = errors.New("All collectors failed")
 	return
@@ -126,8 +126,8 @@ func (e *Experiment) newMeasurement(input string) model.Measurement {
 		ResolverASN:               e.Session.ResolverASNString(),
 		ResolverIP:                e.Session.ResolverIP(),
 		ResolverNetworkName:       e.Session.ResolverNetworkName(),
-		SoftwareName:              e.Session.SoftwareName,
-		SoftwareVersion:           e.Session.SoftwareVersion,
+		SoftwareName:              e.Session.SoftwareName(),
+		SoftwareVersion:           e.Session.SoftwareVersion(),
 		TestName:                  e.TestName,
 		TestStartTime:             e.TestStartTime,
 		TestVersion:               e.TestVersion,

@@ -8,21 +8,20 @@ import (
 	"github.com/ooni/probe-engine/experiment/mkevent"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 // Do runs a specific measurement-kit based experiment. You should
 // pass measurementkit.StartEx as startEx in the common case.
 func Do(
 	settings measurementkit.Settings,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
 	callbacks handler.Callbacks,
 	startEx func(
 		settings measurementkit.Settings, logger model.Logger,
 	) (<-chan measurementkit.Event, error),
 ) error {
-	out, err := startEx(settings, sess.Logger)
+	out, err := startEx(settings, sess.Logger())
 	if err != nil {
 		return err
 	}
