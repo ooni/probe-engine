@@ -7,10 +7,9 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -211,10 +210,6 @@ func TestUnitMaybeURLToSNI(t *testing.T) {
 	})
 }
 
-func newsession() *session.Session {
-	return session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
+func newsession() model.ExperimentSession {
+	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

@@ -8,13 +8,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -96,15 +94,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 
 func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
-	sess := session.New(
-		log.Log,
-		"ooniprobe-engine",
-		"0.1.0-dev",
-		"../../testdata/",
-		nil,
-		"../../testdata/",
-		kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := newsession()
 	err := measurer.Run(
 		context.Background(),
 		sess,
@@ -476,4 +466,8 @@ func TestUnitFillToplevelKeys(t *testing.T) {
 	if tk.ORPortTotal != 1 {
 		t.Fatal("unexpected ORPortTotal value")
 	}
+}
+
+func newsession() model.ExperimentSession {
+	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

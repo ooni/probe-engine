@@ -277,6 +277,7 @@ func TestUnitFetchTorTargetsNotRegistered(t *testing.T) {
 		t.Fatal("expected nil data here")
 	}
 }
+
 func newclient() *Client {
 	clnt := NewClient(
 		http.DefaultClient,

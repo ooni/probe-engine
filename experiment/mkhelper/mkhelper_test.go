@@ -3,19 +3,14 @@ package mkhelper_test
 import (
 	"testing"
 
-	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/mkhelper"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 func TestNoHelpers(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{}
 	var settings measurementkit.Settings
 	err := mkhelper.Set(
 		sess, "foobar", "https", &settings,
@@ -26,15 +21,13 @@ func TestNoHelpers(t *testing.T) {
 }
 
 func TestNoSuitableHelper(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	sess.AvailableTestHelpers = map[string][]model.Service{
-		"foobar": []model.Service{
-			model.Service{
-				Address: "mascetti",
-				Type:    "melandri",
+	sess := &mockable.ExperimentSession{
+		MockableTestHelpers: map[string][]model.Service{
+			"foobar": []model.Service{
+				model.Service{
+					Address: "mascetti",
+					Type:    "melandri",
+				},
 			},
 		},
 	}
@@ -48,15 +41,13 @@ func TestNoSuitableHelper(t *testing.T) {
 }
 
 func TestGoodHelper(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	sess.AvailableTestHelpers = map[string][]model.Service{
-		"foobar": []model.Service{
-			model.Service{
-				Address: "mascetti",
-				Type:    "melandri",
+	sess := &mockable.ExperimentSession{
+		MockableTestHelpers: map[string][]model.Service{
+			"foobar": []model.Service{
+				model.Service{
+					Address: "mascetti",
+					Type:    "melandri",
+				},
 			},
 		},
 	}

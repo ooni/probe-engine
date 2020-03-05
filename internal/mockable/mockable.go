@@ -3,29 +3,34 @@ package mockable
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
+	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
 // ExperimentSession is a mockable ExperimentSession.
 type ExperimentSession struct {
-	MockableASNDatabasePath  string
-	MockableCABundlePath     string
-	MockableExplicitProxy    bool
-	MockableTestHelpers      map[string][]model.Service
-	MockableHTTPClient       *http.Client
-	MockableLogger           model.Logger
-	MockableOrchestraClient  model.ExperimentOrchestraClient
-	MockableProbeASNString   string
-	MockableProbeCC          string
-	MockableProbeIP          string
-	MockableProbeNetworkName string
-	MockableSoftwareName     string
-	MockableSoftwareVersion  string
-	MockableTempDir          string
-	MockableUserAgent        string
+	MockableASNDatabasePath      string
+	MockableCABundlePath         string
+	MockableExplicitProxy        bool
+	MockableTestHelpers          map[string][]model.Service
+	MockableHTTPClient           *http.Client
+	MockableLogger               model.Logger
+	MockableOrchestraClient      model.ExperimentOrchestraClient
+	MockableOrchestraClientError error
+	MockableProbeASNString       string
+	MockableProbeCC              string
+	MockableProbeIP              string
+	MockableProbeNetworkName     string
+	MockableSoftwareName         string
+	MockableSoftwareVersion      string
+	MockableTempDir              string
+	MockableUserAgent            string
 }
 
 // ASNDatabasePath implements ExperimentSession.ASNDatabasePath
@@ -64,7 +69,25 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 	if sess.MockableOrchestraClient != nil {
 		return sess.MockableOrchestraClient, nil
 	}
-	return nil, errors.New("no mockable orchestra client")
+	if sess.MockableOrchestraClientError != nil {
+		return nil, sess.MockableOrchestraClientError
+	}
+	clnt := orchestra.NewClient(
+		http.DefaultClient,
+		log.Log,
+		"miniooni/0.1.0-dev",
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
+	)
+	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
+	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	meta := testorchestra.MetadataFixture()
+	if err := clnt.MaybeRegister(ctx, meta); err != nil {
+		return nil, err
+	}
+	if err := clnt.MaybeLogin(ctx); err != nil {
+		return nil, err
+	}
+	return clnt, nil
 }
 
 // ProbeASNString implements ExperimentSession.ProbeASNString
