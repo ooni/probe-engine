@@ -44,7 +44,7 @@ func (r *TestListsURLsResult) At(idx int64) (out *model.URLInfo) {
 }
 
 // QueryTestListsURLs queries the test-lists/urls API.
-func (sess *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsResult, error) {
+func (s *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsResult, error) {
 	if conf == nil {
 		return nil, errors.New("QueryTestListURLs: passed nil config")
 	}
@@ -54,12 +54,12 @@ func (sess *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsUR
 	}
 	result, err := urls.Query(context.Background(), urls.Config{
 		BaseURL:           baseURL,
-		CountryCode:       sess.ProbeCC(),
+		CountryCode:       s.ProbeCC(),
 		EnabledCategories: conf.Categories,
-		HTTPClient:        sess.httpDefaultClient,
+		HTTPClient:        s.httpDefaultClient,
 		Limit:             conf.Limit,
-		Logger:            sess.logger,
-		UserAgent:         sess.UserAgent(),
+		Logger:            s.logger,
+		UserAgent:         s.UserAgent(),
 	})
 	if err != nil {
 		return nil, err
