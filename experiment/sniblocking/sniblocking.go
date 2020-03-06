@@ -21,7 +21,7 @@ import (
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.0.1"
+	testVersion = "0.0.2"
 )
 
 // Config contains the experiment config.
