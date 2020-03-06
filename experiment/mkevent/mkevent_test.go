@@ -6,17 +6,13 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkevent"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 func TestIntegrationMeasurementSuccess(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{
@@ -33,10 +29,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 			t.Fatal("expected a panic here")
 		}
 	}()
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{
@@ -48,10 +41,7 @@ func TestIntegrationMeasurementFailure(t *testing.T) {
 }
 
 func TestIntegrationLog(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{
@@ -78,10 +68,7 @@ func TestIntegrationLog(t *testing.T) {
 }
 
 func TestIntegrationStatusProgress(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{
@@ -94,10 +81,7 @@ func TestIntegrationStatusProgress(t *testing.T) {
 }
 
 func TestIntegrationStatusEnd(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{
@@ -110,10 +94,7 @@ func TestIntegrationStatusEnd(t *testing.T) {
 }
 
 func TestIntegrationOtherEvent(t *testing.T) {
-	sess := session.New(
-		log.Log, "ooniprobe-engine", "0.1.0", "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
+	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	var m model.Measurement
 	printer := handler.NewPrinterCallbacks(log.Log)
 	mkevent.Handle(sess, &m, measurementkit.Event{

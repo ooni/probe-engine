@@ -8,11 +8,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -20,26 +19,24 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "telegram" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.0.5" {
+		t.Fatal("unexpected version")
 	}
 }
 
 func TestUnitMeasureWithCancelledContext(t *testing.T) {
-	m := newMeasurer(Config{})
+	m := new(measurer)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	err := m.measure(
+	err := m.Run(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -53,11 +50,11 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestIntegrationMeasure(t *testing.T) {
-	m := newMeasurer(Config{})
-	err := m.measure(
+	m := new(measurer)
+	err := m.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),

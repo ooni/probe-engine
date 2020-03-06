@@ -3,10 +3,12 @@ package model
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -116,6 +118,36 @@ func (m *Measurement) AddAnnotation(key, value string) {
 		m.Annotations = make(map[string]string)
 	}
 	m.Annotations[key] = value
+}
+
+// MakeGenericTestKeys casts the m.TestKeys to a map[string]interface{}.
+//
+// Ideally, all tests should have a clear Go structure, well defined, that
+// will be stored in m.TestKeys as an interface. This is not already the
+// case and it's just valid for tests written in Go. Until all tests will
+// be written in Go, we'll keep this glue here to make sure we convert from
+// the engine format to the cli format.
+//
+// This function will first attempt to cast directly to map[string]interface{},
+// which is possible for MK tests, and then use JSON serialization and
+// de-serialization only if that's required.
+func (m *Measurement) MakeGenericTestKeys() (map[string]interface{}, error) {
+	return m.makeGenericTestKeys(json.Marshal)
+}
+
+func (m *Measurement) makeGenericTestKeys(
+	marshal func(v interface{}) ([]byte, error),
+) (map[string]interface{}, error) {
+	if result, ok := m.TestKeys.(map[string]interface{}); ok {
+		return result, nil
+	}
+	data, err := marshal(m.TestKeys)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	err = json.Unmarshal(data, &result)
+	return result, err
 }
 
 // Service describes a backend service.
@@ -271,4 +303,78 @@ type TorTarget struct {
 
 	// Protocol is the protocol to use with the target.
 	Protocol string `json:"protocol"`
+}
+
+// Logger defines the common interface that a logger should have. It is
+// out of the box compatible with `log.Log` in `apex/log`.
+type Logger interface {
+	// Debug emits a debug message.
+	Debug(msg string)
+
+	// Debugf formats and emits a debug message.
+	Debugf(format string, v ...interface{})
+
+	// Info emits an informational message.
+	Info(msg string)
+
+	// Infof format and emits an informational message.
+	Infof(format string, v ...interface{})
+
+	// Warn emits a warning message.
+	Warn(msg string)
+
+	// Warnf formats and emits a warning message.
+	Warnf(format string, v ...interface{})
+}
+
+// ExperimentOrchestraClient is the experiment's view of
+// a client for querying the OONI orchestra.
+type ExperimentOrchestraClient interface {
+	FetchPsiphonConfig(ctx context.Context) ([]byte, error)
+	FetchTorTargets(ctx context.Context) (map[string]TorTarget, error)
+}
+
+// ExperimentSession is the experiment's view of a session.
+type ExperimentSession interface {
+	ASNDatabasePath() string
+	CABundlePath() string
+	ExplicitProxy() bool
+	GetTestHelpersByName(name string) ([]Service, bool)
+	DefaultHTTPClient() *http.Client
+	Logger() Logger
+	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
+	ProbeASNString() string
+	ProbeCC() string
+	ProbeIP() string
+	ProbeNetworkName() string
+	SoftwareName() string
+	SoftwareVersion() string
+	TempDir() string
+	UserAgent() string
+}
+
+// ExperimentCallbacks contains event handling callbacks
+type ExperimentCallbacks interface {
+	// OnDataUsage provides information about data usage.
+	OnDataUsage(dloadKiB, uploadKiB float64)
+
+	// OnProgress provides information about an experiment progress.
+	OnProgress(percentage float64, message string)
+}
+
+// ExperimentMeasurer is the interface that allows to run a
+// measurement for a specific experiment.
+type ExperimentMeasurer interface {
+	// ExperimentName returns the experiment name.
+	ExperimentName() string
+
+	// ExperimentVersion returns the experiment version.
+	ExperimentVersion() string
+
+	// Run runs the experiment with the specified context, session,
+	// measurement, and experiment calbacks.
+	Run(
+		ctx context.Context, sess ExperimentSession,
+		measurement *Measurement, callbacks ExperimentCallbacks,
+	) error
 }

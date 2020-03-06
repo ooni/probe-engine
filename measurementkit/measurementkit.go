@@ -4,7 +4,7 @@ package measurementkit
 import (
 	"encoding/json"
 
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Settings contains settings
@@ -197,7 +197,7 @@ type Event struct {
 	Value EventValue `json:"value"`
 }
 
-func loopEx(in <-chan []byte, out chan<- Event, logger log.Logger) {
+func loopEx(in <-chan []byte, out chan<- Event, logger model.Logger) {
 	defer close(out)
 	for data := range in {
 		// Uncomment the following line to debug
@@ -214,7 +214,7 @@ func loopEx(in <-chan []byte, out chan<- Event, logger log.Logger) {
 
 // StartEx is a more advanced Start that takes input settings
 // and that emits Event on the returned channel.
-func StartEx(settings Settings, logger log.Logger) (<-chan Event, error) {
+func StartEx(settings Settings, logger model.Logger) (<-chan Event, error) {
 	data, err := json.Marshal(settings)
 	if err != nil {
 		return nil, err

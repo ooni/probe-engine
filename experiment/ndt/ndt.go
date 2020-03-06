@@ -4,12 +4,9 @@ package ndt
 import (
 	"context"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/mkrunner"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -23,32 +20,33 @@ type Config struct {
 	LogLevel string
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks, config Config,
+type measurer struct {
+	config Config
+}
+
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	settings := measurementkit.NewSettings(
-		"Ndt", sess.SoftwareName, sess.SoftwareVersion,
+		"Ndt", sess.SoftwareName(), sess.SoftwareVersion(),
 		sess.CABundlePath(), sess.ProbeASNString(), sess.ProbeCC(),
-		sess.ProbeIP(), sess.ProbeNetworkName(), config.LogLevel,
+		sess.ProbeIP(), sess.ProbeNetworkName(), m.config.LogLevel,
 	)
 	return mkrunner.Do(
 		settings, sess, measurement, callbacks, measurementkit.StartEx,
 	)
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(
-		sess, testName, testVersion,
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return measure(ctx, sess, measurement, callbacks, config)
-		})
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return &measurer{config: config}
 }

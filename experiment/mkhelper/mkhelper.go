@@ -6,15 +6,15 @@ import (
 	"fmt"
 
 	"github.com/ooni/probe-engine/measurementkit"
-	"github.com/ooni/probe-engine/session"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Set copies a specific helper from the session to MK settings.
 func Set(
-	sess *session.Session, name, kind string,
+	sess model.ExperimentSession, name, kind string,
 	settings *measurementkit.Settings,
 ) error {
-	ths, ok := sess.AvailableTestHelpers[name]
+	ths, ok := sess.GetTestHelpersByName(name)
 	if !ok {
 		return fmt.Errorf("No available %s test helper", name)
 	}

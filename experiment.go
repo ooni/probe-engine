@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/ooni/probe-engine/experiment"
+	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
@@ -28,23 +29,16 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Callbacks contains event handling callbacks
-//
-// This is a copy of experiment/handler.Callbacks. Go will make sure
-// the interface will match for us. This means we can have this set of
-// callbacks as part of the toplevel engine API.
-type Callbacks interface {
-	// OnDataUsage provides information about data usage.
-	OnDataUsage(dloadKiB, uploadKiB float64)
+const dateFormat = "2006-01-02 15:04:05"
 
-	// OnProgress provides information about an experiment progress.
-	OnProgress(percentage float64, message string)
+func formatTimeNowUTC() string {
+	return time.Now().UTC().Format(dateFormat)
 }
 
 // ExperimentBuilder is an experiment builder.
 type ExperimentBuilder struct {
-	build      func(interface{}) *experiment.Experiment
-	callbacks  Callbacks
+	build      func(interface{}) *Experiment
+	callbacks  model.ExperimentCallbacks
 	config     interface{}
 	needsInput bool
 }
@@ -121,7 +115,7 @@ func (b *ExperimentBuilder) SetOptionString(key, value string) error {
 }
 
 // SetCallbacks sets the interactive callbacks
-func (b *ExperimentBuilder) SetCallbacks(callbacks Callbacks) {
+func (b *ExperimentBuilder) SetCallbacks(callbacks model.ExperimentCallbacks) {
 	b.callbacks = callbacks
 }
 
@@ -142,14 +136,11 @@ func fieldbyname(v interface{}, key string) (reflect.Value, error) {
 	return field, nil
 }
 
-// Build builds the experiment
-func (b *ExperimentBuilder) Build() *Experiment {
+// NewExperiment creates the experiment
+func (b *ExperimentBuilder) NewExperiment() *Experiment {
 	experiment := b.build(b.config)
-	experiment.Callbacks = b.callbacks
-	return &Experiment{
-		experiment: experiment,
-		name:       experiment.TestName,
-	}
+	experiment.callbacks = b.callbacks
+	return experiment
 }
 
 // canonicalizeExperimentName allows code to provide experiment names
@@ -170,50 +161,59 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 		return nil, fmt.Errorf("no such experiment: %s", name)
 	}
 	builder := factory(session)
-	builder.callbacks = handler.NewPrinterCallbacks(session.session.Logger)
+	builder.callbacks = handler.NewPrinterCallbacks(session.Logger())
 	return builder, nil
 }
 
 // Experiment is an experiment instance.
 type Experiment struct {
-	experiment *experiment.Experiment
-	name       string
+	callbacks     model.ExperimentCallbacks
+	measurer      model.ExperimentMeasurer
+	report        *collector.Report
+	session       *Session
+	testName      string
+	testStartTime string
+	testVersion   string
+}
+
+// NewExperiment creates a new experiment given a measurer. The preferred
+// way to create an experiment is the ExperimentBuilder. Though this function
+// allows the programmer to create a custom, external experiment.
+func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment {
+	return &Experiment{
+		callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
+		measurer:      measurer,
+		session:       sess,
+		testName:      measurer.ExperimentName(),
+		testStartTime: formatTimeNowUTC(),
+		testVersion:   measurer.ExperimentVersion(),
+	}
 }
 
 // Name returns the experiment name.
 func (e *Experiment) Name() string {
-	return e.name
+	return e.testName
 }
 
 // OpenReport is an idempotent method to open a report. We assume that
 // you have configured the available collectors, either manually or
 // through using the session's MaybeLookupBackends method.
-func (e *Experiment) OpenReport() error {
-	ctx := context.Background()
-	return e.experiment.OpenReport(ctx)
+func (e *Experiment) OpenReport() (err error) {
+	return e.openReport(context.Background())
 }
 
 // ReportID returns the open reportID, if we have opened a report
 // successfully before, or an empty string, otherwise.
 func (e *Experiment) ReportID() string {
-	return e.experiment.ReportID()
-}
-
-// Measure performs a measurement with input. We assume that you have
-// configured the available test helpers, either manually or by calling
-// the session's MaybeLookupBackends() method.
-func (e *Experiment) Measure(input string) (*Measurement, error) {
-	ctx := context.Background()
-	measurement, err := e.experiment.Measure(ctx, input)
-	// Note: the experiment returns a measurement and not a pointer
-	// therefore we can always safely wrap what we've got. This is
-	// in line with knowing also from the measurement what was wrong.
-	return &Measurement{m: measurement}, err
+	if e.report == nil {
+		return ""
+	}
+	return e.report.ID
 }
 
 // LoadMeasurement loads a measurement from a byte stream. The measurement
 // must be a measurement for this experiment.
-func (e *Experiment) LoadMeasurement(data []byte) (*Measurement, error) {
+func (e *Experiment) LoadMeasurement(data []byte) (*model.Measurement, error) {
 	var measurement model.Measurement
 	if err := json.Unmarshal(data, &measurement); err != nil {
 		return nil, err
@@ -221,76 +221,156 @@ func (e *Experiment) LoadMeasurement(data []byte) (*Measurement, error) {
 	if measurement.TestName != e.Name() {
 		return nil, errors.New("not a measurement for this experiment")
 	}
-	return &Measurement{m: measurement}, nil
+	return &measurement, nil
+}
+
+// Measure performs a measurement with input. We assume that you have
+// configured the available test helpers, either manually or by calling
+// the session's MaybeLookupBackends() method.
+func (e *Experiment) Measure(input string) (*model.Measurement, error) {
+	return e.measure(context.Background(), input)
+}
+
+// SaveMeasurement saves a measurement on the specified file path.
+func (e *Experiment) SaveMeasurement(measurement *model.Measurement, filePath string) error {
+	return e.saveMeasurement(
+		measurement, filePath, json.Marshal, os.OpenFile,
+		func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
 }
 
 // SubmitAndUpdateMeasurement submits a measurement and updates the
 // fields whose value has changed as part of the submission.
-func (e *Experiment) SubmitAndUpdateMeasurement(measurement *Measurement) error {
-	return e.experiment.SubmitMeasurement(context.Background(), &measurement.m)
+func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) error {
+	if e.report == nil {
+		return errors.New("Report is not open")
+	}
+	return e.report.SubmitMeasurement(context.Background(), measurement)
 }
 
-// SaveMeasurement saves the measurement at the specified path.
-func (e *Experiment) SaveMeasurement(measurement *Measurement, path string) error {
-	return e.experiment.SaveMeasurement(measurement.m, path)
-}
-
-// CloseReport is an idempotent method that closes and open report
+// CloseReport is an idempotent method that closes an open report
 // if one has previously been opened, otherwise it does nothing.
-func (e *Experiment) CloseReport() error {
-	return e.experiment.CloseReport(context.Background())
-}
-
-// Measurement is a OONI measurement
-type Measurement struct {
-	m model.Measurement
-}
-
-// MarshalJSON marshals the measurement as JSON
-func (m *Measurement) MarshalJSON() ([]byte, error) {
-	return json.Marshal(m.m)
-}
-
-// AddAnnotations adds annotation to the measurement
-func (m *Measurement) AddAnnotations(annotations map[string]string) {
-	m.m.AddAnnotations(annotations)
-}
-
-// MakeGenericTestKeys casts the m.TestKeys to a map[string]interface{}.
-//
-// Ideally, all tests should have a clear Go structure, well defined, that
-// will be stored in m.TestKeys as an interface. This is not already the
-// case and it's just valid for tests written in Go. Until all tests will
-// be written in Go, we'll keep this glue here to make sure we convert from
-// the engine format to the cli format.
-//
-// This function will first attempt to cast directly to map[string]interface{},
-// which is possible for MK tests, and then use JSON serialization and
-// de-serialization only if that's required.
-func (m *Measurement) MakeGenericTestKeys() (map[string]interface{}, error) {
-	return m.makeGenericTestKeys(json.Marshal)
-}
-
-func (m *Measurement) makeGenericTestKeys(
-	marshal func(v interface{}) ([]byte, error),
-) (map[string]interface{}, error) {
-	if result, ok := m.m.TestKeys.(map[string]interface{}); ok {
-		return result, nil
+func (e *Experiment) CloseReport() (err error) {
+	if e.report != nil {
+		err = e.report.Close(context.Background())
+		e.report = nil
 	}
-	data, err := marshal(m.m.TestKeys)
+	return
+}
+
+func (e *Experiment) measure(ctx context.Context, input string) (measurement *model.Measurement, err error) {
+	err = e.session.maybeLookupLocation(ctx)
 	if err != nil {
-		return nil, err
+		return
 	}
-	var result map[string]interface{}
-	err = json.Unmarshal(data, &result)
-	return result, err
+	measurement = e.newMeasurement(input)
+	start := time.Now()
+	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
+	stop := time.Now()
+	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
+	scrubErr := e.session.privacySettings.Apply(
+		measurement, e.session.ProbeIP(),
+	)
+	if err == nil {
+		err = scrubErr
+	}
+	return
+}
+
+func (e *Experiment) newMeasurement(input string) *model.Measurement {
+	utctimenow := time.Now().UTC()
+	m := model.Measurement{
+		// Since v0.4.0 we always send the 0.2.0 data format on the
+		// wire to avoid confusing the pipeline. The real data format
+		// version is instead submitted as an annotation.
+		DataFormatVersion:         "0.2.0",
+		Input:                     input,
+		MeasurementStartTime:      utctimenow.Format(dateFormat),
+		MeasurementStartTimeSaved: utctimenow,
+		ProbeIP:                   e.session.ProbeIP(),
+		ProbeASN:                  e.session.ProbeASNString(),
+		ProbeCC:                   e.session.ProbeCC(),
+		ReportID:                  e.ReportID(),
+		ResolverASN:               e.session.ResolverASNString(),
+		ResolverIP:                e.session.ResolverIP(),
+		ResolverNetworkName:       e.session.ResolverNetworkName(),
+		SoftwareName:              e.session.SoftwareName(),
+		SoftwareVersion:           e.session.SoftwareVersion(),
+		TestName:                  e.testName,
+		TestStartTime:             e.testStartTime,
+		TestVersion:               e.testVersion,
+	}
+	m.AddAnnotation("real_data_format_version", collector.DefaultDataFormatVersion)
+	return &m
+}
+
+func (e *Experiment) openReport(ctx context.Context) (err error) {
+	if e.report != nil {
+		return // already open
+	}
+	for _, c := range e.session.availableCollectors {
+		if c.Type != "https" {
+			e.session.logger.Debugf(
+				"experiment: unsupported collector type: %s", c.Type,
+			)
+			continue
+		}
+		client := &collector.Client{
+			BaseURL:    c.Address,
+			HTTPClient: e.session.httpDefaultClient, // proxy is OK
+			Logger:     e.session.logger,
+			UserAgent:  e.session.UserAgent(),
+		}
+		template := collector.ReportTemplate{
+			DataFormatVersion: collector.DefaultDataFormatVersion,
+			Format:            collector.DefaultFormat,
+			ProbeASN:          e.session.ProbeASNString(),
+			ProbeCC:           e.session.ProbeCC(),
+			SoftwareName:      e.session.SoftwareName(),
+			SoftwareVersion:   e.session.SoftwareVersion(),
+			TestName:          e.testName,
+			TestVersion:       e.testVersion,
+		}
+		e.report, err = client.OpenReport(ctx, template)
+		if err == nil {
+			return
+		}
+		e.session.logger.Debugf("experiment: collector error: %s", err.Error())
+	}
+	err = errors.New("All collectors failed")
+	return
+}
+
+func (e *Experiment) saveMeasurement(
+	measurement *model.Measurement, filePath string,
+	marshal func(v interface{}) ([]byte, error),
+	openFile func(name string, flag int, perm os.FileMode) (*os.File, error),
+	write func(fp *os.File, b []byte) (n int, err error),
+) error {
+	data, err := marshal(measurement)
+	if err != nil {
+		return err
+	}
+	data = append(data, byte('\n'))
+	filep, err := openFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := write(filep, data); err != nil {
+		return err
+	}
+	return filep.Close()
 }
 
 var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"dash": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return dash.NewExperiment(session.session, *config.(*dash.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, dash.NewExperimentMeasurer(
+					*config.(*dash.Config),
+				))
 			},
 			config:     &dash.Config{},
 			needsInput: false,
@@ -299,11 +379,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"example": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example",
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example",
+				))
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
@@ -315,11 +394,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"example_with_input": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example_with_input",
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_input",
+				))
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
@@ -331,11 +409,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"example_with_failure": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return example.NewExperiment(
-					session.session, *config.(*example.Config),
-					"example_with_failure",
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_failure",
+				))
 			},
 			config: &example.Config{
 				Message:     "Good day from the example with failure experiment!",
@@ -348,10 +425,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"facebook_messenger": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return fbmessenger.NewExperiment(
-					session.session, *config.(*fbmessenger.Config),
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, fbmessenger.NewExperimentMeasurer(
+					*config.(*fbmessenger.Config),
+				))
 			},
 			config:     &fbmessenger.Config{},
 			needsInput: false,
@@ -360,8 +437,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"http_header_field_manipulation": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return hhfm.NewExperiment(session.session, *config.(*hhfm.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, hhfm.NewExperimentMeasurer(
+					*config.(*hhfm.Config),
+				))
 			},
 			config:     &hhfm.Config{},
 			needsInput: false,
@@ -370,8 +449,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"http_invalid_request_line": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return hirl.NewExperiment(session.session, *config.(*hirl.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, hirl.NewExperimentMeasurer(
+					*config.(*hirl.Config),
+				))
 			},
 			config:     &hirl.Config{},
 			needsInput: false,
@@ -380,8 +461,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"ndt": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return ndt.NewExperiment(session.session, *config.(*ndt.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, ndt.NewExperimentMeasurer(
+					*config.(*ndt.Config),
+				))
 			},
 			config:     &ndt.Config{},
 			needsInput: false,
@@ -390,8 +473,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"ndt7": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return ndt7.NewExperiment(session.session, *config.(*ndt7.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, ndt7.NewExperimentMeasurer(
+					*config.(*ndt7.Config),
+				))
 			},
 			config:     &ndt7.Config{},
 			needsInput: false,
@@ -400,11 +485,13 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"psiphon": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return psiphon.NewExperiment(session.session, *config.(*psiphon.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, psiphon.NewExperimentMeasurer(
+					*config.(*psiphon.Config),
+				))
 			},
 			config: &psiphon.Config{
-				WorkDir: session.session.TempDir,
+				WorkDir: session.TempDir(),
 			},
 			needsInput: false,
 		}
@@ -412,8 +499,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"sni_blocking": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return sniblocking.NewExperiment(session.session, *config.(*sniblocking.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, sniblocking.NewExperimentMeasurer(
+					*config.(*sniblocking.Config),
+				))
 			},
 			config: &sniblocking.Config{
 				ControlSNI: "ps.ooni.io",
@@ -424,8 +513,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"telegram": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return telegram.NewExperiment(session.session, *config.(*telegram.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, telegram.NewExperimentMeasurer(
+					*config.(*telegram.Config),
+				))
 			},
 			config:     &telegram.Config{},
 			needsInput: false,
@@ -434,8 +525,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"tor": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return tor.NewExperiment(session.session, *config.(*tor.Config))
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, tor.NewExperimentMeasurer(
+					*config.(*tor.Config),
+				))
 			},
 			config:     &tor.Config{},
 			needsInput: false,
@@ -444,10 +537,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"web_connectivity": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return web_connectivity.NewExperiment(
-					session.session, *config.(*web_connectivity.Config),
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, web_connectivity.NewExperimentMeasurer(
+					*config.(*web_connectivity.Config),
+				))
 			},
 			config:     &web_connectivity.Config{},
 			needsInput: true,
@@ -456,10 +549,10 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 
 	"whatsapp": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
-			build: func(config interface{}) *experiment.Experiment {
-				return whatsapp.NewExperiment(
-					session.session, *config.(*whatsapp.Config),
-				)
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, whatsapp.NewExperimentMeasurer(
+					*config.(*whatsapp.Config),
+				))
 			},
 			config:     &whatsapp.Config{},
 			needsInput: false,

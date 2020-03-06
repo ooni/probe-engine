@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/log"
+	"github.com/ooni/probe-engine/model"
 )
 
 // Config contains configs for calling the update API.
@@ -19,7 +19,7 @@ type Config struct {
 	BaseURL    string
 	ClientID   string
 	HTTPClient *http.Client
-	Logger     log.Logger
+	Logger     model.Logger
 	Metadata   metadata.Metadata
 	UserAgent  string
 }

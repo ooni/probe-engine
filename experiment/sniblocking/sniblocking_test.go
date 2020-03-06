@@ -7,10 +7,9 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -18,16 +17,19 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	experiment := NewExperiment(newsession(), Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "sni_blocking" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.0.1" {
+		t.Fatal("unexpected version")
 	}
 }
 
 func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
-	measurer := newMeasurer(Config{})
-	err := measurer.measure(
+	measurer := NewExperimentMeasurer(Config{})
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
@@ -39,10 +41,10 @@ func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
@@ -56,13 +58,13 @@ func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
 	measurement := &model.Measurement{
 		Input: "\t",
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		ctx,
 		newsession(),
 		measurement,
@@ -76,13 +78,13 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := newMeasurer(Config{
+	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "ps.ooni.io",
 	})
 	measurement := &model.Measurement{
 		Input: "kernel.org",
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		ctx,
 		newsession(),
 		measurement,
@@ -208,10 +210,6 @@ func TestUnitMaybeURLToSNI(t *testing.T) {
 	})
 }
 
-func newsession() *session.Session {
-	return session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
+func newsession() model.ExperimentSession {
+	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

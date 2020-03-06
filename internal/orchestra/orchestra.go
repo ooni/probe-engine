@@ -18,14 +18,13 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
 	"github.com/ooni/probe-engine/internal/orchestra/update"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for OONI orchestra
 type Client struct {
 	HTTPClient         *http.Client
-	Logger             log.Logger
+	Logger             model.Logger
 	OrchestrateBaseURL string
 	RegistryBaseURL    string
 	StateFile          *statefile.StateFile
@@ -36,7 +35,7 @@ type Client struct {
 
 // NewClient creates a new client.
 func NewClient(
-	httpClient *http.Client, logger log.Logger,
+	httpClient *http.Client, logger model.Logger,
 	userAgent string, stateFile *statefile.StateFile,
 ) *Client {
 	return &Client{

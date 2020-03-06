@@ -13,14 +13,13 @@ import (
 
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/avast"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup/ubuntu"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
 
 // LookupFunc is a function for performing the IP lookup.
 type LookupFunc func(
 	ctx context.Context, client *http.Client,
-	logger log.Logger, userAgent string,
+	logger model.Logger, userAgent string,
 ) (string, error)
 
 type method struct {
@@ -49,7 +48,7 @@ type Client struct {
 	HTTPClient *http.Client
 
 	// Logger is the logger to use
-	Logger log.Logger
+	Logger model.Logger
 
 	// UserAgent is the user agent to use
 	UserAgent string

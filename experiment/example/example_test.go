@@ -7,63 +7,38 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/example"
-	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/session"
+	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/mockable"
+	"github.com/ooni/probe-engine/model"
 )
 
-const (
-	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
-)
-
-func TestIntegration(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+func TestIntegrationSuccess(t *testing.T) {
+	m := example.NewExperimentMeasurer(example.Config{
+		SleepTime: int64(2 * time.Second),
+	}, "example")
 	ctx := context.Background()
-
-	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	if err := sess.MaybeLookupBackends(ctx); err != nil {
-		t.Fatal(err)
+	sess := &mockable.ExperimentSession{
+		MockableLogger: log.Log,
 	}
-	if err := sess.MaybeLookupLocation(ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	experiment := example.NewExperiment(
-		sess, example.Config{SleepTime: int64(2 * time.Second)},
-		"example",
-	)
-	if err := experiment.OpenReport(ctx); err != nil {
-		t.Fatal(err)
-	}
-	defer experiment.CloseReport(ctx)
-
-	measurement, err := experiment.Measure(ctx, "")
+	callbacks := handler.NewPrinterCallbacks(sess.Logger())
+	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestIntegrationFailure(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	m := example.NewExperimentMeasurer(example.Config{
+		SleepTime:   int64(2 * time.Second),
+		ReturnError: true,
+	}, "example")
 	ctx := context.Background()
-	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := example.NewExperiment(
-		sess, example.Config{
-			SleepTime:   int64(2 * time.Second),
-			ReturnError: true,
-		},
-		"example",
-	)
-	if _, err := experiment.Measure(ctx, ""); err == nil {
+	sess := &mockable.ExperimentSession{
+		MockableLogger: log.Log,
+	}
+	callbacks := handler.NewPrinterCallbacks(sess.Logger())
+	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
+	if err == nil {
 		t.Fatal("expected an error here")
 	}
 }

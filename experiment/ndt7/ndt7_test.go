@@ -1,46 +1,18 @@
 package ndt7_test
 
 import (
-	"context"
 	"testing"
 
-	"github.com/apex/log"
+	"github.com/ooni/probe-engine/experiment/mktesting"
 	"github.com/ooni/probe-engine/experiment/ndt7"
-	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/session"
-)
-
-const (
-	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
+	"github.com/ooni/probe-engine/model"
 )
 
 func TestIntegration(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	ctx := context.Background()
-
-	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	if err := sess.MaybeLookupBackends(ctx); err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.MaybeLookupLocation(ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	experiment := ndt7.NewExperiment(sess, ndt7.Config{})
-	if err := experiment.OpenReport(ctx); err != nil {
-		t.Fatal(err)
-	}
-	defer experiment.CloseReport(ctx)
-
-	measurement, err := experiment.Measure(ctx, "")
+	err := mktesting.Run("", func() model.ExperimentMeasurer {
+		return ndt7.NewExperimentMeasurer(ndt7.Config{})
+	})
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 }

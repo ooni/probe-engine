@@ -17,15 +17,11 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -57,7 +53,7 @@ type TestKeys struct {
 
 type runner struct {
 	beginning      time.Time
-	callbacks      handler.Callbacks
+	callbacks      model.ExperimentCallbacks
 	config         Config
 	ioutilReadFile func(filename string) ([]byte, error)
 	osMkdirAll     func(path string, perm os.FileMode) error
@@ -66,7 +62,7 @@ type runner struct {
 }
 
 func newRunner(
-	config Config, callbacks handler.Callbacks,
+	config Config, callbacks model.ExperimentCallbacks,
 	beginning time.Time,
 ) *runner {
 	return &runner{
@@ -103,7 +99,7 @@ func (r *runner) starttunnel(
 }
 
 func (r *runner) usetunnel(
-	ctx context.Context, port int, logger log.Logger,
+	ctx context.Context, port int, logger model.Logger,
 ) error {
 	r.testkeys.Agent = "redirect"
 	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
@@ -149,7 +145,7 @@ func (r *runner) usetunnel(
 
 func (r *runner) run(
 	ctx context.Context,
-	logger log.Logger,
+	logger model.Logger,
 	fetchPsiphonConfig func(ctx context.Context) ([]byte, error),
 ) error {
 	configJSON, err := fetchPsiphonConfig(ctx)
@@ -182,9 +178,17 @@ type measurer struct {
 	config Config
 }
 
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
 func (m *measurer) printprogress(
 	ctx context.Context, wg *sync.WaitGroup,
-	maxruntime int, callbacks handler.Callbacks,
+	maxruntime int, callbacks model.ExperimentCallbacks,
 ) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -203,9 +207,9 @@ func (m *measurer) printprogress(
 	}
 }
 
-func (m *measurer) measure(
-	ctx context.Context, sess *session.Session,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+func (m *measurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	clnt, err := sess.NewOrchestraClient(ctx)
 	if err != nil {
@@ -219,16 +223,13 @@ func (m *measurer) measure(
 	r := newRunner(m.config, callbacks, measurement.MeasurementStartTimeSaved)
 	measurement.TestKeys = r.testkeys
 	r.testkeys.MaxRuntime = maxruntime
-	err = r.run(ctx, sess.Logger, clnt.FetchPsiphonConfig)
+	err = r.run(ctx, sess.Logger(), clnt.FetchPsiphonConfig)
 	cancel()
 	wg.Wait()
 	return err
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	m := &measurer{config: config}
-	return experiment.New(sess, testName, testVersion, m.measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return &measurer{config: config}
 }

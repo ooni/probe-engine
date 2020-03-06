@@ -8,12 +8,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -21,28 +20,26 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "tor" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.1.0" {
+		t.Fatal("unexpected version")
 	}
 }
 
 func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	expected := errors.New("mocked error")
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return nil, expected
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -55,16 +52,16 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	expected := errors.New("mocked error")
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(orchestra.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, expected
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -76,16 +73,16 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
-	measurer.newOrchestraClient = func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(orchestra.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
-	err := measurer.measure(
+	err := measurer.Run(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -97,16 +94,8 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 
 func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
-	sess := session.New(
-		log.Log,
-		"ooniprobe-engine",
-		"0.1.0-dev",
-		"../../testdata/",
-		nil,
-		"../../testdata/",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	err := measurer.measure(
+	sess := newsession()
+	err := measurer.Run(
 		context.Background(),
 		sess,
 		new(model.Measurement),
@@ -147,8 +136,8 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	measurer := new(measurer)
 	measurer.measureTargets(
 		context.Background(),
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
@@ -166,8 +155,8 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	measurer := new(measurer)
 	measurer.measureTargets(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
@@ -190,8 +179,8 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 
 func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -236,8 +225,8 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 
 func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -279,8 +268,8 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -301,8 +290,8 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -326,8 +315,8 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -351,8 +340,8 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	rc := newResultsCollector(
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -477,4 +466,8 @@ func TestUnitFillToplevelKeys(t *testing.T) {
 	if tk.ORPortTotal != 1 {
 		t.Fatal("unexpected ORPortTotal value")
 	}
+}
+
+func newsession() model.ExperimentSession {
+	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

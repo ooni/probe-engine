@@ -1,4 +1,4 @@
-// +build !cgo
+// +build nomk
 
 package dash
 
@@ -12,25 +12,17 @@ import (
 	"github.com/montanaflynn/stats"
 	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
-const (
-	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
-)
-
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, Config{})
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "dash" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.8.0" {
+		t.Fatal("unexpected version")
 	}
 }
 
@@ -38,10 +30,10 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
 	m := &measurer{}
-	err := m.measure(
+	err := m.Run(
 		ctx,
-		&session.Session{
-			Logger: log.Log,
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
 		},
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(log.Log),

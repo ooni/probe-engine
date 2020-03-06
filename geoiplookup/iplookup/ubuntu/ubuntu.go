@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/fetch"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -20,7 +19,7 @@ type response struct {
 func Do(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger log.Logger,
+	logger model.Logger,
 	userAgent string,
 ) (string, error) {
 	data, err := (&fetch.Client{

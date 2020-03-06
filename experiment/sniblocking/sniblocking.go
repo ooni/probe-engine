@@ -12,14 +12,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -61,8 +58,12 @@ type measurer struct {
 	config Config
 }
 
-func newMeasurer(config Config) *measurer {
-	return &measurer{config: config}
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
 }
 
 func measureone(
@@ -113,13 +114,13 @@ func measureone(
 }
 
 func (m *measurer) startall(
-	ctx context.Context, sess *session.Session,
+	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, inputs []string,
 ) <-chan Subresult {
 	outputs := make(chan Subresult, len(inputs))
 	for _, input := range inputs {
 		go measureone(
-			ctx, outputs, netxlogger.NewHandler(sess.Logger),
+			ctx, outputs, netxlogger.NewHandler(sess.Logger()),
 			measurement.MeasurementStartTimeSaved,
 			input, m.config.TestHelperAddress,
 		)
@@ -130,9 +131,9 @@ func (m *measurer) startall(
 func processall(
 	outputs <-chan Subresult,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 	inputs []string,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	controlSNI string,
 ) *TestKeys {
 	var (
@@ -152,7 +153,7 @@ func processall(
 		sentBytes += smk.BytesSent
 		receivedBytes += smk.BytesReceived
 		current++
-		sess.Logger.Infof("sni_blocking: %s: %s", smk.SNI, asString(smk.Failure))
+		sess.Logger().Infof("sni_blocking: %s: %s", smk.SNI, asString(smk.Failure))
 		if current >= len(inputs) {
 			break
 		}
@@ -177,11 +178,11 @@ func maybeURLToSNI(input string) (string, error) {
 	return parsed.Hostname(), nil
 }
 
-func (m *measurer) measure(
+func (m *measurer) Run(
 	ctx context.Context,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 ) error {
 	if m.config.ControlSNI == "" {
 		return errors.New("Experiment requires ControlSNI")
@@ -209,12 +210,9 @@ func (m *measurer) measure(
 	return nil
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion,
-		newMeasurer(config).measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return &measurer{config: config}
 }
 
 func asString(failure *string) (result string) {

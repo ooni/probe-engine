@@ -275,7 +275,7 @@ func main() {
 			log.WithError(err).Fatal("cannot set string option")
 		}
 	}
-	experiment := builder.Build()
+	experiment := builder.NewExperiment()
 
 	if !globalOptions.noCollector {
 		if err := experiment.OpenReport(); err != nil {

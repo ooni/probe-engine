@@ -6,15 +6,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
-const (
-	testVersion = "0.0.1"
-)
+const testVersion = "0.0.1"
 
 // Config contains the experiment config.
 //
@@ -36,43 +31,39 @@ type TestKeys struct {
 	Success bool `json:"success"`
 }
 
-// measure is the main function of each experiment,
-// that is called by the NewExperiment.
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks, config Config,
+type measurer struct {
+	config   Config
+	testName string
+}
+
+func (m *measurer) ExperimentName() string {
+	return m.testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	var err error
-	if config.ReturnError {
+	if m.config.ReturnError {
 		err = errors.New("mocked error")
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(config.SleepTime))
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.config.SleepTime))
 	defer cancel()
 	<-ctx.Done()
-	sess.Logger.Warnf("example: remember to drink: %s", "water is key to survival")
-	callbacks.OnProgress(1.0, config.Message)
+	sess.Logger().Warnf("example: remember to drink: %s", "water is key to survival")
+	callbacks.OnProgress(1.0, m.config.Message)
 	callbacks.OnDataUsage(0, 0)
 	return err
 }
 
-// NewExperiment creates a new experiment.
-//
-// This is the function that you call to create an instance of this experiment.
-// Once you have created an instance, you can use directly the
-// generic experiment API.
-func NewExperiment(
-	sess *session.Session, config Config, testName string,
-) *experiment.Experiment {
-	return experiment.New(
-		sess, testName, testVersion,
-		func(
-			ctx context.Context,
-			sess *session.Session,
-			measurement *model.Measurement,
-			callbacks handler.Callbacks,
-		) error {
-			return measure(ctx, sess, measurement, callbacks, config)
-		})
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config, testName string) model.ExperimentMeasurer {
+	return &measurer{config: config, testName: testName}
 }

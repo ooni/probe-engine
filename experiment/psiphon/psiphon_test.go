@@ -12,11 +12,11 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -24,15 +24,13 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperiment(t *testing.T) {
-	sess := session.New(
-		log.Log, softwareName, softwareVersion,
-		"../../testdata", nil, "../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
-	experiment := NewExperiment(sess, makeconfig())
-	if experiment == nil {
-		t.Fatal("nil experiment returned")
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "psiphon" {
+		t.Fatal("unexpected name")
+	}
+	if measurer.ExperimentVersion() != "0.3.2" {
+		t.Fatal("unexpected version")
 	}
 }
 
@@ -40,7 +38,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	m := &measurer{config: makeconfig()}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
-	err := m.measure(
+	err := m.Run(
 		ctx, newsession(),
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
@@ -154,7 +152,7 @@ func newclient() (*orchestra.Client, error) {
 
 func TestIntegration(t *testing.T) {
 	m := &measurer{config: makeconfig()}
-	if err := m.measure(
+	if err := m.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
@@ -180,14 +178,6 @@ func makeconfig() Config {
 	}
 }
 
-func newsession() *session.Session {
-	return session.New(
-		log.Log,
-		"miniooni",
-		"0.1.0-dev",
-		"../../testdata",
-		nil,
-		"../../testdata",
-		kvstore.NewMemoryKeyValueStore(),
-	)
+func newsession() model.ExperimentSession {
+	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

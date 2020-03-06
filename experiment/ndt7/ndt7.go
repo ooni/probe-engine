@@ -14,10 +14,7 @@ import (
 	"github.com/m-lab/ndt7-client-go/mlabns"
 	"github.com/m-lab/ndt7-client-go/spec"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -40,13 +37,13 @@ type TestKeys struct {
 	Upload []spec.Measurement `json:"upload"`
 }
 
-func discover(ctx context.Context, sess *session.Session) (string, error) {
+func discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
 	client := mlabns.NewClient("ndt7", sess.UserAgent())
 	// Basically: (1) make sure we're using our tracing and possibly proxied
 	// client rather than default; (2) if we have an explicit proxy make sure
 	// we tell mlab-ns to use our IP address rather than the proxy one.
-	client.HTTPClient = sess.HTTPDefaultClient
-	if sess.ExplicitProxy {
+	client.HTTPClient = sess.DefaultHTTPClient()
+	if sess.ExplicitProxy() {
 		client.RequestMaker = func(
 			method, url string, body io.Reader,
 		) (*http.Request, error) {
@@ -63,21 +60,33 @@ func discover(ctx context.Context, sess *session.Session) (string, error) {
 	return client.Query(ctx)
 }
 
-func measure(
-	ctx context.Context, sess *session.Session, measurement *model.Measurement,
-	callbacks handler.Callbacks,
+type measurer struct {
+	config Config
+}
+
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	const maxRuntime = 15.0 // second (conservative)
 	testkeys := &TestKeys{}
 	measurement.TestKeys = testkeys
-	client := upstream.NewClient(sess.SoftwareName, sess.SoftwareVersion)
+	client := upstream.NewClient(sess.SoftwareName(), sess.SoftwareVersion())
 	FQDN, err := discover(ctx, sess)
 	if err != nil {
 		testkeys.Failure = err.Error()
 		return err
 	}
 	client.FQDN = FQDN // skip client's own mlabns call
-	sess.Logger.Debugf("ndt7: mlabns returned %s to us", FQDN)
+	sess.Logger().Debugf("ndt7: mlabns returned %s to us", FQDN)
 	ch, err := client.StartDownload(ctx)
 	if err != nil {
 		testkeys.Failure = err.Error()
@@ -102,7 +111,7 @@ func measure(
 			testkeys.Failure = err.Error()
 			return err
 		}
-		sess.Logger.Debugf("%s", string(data))
+		sess.Logger().Debugf("%s", string(data))
 	}
 	ch, err = client.StartUpload(ctx)
 	if err != nil {
@@ -127,15 +136,13 @@ func measure(
 			testkeys.Failure = err.Error()
 			return err
 		}
-		sess.Logger.Debugf("%s", string(data))
+		sess.Logger().Debugf("%s", string(data))
 	}
 	callbacks.OnProgress(1, "done")
 	return nil
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion, measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return &measurer{config: config}
 }

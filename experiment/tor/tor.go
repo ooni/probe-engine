@@ -11,15 +11,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -127,27 +123,35 @@ func (tk *TestKeys) fillToplevelKeys() {
 
 type measurer struct {
 	config             Config
-	fetchTorTargets    func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error)
-	newOrchestraClient func(ctx context.Context, sess *session.Session) (*orchestra.Client, error)
+	fetchTorTargets    func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error)
+	newOrchestraClient func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error)
 }
 
 func newMeasurer(config Config) *measurer {
 	return &measurer{
 		config: config,
-		fetchTorTargets: func(ctx context.Context, clnt *orchestra.Client) (map[string]model.TorTarget, error) {
+		fetchTorTargets: func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 			return clnt.FetchTorTargets(ctx)
 		},
-		newOrchestraClient: func(ctx context.Context, sess *session.Session) (*orchestra.Client, error) {
+		newOrchestraClient: func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 			return sess.NewOrchestraClient(ctx)
 		},
 	}
 }
 
-func (m *measurer) measure(
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
 	ctx context.Context,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -173,9 +177,9 @@ type keytarget struct {
 
 func (m *measurer) measureTargets(
 	ctx context.Context,
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 	targets map[string]model.TorTarget,
 ) {
 	// run measurements in parallel
@@ -207,21 +211,21 @@ func (m *measurer) measureTargets(
 }
 
 type resultsCollector struct {
-	callbacks       handler.Callbacks
+	callbacks       model.ExperimentCallbacks
 	completed       int64
 	flexibleConnect func(context.Context, model.TorTarget) (oonitemplates.Results, error)
 	measurement     *model.Measurement
 	mu              sync.Mutex
 	receivedBytes   int64
 	sentBytes       int64
-	sess            *session.Session
+	sess            model.ExperimentSession
 	targetresults   map[string]TargetResults
 }
 
 func newResultsCollector(
-	sess *session.Session,
+	sess model.ExperimentSession,
 	measurement *model.Measurement,
-	callbacks handler.Callbacks,
+	callbacks model.ExperimentCallbacks,
 ) *resultsCollector {
 	rc := &resultsCollector{
 		callbacks:     callbacks,
@@ -283,7 +287,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			Beginning:               rc.measurement.MeasurementStartTimeSaved,
 			MaxEventsBodySnapSize:   snapshotsize,
 			MaxResponseBodySnapSize: snapshotsize,
-			Handler:                 netxlogger.NewHandler(rc.sess.Logger),
+			Handler:                 netxlogger.NewHandler(rc.sess.Logger()),
 			Method:                  "GET",
 			URL:                     url.String(),
 			UserAgent:               httpheader.RandomUserAgent(),
@@ -294,35 +298,32 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			Address:            target.Address,
 			Beginning:          rc.measurement.MeasurementStartTimeSaved,
 			InsecureSkipVerify: true,
-			Handler:            netxlogger.NewHandler(rc.sess.Logger),
+			Handler:            netxlogger.NewHandler(rc.sess.Logger()),
 		})
 		tk, err = r.TestKeys, r.Error
 	case "obfs4":
 		r := oonitemplates.OBFS4Connect(ctx, oonitemplates.OBFS4ConnectConfig{
 			Address:      target.Address,
 			Beginning:    rc.measurement.MeasurementStartTimeSaved,
-			Handler:      netxlogger.NewHandler(rc.sess.Logger),
+			Handler:      netxlogger.NewHandler(rc.sess.Logger()),
 			Params:       target.Params,
-			StateBaseDir: rc.sess.TempDir,
+			StateBaseDir: rc.sess.TempDir(),
 		})
 		tk, err = r.TestKeys, r.Error
 	default:
 		r := oonitemplates.TCPConnect(ctx, oonitemplates.TCPConnectConfig{
 			Address:   target.Address,
 			Beginning: rc.measurement.MeasurementStartTimeSaved,
-			Handler:   netxlogger.NewHandler(rc.sess.Logger),
+			Handler:   netxlogger.NewHandler(rc.sess.Logger()),
 		})
 		tk, err = r.TestKeys, r.Error
 	}
 	return
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	return experiment.New(sess, testName, testVersion,
-		newMeasurer(config).measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return newMeasurer(config)
 }
 
 func errString(err error) (s string) {

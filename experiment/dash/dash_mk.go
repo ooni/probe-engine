@@ -1,5 +1,7 @@
-// Package whatsapp contains the WhatsApp network experiment.
-package whatsapp
+// +build !nomk
+
+// Package dash contains the dash network experiment.
+package dash
 
 import (
 	"context"
@@ -10,8 +12,8 @@ import (
 )
 
 const (
-	testName    = "whatsapp"
-	testVersion = "0.6.1"
+	testName    = "dash"
+	testVersion = "0.7.0"
 )
 
 // Config contains the experiment config.
@@ -37,17 +39,16 @@ func (m *measurer) Run(
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	settings := measurementkit.NewSettings(
-		"Whatsapp", sess.SoftwareName(), sess.SoftwareVersion(),
+		"Dash", sess.SoftwareName(), sess.SoftwareVersion(),
 		sess.CABundlePath(), sess.ProbeASNString(), sess.ProbeCC(),
 		sess.ProbeIP(), sess.ProbeNetworkName(), m.config.LogLevel,
 	)
-	settings.Options.GeoIPASNPath = sess.ASNDatabasePath()
 	return mkrunner.Do(
 		settings, sess, measurement, callbacks, measurementkit.StartEx,
 	)
 }
 
-// NewExperimentMeasurer creates a new ExperimentMeasurer.
+// NewExperimentMeasurer creates a new experiment measurer
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &measurer{config: config}
 }

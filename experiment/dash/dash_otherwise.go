@@ -1,4 +1,4 @@
-// +build !cgo
+// +build nomk
 
 // Package dash contains the dash network experiment. This file
 // in particular is a pure-Go implementation of this test.
@@ -16,11 +16,7 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/neubot/dash/client"
 	neubotModel "github.com/neubot/dash/model"
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/log"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -54,16 +50,16 @@ type dashClient interface {
 }
 
 type runner struct {
-	callbacks   handler.Callbacks
+	callbacks   model.ExperimentCallbacks
 	client      dashClient
 	jsonMarshal func(v interface{}) ([]byte, error)
-	logger      log.Logger
+	logger      model.Logger
 	tk          *TestKeys
 }
 
 func newRunner(
-	logger log.Logger, client dashClient,
-	callbacks handler.Callbacks,
+	logger model.Logger, client dashClient,
+	callbacks model.ExperimentCallbacks,
 	jsonMarshal func(v interface{}) ([]byte, error),
 ) *runner {
 	return &runner{
@@ -144,7 +140,7 @@ func (tk *TestKeys) analyze() error {
 
 // printSummary just prints a debug-level summary. We cannot use the info
 // level because that is reserved for the OONI Probe CLI.
-func (tk *TestKeys) printSummary(logger log.Logger) {
+func (tk *TestKeys) printSummary(logger model.Logger) {
 	logger.Debugf("Test Summary: ")
 	logger.Debugf("Connect latency: %s",
 		// convert to nanoseconds
@@ -180,12 +176,20 @@ type measurer struct {
 	config Config
 }
 
-func (m *measurer) measure(
-	ctx context.Context, sess *session.Session,
-	measurement *model.Measurement, callbacks handler.Callbacks,
+func (m *measurer) ExperimentName() string {
+	return testName
+}
+
+func (m *measurer) ExperimentVersion() string {
+	return testVersion
+}
+
+func (m *measurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	client := client.New(sess.SoftwareName, sess.SoftwareVersion)
-	r := newRunner(sess.Logger, client, callbacks, json.Marshal)
+	client := client.New(sess.SoftwareName(), sess.SoftwareVersion())
+	r := newRunner(sess.Logger(), client, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
@@ -193,10 +197,7 @@ func (m *measurer) measure(
 	return r.do(ctx)
 }
 
-// NewExperiment creates a new experiment.
-func NewExperiment(
-	sess *session.Session, config Config,
-) *experiment.Experiment {
-	m := &measurer{config: config}
-	return experiment.New(sess, testName, testVersion, m.measure)
+// NewExperimentMeasurer creates a new ExperimentMeasurer.
+func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
+	return &measurer{config: config}
 }
