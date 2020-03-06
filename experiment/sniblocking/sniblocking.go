@@ -52,8 +52,47 @@ type Subresult struct {
 
 // TestKeys contains sniblocking test keys.
 type TestKeys struct {
+	Result  string    `json:"result"`
 	Control Subresult `json:"control"`
 	Target  Subresult `json:"target"`
+}
+
+const (
+	classAccessibleInvalidHostname = "accessible_invalid_hostname"
+	classAccessibleValidHostname   = "accessible_valid_hostname"
+	classAnomalySSLError           = "anomaly_ssl_error"
+	classAnomalyTestHelperBlocked  = "anomaly_test_helper_blocked"
+	classAnomalyTimeout            = "anomaly_timeout"
+	classAnomalyUnexpectedFailure  = "anomaly_unexpected_failure"
+	classBlockedTCPIPError         = "blocked_tcpip_error"
+)
+
+func (tk *TestKeys) classify() string {
+	if tk.Target.Failure == nil {
+		return classAccessibleValidHostname
+	}
+	switch *tk.Target.Failure {
+	case modelx.FailureConnectionRefused:
+		return classAnomalyTestHelperBlocked
+	case modelx.FailureDNSNXDOMAINError:
+		return classAnomalyTestHelperBlocked
+	case modelx.FailureConnectionReset:
+		return classBlockedTCPIPError
+	case modelx.FailureEOFError:
+		return classBlockedTCPIPError
+	case modelx.FailureSSLInvalidHostname:
+		return classAccessibleInvalidHostname
+	case modelx.FailureSSLUnknownAuthority:
+		return classAnomalySSLError
+	case modelx.FailureSSLInvalidCertificate:
+		return classAnomalySSLError
+	case modelx.FailureGenericTimeoutError:
+		if tk.Control.Failure != nil {
+			return classAnomalyTestHelperBlocked
+		}
+		return classAnomalyTimeout
+	}
+	return classAnomalyUnexpectedFailure
 }
 
 type measurer struct {
@@ -83,7 +122,7 @@ func (m *measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := "generic_timeout_error"
+		s := modelx.FailureGenericTimeoutError
 		return Subresult{
 			Failure: &s,
 			SNI:     sni,
@@ -188,6 +227,8 @@ func processall(
 			break
 		}
 	}
+	testkeys.Result = testkeys.classify()
+	sess.Logger().Infof("sni_blocking: result: %s", testkeys.Result)
 	callbacks.OnDataUsage(
 		float64(receivedBytes)/1024.0, // downloaded
 		float64(sentBytes)/1024.0,     // uploaded

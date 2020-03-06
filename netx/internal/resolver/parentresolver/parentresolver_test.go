@@ -93,7 +93,7 @@ func TestLookupHostBogonHardError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if err.Error() != "dns_bogon_error" {
+	if err.Error() != modelx.FailureDNSBogonError {
 		t.Fatal("not the error that we expected")
 	}
 	if addrs != nil {

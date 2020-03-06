@@ -85,6 +85,36 @@ type Measurement struct {
 	Extension *ExtensionEvent `json:",omitempty"`
 }
 
+const (
+	// FailureConnectionRefused means ECONNREFUSED.
+	FailureConnectionRefused = "connection_refused"
+
+	// FailureConnectionReset means ECONNRESET.
+	FailureConnectionReset = "connection_reset"
+
+	// FailureDNSBogonError means we detected bogon in DNS reply.
+	FailureDNSBogonError = "dns_bogon_error"
+
+	// FailureDNSNXDOMAINError means we got NXDOMAIN in DNS reply.
+	FailureDNSNXDOMAINError = "dns_nxdomain_error"
+
+	// FailureEOFError means we got unexpected EOF on connection.
+	FailureEOFError = "eof_error"
+
+	// FailureGenericTimeoutError means we got some timer has expired.
+	FailureGenericTimeoutError = "generic_timeout_error"
+
+	// FailureSSLInvalidHostname means we got certificate is not valid for SNI.
+	FailureSSLInvalidHostname = "ssl_invalid_hostname"
+
+	// FailureSSLUnknownAuthority means we cannot find CA validating certificate.
+	FailureSSLUnknownAuthority = "ssl_unknown_authority"
+
+	// FailureSSLInvalidCertificate means certificate experired or other
+	// sort of errors causing it to be invalid.
+	FailureSSLInvalidCertificate = "ssl_invalid_certificate"
+)
+
 // ErrWrapper is our error wrapper for Go errors. The key objective of
 // this structure is to properly set Failure, which is also returned by
 // the Error() method, so be one of the OONI defined strings.
@@ -98,18 +128,8 @@ type ErrWrapper struct {
 	// Failure is the OONI failure string. The failure strings are
 	// loosely backward compatible with Measurement Kit.
 	//
-	// Supported failure strings
-	//
-	// - `connection_refused`: ECONNREFUSED
-	// - `connection_reset`: ECONNRESET
-	// - `dns_bogon_error`: detected bogon in DNS reply
-	// - `dns_nxdomain_error`: NXDOMAIN in DNS reply
-	// - `eof_error`: unexpected EOF on connection
-	// - `generic_timeout_error`: some timer has expired
-	// - `ssl_invalid_hostname`: certificate not valid for SNI
-	// - `ssl_unknown_autority`: cannot find CA validating certificate
-	// - `ssl_invalid_certificate`: e.g. certificate expried
-	// - `unknown_failure ...`: any other error
+	// This is either one of the FailureXXX strings or any other
+	// string representing an error not mapped to a failure.
 	Failure string
 
 	// Operation is the operation that failed. If possible, it

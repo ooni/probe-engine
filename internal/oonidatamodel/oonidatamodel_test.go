@@ -66,7 +66,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8:53",
-				Error:         errors.New("connection_reset"),
+				Error:         errors.New(modelx.FailureConnectionReset),
 			},
 		},
 	})
@@ -79,7 +79,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 	if out[0].Port != 53 {
 		t.Fatal("unexpected out[0].Port")
 	}
-	if *out[0].Status.Failure != "connection_reset" {
+	if *out[0].Status.Failure != modelx.FailureConnectionReset {
 		t.Fatal("unexpected out[0].Failure")
 	}
 	if out[0].Status.Success != false {
@@ -92,7 +92,7 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 		Connects: []*modelx.ConnectEvent{
 			&modelx.ConnectEvent{
 				RemoteAddress: "8.8.8.8",
-				Error:         errors.New("connection_reset"),
+				Error:         errors.New(modelx.FailureConnectionReset),
 			},
 		},
 	})
@@ -105,7 +105,7 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 	if out[0].Port != 0 {
 		t.Fatal("unexpected out[0].Port")
 	}
-	if *out[0].Status.Failure != "connection_reset" {
+	if *out[0].Status.Failure != modelx.FailureConnectionReset {
 		t.Fatal("unexpected out[0].Failure")
 	}
 	if out[0].Status.Success != false {
@@ -648,7 +648,7 @@ func TestUnitNewDNSQueriesListSuccess(t *testing.T) {
 				TransportNetwork: "system",
 			},
 			&modelx.ResolveDoneEvent{
-				Error:            errors.New("dns_nxdomain_error"),
+				Error:            errors.New(modelx.FailureDNSNXDOMAINError),
 				Hostname:         "dns.googlex",
 				TransportNetwork: "system",
 			},
@@ -767,7 +767,7 @@ func dnscheckbad(e DNSQueryEntry) error {
 	if e.Engine != "system" {
 		return errors.New("invalid engine")
 	}
-	if *e.Failure != "dns_nxdomain_error" {
+	if *e.Failure != modelx.FailureDNSNXDOMAINError {
 		return errors.New("invalid failure")
 	}
 	if e.Hostname != "dns.googlex" {
