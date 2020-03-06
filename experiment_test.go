@@ -19,6 +19,7 @@ import (
 
 func TestCreateAll(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	for _, name := range AllExperiments() {
 		builder, err := sess.NewExperimentBuilder(name)
 		if err != nil {
@@ -33,6 +34,7 @@ func TestCreateAll(t *testing.T) {
 
 func TestRunDASH(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("dash")
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +44,7 @@ func TestRunDASH(t *testing.T) {
 
 func TestRunExample(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -51,6 +54,7 @@ func TestRunExample(t *testing.T) {
 
 func TestRunPsiphon(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("psiphon")
 	if err != nil {
 		t.Fatal(err)
@@ -60,6 +64,7 @@ func TestRunPsiphon(t *testing.T) {
 
 func TestRunSNIBlocking(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("sni_blocking")
 	if err != nil {
 		t.Fatal(err)
@@ -69,6 +74,7 @@ func TestRunSNIBlocking(t *testing.T) {
 
 func TestRunTelegram(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("telegram")
 	if err != nil {
 		t.Fatal(err)
@@ -78,6 +84,7 @@ func TestRunTelegram(t *testing.T) {
 
 func TestRunTor(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("tor")
 	if err != nil {
 		t.Fatal(err)
@@ -87,6 +94,7 @@ func TestRunTor(t *testing.T) {
 
 func TestNeedsInput(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("web_connectivity")
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +106,7 @@ func TestNeedsInput(t *testing.T) {
 
 func TestSetCallbacks(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -133,6 +142,7 @@ func (c *registerCallbacksCalled) OnProgress(percentage float64, message string)
 
 func TestCreateInvalidExperiment(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("antani")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -144,6 +154,7 @@ func TestCreateInvalidExperiment(t *testing.T) {
 
 func TestMeasurementFailure(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -165,6 +176,7 @@ func TestMeasurementFailure(t *testing.T) {
 
 func TestUseOptions(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -246,6 +258,7 @@ func TestRunHHFM(t *testing.T) {
 		t.Skip("Measurement Kit not available; skipping")
 	}
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("http_header_field_manipulation")
 	if err != nil {
 		t.Fatal(err)
@@ -388,6 +401,7 @@ func TestSetOption(t *testing.T) {
 
 func TestLoadMeasurement(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -440,6 +454,7 @@ func TestLoadMeasurement(t *testing.T) {
 
 func TestSaveMeasurementErrors(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -485,6 +500,7 @@ func TestSaveMeasurementErrors(t *testing.T) {
 
 func TestOpenReportIdempotent(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -522,6 +538,7 @@ func TestOpenReportFailure(t *testing.T) {
 	))
 	defer server.Close()
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -541,6 +558,7 @@ func TestOpenReportFailure(t *testing.T) {
 
 func TestSubmitAndUpdateMeasurementWithClosedReport(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
@@ -555,6 +573,7 @@ func TestSubmitAndUpdateMeasurementWithClosedReport(t *testing.T) {
 
 func TestMeasureLookupLocationFailure(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	exp := NewExperiment(sess, new(antaniMeasurer))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
@@ -565,6 +584,7 @@ func TestMeasureLookupLocationFailure(t *testing.T) {
 
 func TestOpenReportNonHTTPS(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	sess.availableCollectors = []model.Service{
 		model.Service{
 			Address: "antani",

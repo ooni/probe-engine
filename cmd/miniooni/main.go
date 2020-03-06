@@ -209,6 +209,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("cannot create measurement session")
 	}
+	defer sess.Close()
 
 	if globalOptions.bouncerURL != "" {
 		sess.AddAvailableHTTPSBouncer(globalOptions.bouncerURL)
