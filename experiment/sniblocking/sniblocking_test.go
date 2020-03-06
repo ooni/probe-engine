@@ -106,7 +106,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.3" {
+	if measurer.ExperimentVersion() != "0.0.4" {
 		t.Fatal("unexpected version")
 	}
 }
