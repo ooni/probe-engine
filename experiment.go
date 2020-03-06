@@ -250,7 +250,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	return e.report.SubmitMeasurement(context.Background(), measurement)
 }
 
-// CloseReport is an idempotent method that closes and open report
+// CloseReport is an idempotent method that closes an open report
 // if one has previously been opened, otherwise it does nothing.
 func (e *Experiment) CloseReport() (err error) {
 	if e.report != nil {
