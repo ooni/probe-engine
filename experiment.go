@@ -505,7 +505,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config: &sniblocking.Config{
-				ControlSNI: "ps.ooni.io",
+				ControlSNI: "example.com",
 			},
 			needsInput: true,
 		}
