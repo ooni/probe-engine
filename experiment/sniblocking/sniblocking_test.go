@@ -22,7 +22,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.2" {
+	if measurer.ExperimentVersion() != "0.0.3" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -42,7 +42,7 @@ func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
 
 func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{
-		ControlSNI: "ps.ooni.io",
+		ControlSNI: "example.com",
 	})
 	err := measurer.Run(
 		context.Background(),
@@ -59,7 +59,7 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{
-		ControlSNI: "ps.ooni.io",
+		ControlSNI: "example.com",
 	})
 	measurement := &model.Measurement{
 		Input: "\t",
@@ -79,7 +79,7 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{
-		ControlSNI: "ps.ooni.io",
+		ControlSNI: "example.com",
 	})
 	measurement := &model.Measurement{
 		Input: "kernel.org",
@@ -98,56 +98,85 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	outputs := make(chan Subresult, 1)
-	measureone(
+	result := new(measurer).measureone(
 		ctx,
-		outputs,
 		netxlogger.NewHandler(log.Log),
 		time.Now(),
 		"kernel.org",
-		"ps.ooni.io:443",
+		"example.com:443",
 	)
-	for result := range outputs {
-		if *result.Failure != "generic_timeout_error" {
-			t.Fatal("unexpected failure")
-		}
-		if result.SNI != "kernel.org" {
-			t.Fatal("unexpected SNI")
-		}
-		if result.BytesReceived != 0 {
-			t.Fatal("expected to receive bytes")
-		}
-		if result.BytesSent != 0 {
-			t.Fatal("expected to send bytes")
-		}
-		break
+	if *result.Failure != "generic_timeout_error" {
+		t.Fatal("unexpected failure")
+	}
+	if result.SNI != "kernel.org" {
+		t.Fatal("unexpected SNI")
+	}
+	if result.BytesReceived != 0 {
+		t.Fatal("expected to receive bytes")
+	}
+	if result.BytesSent != 0 {
+		t.Fatal("expected to send bytes")
 	}
 }
 
 func TestUnitMeasureoneSuccess(t *testing.T) {
-	outputs := make(chan Subresult, 1)
-	measureone(
+	result := new(measurer).measureone(
 		context.Background(),
-		outputs,
 		netxlogger.NewHandler(log.Log),
 		time.Now(),
 		"kernel.org",
-		"ps.ooni.io:443",
+		"example.com:443",
 	)
-	for result := range outputs {
+	if *result.Failure != "ssl_invalid_hostname" {
+		t.Fatal("unexpected failure")
+	}
+	if result.SNI != "kernel.org" {
+		t.Fatal("unexpected SNI")
+	}
+	if result.BytesReceived <= 0 {
+		t.Fatal("expected to receive bytes")
+	}
+	if result.BytesSent <= 0 {
+		t.Fatal("expected to send bytes")
+	}
+}
+
+func TestUnitMeasureonewithcacheWorks(t *testing.T) {
+	measurer := &measurer{cache: make(map[string]Subresult)}
+	output := make(chan Subresult, 2)
+	for i := 0; i < 2; i++ {
+		measurer.measureonewithcache(
+			context.Background(),
+			output,
+			netxlogger.NewHandler(log.Log),
+			time.Now(),
+			"kernel.org",
+			"example.com:443",
+		)
+	}
+	for _, expected := range []bool{false, true} {
+		result := <-output
+		if result.Cached != expected {
+			t.Fatal("unexpected cached")
+		}
 		if *result.Failure != "ssl_invalid_hostname" {
 			t.Fatal("unexpected failure")
 		}
 		if result.SNI != "kernel.org" {
 			t.Fatal("unexpected SNI")
 		}
-		if result.BytesReceived <= 0 {
+		if result.BytesReceived <= 0 && !result.Cached {
 			t.Fatal("expected to receive bytes")
 		}
-		if result.BytesSent <= 0 {
+		if result.BytesSent <= 0 && !result.Cached {
 			t.Fatal("expected to send bytes")
 		}
-		break
+		if result.BytesReceived != 0 && result.Cached {
+			t.Fatal("expected to not receive bytes")
+		}
+		if result.BytesSent != 0 && result.Cached {
+			t.Fatal("expected to not send bytes")
+		}
 	}
 }
 
@@ -174,9 +203,9 @@ func TestUnitProcessallPanicsIfInvalidSNI(t *testing.T) {
 		outputs,
 		measurement,
 		handler.NewPrinterCallbacks(log.Log),
-		[]string{"kernel.org", "ps.ooni.io"},
+		[]string{"kernel.org", "example.com"},
 		newsession(),
-		"ps.ooni.io",
+		"example.com",
 	)
 }
 
