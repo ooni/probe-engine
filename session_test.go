@@ -114,6 +114,7 @@ func newSessionForTesting(t *testing.T) *Session {
 
 func TestIntegrationNewOrchestraClient(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	clnt, err := sess.NewOrchestraClient(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -127,6 +128,7 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	clnt := orchestra.NewClient(
 		sess.DefaultHTTPClient(),
 		sess.Logger(),
@@ -147,6 +149,7 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 	ctx := context.Background()
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	clnt := orchestra.NewClient(
 		sess.DefaultHTTPClient(),
 		sess.Logger(),
@@ -181,6 +184,7 @@ func TestBouncerError(t *testing.T) {
 		t.Fatal(err)
 	}
 	sess := newSessionForTestingNoLookupsWithProxyURL(t, URL)
+	defer sess.Close()
 	if sess.ExplicitProxy() == false {
 		t.Fatal("expected to see explicit proxy here")
 	}
@@ -191,6 +195,7 @@ func TestBouncerError(t *testing.T) {
 
 func TestIntegrationSessionLocationLookup(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
 	}
@@ -230,6 +235,7 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	}
 	ctx := context.Background()
 	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
 	sess.SetAssetsDir(tmpdir)
 	err = sess.FetchResourcesIdempotent(ctx)
 	if err != nil {
@@ -261,6 +267,7 @@ func TestUnitGetAvailableBouncers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer sess.Close()
 	all := sess.GetAvailableBouncers()
 	if len(all) != 1 {
 		t.Fatal("unexpected number of bouncers")
@@ -284,6 +291,7 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer sess.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	err = sess.MaybeLookupBackendsContext(ctx)
@@ -303,6 +311,7 @@ func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer sess.Close()
 	ctx := context.Background()
 	if err = sess.MaybeLookupTestHelpersContext(ctx); err != nil {
 		t.Fatal(err)
@@ -326,6 +335,7 @@ func TestUnitAllBouncersUnsupported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer sess.Close()
 	sess.AppendAvailableBouncer(model.Service{
 		Address: "mascetti",
 		Type:    "antani",

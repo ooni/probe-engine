@@ -151,6 +151,15 @@ func (s *Session) CABundlePath() string {
 	return filepath.Join(s.assetsDir, resources.CABundleName)
 }
 
+// Close ensures that we close all the idle connections that the HTTP clients
+// we are currently using may have created. Not calling this function may likely
+// cause memory leaks in your application because of open idle connections.
+func (s *Session) Close() error {
+	s.httpDefaultClient.CloseIdleConnections()
+	s.httpNoProxyClient.CloseIdleConnections()
+	return nil
+}
+
 // CountryDatabasePath is like ASNDatabasePath but for the country DB path.
 func (s *Session) CountryDatabasePath() string {
 	return filepath.Join(s.assetsDir, resources.CountryDatabaseName)

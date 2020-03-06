@@ -6,6 +6,7 @@ import (
 
 func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	config := &TestListsURLsConfig{}
 	config.AddCategory("NEWS")
 	config.Limit = 7
@@ -41,6 +42,7 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 
 func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	config := &TestListsURLsConfig{BaseURL: "\t"}
 	result, err := sess.QueryTestListsURLs(config)
 	if err == nil {
@@ -53,6 +55,7 @@ func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
 
 func TestUnitQueryTestListsURLsNilConfig(t *testing.T) {
 	sess := newSessionForTesting(t)
+	defer sess.Close()
 	result, err := sess.QueryTestListsURLs(nil)
 	if err == nil {
 		t.Fatal("expected an error here")

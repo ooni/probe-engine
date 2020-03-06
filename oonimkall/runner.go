@@ -124,6 +124,7 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
+	defer sess.Close()
 
 	// TODO(bassosimone): set experiment options here
 	// TODO(bassosimone): we should probably also set callbacks here?

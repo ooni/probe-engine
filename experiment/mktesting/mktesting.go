@@ -31,6 +31,7 @@ func Run(input string, factory func() model.ExperimentMeasurer) error {
 	if err != nil {
 		return err
 	}
+	defer sess.Close()
 	if err := sess.MaybeLookupBackends(); err != nil {
 		return err
 	}
