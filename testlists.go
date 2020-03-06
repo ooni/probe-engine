@@ -8,6 +8,9 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+// TODO(bassosimone): this API can probably be deprecated in
+// favour of always using session.NewOrchestraClient.
+
 // TestListsURLsConfig config config for test-lists/urls API.
 type TestListsURLsConfig struct {
 	BaseURL    string   // URL to use (empty means default)
@@ -41,9 +44,7 @@ func (r *TestListsURLsResult) At(idx int64) (out *model.URLInfo) {
 }
 
 // QueryTestListsURLs queries the test-lists/urls API.
-func (sess *Session) QueryTestListsURLs(
-	conf *TestListsURLsConfig,
-) (*TestListsURLsResult, error) {
+func (sess *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsResult, error) {
 	if conf == nil {
 		return nil, errors.New("QueryTestListURLs: passed nil config")
 	}
@@ -55,10 +56,10 @@ func (sess *Session) QueryTestListsURLs(
 		BaseURL:           baseURL,
 		CountryCode:       sess.ProbeCC(),
 		EnabledCategories: conf.Categories,
-		HTTPClient:        sess.session.HTTPDefaultClient,
+		HTTPClient:        sess.httpDefaultClient,
 		Limit:             conf.Limit,
-		Logger:            sess.session.Logger(),
-		UserAgent:         sess.session.UserAgent(),
+		Logger:            sess.logger,
+		UserAgent:         sess.UserAgent(),
 	})
 	if err != nil {
 		return nil, err

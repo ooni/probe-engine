@@ -1,10 +1,20 @@
 package engine
 
 import (
+	"context"
+	"errors"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/model"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -53,7 +63,7 @@ func newSessionMustFail(t *testing.T, config SessionConfig) {
 	}
 }
 
-func newSessionForTesting(t *testing.T) *Session {
+func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Session {
 	tempdir, err := ioutil.TempDir("testdata", "enginetests")
 	if err != nil {
 		t.Fatal(err)
@@ -61,6 +71,7 @@ func newSessionForTesting(t *testing.T) *Session {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
+		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 		TempDir:         tempdir,
@@ -73,6 +84,15 @@ func newSessionForTesting(t *testing.T) *Session {
 	sess.SetIncludeProbeASN(true)
 	sess.SetIncludeProbeCC(true)
 	sess.SetIncludeProbeIP(false)
+	return sess
+}
+
+func newSessionForTestingNoLookups(t *testing.T) *Session {
+	return newSessionForTestingNoLookupsWithProxyURL(t, nil)
+}
+
+func newSessionForTesting(t *testing.T) *Session {
+	sess := newSessionForTestingNoLookups(t)
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
 	}
@@ -90,4 +110,228 @@ func newSessionForTesting(t *testing.T) *Session {
 		t.Fatal(err)
 	}
 	return sess
+}
+
+func TestIntegrationNewOrchestraClient(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	clnt, err := sess.NewOrchestraClient(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if clnt == nil {
+		t.Fatal("expected non nil client here")
+	}
+}
+
+func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	sess := newSessionForTestingNoLookups(t)
+	clnt := orchestra.NewClient(
+		sess.DefaultHTTPClient(),
+		sess.Logger(),
+		sess.UserAgent(),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
+	)
+	outclnt, err := sess.initOrchestraClient(
+		ctx, clnt, clnt.MaybeLogin,
+	)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if outclnt != nil {
+		t.Fatal("expected a nil client here")
+	}
+}
+
+func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
+	ctx := context.Background()
+	sess := newSessionForTestingNoLookups(t)
+	clnt := orchestra.NewClient(
+		sess.DefaultHTTPClient(),
+		sess.Logger(),
+		sess.UserAgent(),
+		statefile.New(kvstore.NewMemoryKeyValueStore()),
+	)
+	expected := errors.New("mocked error")
+	outclnt, err := sess.initOrchestraClient(
+		ctx, clnt, func(context.Context) error {
+			return expected
+		},
+	)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if outclnt != nil {
+		t.Fatal("expected a nil client here")
+	}
+}
+
+func TestBouncerError(t *testing.T) {
+	// Combine proxy testing with a broken proxy with errors
+	// in reaching out to the bouncer.
+	server := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+	))
+	defer server.Close()
+	URL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess := newSessionForTestingNoLookupsWithProxyURL(t, URL)
+	if sess.ExplicitProxy() == false {
+		t.Fatal("expected to see explicit proxy here")
+	}
+	if err := sess.MaybeLookupBackends(); err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestIntegrationSessionLocationLookup(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	if err := sess.MaybeLookupLocation(); err != nil {
+		t.Fatal(err)
+	}
+	if sess.ProbeASNString() == model.DefaultProbeASNString {
+		t.Fatal("unexpected ProbeASNString")
+	}
+	if sess.ProbeASN() == model.DefaultProbeASN {
+		t.Fatal("unexpected ProbeASN")
+	}
+	if sess.ProbeCC() == model.DefaultProbeCC {
+		t.Fatal("unexpected ProbeCC")
+	}
+	if sess.ProbeIP() == model.DefaultProbeIP {
+		t.Fatal("unexpected ProbeIP")
+	}
+	if sess.ProbeNetworkName() == model.DefaultProbeNetworkName {
+		t.Fatal("unexpected ProbeNetworkName")
+	}
+	if sess.ResolverASN() == model.DefaultResolverASN {
+		t.Fatal("unexpected ResolverASN")
+	}
+	if sess.ResolverASNString() == model.DefaultResolverASNString {
+		t.Fatal("unexpected ResolverASNString")
+	}
+	if sess.ResolverIP() == model.DefaultResolverIP {
+		t.Fatal("unexpected ResolverIP")
+	}
+	if sess.ResolverNetworkName() == model.DefaultResolverNetworkName {
+		t.Fatal("unexpected ResolverNetworkName")
+	}
+}
+
+func TestIntegrationSessionDownloadResources(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("testdata", "test-download-resources-idempotent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	sess := newSessionForTestingNoLookups(t)
+	sess.SetAssetsDir(tmpdir)
+	err = sess.FetchResourcesIdempotent(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readfile := func(path string) (err error) {
+		_, err = ioutil.ReadFile(path)
+		return
+	}
+	if err := readfile(sess.ASNDatabasePath()); err != nil {
+		t.Fatal(err)
+	}
+	if err := readfile(sess.CABundlePath()); err != nil {
+		t.Fatal(err)
+	}
+	if err := readfile(sess.CountryDatabasePath()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUnitGetAvailableBouncers(t *testing.T) {
+	sess, err := NewSession(SessionConfig{
+		AssetsDir:       "testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	all := sess.GetAvailableBouncers()
+	if len(all) != 1 {
+		t.Fatal("unexpected number of bouncers")
+	}
+	if all[0].Address != "https://bouncer.ooni.io" {
+		t.Fatal("unexpected bouncer address")
+	}
+	if all[0].Type != "https" {
+		t.Fatal("unexpected bouncer type")
+	}
+}
+
+func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
+	sess, err := NewSession(SessionConfig{
+		AssetsDir:       "testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	err = sess.MaybeLookupBackendsContext(ctx)
+	if !strings.HasSuffix(err.Error(), "All available bouncers failed") {
+		t.Fatal("unexpected error")
+	}
+}
+
+func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
+	sess, err := NewSession(SessionConfig{
+		AssetsDir:       "testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	if err = sess.MaybeLookupTestHelpersContext(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = sess.MaybeLookupTestHelpersContext(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if sess.QueryBouncerCount() != 1 {
+		t.Fatal("unexpected number of queries sent to the bouncer")
+	}
+}
+
+func TestUnitAllBouncersUnsupported(t *testing.T) {
+	sess, err := NewSession(SessionConfig{
+		AssetsDir:       "testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess.AppendAvailableBouncer(model.Service{
+		Address: "mascetti",
+		Type:    "antani",
+	})
+	err = sess.MaybeLookupBackends()
+	if !strings.HasSuffix(err.Error(), "All available bouncers failed") {
+		t.Fatal("unexpected error")
+	}
 }

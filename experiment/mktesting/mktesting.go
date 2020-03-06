@@ -2,14 +2,10 @@
 package mktesting
 
 import (
-	"context"
-
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/session"
 )
 
 const (
@@ -23,34 +19,37 @@ func Run(input string, factory func() model.ExperimentMeasurer) error {
 		return nil
 	}
 	log.SetLevel(log.DebugLevel)
-	ctx := context.Background()
 
-	sess := session.New(
-		log.Log, softwareName, softwareVersion, "../../testdata", nil,
-		"../../testdata", kvstore.NewMemoryKeyValueStore(),
-	)
-	if err := sess.MaybeLookupBackends(ctx); err != nil {
+	config := engine.SessionConfig{
+		AssetsDir:       "../../testdata",
+		Logger:          log.Log,
+		SoftwareName:    softwareName,
+		SoftwareVersion: softwareVersion,
+		TempDir:         "../../testdata",
+	}
+	sess, err := engine.NewSession(config)
+	if err != nil {
 		return err
 	}
-	if err := sess.MaybeLookupLocation(ctx); err != nil {
+	if err := sess.MaybeLookupBackends(); err != nil {
+		return err
+	}
+	if err := sess.MaybeLookupLocation(); err != nil {
 		return err
 	}
 
 	measurer := factory()
-	experiment := experiment.New(
-		sess, measurer.ExperimentName(),
-		measurer.ExperimentVersion(), measurer,
-	)
-	if err := experiment.OpenReport(ctx); err != nil {
+	experiment := engine.NewExperiment(sess, measurer)
+	if err := experiment.OpenReport(); err != nil {
 		return err
 	}
-	defer experiment.CloseReport(ctx)
+	defer experiment.CloseReport()
 
-	measurement, err := experiment.Measure(ctx, input)
+	measurement, err := experiment.Measure(input)
 	if err != nil {
 		return err
 	}
-	if err := experiment.SubmitMeasurement(ctx, &measurement); err != nil {
+	if err := experiment.SubmitAndUpdateMeasurement(measurement); err != nil {
 		return err
 	}
 	return nil

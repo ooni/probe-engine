@@ -1,13 +1,20 @@
 package engine
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/measurementkit"
+	"github.com/ooni/probe-engine/model"
 )
 
 func TestCreateAll(t *testing.T) {
@@ -17,7 +24,7 @@ func TestCreateAll(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		exp := builder.Build()
+		exp := builder.NewExperiment()
 		if exp.Name() != name {
 			t.Fatal("unexpected experiment name")
 		}
@@ -30,7 +37,7 @@ func TestRunDASH(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func TestRunExample(t *testing.T) {
@@ -39,7 +46,7 @@ func TestRunExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func TestRunPsiphon(t *testing.T) {
@@ -48,7 +55,7 @@ func TestRunPsiphon(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func TestRunSNIBlocking(t *testing.T) {
@@ -57,7 +64,7 @@ func TestRunSNIBlocking(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "kernel.org")
+	runexperimentflow(t, builder.NewExperiment(), "kernel.org")
 }
 
 func TestRunTelegram(t *testing.T) {
@@ -66,7 +73,7 @@ func TestRunTelegram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func TestRunTor(t *testing.T) {
@@ -75,7 +82,7 @@ func TestRunTor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func TestNeedsInput(t *testing.T) {
@@ -100,7 +107,7 @@ func TestSetCallbacks(t *testing.T) {
 	}
 	register := &registerCallbacksCalled{}
 	builder.SetCallbacks(register)
-	if _, err := builder.Build().Measure(""); err != nil {
+	if _, err := builder.NewExperiment().Measure(""); err != nil {
 		t.Fatal(err)
 	}
 	if register.onDataUsageCalled == false {
@@ -144,7 +151,7 @@ func TestMeasurementFailure(t *testing.T) {
 	if err := builder.SetOptionBool("ReturnError", true); err != nil {
 		t.Fatal(err)
 	}
-	measurement, err := builder.Build().Measure("")
+	measurement, err := builder.NewExperiment().Measure("")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -243,7 +250,7 @@ func TestRunHHFM(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runexperimentflow(t, builder.Build(), "")
+	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
 func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
@@ -261,7 +268,7 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	measurement.AddAnnotations(map[string]string{
 		"probe-engine-ci": "yes",
 	})
-	data, err := measurement.MarshalJSON()
+	data, err := json.Marshal(measurement)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,21 +287,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	err = experiment.CloseReport()
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestMakeGenericTestKeysMarshalError(t *testing.T) {
-	m := new(Measurement)
-	out, err := m.makeGenericTestKeys(
-		func(interface{}) ([]byte, error) {
-			return nil, errors.New("mocked error")
-		},
-	)
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if out != nil {
-		t.Fatal("expected nil output here")
 	}
 }
 
@@ -400,8 +392,8 @@ func TestLoadMeasurement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	experiment := builder.Build()
-	testflow := func(t *testing.T, name string) (*Measurement, error) {
+	experiment := builder.NewExperiment()
+	testflow := func(t *testing.T, name string) (*model.Measurement, error) {
 		path := fmt.Sprintf(
 			"testdata/loadable-measurement-%s.jsonl", name,
 		)
@@ -444,4 +436,160 @@ func TestLoadMeasurement(t *testing.T) {
 			t.Fatal("unexpected error value")
 		}
 	})
+}
+
+func TestSaveMeasurementErrors(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp := builder.NewExperiment()
+	dirname, err := ioutil.TempDir("", "ooniprobe-engine-save-measurement")
+	if err != nil {
+		t.Fatal(err)
+	}
+	filename := filepath.Join(dirname, "report.jsonl")
+	m := new(model.Measurement)
+	err = exp.SaveMeasurementEx(
+		m, filename, func(v interface{}) ([]byte, error) {
+			return nil, errors.New("mocked error")
+		}, os.OpenFile, func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	err = exp.SaveMeasurementEx(
+		m, filename, json.Marshal,
+		func(name string, flag int, perm os.FileMode) (*os.File, error) {
+			return nil, errors.New("mocked error")
+		}, func(fp *os.File, b []byte) (int, error) {
+			return fp.Write(b)
+		},
+	)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	err = exp.SaveMeasurementEx(
+		m, filename, json.Marshal, os.OpenFile,
+		func(fp *os.File, b []byte) (int, error) {
+			return 0, errors.New("mocked error")
+		},
+	)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestOpenReportIdempotent(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp := builder.NewExperiment()
+	if exp.ReportID() != "" {
+		t.Fatal("unexpected initial report ID")
+	}
+	if err := exp.SubmitAndUpdateMeasurement(&model.Measurement{}); err == nil {
+		t.Fatal("we should not be able to submit before OpenReport")
+	}
+	err = exp.OpenReport()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer exp.CloseReport()
+	rid := exp.ReportID()
+	if rid == "" {
+		t.Fatal("invalid report ID")
+	}
+	err = exp.OpenReport()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rid != exp.ReportID() {
+		t.Fatal("OpenReport is not idempotent")
+	}
+}
+
+func TestOpenReportFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(500)
+		},
+	))
+	defer server.Close()
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp := builder.NewExperiment()
+	exp.session.availableCollectors = []model.Service{
+		model.Service{
+			Address: server.URL,
+			Type:    "https",
+		},
+	}
+	err = exp.OpenReport()
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestSubmitAndUpdateMeasurementWithClosedReport(t *testing.T) {
+	sess := newSessionForTesting(t)
+	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp := builder.NewExperiment()
+	m := new(model.Measurement)
+	err = exp.SubmitAndUpdateMeasurement(m)
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestMeasureLookupLocationFailure(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	exp := NewExperiment(sess, new(antaniMeasurer))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // so we fail immediately
+	if _, err := exp.measure(ctx, "xx"); err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+func TestOpenReportNonHTTPS(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	sess.availableCollectors = []model.Service{
+		model.Service{
+			Address: "antani",
+			Type:    "mascetti",
+		},
+	}
+	exp := NewExperiment(sess, new(antaniMeasurer))
+	if err := exp.OpenReport(); err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
+type antaniMeasurer struct{}
+
+func (am *antaniMeasurer) ExperimentName() string {
+	return "antani"
+}
+
+func (am *antaniMeasurer) ExperimentVersion() string {
+	return "0.1.1"
+}
+
+func (am *antaniMeasurer) Run(
+	ctx context.Context, sess model.ExperimentSession,
+	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
+) error {
+	return nil
 }

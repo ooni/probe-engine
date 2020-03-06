@@ -2,6 +2,7 @@ package oonimkall
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/m-lab/go/rtx"
@@ -189,7 +190,7 @@ func (r *runner) Run(ctx context.Context) {
 		}
 		r.settings.Inputs = append(r.settings.Inputs, "")
 	}
-	experiment := builder.Build()
+	experiment := builder.NewExperiment()
 	if !r.settings.Options.NoCollector {
 		if err := experiment.OpenReport(); err != nil {
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
@@ -223,7 +224,7 @@ func (r *runner) Run(ctx context.Context) {
 			})
 			// fallthrough: we want to submit the report anyway
 		}
-		data, err := m.MarshalJSON()
+		data, err := json.Marshal(m)
 		rtx.PanicOnError(err, "measurement.MarshalJSON failed")
 		r.emitter.Emit(measurement, eventMeasurementGeneric{
 			Idx:     int64(idx),
