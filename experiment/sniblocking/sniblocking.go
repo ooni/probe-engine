@@ -271,6 +271,9 @@ func (m *measurer) Run(
 			m.config.ControlSNI, "443",
 		)
 	}
+	// TODO(bassosimone): if the user has configured DoT or DoH, here we
+	// probably want to perform the name resolution before the measurements
+	// or to make sure that the classify logic is robust to that.
 	maybeParsed, err := maybeURLToSNI(measurement.Input)
 	if err != nil {
 		return err
