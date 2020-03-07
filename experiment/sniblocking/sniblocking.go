@@ -68,9 +68,18 @@ const (
 )
 
 func (tk *TestKeys) classify() string {
+	// This implementation of classify is loosely modeled after
+	// https://github.com/ooni/spec/pull/159#discussion_r373754706
 	if tk.Target.Failure == nil {
 		return classAccessibleValidHostname
 	}
+	// TODO(bassosimone): we should write jafar tests to understand
+	// what error is returned in the case of MITM and make sure we
+	// can reliably detect and distinguish this case from other cases
+	// of TLS error. For now, the following is coded such that the
+	// MITM will result in classAnomalySSLErrror.
+	//
+	// See https://github.com/ooni/probe-engine/issues/393.
 	switch *tk.Target.Failure {
 	case modelx.FailureConnectionRefused:
 		return classAnomalyTestHelperBlocked
