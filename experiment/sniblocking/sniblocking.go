@@ -52,8 +52,8 @@ type Subresult struct {
 
 // TestKeys contains sniblocking test keys.
 type TestKeys struct {
-	Result  string    `json:"result"`
 	Control Subresult `json:"control"`
+	Result  string    `json:"result"`
 	Target  Subresult `json:"target"`
 }
 
