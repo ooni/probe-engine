@@ -43,45 +43,45 @@ func TestMaybeBuildFactory(t *testing.T) {
 func TestToFailureString(t *testing.T) {
 	t.Run("for already wrapped error", func(t *testing.T) {
 		err := SafeErrWrapperBuilder{Error: io.EOF}.MaybeBuild()
-		if toFailureString(err) != "eof_error" {
+		if toFailureString(err) != modelx.FailureEOFError {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for modelx.ErrDNSBogon", func(t *testing.T) {
-		if toFailureString(modelx.ErrDNSBogon) != "dns_bogon_error" {
+		if toFailureString(modelx.ErrDNSBogon) != modelx.FailureDNSBogonError {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.HostnameError", func(t *testing.T) {
 		var err x509.HostnameError
-		if toFailureString(err) != "ssl_invalid_hostname" {
+		if toFailureString(err) != modelx.FailureSSLInvalidHostname {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.UnknownAuthorityError", func(t *testing.T) {
 		var err x509.UnknownAuthorityError
-		if toFailureString(err) != "ssl_unknown_authority" {
+		if toFailureString(err) != modelx.FailureSSLUnknownAuthority {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.CertificateInvalidError", func(t *testing.T) {
 		var err x509.CertificateInvalidError
-		if toFailureString(err) != "ssl_invalid_certificate" {
+		if toFailureString(err) != modelx.FailureSSLInvalidCertificate {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for EOF", func(t *testing.T) {
-		if toFailureString(io.EOF) != "eof_error" {
+		if toFailureString(io.EOF) != modelx.FailureEOFError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for connection_refused", func(t *testing.T) {
-		if toFailureString(syscall.ECONNREFUSED) != "connection_refused" {
+		if toFailureString(syscall.ECONNREFUSED) != modelx.FailureConnectionRefused {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for connection_reset", func(t *testing.T) {
-		if toFailureString(syscall.ECONNRESET) != "connection_reset" {
+		if toFailureString(syscall.ECONNRESET) != modelx.FailureConnectionReset {
 			t.Fatal("unexpected results")
 		}
 	})
@@ -89,7 +89,7 @@ func TestToFailureString(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
 		defer cancel()
 		<-ctx.Done()
-		if toFailureString(ctx.Err()) != "generic_timeout_error" {
+		if toFailureString(ctx.Err()) != modelx.FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
@@ -103,20 +103,20 @@ func TestToFailureString(t *testing.T) {
 		if conn != nil {
 			t.Fatal("expected nil connection here")
 		}
-		if toFailureString(err) != "generic_timeout_error" {
+		if toFailureString(err) != modelx.FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for TLS handshake timeout error", func(t *testing.T) {
 		err := errors.New("net/http: TLS handshake timeout")
-		if toFailureString(err) != "generic_timeout_error" {
+		if toFailureString(err) != modelx.FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for no such host", func(t *testing.T) {
 		if toFailureString(&net.DNSError{
 			Err: "no such host",
-		}) != "dns_nxdomain_error" {
+		}) != modelx.FailureDNSNXDOMAINError {
 			t.Fatal("unexpected results")
 		}
 	})

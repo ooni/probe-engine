@@ -9,6 +9,7 @@ import (
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )
@@ -37,7 +38,7 @@ func TestIntegrationDNSLookupCancellation(t *testing.T) {
 	if results.Error == nil {
 		t.Fatal("expected an error here")
 	}
-	if results.Error.Error() != "generic_timeout_error" {
+	if results.Error.Error() != modelx.FailureGenericTimeoutError {
 		t.Fatal("not the error we expected")
 	}
 	if len(results.Addresses) > 0 {
@@ -152,7 +153,7 @@ func TestIntegrationTLSConnectCancellation(t *testing.T) {
 	if results.Error == nil {
 		t.Fatal("expected an error here")
 	}
-	if results.Error.Error() != "generic_timeout_error" {
+	if results.Error.Error() != modelx.FailureGenericTimeoutError {
 		t.Fatal("not the error we expected")
 	}
 }

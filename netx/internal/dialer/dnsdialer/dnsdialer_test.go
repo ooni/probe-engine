@@ -101,11 +101,11 @@ func TestReduceErrors(t *testing.T) {
 			Failure: "unknown_error: antani",
 		}
 		err3 := &modelx.ErrWrapper{
-			Failure: "connection_refused",
+			Failure: modelx.FailureConnectionRefused,
 		}
 		err4 := errors.New("mocked error #3")
 		result := reduceErrors([]error{err1, err2, err3, err4})
-		if result.Error() != "connection_refused" {
+		if result.Error() != modelx.FailureConnectionRefused {
 			t.Fatal("wrong result")
 		}
 	})

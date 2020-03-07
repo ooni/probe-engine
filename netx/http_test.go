@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func dowithclient(t *testing.T, client *netx.HTTPClient) {
@@ -147,7 +148,7 @@ func TestIntegrationHTTPTransportTimeout(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "generic_timeout_error") {
+	if !strings.HasSuffix(err.Error(), modelx.FailureGenericTimeoutError) {
 		t.Fatal("not the error we expected")
 	}
 	if resp != nil {

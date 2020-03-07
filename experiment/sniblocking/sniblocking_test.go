@@ -10,6 +10,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 const (
@@ -17,12 +18,95 @@ const (
 	softwareVersion = "0.0.1"
 )
 
+func TestUnitTestKeysClassify(t *testing.T) {
+	asStringPtr := func(s string) *string {
+		return &s
+	}
+	t.Run("with tk.Target.Failure == nil", func(t *testing.T) {
+		tk := new(TestKeys)
+		if tk.classify() != classAccessibleValidHostname {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == connection_refused", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureConnectionRefused)
+		if tk.classify() != classAnomalyTestHelperBlocked {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == dns_nxdomain_error", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureDNSNXDOMAINError)
+		if tk.classify() != classAnomalyTestHelperBlocked {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == connection_reset", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureConnectionReset)
+		if tk.classify() != classBlockedTCPIPError {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == eof_error", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureEOFError)
+		if tk.classify() != classBlockedTCPIPError {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == ssl_invalid_hostname", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureSSLInvalidHostname)
+		if tk.classify() != classAccessibleInvalidHostname {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == ssl_unknown_authority", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureSSLUnknownAuthority)
+		if tk.classify() != classAnomalySSLError {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == ssl_invalid_certificate", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureSSLInvalidCertificate)
+		if tk.classify() != classAnomalySSLError {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == generic_timeout_error #1", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureGenericTimeoutError)
+		if tk.classify() != classAnomalyTimeout {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == generic_timeout_error #2", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr(modelx.FailureGenericTimeoutError)
+		tk.Control.Failure = asStringPtr(modelx.FailureGenericTimeoutError)
+		if tk.classify() != classAnomalyTestHelperBlocked {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("with tk.Target.Failure == unknown_failure", func(t *testing.T) {
+		tk := new(TestKeys)
+		tk.Target.Failure = asStringPtr("unknown_failure")
+		if tk.classify() != classAnomalyUnexpectedFailure {
+			t.Fatal("unexpected result")
+		}
+	})
+}
+
 func TestUnitNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.3" {
+	if measurer.ExperimentVersion() != "0.0.4" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -105,7 +189,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 		"kernel.org",
 		"example.com:443",
 	)
-	if *result.Failure != "generic_timeout_error" {
+	if *result.Failure != modelx.FailureGenericTimeoutError {
 		t.Fatal("unexpected failure")
 	}
 	if result.SNI != "kernel.org" {
@@ -127,7 +211,7 @@ func TestUnitMeasureoneSuccess(t *testing.T) {
 		"kernel.org",
 		"example.com:443",
 	)
-	if *result.Failure != "ssl_invalid_hostname" {
+	if *result.Failure != modelx.FailureSSLInvalidHostname {
 		t.Fatal("unexpected failure")
 	}
 	if result.SNI != "kernel.org" {
@@ -159,7 +243,7 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 		if result.Cached != expected {
 			t.Fatal("unexpected cached")
 		}
-		if *result.Failure != "ssl_invalid_hostname" {
+		if *result.Failure != modelx.FailureSSLInvalidHostname {
 			t.Fatal("unexpected failure")
 		}
 		if result.SNI != "kernel.org" {

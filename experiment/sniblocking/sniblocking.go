@@ -22,7 +22,7 @@ import (
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.0.3"
+	testVersion = "0.0.4"
 )
 
 // Config contains the experiment config.
@@ -53,7 +53,55 @@ type Subresult struct {
 // TestKeys contains sniblocking test keys.
 type TestKeys struct {
 	Control Subresult `json:"control"`
+	Result  string    `json:"result"`
 	Target  Subresult `json:"target"`
+}
+
+const (
+	classAccessibleInvalidHostname = "accessible_invalid_hostname"
+	classAccessibleValidHostname   = "accessible_valid_hostname"
+	classAnomalySSLError           = "anomaly_ssl_error"
+	classAnomalyTestHelperBlocked  = "anomaly_test_helper_blocked"
+	classAnomalyTimeout            = "anomaly_timeout"
+	classAnomalyUnexpectedFailure  = "anomaly_unexpected_failure"
+	classBlockedTCPIPError         = "blocked_tcpip_error"
+)
+
+func (tk *TestKeys) classify() string {
+	// This implementation of classify is loosely modeled after
+	// https://github.com/ooni/spec/pull/159#discussion_r373754706
+	if tk.Target.Failure == nil {
+		return classAccessibleValidHostname
+	}
+	// TODO(bassosimone): we should write jafar tests to understand
+	// what error is returned in the case of MITM and make sure we
+	// can reliably detect and distinguish this case from other cases
+	// of TLS error. For now, the following is coded such that the
+	// MITM will result in classAnomalySSLErrror.
+	//
+	// See https://github.com/ooni/probe-engine/issues/393.
+	switch *tk.Target.Failure {
+	case modelx.FailureConnectionRefused:
+		return classAnomalyTestHelperBlocked
+	case modelx.FailureDNSNXDOMAINError:
+		return classAnomalyTestHelperBlocked
+	case modelx.FailureConnectionReset:
+		return classBlockedTCPIPError
+	case modelx.FailureEOFError:
+		return classBlockedTCPIPError
+	case modelx.FailureSSLInvalidHostname:
+		return classAccessibleInvalidHostname
+	case modelx.FailureSSLUnknownAuthority:
+		return classAnomalySSLError
+	case modelx.FailureSSLInvalidCertificate:
+		return classAnomalySSLError
+	case modelx.FailureGenericTimeoutError:
+		if tk.Control.Failure != nil {
+			return classAnomalyTestHelperBlocked
+		}
+		return classAnomalyTimeout
+	}
+	return classAnomalyUnexpectedFailure
 }
 
 type measurer struct {
@@ -83,7 +131,7 @@ func (m *measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := "generic_timeout_error"
+		s := modelx.FailureGenericTimeoutError
 		return Subresult{
 			Failure: &s,
 			SNI:     sni,
@@ -188,6 +236,8 @@ func processall(
 			break
 		}
 	}
+	testkeys.Result = testkeys.classify()
+	sess.Logger().Infof("sni_blocking: result: %s", testkeys.Result)
 	callbacks.OnDataUsage(
 		float64(receivedBytes)/1024.0, // downloaded
 		float64(sentBytes)/1024.0,     // uploaded
@@ -230,6 +280,11 @@ func (m *measurer) Run(
 			m.config.ControlSNI, "443",
 		)
 	}
+	// TODO(bassosimone): if the user has configured DoT or DoH, here we
+	// probably want to perform the name resolution before the measurements
+	// or to make sure that the classify logic is robust to that.
+	//
+	// See https://github.com/ooni/probe-engine/issues/392.
 	maybeParsed, err := maybeURLToSNI(measurement.Input)
 	if err != nil {
 		return err

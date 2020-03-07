@@ -55,50 +55,50 @@ func toFailureString(err error) string {
 	}
 
 	if errors.Is(err, modelx.ErrDNSBogon) {
-		return "dns_bogon_error" // not in MK
+		return modelx.FailureDNSBogonError // not in MK
 	}
 
 	var x509HostnameError x509.HostnameError
 	if errors.As(err, &x509HostnameError) {
 		// Test case: https://wrong.host.badssl.com/
-		return "ssl_invalid_hostname"
+		return modelx.FailureSSLInvalidHostname
 	}
 	var x509UnknownAuthorityError x509.UnknownAuthorityError
 	if errors.As(err, &x509UnknownAuthorityError) {
 		// Test case: https://self-signed.badssl.com/. This error has
 		// never been among the ones returned by MK.
-		return "ssl_unknown_authority"
+		return modelx.FailureSSLUnknownAuthority
 	}
 	var x509CertificateInvalidError x509.CertificateInvalidError
 	if errors.As(err, &x509CertificateInvalidError) {
 		// Test case: https://expired.badssl.com/
-		return "ssl_invalid_certificate"
+		return modelx.FailureSSLInvalidCertificate
 	}
 
 	s := err.Error()
 	if strings.HasSuffix(s, "EOF") {
-		return "eof_error"
+		return modelx.FailureEOFError
 	}
 	if strings.HasSuffix(s, "connection refused") {
-		return "connection_refused"
+		return modelx.FailureConnectionRefused
 	}
 	if strings.HasSuffix(s, "connection reset by peer") {
-		return "connection_reset"
+		return modelx.FailureConnectionReset
 	}
 	if strings.HasSuffix(s, "context deadline exceeded") {
-		return "generic_timeout_error"
+		return modelx.FailureGenericTimeoutError
 	}
 	if strings.HasSuffix(s, "i/o timeout") {
-		return "generic_timeout_error"
+		return modelx.FailureGenericTimeoutError
 	}
 	if strings.HasSuffix(s, "TLS handshake timeout") {
-		return "generic_timeout_error"
+		return modelx.FailureGenericTimeoutError
 	}
 	if strings.HasSuffix(s, "no such host") {
 		// This is dns_lookup_error in MK but such error is used as a
 		// generic "hey, the lookup failed" error. Instead, this error
 		// that we return here is significantly more specific.
-		return "dns_nxdomain_error"
+		return modelx.FailureDNSNXDOMAINError
 	}
 
 	return fmt.Sprintf("unknown_failure: %s", s)
