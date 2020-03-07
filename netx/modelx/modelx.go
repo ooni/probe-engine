@@ -129,7 +129,8 @@ type ErrWrapper struct {
 	// loosely backward compatible with Measurement Kit.
 	//
 	// This is either one of the FailureXXX strings or any other
-	// string representing an error not mapped to a failure.
+	// string like `unknown_failure ...`. The latter represents an
+	// error that we have not yet mapped to a failure.
 	Failure string
 
 	// Operation is the operation that failed. If possible, it
