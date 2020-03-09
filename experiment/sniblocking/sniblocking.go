@@ -22,7 +22,7 @@ import (
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.0.4"
+	testVersion = "0.0.5"
 )
 
 // Config contains the experiment config.
@@ -58,48 +58,40 @@ type TestKeys struct {
 }
 
 const (
-	classAccessibleInvalidHostname = "accessible_invalid_hostname"
-	classAccessibleValidHostname   = "accessible_valid_hostname"
-	classAnomalySSLError           = "anomaly_ssl_error"
-	classAnomalyTestHelperBlocked  = "anomaly_test_helper_blocked"
-	classAnomalyTimeout            = "anomaly_timeout"
-	classAnomalyUnexpectedFailure  = "anomaly_unexpected_failure"
-	classBlockedTCPIPError         = "blocked_tcpip_error"
+	classAnomalyTestHelperUnreachable   = "anomaly.test_helper_unreachable"
+	classAnomalyTimeout                 = "anomaly.timeout"
+	classAnomalyUnexpectedFailure       = "anomaly.unexpected_failure"
+	classInterferenceClosed             = "interference.closed"
+	classInterferenceInvalidCertificate = "interference.invalid_certificate"
+	classInterferenceReset              = "interference.reset"
+	classInterferenceUnknownAuthority   = "interference.unknown_authority"
+	classSuccessGotServerHello          = "success.got_server_hello"
 )
 
 func (tk *TestKeys) classify() string {
-	// This implementation of classify is loosely modeled after
-	// https://github.com/ooni/spec/pull/159#discussion_r373754706
 	if tk.Target.Failure == nil {
-		return classAccessibleValidHostname
+		return classSuccessGotServerHello
 	}
-	// TODO(bassosimone): we should write jafar tests to understand
-	// what error is returned in the case of MITM and make sure we
-	// can reliably detect and distinguish this case from other cases
-	// of TLS error. For now, the following is coded such that the
-	// MITM will result in classAnomalySSLErrror.
-	//
-	// See https://github.com/ooni/probe-engine/issues/393.
 	switch *tk.Target.Failure {
 	case modelx.FailureConnectionRefused:
-		return classAnomalyTestHelperBlocked
-	case modelx.FailureDNSNXDOMAINError:
-		return classAnomalyTestHelperBlocked
+		return classAnomalyTestHelperUnreachable
 	case modelx.FailureConnectionReset:
-		return classBlockedTCPIPError
+		return classInterferenceReset
+	case modelx.FailureDNSNXDOMAINError:
+		return classAnomalyTestHelperUnreachable
 	case modelx.FailureEOFError:
-		return classBlockedTCPIPError
-	case modelx.FailureSSLInvalidHostname:
-		return classAccessibleInvalidHostname
-	case modelx.FailureSSLUnknownAuthority:
-		return classAnomalySSLError
-	case modelx.FailureSSLInvalidCertificate:
-		return classAnomalySSLError
+		return classInterferenceClosed
 	case modelx.FailureGenericTimeoutError:
 		if tk.Control.Failure != nil {
-			return classAnomalyTestHelperBlocked
+			return classAnomalyTestHelperUnreachable
 		}
 		return classAnomalyTimeout
+	case modelx.FailureSSLInvalidCertificate:
+		return classInterferenceInvalidCertificate
+	case modelx.FailureSSLInvalidHostname:
+		return classSuccessGotServerHello
+	case modelx.FailureSSLUnknownAuthority:
+		return classInterferenceUnknownAuthority
 	}
 	return classAnomalyUnexpectedFailure
 }

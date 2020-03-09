@@ -24,56 +24,56 @@ func TestUnitTestKeysClassify(t *testing.T) {
 	}
 	t.Run("with tk.Target.Failure == nil", func(t *testing.T) {
 		tk := new(TestKeys)
-		if tk.classify() != classAccessibleValidHostname {
+		if tk.classify() != classSuccessGotServerHello {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == connection_refused", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureConnectionRefused)
-		if tk.classify() != classAnomalyTestHelperBlocked {
+		if tk.classify() != classAnomalyTestHelperUnreachable {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == dns_nxdomain_error", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureDNSNXDOMAINError)
-		if tk.classify() != classAnomalyTestHelperBlocked {
+		if tk.classify() != classAnomalyTestHelperUnreachable {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == connection_reset", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureConnectionReset)
-		if tk.classify() != classBlockedTCPIPError {
+		if tk.classify() != classInterferenceReset {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == eof_error", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureEOFError)
-		if tk.classify() != classBlockedTCPIPError {
+		if tk.classify() != classInterferenceClosed {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == ssl_invalid_hostname", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureSSLInvalidHostname)
-		if tk.classify() != classAccessibleInvalidHostname {
+		if tk.classify() != classSuccessGotServerHello {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == ssl_unknown_authority", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureSSLUnknownAuthority)
-		if tk.classify() != classAnomalySSLError {
+		if tk.classify() != classInterferenceUnknownAuthority {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("with tk.Target.Failure == ssl_invalid_certificate", func(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureSSLInvalidCertificate)
-		if tk.classify() != classAnomalySSLError {
+		if tk.classify() != classInterferenceInvalidCertificate {
 			t.Fatal("unexpected result")
 		}
 	})
@@ -88,7 +88,7 @@ func TestUnitTestKeysClassify(t *testing.T) {
 		tk := new(TestKeys)
 		tk.Target.Failure = asStringPtr(modelx.FailureGenericTimeoutError)
 		tk.Control.Failure = asStringPtr(modelx.FailureGenericTimeoutError)
-		if tk.classify() != classAnomalyTestHelperBlocked {
+		if tk.classify() != classAnomalyTestHelperUnreachable {
 			t.Fatal("unexpected result")
 		}
 	})
@@ -106,7 +106,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.4" {
+	if measurer.ExperimentVersion() != "0.0.5" {
 		t.Fatal("unexpected version")
 	}
 }
