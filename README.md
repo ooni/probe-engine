@@ -26,17 +26,32 @@ miniooni CLI will be stable over time.
 This software uses [Go modules](https://github.com/golang/go/wiki/Modules)
 and requires Go v1.13+. We also depend on [Measurement Kit](
 https://github.com/measurement-kit/measurement-kit), a C++14 library
-implementing many OONI tests.
+implementing many OONI tests, a.k.a. MK.
 
 Note that passing the `-tags nomk` flag to Go will disable linking
 Measurement Kit into the resulting Go binaries. You may want that in
 cases where you only want to use experiments written in Go.
 
 We plan on gradually rewriting all OONI tests in Go, therefore the
-dependency on Measurement Kit will eventually be removed.
+dependency on Measurement Kit will eventually be removed. A future version
+of this document will provide platform specific instructions for
+installing Measurement Kit and linking to it.
 
-A future version of this document will provide platform specific
-instruction for installing Measurement Kit and building.
+## Building miniooni
+
+```
+go build -v -tags nomk ./cmd/miniooni/
+```
+
+Omit `-tags nomk` to link with MK.
+
+## Building Android bindings
+
+```
+./build-android.bash
+```
+
+When building Android bindings, we automatically omit linking with MK.
 
 ## Release procedure
 
