@@ -221,7 +221,7 @@ func processall(
 		sentBytes += smk.BytesSent
 		receivedBytes += smk.BytesReceived
 		current++
-		sess.Logger().Infof(
+		sess.Logger().Debugf(
 			"sni_blocking: %s: %s [cached: %+v]", smk.SNI,
 			asString(smk.Failure), smk.Cached)
 		if current >= len(inputs) {
