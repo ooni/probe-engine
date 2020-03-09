@@ -153,20 +153,28 @@ func (m *measurer) Run(
 	measurement *model.Measurement,
 	callbacks model.ExperimentCallbacks,
 ) error {
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	targets, err := m.gimmeTargets(ctx, sess)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(
+		ctx, 15*time.Second*time.Duration(len(targets)),
+	)
 	defer cancel()
-	// fetch experiment targets
-	clnt, err := m.newOrchestraClient(ctx, sess)
-	if err != nil {
-		return err
-	}
-	targets, err := m.fetchTorTargets(ctx, clnt)
-	if err != nil {
-		return err
-	}
-	// run the measurement
 	m.measureTargets(ctx, sess, measurement, callbacks, targets)
 	return nil
+}
+
+func (m *measurer) gimmeTargets(
+	ctx context.Context, sess model.ExperimentSession,
+) (map[string]model.TorTarget, error) {
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	clnt, err := m.newOrchestraClient(ctx, sess)
+	if err != nil {
+		return nil, err
+	}
+	return m.fetchTorTargets(ctx, clnt)
 }
 
 // keytarget contains a key and the related target

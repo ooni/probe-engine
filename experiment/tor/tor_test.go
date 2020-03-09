@@ -71,6 +71,32 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	}
 }
 
+func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
+	measurer := newMeasurer(Config{})
+	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
+		return new(orchestra.Client), nil
+	}
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
+		return nil, nil
+	}
+	measurement := new(model.Measurement)
+	err := measurer.Run(
+		context.Background(),
+		&mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		measurement,
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*TestKeys)
+	if len(tk.Targets) != 0 {
+		t.Fatal("expected no targets here")
+	}
+}
+
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
