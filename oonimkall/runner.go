@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	engine "github.com/ooni/probe-engine"
 )
 
@@ -226,7 +226,7 @@ func (r *runner) Run(ctx context.Context) {
 			// fallthrough: we want to submit the report anyway
 		}
 		data, err := json.Marshal(m)
-		rtx.PanicOnError(err, "measurement.MarshalJSON failed")
+		runtimex.PanicOnError(err, "measurement.MarshalJSON failed")
 		r.emitter.Emit(measurement, eventMeasurementGeneric{
 			Idx:     int64(idx),
 			Input:   input,

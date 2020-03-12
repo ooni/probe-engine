@@ -8,7 +8,7 @@ package bogondetector
 import (
 	"net"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 var privateIPBlocks []*net.IPNet
@@ -28,7 +28,7 @@ func init() {
 		"fc00::/7",       // IPv6 unique local addr
 	} {
 		_, block, err := net.ParseCIDR(cidr)
-		rtx.PanicOnError(err, "net.ParseCIDR failed")
+		runtimex.PanicOnError(err, "net.ParseCIDR failed")
 		privateIPBlocks = append(privateIPBlocks, block)
 	}
 }
