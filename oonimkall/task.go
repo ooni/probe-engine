@@ -15,7 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 // Task is an asynchronous task.
@@ -60,7 +60,7 @@ func (t *Task) WaitForNextEvent() string {
 		return terminated
 	}
 	data, err := json.Marshal(evp)
-	rtx.PanicOnError(err, "json.Marshal failed")
+	runtimex.PanicOnError(err, "json.Marshal failed")
 	return string(data)
 }
 

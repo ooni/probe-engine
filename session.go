@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/bouncer"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
@@ -445,19 +445,19 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 			resolverOrg string
 		)
 		err = s.fetchResourcesIdempotent(ctx)
-		rtx.PanicOnError(err, "s.fetchResourcesIdempotent failed")
+		runtimex.PanicOnError(err, "s.fetchResourcesIdempotent failed")
 		probeIP, err = s.lookupProbeIP(ctx)
-		rtx.PanicOnError(err, "s.lookupProbeIP failed")
+		runtimex.PanicOnError(err, "s.lookupProbeIP failed")
 		asn, org, err = s.lookupASN(s.ASNDatabasePath(), probeIP)
-		rtx.PanicOnError(err, "s.lookupASN #1 failed")
+		runtimex.PanicOnError(err, "s.lookupASN #1 failed")
 		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
-		rtx.PanicOnError(err, "s.lookupProbeCC failed")
+		runtimex.PanicOnError(err, "s.lookupProbeCC failed")
 		resolverIP, err = s.lookupResolverIP(ctx)
-		rtx.PanicOnError(err, "s.lookupResolverIP failed")
+		runtimex.PanicOnError(err, "s.lookupResolverIP failed")
 		resolverASN, resolverOrg, err = s.lookupASN(
 			s.ASNDatabasePath(), resolverIP,
 		)
-		rtx.PanicOnError(err, "s.lookupASN #2 failed")
+		runtimex.PanicOnError(err, "s.lookupASN #2 failed")
 		s.location = &model.LocationInfo{
 			ASN:                 asn,
 			CountryCode:         cc,

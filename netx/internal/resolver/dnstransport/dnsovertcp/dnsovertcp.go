@@ -9,7 +9,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -69,25 +69,25 @@ func (t *Transport) doWithConn(conn net.Conn, query []byte) (reply []byte, err e
 		}
 	}()
 	err = conn.SetDeadline(time.Now().Add(10 * time.Second))
-	rtx.PanicOnError(err, "conn.SetDeadline failed")
+	runtimex.PanicOnError(err, "conn.SetDeadline failed")
 	// Write request
 	writer := bufio.NewWriter(conn)
 	err = writer.WriteByte(byte(len(query) >> 8))
-	rtx.PanicOnError(err, "writer.WriteByte failed for first byte")
+	runtimex.PanicOnError(err, "writer.WriteByte failed for first byte")
 	err = writer.WriteByte(byte(len(query)))
-	rtx.PanicOnError(err, "writer.WriteByte failed for second byte")
+	runtimex.PanicOnError(err, "writer.WriteByte failed for second byte")
 	_, err = writer.Write(query)
-	rtx.PanicOnError(err, "writer.Write failed for query")
+	runtimex.PanicOnError(err, "writer.Write failed for query")
 	err = writer.Flush()
-	rtx.PanicOnError(err, "writer.Flush failed")
+	runtimex.PanicOnError(err, "writer.Flush failed")
 	// Read response
 	header := make([]byte, 2)
 	_, err = io.ReadFull(conn, header)
-	rtx.PanicOnError(err, "io.ReadFull failed")
+	runtimex.PanicOnError(err, "io.ReadFull failed")
 	length := int(header[0])<<8 | int(header[1])
 	reply = make([]byte, length)
 	_, err = io.ReadFull(conn, reply)
-	rtx.PanicOnError(err, "io.ReadFull failed")
+	runtimex.PanicOnError(err, "io.ReadFull failed")
 	return reply, nil
 }
 

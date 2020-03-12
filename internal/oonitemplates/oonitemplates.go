@@ -20,7 +20,7 @@ import (
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -210,7 +210,7 @@ func configureDNS(seed int64, network, address string) (modelx.DNSResolver, erro
 		}
 		var fallback modelx.DNSResolver
 		fallback, err = netx.NewResolver(fallbacks[i].network, fallbacks[i].address)
-		rtx.PanicOnError(err, "porcelain: invalid fallbacks table")
+		runtimex.PanicOnError(err, "porcelain: invalid fallbacks table")
 		resolver = netx.ChainResolvers(resolver, fallback)
 		configured++
 	}
@@ -503,7 +503,7 @@ func TCPConnect(
 }
 
 func init() {
-	rtx.Must(transports.Init(), "transport.Init() failed")
+	runtimex.PanicOnError(transports.Init(), "transport.Init() failed")
 }
 
 // OBFS4ConnectConfig contains OBFS4Connect settings.

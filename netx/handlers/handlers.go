@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/m-lab/go/rtx"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -13,7 +13,7 @@ type stdoutHandler struct{}
 
 func (stdoutHandler) OnMeasurement(m modelx.Measurement) {
 	data, err := json.Marshal(m)
-	rtx.Must(err, "unexpected json.Marshal failure")
+	runtimex.PanicOnError(err, "unexpected json.Marshal failure")
 	fmt.Printf("%s\n", string(data))
 }
 
