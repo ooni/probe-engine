@@ -52,6 +52,16 @@ func TestRunExample(t *testing.T) {
 	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
+func TestRunNdt7(t *testing.T) {
+	sess := newSessionForTesting(t)
+	defer sess.Close()
+	builder, err := sess.NewExperimentBuilder("ndt7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runexperimentflow(t, builder.NewExperiment(), "")
+}
+
 func TestRunPsiphon(t *testing.T) {
 	sess := newSessionForTesting(t)
 	defer sess.Close()

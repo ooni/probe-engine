@@ -15,11 +15,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-const (
-	softwareName    = "ooniprobe-example"
-	softwareVersion = "0.0.1"
-)
-
 func TestUnitNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "tor" {
