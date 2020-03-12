@@ -23,14 +23,14 @@ type Config struct{}
 
 // Summary is the measurement summary
 type Summary struct {
-	AvgRTT         float64 `json:"avg_rtt"`         // AverageRTT in ms
-	Download       float64 `json:"download"`        // download speed in kbit/s
+	AvgRTT         float64 `json:"avg_rtt"`         // Average RTT [ms]
+	Download       float64 `json:"download"`        // download speed [kbit/s]
 	MSS            int64   `json:"mss"`             // MSS
-	MaxRTT         float64 `json:"max_rtt"`         // MaxRTT in ms
-	MinRTT         float64 `json:"min_rtt"`         // MinRTT in ms
-	Ping           float64 `json:"ping"`            // RTT in ms
-	RetransmitRate float64 `json:"retransmit_rate"` // Retransmit rate
-	Upload         float64 `json:"upload"`          // upload speed in kbit/s
+	MaxRTT         float64 `json:"max_rtt"`         // Max AvgRTT sample seen [ms]
+	MinRTT         float64 `json:"min_rtt"`         // Min RTT according to kernel [ms]
+	Ping           float64 `json:"ping"`            // Equivalent to MinRTT [ms]
+	RetransmitRate float64 `json:"retransmit_rate"` // bytes_retrans/bytes_sent [0..1]
+	Upload         float64 `json:"upload"`          // upload speed [kbit/s]
 }
 
 // TestKeys contains the test keys
