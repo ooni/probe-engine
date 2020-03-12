@@ -31,6 +31,7 @@ require (
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
+	github.com/gorilla/websocket v1.4.1
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
