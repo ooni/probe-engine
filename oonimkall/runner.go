@@ -121,6 +121,9 @@ func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
 }
 
 func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
+	// TODO(bassosimone): I am unsure whether this lock here is really
+	// needed. I think a future refactoring goal for probe-engine is to
+	// have much more goroutines and channesl than now.
 	cb.lock.Lock()
 	cb.emitter.Emit(statusProgress, eventStatusProgress{
 		Percentage: 0.4 + (percentage * 0.6), // open report is 40%
