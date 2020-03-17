@@ -106,6 +106,15 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	})
 }
 
+func (r *runner) contextForExperiment(
+	ctx context.Context, builder *engine.ExperimentBuilder,
+) context.Context {
+	if builder.LongRunning() {
+		return ctx // we can only interrupt long running experiments
+	}
+	return context.Background()
+}
+
 // Run runs the runner until completion. The context argument controls
 // when to stop when processing multiple inputs. We currently do not use
 // any context for stopping individual experiments.
@@ -204,7 +213,7 @@ func (r *runner) Run(ctx context.Context) {
 			ReportID: experiment.ReportID(),
 		})
 	}
-	if r.settings.Options.MaxRuntime >= 0 {
+	if r.settings.Options.MaxRuntime >= 0 && builder.NeedsInput() {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(
 			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
@@ -219,7 +228,13 @@ func (r *runner) Run(ctx context.Context) {
 			Idx:   int64(idx),
 			Input: input,
 		})
-		m, err := experiment.Measure(input)
+		m, err := experiment.MeasureWithContext(
+			r.contextForExperiment(ctx, builder),
+			input,
+		)
+		if builder.LongRunning() && ctx.Err() != nil {
+			break
+		}
 		m.AddAnnotations(r.settings.Annotations)
 		if err != nil {
 			r.emitter.Emit(failureMeasurement, eventMeasurementGeneric{

@@ -384,7 +384,7 @@ func TestIntegrationBadCollectorURL(t *testing.T) {
 	}
 }
 
-func TestIntegrationStopWhileRunning(t *testing.T) {
+func TestIntegrationInterruptWebConnectivity(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../../testdata/oonimkall/assets",
 		"inputs": [
@@ -434,6 +434,52 @@ func TestIntegrationStopWhileRunning(t *testing.T) {
 		"task_terminated",
 	}
 	if !reflect.DeepEqual(keys, expect) {
-		t.Fatal("seen different keys thna expected")
+		t.Fatal("seen different keys than expected")
+	}
+}
+
+func TestIntegrationInterruptNdt7(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../../testdata/oonimkall/assets",
+		"name": "Ndt7",
+		"options": {
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../../testdata/oonimkall/state",
+		"temp_dir": "../../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		<-time.After(7 * time.Second)
+		task.Interrupt()
+	}()
+	var keys []string
+	for !task.IsDone() {
+		eventstr := task.WaitForNextEvent()
+		var event eventlike
+		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+			t.Fatal(err)
+		}
+		keys = append(keys, event.Key)
+	}
+	t.Log(keys)
+	expect := []string{
+		"status.queued",
+		"status.started",
+		"status.progress",
+		"status.progress",
+		"status.progress",
+		"status.geoip_lookup",
+		"status.resolver_lookup",
+		"status.progress",
+		"status.report_create",
+		"status.end",
+		"task_terminated",
+	}
+	if !reflect.DeepEqual(keys, expect) {
+		t.Fatal("seen different keys than expected")
 	}
 }

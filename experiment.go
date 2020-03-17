@@ -37,10 +37,17 @@ func formatTimeNowUTC() string {
 
 // ExperimentBuilder is an experiment builder.
 type ExperimentBuilder struct {
-	build      func(interface{}) *Experiment
-	callbacks  model.ExperimentCallbacks
-	config     interface{}
-	needsInput bool
+	build       func(interface{}) *Experiment
+	callbacks   model.ExperimentCallbacks
+	config      interface{}
+	longRunning bool
+	needsInput  bool
+}
+
+// LongRunning tells you whether this is a long running experiment. This kind
+// of experiments (e.g. ndt7) may be interrupted mid way.
+func (b *ExperimentBuilder) LongRunning() bool {
+	return b.longRunning
 }
 
 // NeedsInput returns whether the experiment needs input
@@ -228,7 +235,29 @@ func (e *Experiment) LoadMeasurement(data []byte) (*model.Measurement, error) {
 // configured the available test helpers, either manually or by calling
 // the session's MaybeLookupBackends() method.
 func (e *Experiment) Measure(input string) (*model.Measurement, error) {
-	return e.measure(context.Background(), input)
+	return e.MeasureWithContext(context.Background(), input)
+}
+
+// MeasureWithContext is like Measure but with context.
+func (e *Experiment) MeasureWithContext(
+	ctx context.Context, input string,
+) (measurement *model.Measurement, err error) {
+	err = e.session.maybeLookupLocation(ctx)
+	if err != nil {
+		return
+	}
+	measurement = e.newMeasurement(input)
+	start := time.Now()
+	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
+	stop := time.Now()
+	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
+	scrubErr := e.session.privacySettings.Apply(
+		measurement, e.session.ProbeIP(),
+	)
+	if err == nil {
+		err = scrubErr
+	}
+	return
 }
 
 // SaveMeasurement saves a measurement on the specified file path.
@@ -256,25 +285,6 @@ func (e *Experiment) CloseReport() (err error) {
 	if e.report != nil {
 		err = e.report.Close(context.Background())
 		e.report = nil
-	}
-	return
-}
-
-func (e *Experiment) measure(ctx context.Context, input string) (measurement *model.Measurement, err error) {
-	err = e.session.maybeLookupLocation(ctx)
-	if err != nil {
-		return
-	}
-	measurement = e.newMeasurement(input)
-	start := time.Now()
-	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
-	stop := time.Now()
-	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
-	scrubErr := e.session.privacySettings.Apply(
-		measurement, e.session.ProbeIP(),
-	)
-	if err == nil {
-		err = scrubErr
 	}
 	return
 }
@@ -372,8 +382,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*dash.Config),
 				))
 			},
-			config:     &dash.Config{},
-			needsInput: false,
+			config:      &dash.Config{},
+			longRunning: true,
+			needsInput:  false,
 		}
 	},
 
@@ -466,8 +477,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt.Config),
 				))
 			},
-			config:     &ndt.Config{},
-			needsInput: false,
+			config:      &ndt.Config{},
+			longRunning: true,
+			needsInput:  false,
 		}
 	},
 
@@ -478,8 +490,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt7.Config),
 				))
 			},
-			config:     &ndt7.Config{},
-			needsInput: false,
+			config:      &ndt7.Config{},
+			longRunning: true,
+			needsInput:  false,
 		}
 	},
 

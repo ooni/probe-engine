@@ -39,6 +39,9 @@ func TestRunDASH(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if !builder.LongRunning() {
+		t.Fatal("dash not marked long running")
+	}
 	runexperimentflow(t, builder.NewExperiment(), "")
 }
 
@@ -58,6 +61,9 @@ func TestRunNdt7(t *testing.T) {
 	builder, err := sess.NewExperimentBuilder("ndt7")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !builder.LongRunning() {
+		t.Fatal("ndt7 not marked long running")
 	}
 	runexperimentflow(t, builder.NewExperiment(), "")
 }
@@ -587,7 +593,7 @@ func TestMeasureLookupLocationFailure(t *testing.T) {
 	exp := NewExperiment(sess, new(antaniMeasurer))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
-	if _, err := exp.measure(ctx, "xx"); err == nil {
+	if _, err := exp.MeasureWithContext(ctx, "xx"); err == nil {
 		t.Fatal("expected an error here")
 	}
 }
