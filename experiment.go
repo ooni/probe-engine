@@ -37,10 +37,17 @@ func formatTimeNowUTC() string {
 
 // ExperimentBuilder is an experiment builder.
 type ExperimentBuilder struct {
-	build      func(interface{}) *Experiment
-	callbacks  model.ExperimentCallbacks
-	config     interface{}
-	needsInput bool
+	build         func(interface{}) *Experiment
+	callbacks     model.ExperimentCallbacks
+	config        interface{}
+	interruptible bool
+	needsInput    bool
+}
+
+// Interruptible tells you whether this is an interruptible experiment. This kind
+// of experiments (e.g. ndt7) may be interrupted mid way.
+func (b *ExperimentBuilder) Interruptible() bool {
+	return b.interruptible
 }
 
 // NeedsInput returns whether the experiment needs input
@@ -228,7 +235,29 @@ func (e *Experiment) LoadMeasurement(data []byte) (*model.Measurement, error) {
 // configured the available test helpers, either manually or by calling
 // the session's MaybeLookupBackends() method.
 func (e *Experiment) Measure(input string) (*model.Measurement, error) {
-	return e.measure(context.Background(), input)
+	return e.MeasureWithContext(context.Background(), input)
+}
+
+// MeasureWithContext is like Measure but with context.
+func (e *Experiment) MeasureWithContext(
+	ctx context.Context, input string,
+) (measurement *model.Measurement, err error) {
+	err = e.session.maybeLookupLocation(ctx)
+	if err != nil {
+		return
+	}
+	measurement = e.newMeasurement(input)
+	start := time.Now()
+	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
+	stop := time.Now()
+	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
+	scrubErr := e.session.privacySettings.Apply(
+		measurement, e.session.ProbeIP(),
+	)
+	if err == nil {
+		err = scrubErr
+	}
+	return
 }
 
 // SaveMeasurement saves a measurement on the specified file path.
@@ -256,25 +285,6 @@ func (e *Experiment) CloseReport() (err error) {
 	if e.report != nil {
 		err = e.report.Close(context.Background())
 		e.report = nil
-	}
-	return
-}
-
-func (e *Experiment) measure(ctx context.Context, input string) (measurement *model.Measurement, err error) {
-	err = e.session.maybeLookupLocation(ctx)
-	if err != nil {
-		return
-	}
-	measurement = e.newMeasurement(input)
-	start := time.Now()
-	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
-	stop := time.Now()
-	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
-	scrubErr := e.session.privacySettings.Apply(
-		measurement, e.session.ProbeIP(),
-	)
-	if err == nil {
-		err = scrubErr
 	}
 	return
 }
@@ -372,8 +382,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*dash.Config),
 				))
 			},
-			config:     &dash.Config{},
-			needsInput: false,
+			config:        &dash.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -388,7 +399,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				Message:   "Good day from the example experiment!",
 				SleepTime: int64(5 * time.Second),
 			},
-			needsInput: false,
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -403,7 +415,28 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				Message:   "Good day from the example with input experiment!",
 				SleepTime: int64(5 * time.Second),
 			},
-			needsInput: true,
+			interruptible: true,
+			needsInput:    true,
+		}
+	},
+
+	// TODO(bassosimone): when we can set experiment options using the JSON
+	// we need to get rid of all these multiple experiments.
+	//
+	// See https://github.com/ooni/probe-engine/issues/413
+	"example_with_input_non_interruptible": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_input_non_interruptible",
+				))
+			},
+			config: &example.Config{
+				Message:   "Good day from the example with input experiment!",
+				SleepTime: int64(5 * time.Second),
+			},
+			interruptible: false,
+			needsInput:    true,
 		}
 	},
 
@@ -419,7 +452,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				ReturnError: true,
 				SleepTime:   int64(5 * time.Second),
 			},
-			needsInput: false,
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -466,8 +500,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt.Config),
 				))
 			},
-			config:     &ndt.Config{},
-			needsInput: false,
+			config:        &ndt.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -478,8 +513,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt7.Config),
 				))
 			},
-			config:     &ndt7.Config{},
-			needsInput: false,
+			config:        &ndt7.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 

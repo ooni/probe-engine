@@ -107,6 +107,15 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	})
 }
 
+func (r *runner) contextForExperiment(
+	ctx context.Context, builder *engine.ExperimentBuilder,
+) context.Context {
+	if builder.Interruptible() {
+		return ctx
+	}
+	return context.Background()
+}
+
 type runnerCallbacks struct {
 	emitter *eventEmitter
 	end     *eventStatusEnd
@@ -132,10 +141,11 @@ func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
 	cb.lock.Unlock()
 }
 
-// Run runs the runner until completion
+// Run runs the runner until completion. The context argument controls
+// when to stop when processing multiple inputs, as well as when to stop
+// experiments explicitly marked as interruptible.
 func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): accurately count bytes
-	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
@@ -234,7 +244,12 @@ func (r *runner) Run(ctx context.Context) {
 			ReportID: experiment.ReportID(),
 		})
 	}
-	if r.settings.Options.MaxRuntime >= 0 {
+	// This deviates a little bit from measurement-kit, for which
+	// a zero timeout is actually valid. Since it does not make much
+	// sense, here we're changing the behaviour.
+	//
+	// See https://github.com/measurement-kit/measurement-kit/issues/1922
+	if r.settings.Options.MaxRuntime > 0 && builder.NeedsInput() {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(
 			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
@@ -242,11 +257,22 @@ func (r *runner) Run(ctx context.Context) {
 		defer cancel()
 	}
 	for idx, input := range r.settings.Inputs {
+		if ctx.Err() != nil {
+			break
+		}
 		r.emitter.Emit(statusMeasurementStart, eventMeasurementGeneric{
 			Idx:   int64(idx),
 			Input: input,
 		})
-		m, err := experiment.Measure(input)
+		m, err := experiment.MeasureWithContext(
+			r.contextForExperiment(ctx, builder),
+			input,
+		)
+		if builder.Interruptible() && ctx.Err() != nil {
+			// We want to stop here only if interruptible otherwise we want to
+			// submit measurement and stop at beginning of next iteration
+			break
+		}
 		m.AddAnnotations(r.settings.Annotations)
 		if err != nil {
 			r.emitter.Emit(failureMeasurement, eventMeasurementGeneric{
