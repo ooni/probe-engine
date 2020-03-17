@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/runtimex"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 const (
@@ -106,6 +106,23 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	})
 }
 
+type runnerCallbacks struct {
+	emitter *eventEmitter
+	end     *eventStatusEnd
+}
+
+func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
+	cb.end.DownloadedKB += dloadKiB
+	cb.end.UploadedKB += uploadKiB
+}
+
+func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
+	cb.emitter.Emit(statusProgress, eventStatusProgress{
+		Percentage: 0.4 + (percentage * 0.6),
+		Message:    message,
+	})
+}
+
 // Run runs the runner until completion
 func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): accurately count bytes
@@ -113,7 +130,8 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
-	defer r.emitter.Emit(statusEnd, eventStatusEnd{})
+	endEvent := new(eventStatusEnd)
+	defer r.emitter.Emit(statusEnd, endEvent)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
 		return
@@ -184,6 +202,10 @@ func (r *runner) Run(ctx context.Context) {
 		return
 	}
 
+	builder.SetCallbacks(&runnerCallbacks{
+		emitter: r.emitter,
+		end:     endEvent,
+	})
 	if len(r.settings.Inputs) <= 0 {
 		if builder.NeedsInput() {
 			r.emitter.EmitFailureStartup("no input provided")
