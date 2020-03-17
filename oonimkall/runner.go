@@ -3,6 +3,7 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
@@ -115,6 +116,31 @@ func (r *runner) contextForExperiment(
 	return context.Background()
 }
 
+type runnerCallbacks struct {
+	emitter *eventEmitter
+	end     *eventStatusEnd
+	lock    sync.Mutex
+}
+
+func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
+	cb.lock.Lock()
+	cb.end.DownloadedKB += dloadKiB
+	cb.end.UploadedKB += uploadKiB
+	cb.lock.Unlock()
+}
+
+func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
+	// TODO(bassosimone): I am unsure whether this lock here is really
+	// needed. I think a future refactoring goal for probe-engine is to
+	// have much more goroutines and channesl than now.
+	cb.lock.Lock()
+	cb.emitter.Emit(statusProgress, eventStatusProgress{
+		Percentage: 0.4 + (percentage * 0.6), // open report is 40%
+		Message:    message,
+	})
+	cb.lock.Unlock()
+}
+
 // Run runs the runner until completion. The context argument controls
 // when to stop when processing multiple inputs. We currently do not use
 // any context for stopping individual experiments.
@@ -123,7 +149,8 @@ func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
-	defer r.emitter.Emit(statusEnd, eventStatusEnd{})
+	endEvent := new(eventStatusEnd)
+	defer r.emitter.Emit(statusEnd, endEvent)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
 		return
@@ -194,6 +221,10 @@ func (r *runner) Run(ctx context.Context) {
 		return
 	}
 
+	builder.SetCallbacks(&runnerCallbacks{
+		emitter: r.emitter,
+		end:     endEvent,
+	})
 	if len(r.settings.Inputs) <= 0 {
 		if builder.NeedsInput() {
 			r.emitter.EmitFailureStartup("no input provided")

@@ -3,7 +3,6 @@ package oonimkall_test
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -47,12 +46,10 @@ func TestIntegrationGood(t *testing.T) {
 	// make sure we only see task_terminated at this point
 	for {
 		eventstr := task.WaitForNextEvent()
-		fmt.Printf("%s\n", eventstr)
 		var event eventlike
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("%s\n", eventstr)
 		if event.Key != "task_terminated" {
 			t.Fatalf("unexpected event.Key: %s", event.Key)
 		}
