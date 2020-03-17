@@ -428,7 +428,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
 				return NewExperiment(session, example.NewExperimentMeasurer(
-					*config.(*example.Config), "example_with_input",
+					*config.(*example.Config), "example_with_input_non_interruptible",
 				))
 			},
 			config: &example.Config{
