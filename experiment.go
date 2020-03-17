@@ -44,7 +44,7 @@ type ExperimentBuilder struct {
 	needsInput    bool
 }
 
-// Interruptible tells you whether this is a long running experiment. This kind
+// Interruptible tells you whether this is an interruptible experiment. This kind
 // of experiments (e.g. ndt7) may be interrupted mid way.
 func (b *ExperimentBuilder) Interruptible() bool {
 	return b.interruptible
