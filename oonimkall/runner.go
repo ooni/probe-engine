@@ -269,6 +269,8 @@ func (r *runner) Run(ctx context.Context) {
 			input,
 		)
 		if builder.Interruptible() && ctx.Err() != nil {
+			// We want to stop here only if interruptible otherwise we want to
+			// submit measurement and stop at beginning of next iteration
 			break
 		}
 		m.AddAnnotations(r.settings.Annotations)
