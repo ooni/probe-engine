@@ -3,6 +3,7 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
@@ -109,18 +110,23 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 type runnerCallbacks struct {
 	emitter *eventEmitter
 	end     *eventStatusEnd
+	lock    sync.Mutex
 }
 
 func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
+	cb.lock.Lock()
 	cb.end.DownloadedKB += dloadKiB
 	cb.end.UploadedKB += uploadKiB
+	cb.lock.Unlock()
 }
 
 func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
+	cb.lock.Lock()
 	cb.emitter.Emit(statusProgress, eventStatusProgress{
-		Percentage: 0.4 + (percentage * 0.6),
+		Percentage: 0.4 + (percentage * 0.6), // open report is 40%
 		Message:    message,
 	})
+	cb.lock.Unlock()
 }
 
 // Run runs the runner until completion
