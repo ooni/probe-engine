@@ -37,17 +37,17 @@ func formatTimeNowUTC() string {
 
 // ExperimentBuilder is an experiment builder.
 type ExperimentBuilder struct {
-	build       func(interface{}) *Experiment
-	callbacks   model.ExperimentCallbacks
-	config      interface{}
-	longRunning bool
-	needsInput  bool
+	build         func(interface{}) *Experiment
+	callbacks     model.ExperimentCallbacks
+	config        interface{}
+	interruptible bool
+	needsInput    bool
 }
 
-// LongRunning tells you whether this is a long running experiment. This kind
+// Interruptible tells you whether this is a long running experiment. This kind
 // of experiments (e.g. ndt7) may be interrupted mid way.
-func (b *ExperimentBuilder) LongRunning() bool {
-	return b.longRunning
+func (b *ExperimentBuilder) Interruptible() bool {
+	return b.interruptible
 }
 
 // NeedsInput returns whether the experiment needs input
@@ -382,9 +382,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*dash.Config),
 				))
 			},
-			config:      &dash.Config{},
-			longRunning: true,
-			needsInput:  false,
+			config:        &dash.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -399,7 +399,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				Message:   "Good day from the example experiment!",
 				SleepTime: int64(5 * time.Second),
 			},
-			needsInput: false,
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -414,7 +415,28 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				Message:   "Good day from the example with input experiment!",
 				SleepTime: int64(5 * time.Second),
 			},
-			needsInput: true,
+			interruptible: true,
+			needsInput:    true,
+		}
+	},
+
+	// TODO(bassosimone): when we can set experiment options using the JSON
+	// we need to get rid of all these multiple experiments.
+	//
+	// See https://github.com/ooni/probe-engine/issues/413
+	"example_with_input_non_interruptible": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, example.NewExperimentMeasurer(
+					*config.(*example.Config), "example_with_input",
+				))
+			},
+			config: &example.Config{
+				Message:   "Good day from the example with input experiment!",
+				SleepTime: int64(5 * time.Second),
+			},
+			interruptible: false,
+			needsInput:    true,
 		}
 	},
 
@@ -430,7 +452,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				ReturnError: true,
 				SleepTime:   int64(5 * time.Second),
 			},
-			needsInput: false,
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -477,9 +500,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt.Config),
 				))
 			},
-			config:      &ndt.Config{},
-			longRunning: true,
-			needsInput:  false,
+			config:        &ndt.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 
@@ -490,9 +513,9 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*ndt7.Config),
 				))
 			},
-			config:      &ndt7.Config{},
-			longRunning: true,
-			needsInput:  false,
+			config:        &ndt7.Config{},
+			interruptible: true,
+			needsInput:    false,
 		}
 	},
 

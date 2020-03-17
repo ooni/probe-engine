@@ -110,8 +110,8 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 func (r *runner) contextForExperiment(
 	ctx context.Context, builder *engine.ExperimentBuilder,
 ) context.Context {
-	if builder.LongRunning() {
-		return ctx // we can only interrupt long running experiments
+	if builder.Interruptible() {
+		return ctx
 	}
 	return context.Background()
 }
@@ -244,7 +244,12 @@ func (r *runner) Run(ctx context.Context) {
 			ReportID: experiment.ReportID(),
 		})
 	}
-	if r.settings.Options.MaxRuntime >= 0 && builder.NeedsInput() {
+	// This deviates a little bit from measurement-kit, for which
+	// a zero timeout is actually valid. Since it does not make much
+	// sense, here we're changing the behaviour.
+	//
+	// See https://github.com/measurement-kit/measurement-kit/issues/1922
+	if r.settings.Options.MaxRuntime > 0 && builder.NeedsInput() {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(
 			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
@@ -263,7 +268,7 @@ func (r *runner) Run(ctx context.Context) {
 			r.contextForExperiment(ctx, builder),
 			input,
 		)
-		if builder.LongRunning() && ctx.Err() != nil {
+		if builder.Interruptible() && ctx.Err() != nil {
 			break
 		}
 		m.AddAnnotations(r.settings.Annotations)

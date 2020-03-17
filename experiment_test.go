@@ -39,7 +39,7 @@ func TestRunDASH(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !builder.LongRunning() {
+	if !builder.Interruptible() {
 		t.Fatal("dash not marked long running")
 	}
 	runexperimentflow(t, builder.NewExperiment(), "")
@@ -62,7 +62,7 @@ func TestRunNdt7(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !builder.LongRunning() {
+	if !builder.Interruptible() {
 		t.Fatal("ndt7 not marked long running")
 	}
 	runexperimentflow(t, builder.NewExperiment(), "")

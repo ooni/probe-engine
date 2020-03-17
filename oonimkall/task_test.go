@@ -381,7 +381,34 @@ func TestIntegrationBadCollectorURL(t *testing.T) {
 	}
 }
 
-func TestIntegrationInterruptWebConnectivity(t *testing.T) {
+func TestIntegrationMaxRuntime(t *testing.T) {
+	begin := time.Now()
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../../testdata/oonimkall/assets",
+		"inputs": ["a", "b", "c"],
+		"name": "ExampleWithInput",
+		"options": {
+			"max_runtime": 1,
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../../testdata/oonimkall/state",
+		"temp_dir": "../../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for !task.IsDone() {
+		task.WaitForNextEvent()
+	}
+	if time.Now().Sub(begin) > 2*time.Second {
+		t.Fatal("expected shorter runtime")
+	}
+}
+
+func TestIntegrationInterruptExampleWithInput(t *testing.T) {
+	// We cannot use WebConnectivity until it's written in Go since
+	// measurement-kit may not always be available
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../../testdata/oonimkall/assets",
 		"inputs": [
@@ -393,7 +420,7 @@ func TestIntegrationInterruptWebConnectivity(t *testing.T) {
 			"http://www.google.it/",
 			"http://ooni.org/"
 		],
-		"name": "WebConnectivity",
+		"name": "ExampleWithInputNonInterruptible",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
@@ -415,23 +442,31 @@ func TestIntegrationInterruptWebConnectivity(t *testing.T) {
 		case "status.measurement_start":
 			go task.Interrupt()
 		}
-		keys = append(keys, event.Key)
+		// We compress the keys. What matters is basically that we
+		// see just one of the many possible measurements here.
+		if keys == nil || keys[len(keys)-1] != event.Key {
+			keys = append(keys, event.Key)
+		}
 	}
 	expect := []string{
 		"status.queued",
 		"status.started",
 		"status.progress",
-		"status.progress",
-		"status.progress",
 		"status.geoip_lookup",
 		"status.resolver_lookup",
 		"status.progress",
 		"status.report_create",
+		"status.measurement_start",
+		"log",
+		"status.progress",
+		"measurement",
+		"status.measurement_submission",
+		"status.measurement_done",
 		"status.end",
 		"task_terminated",
 	}
 	if !reflect.DeepEqual(keys, expect) {
-		t.Fatal("seen different keys than expected")
+		t.Fatalf("seen different keys than expected: %+v", keys)
 	}
 }
 
@@ -460,19 +495,24 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		keys = append(keys, event.Key)
+		// We compress the keys because we don't know how many
+		// status.progress we will see. What matters is that we
+		// don't see a measurement submission, since it means
+		// that we have interrupted the measurement.
+		if keys == nil || keys[len(keys)-1] != event.Key {
+			keys = append(keys, event.Key)
+		}
 	}
-	t.Log(keys)
 	expect := []string{
 		"status.queued",
 		"status.started",
-		"status.progress",
-		"status.progress",
 		"status.progress",
 		"status.geoip_lookup",
 		"status.resolver_lookup",
 		"status.progress",
 		"status.report_create",
+		"status.measurement_start",
+		"status.progress",
 		"status.end",
 		"task_terminated",
 	}
