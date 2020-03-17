@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -380,5 +381,59 @@ func TestIntegrationBadCollectorURL(t *testing.T) {
 	}
 	if !seen {
 		t.Fatal("did not see failure.report_create")
+	}
+}
+
+func TestIntegrationStopWhileRunning(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../../testdata/oonimkall/assets",
+		"inputs": [
+			"http://www.kernel.org/",
+			"http://www.x.org/",
+			"http://www.microsoft.com/",
+			"http://www.slashdot.org/",
+			"http://www.repubblica.it/",
+			"http://www.google.it/",
+			"http://ooni.org/"
+		],
+		"name": "WebConnectivity",
+		"options": {
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../../testdata/oonimkall/state",
+		"temp_dir": "../../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var keys []string
+	for !task.IsDone() {
+		eventstr := task.WaitForNextEvent()
+		var event eventlike
+		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+			t.Fatal(err)
+		}
+		switch event.Key {
+		case "status.measurement_start":
+			go task.Interrupt()
+		}
+		keys = append(keys, event.Key)
+	}
+	expect := []string{
+		"status.queued",
+		"status.started",
+		"status.progress",
+		"status.progress",
+		"status.progress",
+		"status.geoip_lookup",
+		"status.resolver_lookup",
+		"status.progress",
+		"status.report_create",
+		"status.end",
+		"task_terminated",
+	}
+	if !reflect.DeepEqual(keys, expect) {
+		t.Fatal("seen different keys thna expected")
 	}
 }

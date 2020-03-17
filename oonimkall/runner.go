@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/runtimex"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 const (
@@ -106,10 +106,11 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	})
 }
 
-// Run runs the runner until completion
+// Run runs the runner until completion. The context argument controls
+// when to stop when processing multiple inputs. We currently do not use
+// any context for stopping individual experiments.
 func (r *runner) Run(ctx context.Context) {
 	// TODO(bassosimone): accurately count bytes
-	// TODO(bassosimone): honour context
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
@@ -211,6 +212,9 @@ func (r *runner) Run(ctx context.Context) {
 		defer cancel()
 	}
 	for idx, input := range r.settings.Inputs {
+		if ctx.Err() != nil {
+			break
+		}
 		r.emitter.Emit(statusMeasurementStart, eventMeasurementGeneric{
 			Idx:   int64(idx),
 			Input: input,
