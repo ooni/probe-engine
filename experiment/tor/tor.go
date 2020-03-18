@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
@@ -213,19 +213,19 @@ func (m *measurer) measureTargets(
 	testkeys.fillToplevelKeys()
 	measurement.TestKeys = testkeys
 	callbacks.OnDataUsage(
-		float64(rc.receivedBytes)/1024.0, // downloaded
-		float64(rc.sentBytes)/1024.0,     // uploaded
+		float64(rc.receivedBytes.Load())/1024.0, // downloaded
+		float64(rc.sentBytes.Load())/1024.0,     // uploaded
 	)
 }
 
 type resultsCollector struct {
 	callbacks       model.ExperimentCallbacks
-	completed       int64
+	completed       *atomicx.Int64
 	flexibleConnect func(context.Context, model.TorTarget) (oonitemplates.Results, error)
 	measurement     *model.Measurement
 	mu              sync.Mutex
-	receivedBytes   int64
-	sentBytes       int64
+	receivedBytes   *atomicx.Int64
+	sentBytes       *atomicx.Int64
 	sess            model.ExperimentSession
 	targetresults   map[string]TargetResults
 }
@@ -237,7 +237,10 @@ func newResultsCollector(
 ) *resultsCollector {
 	rc := &resultsCollector{
 		callbacks:     callbacks,
+		completed:     atomicx.NewInt64(),
 		measurement:   measurement,
+		receivedBytes: atomicx.NewInt64(),
+		sentBytes:     atomicx.NewInt64(),
 		sess:          sess,
 		targetresults: make(map[string]TargetResults),
 	}
@@ -265,9 +268,9 @@ func (rc *resultsCollector) measureSingleTarget(
 	tr.fillSummary()
 	rc.targetresults[kt.key] = tr
 	rc.mu.Unlock()
-	atomic.AddInt64(&rc.sentBytes, tk.SentBytes)
-	atomic.AddInt64(&rc.receivedBytes, tk.ReceivedBytes)
-	sofar := atomic.AddInt64(&rc.completed, 1)
+	rc.sentBytes.Add(tk.SentBytes)
+	rc.receivedBytes.Add(tk.ReceivedBytes)
+	sofar := rc.completed.Add(1)
 	percentage := 0.0
 	if total > 0 {
 		percentage = float64(sofar) / float64(total)

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
@@ -29,7 +30,15 @@ import (
 )
 
 type channelHandler struct {
-	ch chan<- modelx.Measurement
+	ch         chan<- modelx.Measurement
+	lateWrites *atomicx.Int64
+}
+
+func newChannelHandler(ch chan<- modelx.Measurement) *channelHandler {
+	return &channelHandler{
+		ch:         ch,
+		lateWrites: atomicx.NewInt64(),
+	}
 }
 
 func (h *channelHandler) OnMeasurement(m modelx.Measurement) {
@@ -41,12 +50,7 @@ func (h *channelHandler) OnMeasurement(m modelx.Measurement) {
 	select {
 	case h.ch <- m:
 	case <-time.After(100 * time.Millisecond):
-		// We use to have code here but that caused crashes on
-		// the Android simulator under x86 and on devices. We
-		// don't have a solid theory of why it happens, but we
-		// know that _not_ putting code here prevents this from
-		// happening. The issue for tracking this bug was:
-		// https://github.com/ooni/probe-engine/issues/355.
+		h.lateWrites.Add(1)
 	}
 }
 
@@ -247,9 +251,7 @@ func DNSLookup(
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
 		Beginning: config.Beginning,
-		Handler: &channelHandler{
-			ch: channel,
-		},
+		Handler:   newChannelHandler(channel),
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
 	resolver, err := netx.NewResolver(config.ServerNetwork, config.ServerAddress)
@@ -317,10 +319,8 @@ func HTTPDo(
 	channel := make(chan modelx.Measurement)
 	// TODO(bassosimone): tell client to use specific CA bundle?
 	root := &modelx.MeasurementRoot{
-		Beginning: config.Beginning,
-		Handler: &channelHandler{
-			ch: channel,
-		},
+		Beginning:       config.Beginning,
+		Handler:         newChannelHandler(channel),
 		MaxBodySnapSize: config.MaxEventsBodySnapSize,
 	}
 	ctx := modelx.WithMeasurementRoot(origCtx, root)
@@ -410,9 +410,7 @@ func TLSConnect(
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
 		Beginning: config.Beginning,
-		Handler: &channelHandler{
-			ch: channel,
-		},
+		Handler:   newChannelHandler(channel),
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
 	dialer := netx.NewDialer()
@@ -473,9 +471,7 @@ func TCPConnect(
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
 		Beginning: config.Beginning,
-		Handler: &channelHandler{
-			ch: channel,
-		},
+		Handler:   newChannelHandler(channel),
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
 	dialer := netx.NewDialer()
@@ -541,9 +537,7 @@ func OBFS4Connect(
 	channel := make(chan modelx.Measurement)
 	root := &modelx.MeasurementRoot{
 		Beginning: config.Beginning,
-		Handler: &channelHandler{
-			ch: channel,
-		},
+		Handler:   newChannelHandler(channel),
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
 	dialer := netx.NewDialer()

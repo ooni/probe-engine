@@ -5,9 +5,9 @@ import (
 	"context"
 	"errors"
 	"net"
-	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/resolver/bogondetector"
@@ -17,13 +17,16 @@ import (
 
 // Resolver is the emitter resolver
 type Resolver struct {
-	bogonsCount int64
+	bogonsCount *atomicx.Int64
 	resolver    modelx.DNSResolver
 }
 
 // New creates a new emitter resolver
 func New(resolver modelx.DNSResolver) *Resolver {
-	return &Resolver{resolver: resolver}
+	return &Resolver{
+		bogonsCount: atomicx.NewInt64(),
+		resolver:    resolver,
+	}
 }
 
 // LookupAddr returns the name of the provided IP address
@@ -123,7 +126,7 @@ func (r *Resolver) lookupHost(ctx context.Context, hostname string) ([]string, e
 func (r *Resolver) detectedBogon(
 	ctx context.Context, hostname string, addrs []string,
 ) ([]string, error) {
-	atomic.AddInt64(&r.bogonsCount, 1)
+	r.bogonsCount.Add(1)
 	return addrs, modelx.ErrDNSBogon
 }
 

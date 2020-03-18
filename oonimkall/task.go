@@ -13,16 +13,16 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
-	"sync/atomic"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 // Task is an asynchronous task.
 type Task struct {
 	cancel context.CancelFunc
+	isdone *atomicx.Int64
 	out    chan *eventRecord
-	isdone int64
 	wg     *sync.WaitGroup
 }
 
@@ -38,6 +38,7 @@ func StartTask(input string) (*Task, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	task := &Task{
 		cancel: cancel,
+		isdone: atomicx.NewInt64(),
 		out:    make(chan *eventRecord),
 		wg:     wg,
 	}
@@ -56,7 +57,7 @@ func (t *Task) WaitForNextEvent() string {
 	const terminated = `{"key":"task_terminated","value":{}}` // like MK
 	evp := <-t.out
 	if evp == nil {
-		atomic.AddInt64(&t.isdone, 1)
+		t.isdone.Add(1)
 		return terminated
 	}
 	data, err := json.Marshal(evp)
@@ -66,7 +67,7 @@ func (t *Task) WaitForNextEvent() string {
 
 // IsDone returns true if the task is done.
 func (t *Task) IsDone() bool {
-	return atomic.LoadInt64(&t.isdone) != 0
+	return t.isdone.Load() != 0
 }
 
 // Interrupt interrupts the task.

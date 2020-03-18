@@ -5,10 +5,10 @@ import (
 	"context"
 	"errors"
 	"net"
-	"sync/atomic"
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -17,13 +17,16 @@ import (
 // manually create and submit queries. It can use all the transports
 // for DNS supported by this library, however.
 type Resolver struct {
-	ntimeouts int64
+	ntimeouts *atomicx.Int64
 	transport modelx.DNSRoundTripper
 }
 
 // New creates a new OONI Resolver instance.
 func New(t modelx.DNSRoundTripper) *Resolver {
-	return &Resolver{transport: t}
+	return &Resolver{
+		ntimeouts: atomicx.NewInt64(),
+		transport: t,
+	}
 }
 
 // Transport returns the transport being used.
@@ -151,7 +154,7 @@ func (c *Resolver) roundTripWithRetry(
 			// so, the resulting failing operation is not correct.
 			break
 		}
-		atomic.AddInt64(&c.ntimeouts, 1)
+		c.ntimeouts.Add(1)
 	}
 	// bugfix: we MUST return one of the errors otherwise we confuse the
 	// mechanism in errwrap that classifies the root cause operation, since

@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
@@ -169,10 +169,10 @@ func (m *measurer) Run(
 	}
 	// run all measurements in parallel
 	var (
-		completed     int64
+		completed     = atomicx.NewInt64()
 		mu            sync.Mutex
-		receivedBytes int64
-		sentBytes     int64
+		receivedBytes = atomicx.NewInt64()
+		sentBytes     = atomicx.NewInt64()
 		waitgroup     sync.WaitGroup
 	)
 	waitgroup.Add(len(urlmeasurements))
@@ -200,9 +200,9 @@ func (m *measurer) Run(
 				UserAgent:      httpheader.RandomUserAgent(),
 			})
 			tk := &entry.results.TestKeys
-			atomic.AddInt64(&sentBytes, tk.SentBytes)
-			atomic.AddInt64(&receivedBytes, tk.ReceivedBytes)
-			sofar := atomic.AddInt64(&completed, 1)
+			sentBytes.Add(tk.SentBytes)
+			receivedBytes.Add(tk.ReceivedBytes)
+			sofar := completed.Add(1)
 			percentage := float64(sofar) / float64(len(urlmeasurements))
 			callbacks.OnProgress(percentage, fmt.Sprintf(
 				"telegram: access %s: %s", key, errString(entry.results.Error),
@@ -215,8 +215,8 @@ func (m *measurer) Run(
 	measurement.TestKeys = &testkeys
 	err := testkeys.processall(urlmeasurements)
 	callbacks.OnDataUsage(
-		float64(receivedBytes)/1024.0, // downloaded
-		float64(sentBytes)/1024.0,     // uploaded
+		float64(receivedBytes.Load())/1024.0, // downloaded
+		float64(sentBytes.Load())/1024.0,     // uploaded
 	)
 	return err
 }

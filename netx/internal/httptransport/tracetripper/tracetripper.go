@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"net/http/httptrace"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
@@ -21,7 +21,7 @@ import (
 
 // Transport performs single HTTP transactions.
 type Transport struct {
-	readAllErrs  int64
+	readAllErrs  *atomicx.Int64
 	readAll      func(r io.Reader) ([]byte, error)
 	roundTripper http.RoundTripper
 }
@@ -29,6 +29,7 @@ type Transport struct {
 // New creates a new Transport.
 func New(roundTripper http.RoundTripper) *Transport {
 	return &Transport{
+		readAllErrs:  atomicx.NewInt64(),
 		readAll:      ioutil.ReadAll,
 		roundTripper: roundTripper,
 	}
@@ -250,7 +251,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		var data []byte
 		data, err = readSnap(&resp.Body, snapSize, t.readAll)
 		if err != nil {
-			atomic.AddInt64(&t.readAllErrs, 1)
+			t.readAllErrs.Add(1)
 			resp = nil // this is how net/http likes it
 		} else {
 			event.ResponseBodySnap = data

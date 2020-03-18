@@ -75,7 +75,7 @@ func TestUnitEmitNonblocking(t *testing.T) {
 		wg.Done()
 	}()
 	wg.Wait()
-	if emitter.timeouts != 1 {
+	if emitter.timeouts.Load() != 1 {
 		t.Fatal("did not see any timeout")
 	}
 }

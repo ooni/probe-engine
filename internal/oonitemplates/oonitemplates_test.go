@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,6 +14,21 @@ import (
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )
+
+func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
+	handler := newChannelHandler(make(chan modelx.Measurement))
+	var waitgroup sync.WaitGroup
+	waitgroup.Add(1)
+	go func() {
+		time.Sleep(1 * time.Second)
+		handler.OnMeasurement(modelx.Measurement{})
+		waitgroup.Done()
+	}()
+	waitgroup.Wait()
+	if handler.lateWrites.Load() != 1 {
+		t.Fatal("unexpected lateWrites value")
+	}
+}
 
 func TestIntegrationDNSLookupGood(t *testing.T) {
 	ctx := context.Background()

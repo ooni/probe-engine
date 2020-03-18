@@ -61,7 +61,7 @@ func TestIntegrationReadAllFailure(t *testing.T) {
 	if resp != nil {
 		t.Fatal("expected nil response here")
 	}
-	if transport.readAllErrs <= 0 {
+	if transport.readAllErrs.Load() <= 0 {
 		t.Fatal("not the error we expected")
 	}
 	client.CloseIdleConnections()
