@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"sync/atomic"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/bouncer"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
@@ -22,6 +21,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -51,7 +51,7 @@ type Session struct {
 	explicitProxy        bool
 	location             *model.LocationInfo
 	logger               model.Logger
-	queryBouncerCount    int64
+	queryBouncerCount    *atomicx.Int64
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
@@ -114,11 +114,12 @@ func NewSession(config SessionConfig) (*Session, error) {
 			IncludeCountry: true,
 			IncludeASN:     true,
 		},
-		explicitProxy:   config.ProxyURL != nil,
-		logger:          config.Logger,
-		softwareName:    config.SoftwareName,
-		softwareVersion: config.SoftwareVersion,
-		tempDir:         config.TempDir,
+		explicitProxy:     config.ProxyURL != nil,
+		logger:            config.Logger,
+		queryBouncerCount: atomicx.NewInt64(),
+		softwareName:      config.SoftwareName,
+		softwareVersion:   config.SoftwareVersion,
+		tempDir:           config.TempDir,
 	}, nil
 }
 
@@ -482,7 +483,7 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 }
 
 func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) error) error {
-	atomic.AddInt64(&s.queryBouncerCount, 1)
+	s.queryBouncerCount.Add(1)
 	for _, e := range s.getAvailableBouncers() {
 		if e.Type != "https" {
 			s.logger.Debugf("session: unsupported bouncer type: %s", e.Type)

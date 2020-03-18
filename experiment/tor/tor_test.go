@@ -236,10 +236,10 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
 	}
-	if rc.sentBytes != 10 {
+	if rc.sentBytes.Load() != 10 {
 		t.Fatal("sent bytes is invalid")
 	}
-	if rc.receivedBytes != 14 {
+	if rc.receivedBytes.Load() != 14 {
 		t.Fatal("received bytes is invalid")
 	}
 }
@@ -279,10 +279,10 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
 	}
-	if rc.sentBytes != 0 {
+	if rc.sentBytes.Load() != 0 {
 		t.Fatal("sent bytes is invalid")
 	}
-	if rc.receivedBytes != 0 {
+	if rc.receivedBytes.Load() != 0 {
 		t.Fatal("received bytes is invalid")
 	}
 }

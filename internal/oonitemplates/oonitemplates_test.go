@@ -16,9 +16,7 @@ import (
 )
 
 func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
-	handler := &channelHandler{
-		ch: make(chan modelx.Measurement),
-	}
+	handler := newChannelHandler(make(chan modelx.Measurement))
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(1)
 	go func() {
@@ -27,7 +25,7 @@ func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
 		waitgroup.Done()
 	}()
 	waitgroup.Wait()
-	if handler.lateWrites != 1 {
+	if handler.lateWrites.Load() != 1 {
 		t.Fatal("unexpected lateWrites value")
 	}
 }

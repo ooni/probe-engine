@@ -62,7 +62,7 @@ func TestLookupHostWithRetry(t *testing.T) {
 	if !strings.HasSuffix(err.Error(), "i/o timeout") {
 		t.Fatal("not the error we expected")
 	}
-	if client.ntimeouts <= 0 {
+	if client.ntimeouts.Load() <= 0 {
 		t.Fatal("no timeouts?")
 	}
 	if addrs != nil {
@@ -93,7 +93,7 @@ func TestLookupHostWithNonTimeoutError(t *testing.T) {
 	if err.Error() == "context deadline exceeded" {
 		t.Fatal("not the error we expected")
 	}
-	if client.ntimeouts != 0 {
+	if client.ntimeouts.Load() != 0 {
 		t.Fatal("we saw a timeout?")
 	}
 	if addrs != nil {

@@ -31,5 +31,5 @@ func (s *Session) MaybeLookupTestHelpersContext(ctx context.Context) error {
 }
 
 func (s *Session) QueryBouncerCount() int64 {
-	return s.queryBouncerCount
+	return s.queryBouncerCount.Load()
 }

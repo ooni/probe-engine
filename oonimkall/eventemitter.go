@@ -1,15 +1,16 @@
 package oonimkall
 
 import (
-	"sync/atomic"
 	"time"
+
+	"github.com/ooni/probe-engine/atomicx"
 )
 
 // eventEmitter emits event on a channel
 type eventEmitter struct {
 	disabled map[string]bool
 	out      chan<- *eventRecord
-	timeouts int64
+	timeouts *atomicx.Int64
 }
 
 // newEventEmitter creates a new Emitter
@@ -19,6 +20,7 @@ func newEventEmitter(disabledEvents []string, out chan<- *eventRecord) *eventEmi
 	for _, eventname := range disabledEvents {
 		ee.disabled[eventname] = true
 	}
+	ee.timeouts = atomicx.NewInt64()
 	return ee
 }
 
@@ -44,7 +46,7 @@ func (ee *eventEmitter) Emit(key string, value interface{}) {
 	}
 	select {
 	case <-time.After(250 * time.Millisecond):
-		atomic.AddInt64(&ee.timeouts, 1)
+		ee.timeouts.Add(1)
 	case ee.out <- &eventRecord{Key: key, Value: value}:
 	}
 }

@@ -145,7 +145,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err) // we don't expect error because good resolver is first
 	}
-	if primary.NumErrors < 1 {
+	if primary.NumErrors.Load() < 1 {
 		t.Fatal("primary has not been used")
 	}
 	defer conn.Close()
