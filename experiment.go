@@ -18,7 +18,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
-	"github.com/ooni/probe-engine/experiment/ndt"
+	"github.com/ooni/probe-engine/experiment/ndt5"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
@@ -151,12 +151,13 @@ func (b *ExperimentBuilder) NewExperiment() *Experiment {
 }
 
 // canonicalizeExperimentName allows code to provide experiment names
-// in a more flexible way. There is a special case for ndt7 where we
-// get `ndt_7` but we would actually want `ndt7`.
+// in a more flexible way, where we have aliases.
 func canonicalizeExperimentName(name string) string {
 	switch name = strcase.ToSnake(name); name {
 	case "ndt_7":
-		name = "ndt7"
+		name = "ndt" // since 2020-03-18, we use ndt7 to implement ndt by default
+	case "ndt_5":
+		name = "ndt5"
 	default:
 	}
 	return name
@@ -493,20 +494,20 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
-	"ndt": func(session *Session) *ExperimentBuilder {
+	"ndt5": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, ndt.NewExperimentMeasurer(
-					*config.(*ndt.Config),
+				return NewExperiment(session, ndt5.NewExperimentMeasurer(
+					*config.(*ndt5.Config),
 				))
 			},
-			config:        &ndt.Config{},
+			config:        &ndt5.Config{},
 			interruptible: true,
 			needsInput:    false,
 		}
 	},
 
-	"ndt7": func(session *Session) *ExperimentBuilder {
+	"ndt": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
 				return NewExperiment(session, ndt7.NewExperimentMeasurer(

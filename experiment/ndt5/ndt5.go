@@ -1,5 +1,5 @@
 // Package ndt contains the ndt network experiment.
-package ndt
+package ndt5
 
 import (
 	"context"

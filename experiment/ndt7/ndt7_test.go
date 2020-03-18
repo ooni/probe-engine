@@ -15,10 +15,10 @@ import (
 
 func TestUnitNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
-	if measurer.ExperimentName() != "ndt7" {
+	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.2.0" {
+	if measurer.ExperimentVersion() != "0.4.0" {
 		t.Fatal("unexpected version")
 	}
 }

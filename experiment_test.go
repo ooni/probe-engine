@@ -26,7 +26,14 @@ func TestCreateAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		exp := builder.NewExperiment()
-		if exp.Name() != name {
+		var good bool
+		switch name {
+		case "ndt5":
+			good = (name == "ndt5" && exp.Name() == "ndt")
+		default:
+			good = (exp.Name() == name)
+		}
+		if !good {
 			t.Fatal("unexpected experiment name")
 		}
 	}

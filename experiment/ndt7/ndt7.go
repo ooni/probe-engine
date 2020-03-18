@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	testName    = "ndt7"
-	testVersion = "0.2.0"
+	testName    = "ndt"
+	testVersion = "0.4.0"
 )
 
 // Config contains the experiment settings
