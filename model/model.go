@@ -353,7 +353,7 @@ type ExperimentSession interface {
 	UserAgent() string
 }
 
-// ExperimentCallbacks contains event handling callbacks
+// ExperimentCallbacks contains experiment event-handling callbacks
 type ExperimentCallbacks interface {
 	// OnDataUsage provides information about data usage.
 	OnDataUsage(dloadKiB, uploadKiB float64)

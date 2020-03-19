@@ -249,7 +249,10 @@ func (e *Experiment) MeasureWithContext(
 	}
 	measurement = e.newMeasurement(input)
 	start := time.Now()
-	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
+	err = e.measurer.Run(ctx, e.session, measurement, &sessionExperimentCallbacks{
+		inner: e.callbacks,
+		sess:  e.session,
+	})
 	stop := time.Now()
 	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
 	scrubErr := e.session.privacySettings.Apply(
@@ -259,6 +262,21 @@ func (e *Experiment) MeasureWithContext(
 		err = scrubErr
 	}
 	return
+}
+
+type sessionExperimentCallbacks struct {
+	inner model.ExperimentCallbacks
+	sess  *Session
+}
+
+func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
+	cb.sess.kibsReceived.Add(dloadKiB)
+	cb.sess.kibsSent.Add(uploadKiB)
+	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
+}
+
+func (cb *sessionExperimentCallbacks) OnProgress(percentage float64, message string) {
+	cb.inner.OnProgress(percentage, message)
 }
 
 // SaveMeasurement saves a measurement on the specified file path.

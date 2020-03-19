@@ -46,6 +46,8 @@ type Session struct {
 	availableTestHelpers map[string][]model.Service
 	httpDefaultClient    *http.Client
 	httpNoProxyClient    *http.Client
+	kibsReceived         *atomicx.Float64
+	kibsSent             *atomicx.Float64
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
 	explicitProxy        bool
@@ -57,32 +59,52 @@ type Session struct {
 	tempDir              string
 }
 
-func newHTTPClient(proxy *url.URL, logger model.Logger) *http.Client {
+func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Client {
 	txp := netx.NewHTTPTransportWithProxyFunc(func(req *http.Request) (*url.URL, error) {
 		if proxy != nil {
 			return proxy, nil
 		}
 		return http.ProxyFromEnvironment(req)
 	})
-	return &http.Client{Transport: &loggingHTTPTransport{
+	return &http.Client{Transport: &sessHTTPTransport{
 		beginning: time.Now(),
 		logger:    logger,
+		sess:      sess,
 		transport: txp,
 	}}
 }
 
-type loggingHTTPTransport struct {
+type sessHTTPTransport struct {
 	beginning time.Time
 	logger    model.Logger
+	sess      *Session
 	transport *netx.HTTPTransport
 }
 
-func (t *loggingHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *sessHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.WithContext(modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
 		Beginning: t.beginning,
-		Handler:   netxlogger.NewHandler(t.logger),
+		Handler: &sessHandler{
+			inner: netxlogger.NewHandler(t.logger),
+			sess:  t.sess,
+		},
 	}))
 	return t.transport.RoundTrip(req)
+}
+
+type sessHandler struct {
+	inner modelx.Handler
+	sess  *Session
+}
+
+func (h *sessHandler) OnMeasurement(m modelx.Measurement) {
+	if m.Read != nil {
+		h.sess.kibsReceived.Add(float64(m.Read.NumBytes) / 1024)
+	}
+	if m.Write != nil {
+		h.sess.kibsSent.Add(float64(m.Write.NumBytes) / 1024)
+	}
+	h.inner.OnMeasurement(m)
 }
 
 // NewSession creates a new session or returns an error
@@ -105,11 +127,11 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.KVStore == nil {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
-	return &Session{
-		assetsDir:         config.AssetsDir,
-		httpDefaultClient: newHTTPClient(config.ProxyURL, config.Logger),
-		httpNoProxyClient: newHTTPClient(nil, config.Logger),
-		kvStore:           config.KVStore,
+	sess := &Session{
+		assetsDir:    config.AssetsDir,
+		kibsReceived: atomicx.NewFloat64(),
+		kibsSent:     atomicx.NewFloat64(),
+		kvStore:      config.KVStore,
 		privacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
@@ -120,7 +142,10 @@ func NewSession(config SessionConfig) (*Session, error) {
 		softwareName:      config.SoftwareName,
 		softwareVersion:   config.SoftwareVersion,
 		tempDir:           config.TempDir,
-	}, nil
+	}
+	sess.httpDefaultClient = newHTTPClient(sess, config.ProxyURL, config.Logger)
+	sess.httpNoProxyClient = newHTTPClient(sess, nil, config.Logger)
+	return sess, nil
 }
 
 // ASNDatabasePath returns the path where the ASN database path should
@@ -145,6 +170,17 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 		Address: baseURL,
 		Type:    "https",
 	})
+}
+
+// KiBsReceived accounts for the KiBs received by the HTTP clients
+// managed by this session so far, including experiments.
+func (s *Session) KiBsReceived() float64 {
+	return s.kibsReceived.Load()
+}
+
+// KiBsSent is like KiBsReceived but for the bytes sent.
+func (s *Session) KiBsSent() float64 {
+	return s.kibsSent.Load()
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.
