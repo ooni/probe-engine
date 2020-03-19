@@ -3,7 +3,6 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
-	"sync"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
@@ -118,39 +117,26 @@ func (r *runner) contextForExperiment(
 
 type runnerCallbacks struct {
 	emitter *eventEmitter
-	end     *eventStatusEnd
-	lock    sync.Mutex
 }
 
 func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	cb.lock.Lock()
-	cb.end.DownloadedKB += dloadKiB
-	cb.end.UploadedKB += uploadKiB
-	cb.lock.Unlock()
+	// nothing!
 }
 
 func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
-	// TODO(bassosimone): I am unsure whether this lock here is really
-	// needed. I think a future refactoring goal for probe-engine is to
-	// have much more goroutines and channesl than now.
-	cb.lock.Lock()
 	cb.emitter.Emit(statusProgress, eventStatusProgress{
 		Percentage: 0.4 + (percentage * 0.6), // open report is 40%
 		Message:    message,
 	})
-	cb.lock.Unlock()
 }
 
 // Run runs the runner until completion. The context argument controls
 // when to stop when processing multiple inputs, as well as when to stop
 // experiments explicitly marked as interruptible.
 func (r *runner) Run(ctx context.Context) {
-	// TODO(bassosimone): accurately count bytes
 	// TODO(bassosimone): intercept all options we ignore
 
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
-	endEvent := new(eventStatusEnd)
-	defer r.emitter.Emit(statusEnd, endEvent)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
 		return
@@ -161,7 +147,13 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
-	defer sess.Close()
+	defer func() {
+		sess.Close()
+		r.emitter.Emit(statusEnd, &eventStatusEnd{
+			DownloadedKB: sess.KiBsReceived(),
+			UploadedKB:   sess.KiBsSent(),
+		})
+	}()
 
 	// TODO(bassosimone): set experiment options here
 	// TODO(bassosimone): we should probably also set callbacks here?
@@ -221,10 +213,7 @@ func (r *runner) Run(ctx context.Context) {
 		return
 	}
 
-	builder.SetCallbacks(&runnerCallbacks{
-		emitter: r.emitter,
-		end:     endEvent,
-	})
+	builder.SetCallbacks(&runnerCallbacks{emitter: r.emitter})
 	if len(r.settings.Inputs) <= 0 {
 		if builder.NeedsInput() {
 			r.emitter.EmitFailureStartup("no input provided")
