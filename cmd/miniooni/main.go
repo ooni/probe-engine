@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/dustin/go-humanize"
 	engine "github.com/ooni/probe-engine"
 	"github.com/pborman/getopt/v2"
 )
@@ -209,7 +210,13 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("cannot create measurement session")
 	}
-	defer sess.Close()
+	defer func() {
+		sess.Close()
+		log.Infof("whole session: recv %s, sent %s",
+			humanize.SI(sess.KiBsReceived()*1024, "byte"),
+			humanize.SI(sess.KiBsSent()*1024, "byte"),
+		)
+	}()
 
 	if globalOptions.bouncerURL != "" {
 		sess.AddAvailableHTTPSBouncer(globalOptions.bouncerURL)
