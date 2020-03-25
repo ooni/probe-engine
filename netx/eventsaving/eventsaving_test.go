@@ -6,13 +6,20 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/ooni/probe-engine/netx/eventsaving"
+	"github.com/ooni/probe-engine/netx/logging"
 	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 func TestIntegration(t *testing.T) {
-	saver := new(eventsaving.Saver)
-	ctx := eventsaving.WithSaver(context.Background(), saver)
+	log.SetLevel(log.DebugLevel)
+	saver := &eventsaving.Saver{Operations: logging.Handler{
+		Operations: measurable.Defaults{},
+		Logger:     log.Log,
+		Prefix:     "<test #1>",
+	}}
+	ctx := measurable.WithOperations(context.Background(), saver)
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://facebook.com", nil)
 	if err != nil {
 		t.Fatal(err)
