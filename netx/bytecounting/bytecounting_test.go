@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ooni/probe-engine/internal/bytecounting"
-	"github.com/ooni/probe-engine/internal/measurable"
+	"github.com/ooni/probe-engine/netx/bytecounting"
+	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 func TestIntegration(t *testing.T) {

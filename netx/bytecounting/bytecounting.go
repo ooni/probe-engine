@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/internal/measurable"
+	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 // TODO(bassosimone): we can estimate the bytes required by LookupHost

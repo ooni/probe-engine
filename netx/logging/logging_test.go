@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/logging"
-	"github.com/ooni/probe-engine/internal/measurable"
+	"github.com/ooni/probe-engine/netx/logging"
+	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 func TestIntegration(t *testing.T) {
