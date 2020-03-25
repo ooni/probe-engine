@@ -13,11 +13,12 @@ import (
 
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	defer log.SetLevel(log.InfoLevel)
-	ctx := logging.WithLogger(context.Background(), logging.Config{
-		Logger: log.Log,
-		Prefix: "<test #1>",
-	})
+	ops := logging.Handler{
+		Operations: measurable.Defaults{},
+		Logger:     log.Log,
+		Prefix:     "<test #1>",
+	}
+	ctx := measurable.WithOperations(context.Background(), ops)
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://facebook.com", nil)
 	if err != nil {
 		t.Fatal(err)

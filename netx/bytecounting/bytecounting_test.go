@@ -11,8 +11,8 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	counter := bytecounting.NewCounter()
-	ctx := bytecounting.WithCounter(context.Background(), counter)
+	counter := bytecounting.NewCounter(measurable.Defaults{})
+	ctx := measurable.WithOperations(context.Background(), counter)
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://facebook.com", nil)
 	if err != nil {
 		t.Fatal(err)

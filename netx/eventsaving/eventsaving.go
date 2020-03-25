@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/measurable"
+	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 // An Event describes something that occurred.

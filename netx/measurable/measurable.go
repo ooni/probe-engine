@@ -1,72 +1,4 @@
-// Package measurable allows us to measure dns/dials/http requests.
-//
-// This package is a reimplementation of some of the functionality provided by
-// github.com/ooni/probe-engine/netx after the introduction of DialTLSContext
-// inside http.Transport with Go 1.14. The availability of DialTLSContext allows
-// us to modify the behavior on the fly by editing the context.
-//
-// Accordingly, there is no logging or data collection here. Now that we can modify
-// any aspect of every request with a context, we can implement different logging
-// and/or data collection strategies.
-//
-// Thus, in terms of netx/DESIGN.md, this package only addresses the aspect of
-// providing mockable/wrappable replacements for commonly used structs.
-//
-// Usage
-//
-// A design goal of this package is to make OONI code as similar as possible to
-// standard library code, while still allowing measurements, logging.
-//
-// To dial a new network connection, your code should use:
-//
-//     conn, err := measurable.DialContext(ctx, network, address)
-//
-// Likewise, to dial a TLS connection one of:
-//
-//     conn, err := measurable.DialTLSContext(ctx, network, address)
-//     conn, err := measurable.DialTLSContextConfig(ctx, network, address, config)
-//
-// To perform a name lookup:
-//
-//     addrs, err := measurable.LookupHost(ctx, hostname)
-//
-// To send an HTTP request and receive its response:
-//
-//     resp, err := measurable.DefaultHTTPClient.Do(req)
-//
-// To just perform a round trip:
-//
-//     resp, err := measurable.DefaultHTTPTransport.RoundTrip(req)
-//
-// Configuration
-//
-// Every dial, TLS dial, host lookup, or HTTP round trip is customizable. To do so,
-// you should create and properly modify a context. Other packages should provide the
-// programmer with high level functionality to implement, e.g., logging, saving the
-// measurements, byte counting, retrying, and so forth.
-//
-// The functionality exposed by this package allows you to change the configuration
-// associated with a specific context in several ways. First and foremost, you can
-// get the current configuration using:
-//
-//     config := measurable.ContextConfig(ctx)
-//     if config == nil {
-//         config = measurer.NewConfig()
-//     }
-//
-// The first time you call this function, it will return a nil Config instance
-// as shown above. Once you've edited the config, you can save with:
-//
-//     derivedCtx := measurable.WithConfig(ctx, config)
-//
-// This will create a new derivedCtx context that is bound to config. You can
-// access and modify the configuration stored in a ctx using:
-//
-//     if config := measurable.ContextConfig(ctx); config != nil {
-//         config.Connector = customConnector
-//     }
-//
-// From that point on, if config is not nil, the customConnector will be used.
+// Package measurable makes DNS, connect, TLS, and HTTP measurable.
 package measurable
 
 import (
@@ -78,76 +10,58 @@ import (
 	"time"
 )
 
-// The Resolver interface allows you to wrap net.Resolver as well as any
-// other struct implementing a compatible interface.
-//
-// Possible applications:
-//
-// 1. log domain name resolutions
-// 2. save measurement events
-// 3. filter for bogons
-// 4. fallback to DoH/DoT
-type Resolver interface {
-	// The LookupHost method discovers the IP addresses associated to
-	// domain inside of the DNS. Returns a non-empty list of addresses
-	// on success, and an error on failure. When domain is not actually
-	// a domain name, but an IP address, this method must return a non
-	// empty list containing a single entry for domain.
+// Operations contains measurable operations
+type Operations interface {
 	LookupHost(ctx context.Context, domain string) ([]string, error)
-}
-
-// The Connector interface allows you to wrap net.Dialer as well as any
-// other struct implementing a compatible interface.
-//
-// Possible applications:
-//
-// 1. log connect attempts
-// 2. save measurement events
-// 3. transparently implement proxying
-// 4. wrap a connection
-type Connector interface {
-	// DialContext establishes a connection to the remote address using
-	// the specified network. Returns a conn or an error.
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
-}
-
-// TLSHandshaker performs the TLS handshake.
-//
-// Possible applications:
-//
-// 1. log TLS handshake attempts
-// 2. save measurement events
-// 3. change params and retry handshake
-// 4. use another TLS implementation
-type TLSHandshaker interface {
-	// Handshake performs a TLS handshake using conn and config. Returns a valid
-	// conn and a valid connection state on success, an error on failure. Note that
-	// this function will not close conn in case of failure.
 	Handshake(ctx context.Context, conn net.Conn, config *tls.Config) (
 		net.Conn, tls.ConnectionState, error)
-}
-
-// The HTTPTransport interface allows you to wrap http.Transport as well
-// as any struct implementing a compatible interface. This interface is
-// handy in that it has an explicit notion of CloseIdleConnections.
-type HTTPTransport interface {
-	// RoundTrip performs the req request and returns either the response
-	// (in case of success) or an error (in case of failure). This function
-	// may read part of all of the response body, as long as the body is
-	// left into a state such that another transport wrapping this transport
-	// may also read the body without any noticeable difference. This means
-	// that, in particular, if there is an error when reading the body, also
-	// the downstream transport should see the error at that point.
 	RoundTrip(req *http.Request) (*http.Response, error)
-
-	// CloseIdleConnections will close idle connections in the transport.
-	CloseIdleConnections()
 }
 
-type defaultTLSHandshaker struct{}
+type operationsKey struct{}
 
-func (defaultTLSHandshaker) Handshake(
-	ctx context.Context, conn net.Conn, config *tls.Config) (
+// WithOperations returns a new context using the specified measurable operations.
+func WithOperations(ctx context.Context, operations Operations) context.Context {
+	return context.WithValue(ctx, operationsKey{}, operations)
+}
+
+// ContextOperations returns the Operations associated with the context.
+func ContextOperations(ctx context.Context) Operations {
+	operations, _ := ctx.Value(operationsKey{}).(Operations)
+	return operations
+}
+
+var (
+	connector     = &net.Dialer{Timeout: 30 * time.Second}
+	httpTransport = &http.Transport{
+		DialContext:         DialContext,
+		DialTLSContext:      DialTLSContext,
+		DisableCompression:  true,  // simplifies OONI measurements (but is also costly)
+		DisableKeepAlives:   false, // hey, we want to keep connections alive!
+		ForceAttemptHTTP2:   true,  // we wanna use HTTP/2 if possible
+		Proxy:               nil,   // use ContextDialer to implement proxying
+		TLSClientConfig:     nil,   // use ContextTLSDialer instead
+		TLSHandshakeTimeout: 0,     // ditto
+	}
+	resolver = &net.Resolver{PreferGo: false}
+)
+
+// Defaults contains the default operations implementation.
+type Defaults struct{}
+
+// LookupHost performs an host lookup
+func (Defaults) LookupHost(ctx context.Context, domain string) ([]string, error) {
+	return resolver.LookupHost(ctx, domain)
+}
+
+// DialContext establishes a new connection
+func (Defaults) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return connector.DialContext(ctx, network, address)
+}
+
+// Handshake performs a TLS handshake
+func (Defaults) Handshake(ctx context.Context, conn net.Conn, config *tls.Config) (
 	net.Conn, tls.ConnectionState, error) {
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
@@ -167,61 +81,9 @@ func (defaultTLSHandshaker) Handshake(
 	return tlsconn, tlsconn.ConnectionState(), nil
 }
 
-// Config contains the current measurable configuration. This is always
-// associated with a Context, using WithConfig and ConfigContext.
-type Config struct {
-	Connector
-	HTTPTransport
-	Resolver
-	TLSHandshaker
-}
-
-// NewConfig creates a new initialized Config instance.
-func NewConfig() *Config {
-	return &Config{
-		Connector: &net.Dialer{Timeout: 30 * time.Second},
-		HTTPTransport: NewLowLevelHTTPTransport(&http.Transport{
-			Proxy:               nil,   // use ContextDialer to implement proxying
-			TLSClientConfig:     nil,   // use ContextTLSDialer instead
-			TLSHandshakeTimeout: 0,     // ditto
-			DisableKeepAlives:   false, // hey, we want to keep connections alive!
-			DisableCompression:  true,  // simplifies OONI measurements (but is also costly)
-			ForceAttemptHTTP2:   true,  // we wanna use HTTP/2 if possible
-		}),
-		Resolver:      &net.Resolver{PreferGo: false},
-		TLSHandshaker: defaultTLSHandshaker{},
-	}
-}
-
-// configkey is the key for Context.{,With}Value.
-type configkey struct{}
-
-// WithConfig returns a copy of ctx with the specified config. It is legal
-// to pass in a nil config: this means we will use default values.
-func WithConfig(ctx context.Context, config *Config) context.Context {
-	return context.WithValue(ctx, configkey{}, config)
-}
-
-// ContextConfig returns the Config associated with the context. The return
-// value of this function may be nil if no configuration has been set.
-func ContextConfig(ctx context.Context) *Config {
-	config, _ := ctx.Value(configkey{}).(*Config)
-	return config
-}
-
-var defaultConfig *Config
-
-func init() {
-	defaultConfig = NewConfig() // necessary to break cycle
-}
-
-// ContextConfigOrDefault returns the configuration stored in the context
-// or otherwise the default configuration stored in a global var.
-func ContextConfigOrDefault(ctx context.Context) *Config {
-	if config := ContextConfig(ctx); config != nil {
-		return config
-	}
-	return defaultConfig
+// RoundTrip performs an HTTP round trip
+func (Defaults) RoundTrip(req *http.Request) (*http.Response, error) {
+	return httpTransport.RoundTrip(req)
 }
 
 // ErrConnect is the error returned when we attempted to connect multiple
@@ -236,10 +98,13 @@ func (ErrConnect) Error() string {
 	return "connect_error" // compatible with ooni/probe-legacy
 }
 
-// LookupHost calls LookupHost on the context's Resolver.
+// LookupHost performs a host lookup
 func LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	config := ContextConfigOrDefault(ctx)
-	return config.Resolver.LookupHost(ctx, hostname)
+	ops := ContextOperations(ctx)
+	if ops == nil {
+		ops = Defaults{}
+	}
+	return ops.LookupHost(ctx, hostname)
 }
 
 // DialContext dials a new conntection using the context's Connector and Resolver.
@@ -248,8 +113,11 @@ func DialContext(ctx context.Context, network, address string) (net.Conn, error)
 	if err != nil {
 		return nil, err
 	}
-	config := ContextConfigOrDefault(ctx)
-	addrs, err := config.Resolver.LookupHost(ctx, hostname)
+	ops := ContextOperations(ctx)
+	if ops == nil {
+		ops = Defaults{}
+	}
+	addrs, err := ops.LookupHost(ctx, hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +127,7 @@ func DialContext(ctx context.Context, network, address string) (net.Conn, error)
 	var errConnect ErrConnect
 	for _, address = range addrs {
 		address = net.JoinHostPort(address, port)
-		conn, err := config.Connector.DialContext(ctx, network, address)
+		conn, err := ops.DialContext(ctx, network, address)
 		if err == nil {
 			return conn, nil
 		}
@@ -309,8 +177,11 @@ func DialTLSContextConfig(
 	if config.NextProtos == nil {
 		config.NextProtos = []string{"h2", "http/1.1"}
 	}
-	ctxconf := ContextConfigOrDefault(ctx)
-	tlsconn, _, err := ctxconf.TLSHandshaker.Handshake(ctx, conn, config)
+	ops := ContextOperations(ctx)
+	if ops == nil {
+		ops = Defaults{}
+	}
+	tlsconn, _, err := ops.Handshake(ctx, conn, config)
 	if err != nil {
 		conn.Close()
 		return nil, err
@@ -318,31 +189,20 @@ func DialTLSContextConfig(
 	return tlsconn, nil
 }
 
-// NewLowLevelHTTPTransport creates a low level HTTP transport that directly
-// edits the provided template such that:
-//
-// - the DialContext member now points to DialContext
-// - the DialTLSContext member now points to DialTLSContext
-//
-// The returned transport is a clone and can be used independently of the original.
-func NewLowLevelHTTPTransport(template *http.Transport) *http.Transport {
-	txp := template.Clone()
-	txp.DialContext = DialContext
-	txp.DialTLSContext = DialTLSContext
-	return txp
-}
+type routingHTTPTransport struct{}
 
-type defaultHTTPTransport struct{}
-
-func (txp defaultHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	config := ContextConfigOrDefault(req.Context())
-	return config.HTTPTransport.RoundTrip(req)
+func (txp routingHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ops := ContextOperations(req.Context())
+	if ops == nil {
+		ops = Defaults{}
+	}
+	return ops.RoundTrip(req)
 }
 
 // DefaultHTTPTransport dispatches performing the request to the transport
 // configured inside the request's context. By default, if no other transport has
 // been configuered, we will use DefaultLowLevelHTTPTransport.
-var DefaultHTTPTransport http.RoundTripper = defaultHTTPTransport{}
+var DefaultHTTPTransport http.RoundTripper = routingHTTPTransport{}
 
 // DefaultHTTPClient is the default HTTP client.
 var DefaultHTTPClient = &http.Client{Transport: DefaultHTTPTransport}
