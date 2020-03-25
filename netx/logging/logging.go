@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/measurable"
+	"github.com/ooni/probe-engine/netx/measurable"
 )
 
 // The Logger interface describes a generic logger. This is designed
