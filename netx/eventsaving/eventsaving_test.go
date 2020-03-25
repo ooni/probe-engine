@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/eventsaving"
 	"github.com/ooni/probe-engine/netx/logging"
 	"github.com/ooni/probe-engine/netx/measurable"
@@ -14,21 +15,30 @@ import (
 
 func TestIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	saver := &eventsaving.Saver{Operations: logging.Handler{
+	logger := logging.Handler{
 		Operations: measurable.Defaults{},
 		Logger:     log.Log,
-		Prefix:     "<test #1>",
-	}}
-	ctx := measurable.WithOperations(context.Background(), saver)
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://facebook.com", nil)
-	if err != nil {
-		t.Fatal(err)
+		Prefix:     "<httptest>",
 	}
+	ctx := measurable.WithOperations(context.Background(), logger)
+	saver := perform(ctx, "http://www.google.com")
+	t.Logf("%+v", saver.ReadEvents())
+	saver = perform(ctx, "http://facebook.com")
+	t.Logf("%+v", saver.ReadEvents())
+}
+
+func perform(ctx context.Context, url string) *eventsaving.Saver {
+	ops := measurable.ContextOperations(ctx)
+	if ops == nil {
+		ops = measurable.Defaults{}
+	}
+	saver := &eventsaving.Saver{Operations: ops}
+	ctx = measurable.WithOperations(context.Background(), saver)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	runtimex.PanicOnError(err, "http.NewRequestWithContext failed")
 	resp, err := measurable.DefaultHTTPClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runtimex.PanicOnError(err, "measurable.DefaultHTTPClient.Do failed")
 	ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	t.Logf("%+v", saver.ReadEvents())
+	return saver
 }
