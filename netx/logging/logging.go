@@ -1,4 +1,18 @@
 // Package logging adds logging to measurable objects.
+//
+// This package replaces github.com/ooni/probe-engine/internal/netxlogger as
+// the code that emits logs generated through netx.
+//
+// Usage
+//
+// To enable logging, modify the context you are going to use as follows:
+//
+//     ctx = logging.WithLogger(ctx, logging.Config{
+//         Logger: logger,
+//     })
+//
+// where logger is a github.com/apex/log like logger. All the events generated
+// using the specified context will use the configured logger.
 package logging
 
 import (
@@ -6,7 +20,9 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+	"time"
 
+	"github.com/ooni/probe-engine/internal/tlsx"
 	"github.com/ooni/probe-engine/netx/measurable"
 )
 
@@ -17,85 +33,87 @@ type Logger interface {
 	Debug(msg string)
 }
 
-// Resolver is a logging resolver.
-type Resolver struct {
-	measurable.Resolver
-	Logger
+// Config contains settings for the logger.
+type Config struct {
+	Logger Logger // logger to use
+	Prefix string // optional prefix
 }
 
-// LookupHost implements measurable.Resolver.LookupHost
-func (r Resolver) LookupHost(ctx context.Context, domain string) ([]string, error) {
-	r.Logger.Debugf("LookupHostStart %s", domain)
-	addrs, err := r.Resolver.LookupHost(ctx, domain)
-	r.Logger.Debugf("LookupHostDone %+v %+v", addrs, err)
+type handler struct {
+	measurable.Resolver
+	measurable.Connector
+	measurable.TLSHandshaker
+	measurable.HTTPTransport
+	config Config
+}
+
+func (lh handler) debugf(format string, v ...interface{}) {
+	if lh.config.Prefix != "" {
+		format = lh.config.Prefix + " " + format
+	}
+	lh.config.Logger.Debugf(format, v...)
+}
+
+func (lh handler) LookupHost(ctx context.Context, domain string) ([]string, error) {
+	lh.debugf("resolve %s", domain)
+	start := time.Now()
+	addrs, err := lh.Resolver.LookupHost(ctx, domain)
+	elapsed := time.Now().Sub(start)
+	lh.debugf("resolve %s => {addrs=%s err=%+v t=%s}", domain, addrs, err, elapsed)
 	return addrs, err
 }
 
-// Connector is a logging connector.
-type Connector struct {
-	measurable.Connector
-	Logger
-}
-
-// DialContext implements measurable.Connector.DialContext
-func (d Connector) DialContext(
+func (lh handler) DialContext(
 	ctx context.Context, network, address string) (net.Conn, error) {
-	d.Logger.Debugf("DialContextStart %s %s", network, address)
-	conn, err := d.Connector.DialContext(ctx, network, address)
-	d.Logger.Debugf("DialContextDone %+v %+v", conn, err)
+	lh.debugf("connect %s/%s", address, network)
+	start := time.Now()
+	conn, err := lh.Connector.DialContext(ctx, network, address)
+	elapsed := time.Now().Sub(start)
+	lh.debugf("connect %s/%s => {err=%+v t=%s}", address, network, err, elapsed)
 	return conn, err
 }
 
-// TLSHandshaker is a logging TLS handshaker
-type TLSHandshaker struct {
-	measurable.TLSHandshaker
-	Logger
-}
-
-// Handshake implements measurable.TLSHandshaker.Handshake
-func (th TLSHandshaker) Handshake(
+func (lh handler) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config) (
 	net.Conn, tls.ConnectionState, error) {
-	th.Logger.Debugf("TLSHandshakeStart %+v %+v", conn, config)
-	tlsconn, state, err := th.TLSHandshaker.Handshake(ctx, conn, config)
-	th.Logger.Debugf("TLSHandshakeDone %+v %+v", state, err)
+	lh.debugf("tls {alpn=%s sni=%s}", config.NextProtos, config.ServerName)
+	start := time.Now()
+	tlsconn, state, err := lh.TLSHandshaker.Handshake(ctx, conn, config)
+	elapsed := time.Now().Sub(start)
+	lh.debugf("tls {alpn=%s sni=%s} => {alpn=%s err=%+v t=%s v=%s}", config.NextProtos,
+		config.ServerName, state.NegotiatedProtocol, err, elapsed,
+		tlsx.VersionString(state.Version))
 	return tlsconn, state, err
 }
 
-// HTTPTransport is a loggable HTTPTransport
-type HTTPTransport struct {
-	measurable.HTTPTransport
-	Logger
-}
-
-// RoundTrip implements measurable.HTTPTransport.RoundTrip
-func (txp HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	txp.Logger.Debugf("RoundTripStart %+v", req)
-	resp, err := txp.HTTPTransport.RoundTrip(req)
-	txp.Logger.Debugf("RoundTripDone %+v %+v", resp, err)
+func (lh handler) RoundTrip(req *http.Request) (*http.Response, error) {
+	lh.debugf("%s %s", req.Method, req.URL)
+	start := time.Now()
+	resp, err := lh.HTTPTransport.RoundTrip(req)
+	elapsed := time.Now().Sub(start)
+	if err != nil {
+		lh.debugf("%s %s => {err=%+v t=%s}", req.Method, req.URL, err, elapsed)
+		return nil, err
+	}
+	lh.debugf("%s %s => {code=%+v t=%s}", req.Method, req.URL, resp.StatusCode, elapsed)
 	return resp, err
 }
 
 // WithLogger creates a copy of the provided context that is configured
-// to use the specified logger for every dial, request, etc.
-func WithLogger(ctx context.Context, logger Logger) context.Context {
-	config := measurable.ContextConfigOrDefault(ctx)
+// to use the specified config for every dial, request, etc.
+func WithLogger(ctx context.Context, config Config) context.Context {
+	cc := measurable.ContextConfigOrDefault(ctx)
+	handler := handler{
+		Connector:     cc.Connector,
+		HTTPTransport: cc.HTTPTransport,
+		Resolver:      cc.Resolver,
+		TLSHandshaker: cc.TLSHandshaker,
+		config:        config,
+	}
 	return measurable.WithConfig(ctx, &measurable.Config{
-		Connector: &Connector{
-			Connector: config.Connector,
-			Logger:    logger,
-		},
-		HTTPTransport: &HTTPTransport{
-			HTTPTransport: config.HTTPTransport,
-			Logger:        logger,
-		},
-		Resolver: &Resolver{
-			Resolver: config.Resolver,
-			Logger:   logger,
-		},
-		TLSHandshaker: &TLSHandshaker{
-			TLSHandshaker: config.TLSHandshaker,
-			Logger:        logger,
-		},
+		Connector:     handler,
+		HTTPTransport: handler,
+		Resolver:      handler,
+		TLSHandshaker: handler,
 	})
 }
