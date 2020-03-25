@@ -37,7 +37,7 @@ var (
 	httpTransport = &http.Transport{
 		DialContext:         DialContext,
 		DialTLSContext:      DialTLSContext,
-		DisableCompression:  true,  // simplifies OONI measurements (but is also costly)
+		DisableCompression:  true,  // simplifies OONI measurements
 		DisableKeepAlives:   false, // hey, we want to keep connections alive!
 		ForceAttemptHTTP2:   true,  // we wanna use HTTP/2 if possible
 		Proxy:               nil,   // use ContextDialer to implement proxying
@@ -192,6 +192,17 @@ func DialTLSContextConfig(
 type routingHTTPTransport struct{}
 
 func (txp routingHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// make sure we see all headers that go would otherwise set
+	// automatically, so that all of them can be saved
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", "miniooni/0.1.0-dev")
+	}
+	host := req.Host
+	if host == "" {
+		host = req.URL.Host
+	}
+	req.Header.Set("Host", host)
+	// proceed with passing the ball to lower layers
 	ops := ContextOperations(req.Context())
 	if ops == nil {
 		ops = Defaults{}
