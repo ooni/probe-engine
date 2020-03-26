@@ -3,6 +3,7 @@ package dialer
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sync"
 	"time"
@@ -151,4 +152,84 @@ type Events struct {
 	LocalAddress  string
 	Network       string
 	StartTime     time.Time
+}
+
+// Service is the dialing service. This is useful to create a flexible HTTP
+// transport, for which the dialer is undertermined. Just pass an instance of
+// this struct to httptransport.NewBase(). Every dial request will block and
+// possibly timeout, until a single goroutine takes ownership of this instance
+// of Service by running service.Loop. Because service.Loop takes in input
+// a dialer, it means you can customize dial depending on circumstances.
+type Service struct {
+	ch   chan serviceRequest
+	sync chan interface{}
+}
+
+// NewService creates a new dialing service.
+func NewService() Service {
+	return Service{ch: make(chan serviceRequest), sync: make(chan interface{}, 1)}
+}
+
+type serviceRequest struct {
+	dialer chan Dialer
+}
+
+// DialContext implements Dialer.DialContext.
+func (d Service) DialContext(
+	ctx context.Context, network, address string) (net.Conn, error) {
+	req := serviceRequest{dialer: make(chan Dialer)}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case d.ch <- req:
+	}
+	select {
+	case d := <-req.dialer:
+		return d.DialContext(ctx, network, address)
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// ErrBusy means that Service.Loop is already running
+var ErrBusy = errors.New("service loop is busy")
+
+// Start starts the service loop and runs it until the context is done. Just one loop
+// can run at a time. If one is already running, we return an error.
+func (d Service) Start(ctx context.Context, dialer Dialer) error {
+	select {
+	case d.sync <- true:
+	case <-time.After(100 * time.Millisecond):
+		return ErrBusy
+	}
+	go func() {
+		defer func() { <-d.sync }()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case req := <-d.ch:
+				req.dialer <- dialer
+			}
+		}
+	}()
+	return nil
+}
+
+// Mockable is a mockable dialer
+type Mockable struct {
+	Conn net.Conn
+	Err  error
+}
+
+// DialContext implements Dialer.DialContext.
+func (d Mockable) DialContext(
+	ctx context.Context, network, address string) (net.Conn, error) {
+	if d.Err != nil {
+		return nil, d.Err
+	}
+	if d.Conn != nil {
+		return d.Conn, nil
+	}
+	return nil, errors.New("mocked error")
 }
