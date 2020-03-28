@@ -215,11 +215,17 @@ func (txp *EventsSaver) RoundTrip(req *http.Request) (*http.Response, error) {
 			mu.Unlock()
 		},
 	}
+	rte.Method = req.Method
 	rte.URL = req.URL.String()
+	rte.RequestHeaders = req.Header
 	rte.RoundTripStartTime = time.Now()
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), tracer))
 	resp, err := txp.Transport.RoundTrip(req)
 	rte.RoundTripEndTime = time.Now()
+	if resp != nil {
+		rte.ResponseHeaders = resp.Header
+		rte.StatusCode = resp.StatusCode
+	}
 	txp.mu.Lock()
 	txp.events = append(txp.events, rte)
 	txp.mu.Unlock()
@@ -237,6 +243,8 @@ func (txp *EventsSaver) ReadEvents() []Events {
 
 // Events describes round trip events
 type Events struct {
+	Method                   string
+	RequestHeaders           http.Header
 	URL                      string
 	RoundTripStartTime       time.Time
 	GetConnTime              time.Time
@@ -247,4 +255,6 @@ type Events struct {
 	WroteHeadersTime         time.Time
 	WroteRequestTime         time.Time
 	RoundTripEndTime         time.Time
+	StatusCode               int
+	ResponseHeaders          http.Header
 }
