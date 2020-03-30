@@ -12,7 +12,6 @@ You can [browse ooni/probe-engine's API](
 https://godoc.org/github.com/ooni/probe-engine)
 online at godoc.org. We currently don't provide any API
 stability guarantees.
-
 This repository also allows to build [miniooni](cmd/miniooni), a
 small command line client useful to test the functionality in here
 without integrating with OONI probe. You can browse [the manual
