@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 pkgname=oonimkall
-version=$(date -u +%Y%m%dT%H%M%SZ)
+version=$(date -u +%Y.%m.%d-%H%M%S)
 baseurl=https://api.bintray.com/content/ooni/android/$pkgname/$version/org/ooni/$pkgname/$version
 aarfile=./MOBILE/dist/$pkgname.aar
 pomfile=./MOBILE/dist/$pkgname-$version.pom
