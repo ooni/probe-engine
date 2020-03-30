@@ -18,4 +18,4 @@ jobs:
       - run: ./build-android.bash
         env:
           ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
-     - run: ./publish-android.bash
+      - run: ./publish-android.bash
