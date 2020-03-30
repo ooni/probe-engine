@@ -16,6 +16,6 @@ fi
 # <curl -s $user:$BINTRAY_API_KEY https://api.bintray.com/packages/ooni/android/oonimkall>
 # query, which returns a list of versions. From such list, we can delete the versions we
 # don't need using <DELETE /packages/:subject/:repo/:package/versions/:version>.
-curl -#T $aarfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.aar?publish=1 >/dev/null
-curl -#T $pomfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.pom?publish=1 >/dev/null
+curl -sT $aarfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.aar?publish=1 >/dev/null
+curl -sT $pomfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.pom?publish=1 >/dev/null
 echo "implementation 'org.ooni:oonimkall:$version'"
