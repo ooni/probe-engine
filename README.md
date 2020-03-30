@@ -16,8 +16,7 @@ stability guarantees.
 This repository also allows to build [miniooni](cmd/miniooni), a
 small command line client useful to test the functionality in here
 without integrating with OONI probe. You can browse [the manual
-of this tool](
-https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
+of this tool](https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
 online at godoc.org. We currently don't promise that the
 miniooni CLI will be stable over time.
 
