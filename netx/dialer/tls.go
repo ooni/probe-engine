@@ -12,7 +12,6 @@ import (
 
 // TLSDialer is the TLS dialer
 type TLSDialer struct {
-	ConnectTimeout      time.Duration // default: 30 second
 	TLSHandshakeTimeout time.Duration // default: 10 second
 	config              *tls.Config
 	dialer              modelx.Dialer
@@ -22,7 +21,6 @@ type TLSDialer struct {
 // NewTLSDialer creates a new TLSDialer
 func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) *TLSDialer {
 	return &TLSDialer{
-		ConnectTimeout:      30 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second,
 		config:              config,
 		dialer:              dialer,
@@ -34,8 +32,7 @@ func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) *TLSDialer {
 
 // DialTLS dials a new TLS connection
 func (d *TLSDialer) DialTLS(network, address string) (net.Conn, error) {
-	ctx := context.Background()
-	return d.DialTLSContext(ctx, network, address)
+	return d.DialTLSContext(context.Background(), network, address)
 }
 
 // DialTLSContext is like DialTLS, but with context
@@ -46,8 +43,6 @@ func (d *TLSDialer) DialTLSContext(
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(ctx, d.ConnectTimeout)
-	defer cancel()
 	conn, err := d.dialer.DialContext(ctx, network, address)
 	if err != nil {
 		return nil, err

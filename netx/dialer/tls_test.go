@@ -1,6 +1,7 @@
 package dialer
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"net"
@@ -47,9 +48,10 @@ func TestIntegrationTLSDialerFailureSplitHostPort(t *testing.T) {
 }
 
 func TestIntegrationTLSDialerFailureConnectTimeout(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cause immediate timeout
 	dialer := newTLSDialer()
-	dialer.(*TLSDialer).ConnectTimeout = 10 * time.Microsecond
-	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
+	conn, err := dialer.DialTLSContext(ctx, "tcp", "www.google.com:443")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
