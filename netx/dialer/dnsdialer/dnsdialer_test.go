@@ -11,8 +11,8 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-func TestIntegrationDial(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerDial(t *testing.T) {
+	dialer := newDNSDialer()
 	conn, err := dialer.Dial("tcp", "www.google.com:80")
 	if err != nil {
 		t.Fatal(err)
@@ -20,8 +20,8 @@ func TestIntegrationDial(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialAddress(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerDialAddress(t *testing.T) {
+	dialer := newDNSDialer()
 	conn, err := dialer.Dial("tcp", "8.8.8.8:853")
 	if err != nil {
 		t.Fatal(err)
@@ -29,8 +29,8 @@ func TestIntegrationDialAddress(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationNoPort(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerNoPort(t *testing.T) {
+	dialer := newDNSDialer()
 	conn, err := dialer.Dial("tcp", "antani.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -40,8 +40,8 @@ func TestIntegrationNoPort(t *testing.T) {
 	}
 }
 
-func TestIntegrationLookupFailure(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerLookupFailure(t *testing.T) {
+	dialer := newDNSDialer()
 	conn, err := dialer.Dial("tcp", "antani.ooni.io:443")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -51,8 +51,8 @@ func TestIntegrationLookupFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationDialTCPFailure(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerDialTCPFailure(t *testing.T) {
+	dialer := newDNSDialer()
 	// The port is unreachable and filtered. The timeout is here
 	// to make sure that we don't run for too much time.
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
@@ -66,11 +66,11 @@ func TestIntegrationDialTCPFailure(t *testing.T) {
 	}
 }
 
-func newdialer() modelx.Dialer {
-	return New(new(net.Resolver), new(net.Dialer))
+func newDNSDialer() modelx.Dialer {
+	return NewDNSDialer(new(net.Resolver), new(net.Dialer))
 }
 
-func TestReduceErrors(t *testing.T) {
+func TestUnitReduceErrors(t *testing.T) {
 	t.Run("no errors", func(t *testing.T) {
 		result := reduceErrors(nil)
 		if result != nil {
@@ -111,8 +111,8 @@ func TestReduceErrors(t *testing.T) {
 	})
 }
 
-func TestIntegrationDivertLookupHost(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationDNSDialerDivertLookupHost(t *testing.T) {
+	dialer := newDNSDialer()
 	failure := errors.New("mocked error")
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),

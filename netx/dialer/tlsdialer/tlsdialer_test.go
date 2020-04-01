@@ -12,8 +12,8 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationTLSDialerSuccess(t *testing.T) {
+	dialer := newTLSDialer()
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)
@@ -24,9 +24,9 @@ func TestIntegrationSuccess(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationSuccessWithMeasuringConn(t *testing.T) {
-	dialer := newdialer()
-	dialer.(*TLSDialer).dialer = dialerbase.New(
+func TestIntegrationTLSDialerSuccessWithMeasuringConn(t *testing.T) {
+	dialer := newTLSDialer()
+	dialer.(*TLSDialer).dialer = dialerbase.NewBaseDialer(
 		time.Now(), handlers.NoHandler, new(net.Dialer), 17,
 	)
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
@@ -39,8 +39,8 @@ func TestIntegrationSuccessWithMeasuringConn(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationFailureSplitHostPort(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationTLSDialerFailureSplitHostPort(t *testing.T) {
+	dialer := newTLSDialer()
 	conn, err := dialer.DialTLS("tcp", "www.google.com") // missing port
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -50,8 +50,8 @@ func TestIntegrationFailureSplitHostPort(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailureConnectTimeout(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationTLSDialerFailureConnectTimeout(t *testing.T) {
+	dialer := newTLSDialer()
 	dialer.(*TLSDialer).ConnectTimeout = 10 * time.Microsecond
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err == nil {
@@ -62,8 +62,8 @@ func TestIntegrationFailureConnectTimeout(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailureTLSHandshakeTimeout(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationTLSDialerFailureTLSHandshakeTimeout(t *testing.T) {
+	dialer := newTLSDialer()
 	dialer.(*TLSDialer).TLSHandshakeTimeout = 10 * time.Microsecond
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err == nil {
@@ -74,8 +74,8 @@ func TestIntegrationFailureTLSHandshakeTimeout(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailureSetDeadline(t *testing.T) {
-	dialer := newdialer()
+func TestIntegrationTLSDialerFailureSetDeadline(t *testing.T) {
+	dialer := newTLSDialer()
 	dialer.(*TLSDialer).setDeadline = func(conn net.Conn, t time.Time) error {
 		return errors.New("mocked error")
 	}
@@ -88,6 +88,6 @@ func TestIntegrationFailureSetDeadline(t *testing.T) {
 	}
 }
 
-func newdialer() modelx.TLSDialer {
-	return New(new(net.Dialer), new(tls.Config))
+func newTLSDialer() modelx.TLSDialer {
+	return NewTLSDialer(new(net.Dialer), new(tls.Config))
 }
