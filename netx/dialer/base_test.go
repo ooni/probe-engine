@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 	"net"
+	"net/http"
 	"testing"
 	"time"
 
@@ -11,11 +12,15 @@ import (
 
 func TestIntegrationBaseDialerSuccess(t *testing.T) {
 	dialer := newBaseDialer()
-	conn, err := dialer.DialContext(context.Background(), "tcp", "8.8.8.8:53")
+	txp := &http.Transport{
+		DialContext: dialer.DialContext,
+	}
+	client := &http.Client{Transport: txp}
+	resp, err := client.Get("http://www.google.com")
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn.Close()
+	resp.Body.Close()
 }
 
 func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
