@@ -20,7 +20,7 @@ type DNSDialer struct {
 // NewDNSDialer creates a new DNSDialer.
 func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDialer) {
 	return &DNSDialer{
-		dialer:   dialer,
+		dialer:   &BaseDialer{Dialer: dialer},
 		resolver: resolver,
 	}
 }
@@ -35,7 +35,6 @@ func (d *DNSDialer) Dial(network, address string) (net.Conn, error) {
 func (d *DNSDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
-	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	onlyhost, onlyport, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -48,11 +47,8 @@ func (d *DNSDialer) DialContext(
 	}
 	var errorslist []error
 	for _, addr := range addrs {
-		dialer := NewBaseDialer(
-			root.Beginning, root.Handler, d.dialer,
-		)
 		target := net.JoinHostPort(addr, onlyport)
-		conn, err = dialer.DialContext(ctx, network, target)
+		conn, err = d.dialer.DialContext(ctx, network, target)
 		if err == nil {
 			return
 		}
