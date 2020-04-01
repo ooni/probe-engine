@@ -36,19 +36,17 @@ func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 
 // see whether we implement the interface
 func newBaseDialer() Dialer {
-	return MeasuringDialer{
-		Dialer: EmitterDialer{
-			Dialer: ErrWrapperDialer{
-				Dialer: TimeoutDialer{
-					Dialer: new(net.Dialer),
-				},
+	return EmitterDialer{
+		Dialer: ErrWrapperDialer{
+			Dialer: TimeoutDialer{
+				Dialer: new(net.Dialer),
 			},
 		},
 	}
 }
 
-func TestIntegrationMeasuringConn(t *testing.T) {
-	conn := net.Conn(&MeasuringConn{
+func TestIntegrationEmitterConn(t *testing.T) {
+	conn := net.Conn(&EmitterConn{
 		Conn:    fakeconn{},
 		Handler: handlers.NoHandler,
 	})

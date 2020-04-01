@@ -71,12 +71,10 @@ func (d *Dialer) DialTLS(network, address string) (net.Conn, error) {
 
 func newFullDialer(resolver modelx.DNSResolver) dialer.Dialer {
 	return dialer.DNSDialer{
-		Dialer: dialer.MeasuringDialer{
-			Dialer: dialer.EmitterDialer{
-				Dialer: dialer.ErrWrapperDialer{
-					Dialer: dialer.TimeoutDialer{
-						Dialer: new(net.Dialer),
-					},
+		Dialer: dialer.EmitterDialer{
+			Dialer: dialer.ErrWrapperDialer{
+				Dialer: dialer.TimeoutDialer{
+					Dialer: new(net.Dialer),
 				},
 			},
 		},
