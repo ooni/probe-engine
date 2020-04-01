@@ -12,29 +12,32 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// BaseDialer is a net.BaseDialer that is only able to connect to
-// remote TCP/UDP endpoints. DNS is not supported.
-type BaseDialer struct {
-	Dialer modelx.Dialer
+// TimeoutDialer is a wrapper for the system dialer
+type TimeoutDialer struct {
+	modelx.Dialer
+	ConnectTimeout time.Duration // default: 30 seconds
 }
 
-// Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d *BaseDialer) Dial(network, address string) (net.Conn, error) {
-	return d.DialContext(context.Background(), network, address)
-}
-
-// DialContext dials a new connection with context.
-func (d *BaseDialer) DialContext(
-	ctx context.Context, network, address string,
-) (net.Conn, error) {
-	root := modelx.ContextMeasurementRootOrDefault(ctx)
-	dialID := dialid.ContextDialID(ctx)
-	// this is the same timeout used by Go's net/http.DefaultTransport
+// DialContext implements Dialer.DialContext
+func (d TimeoutDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	timeout := d.ConnectTimeout
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	start := time.Now()
+	return d.Dialer.DialContext(ctx, network, address)
+}
+
+// ErrWrapperDialer is a dialer that performs err wrapping
+type ErrWrapperDialer struct {
+	modelx.Dialer
+}
+
+// DialContext implements Dialer.DialContext
+func (d ErrWrapperDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	dialID := dialid.ContextDialID(ctx)
 	conn, err := d.Dialer.DialContext(ctx, network, address)
-	stop := time.Now()
 	err = errwrapper.SafeErrWrapperBuilder{
 		// ConnID does not make any sense if we've failed and the error
 		// does not make any sense (and is nil) if we succeded.
@@ -42,29 +45,33 @@ func (d *BaseDialer) DialContext(
 		Error:     err,
 		Operation: "connect",
 	}.MaybeBuild()
-	connID := safeConnID(network, conn)
-	txID := transactionid.ContextTransactionID(ctx)
+	return conn, err
+}
+
+// EmitterDialer is a dialer that emits events
+type EmitterDialer struct {
+	modelx.Dialer
+}
+
+// DialContext implements Dialer.DialContext
+func (d EmitterDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	start := time.Now()
+	conn, err := d.Dialer.DialContext(ctx, network, address)
+	stop := time.Now()
+	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	root.Handler.OnMeasurement(modelx.Measurement{
 		Connect: &modelx.ConnectEvent{
-			ConnID:                 connID,
-			DialID:                 dialID,
+			ConnID:                 safeConnID(network, conn),
+			DialID:                 dialid.ContextDialID(ctx),
 			DurationSinceBeginning: stop.Sub(root.Beginning),
 			Error:                  err,
 			Network:                network,
 			RemoteAddress:          address,
 			SyscallDuration:        stop.Sub(start),
-			TransactionID:          txID,
+			TransactionID:          transactionid.ContextTransactionID(ctx),
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
-	return &MeasuringConn{
-		Conn:      conn,
-		Beginning: root.Beginning,
-		Handler:   root.Handler,
-		ID:        connID,
-	}, nil
+	return conn, err
 }
 
 func safeLocalAddress(conn net.Conn) (s string) {
@@ -76,4 +83,97 @@ func safeLocalAddress(conn net.Conn) (s string) {
 
 func safeConnID(network string, conn net.Conn) int64 {
 	return connid.Compute(network, safeLocalAddress(conn))
+}
+
+// MeasuringDialer is a dialer that measures the underlying connection
+type MeasuringDialer struct {
+	modelx.Dialer
+}
+
+// DialContext implements Dialer.DialContext
+func (d MeasuringDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	conn, err := d.Dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	root := modelx.ContextMeasurementRootOrDefault(ctx)
+	return MeasuringConn{
+		Conn:      conn,
+		Beginning: root.Beginning,
+		Handler:   root.Handler,
+		ID:        safeConnID(network, conn),
+	}, nil
+}
+
+// MeasuringConn is a net.Conn used to perform measurements
+type MeasuringConn struct {
+	net.Conn
+	Beginning time.Time
+	Handler   modelx.Handler
+	ID        int64
+}
+
+// Read reads data from the connection.
+func (c MeasuringConn) Read(b []byte) (n int, err error) {
+	start := time.Now()
+	n, err = c.Conn.Read(b)
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "read",
+	}.MaybeBuild()
+	stop := time.Now()
+	c.Handler.OnMeasurement(modelx.Measurement{
+		Read: &modelx.ReadEvent{
+			ConnID:                 c.ID,
+			DurationSinceBeginning: stop.Sub(c.Beginning),
+			Error:                  err,
+			NumBytes:               int64(n),
+			SyscallDuration:        stop.Sub(start),
+		},
+	})
+	return
+}
+
+// Write writes data to the connection
+func (c MeasuringConn) Write(b []byte) (n int, err error) {
+	start := time.Now()
+	n, err = c.Conn.Write(b)
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "write",
+	}.MaybeBuild()
+	stop := time.Now()
+	c.Handler.OnMeasurement(modelx.Measurement{
+		Write: &modelx.WriteEvent{
+			ConnID:                 c.ID,
+			DurationSinceBeginning: stop.Sub(c.Beginning),
+			Error:                  err,
+			NumBytes:               int64(n),
+			SyscallDuration:        stop.Sub(start),
+		},
+	})
+	return
+}
+
+// Close closes the connection
+func (c MeasuringConn) Close() (err error) {
+	start := time.Now()
+	err = c.Conn.Close()
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "close",
+	}.MaybeBuild()
+	stop := time.Now()
+	c.Handler.OnMeasurement(modelx.Measurement{
+		Close: &modelx.CloseEvent{
+			ConnID:                 c.ID,
+			DurationSinceBeginning: stop.Sub(c.Beginning),
+			Error:                  err,
+			SyscallDuration:        stop.Sub(start),
+		},
+	})
+	return
 }

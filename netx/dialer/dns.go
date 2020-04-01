@@ -18,21 +18,29 @@ type DNSDialer struct {
 }
 
 // NewDNSDialer creates a new DNSDialer.
-func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDialer) {
-	return &DNSDialer{
-		dialer:   &BaseDialer{Dialer: dialer},
+func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) DNSDialer {
+	return DNSDialer{
+		dialer: MeasuringDialer{
+			Dialer: EmitterDialer{
+				Dialer: ErrWrapperDialer{
+					Dialer: TimeoutDialer{
+						Dialer: dialer,
+					},
+				},
+			},
+		},
 		resolver: resolver,
 	}
 }
 
 // Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d *DNSDialer) Dial(network, address string) (net.Conn, error) {
+func (d DNSDialer) Dial(network, address string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, address)
 }
 
 // DialContext is like Dial but the context allows to interrupt a
 // pending connection attempt at any time.
-func (d *DNSDialer) DialContext(
+func (d DNSDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	onlyhost, onlyport, err := net.SplitHostPort(address)
@@ -62,7 +70,7 @@ func reduceErrors(errorslist []error) error {
 	if len(errorslist) == 0 {
 		return nil
 	}
-	// If we have a know error, let's consider this the real error
+	// If we have a known error, let's consider this the real error
 	// since it's probably most relevant. Otherwise let's return the
 	// first considering that (1) local resolvers likely will give
 	// us IPv4 first and (2) also our resolver does that. So, in case
@@ -80,7 +88,7 @@ func reduceErrors(errorslist []error) error {
 	return errorslist[0]
 }
 
-func (d *DNSDialer) lookupHost(
+func (d DNSDialer) lookupHost(
 	ctx context.Context, hostname string,
 ) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
