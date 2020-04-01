@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -56,11 +57,8 @@ func (d *TLSDialer) DialTLSContext(
 		conn.Close()
 		return nil, err
 	}
+	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
 	tlsconn := tls.Client(conn, config)
-	var connID int64
-	if mconn, ok := conn.(*MeasuringConn); ok {
-		connID = mconn.ID
-	}
 	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	// Implementation note: when DialTLS is not set, the code in
 	// net/http will perform the handshake. Otherwise, if DialTLS
