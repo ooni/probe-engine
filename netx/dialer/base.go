@@ -58,7 +58,49 @@ func (d ErrWrapperDialer) DialContext(ctx context.Context, network, address stri
 		Error:     err,
 		Operation: "connect",
 	}.MaybeBuild()
-	return conn, err
+	if err != nil {
+		return nil, err
+	}
+	return &ErrWrapperConn{Conn: conn, ID: safeConnID(network, conn)}, err
+}
+
+// ErrWrapperConn is a net.Conn that performs error wrapping.
+type ErrWrapperConn struct {
+	net.Conn
+	ID int64
+}
+
+// Read reads data from the connection.
+func (c ErrWrapperConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "read",
+	}.MaybeBuild()
+	return
+}
+
+// Write writes data to the connection
+func (c ErrWrapperConn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "write",
+	}.MaybeBuild()
+	return
+}
+
+// Close closes the connection
+func (c ErrWrapperConn) Close() (err error) {
+	err = c.Conn.Close()
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    c.ID,
+		Error:     err,
+		Operation: "close",
+	}.MaybeBuild()
+	return
 }
 
 // EmitterDialer is a dialer that emits events
@@ -84,33 +126,10 @@ func (d EmitterDialer) DialContext(ctx context.Context, network, address string)
 			TransactionID:          transactionid.ContextTransactionID(ctx),
 		},
 	})
-	return conn, err
-}
-
-func safeLocalAddress(conn net.Conn) (s string) {
-	if conn != nil && conn.LocalAddr() != nil {
-		s = conn.LocalAddr().String()
-	}
-	return
-}
-
-func safeConnID(network string, conn net.Conn) int64 {
-	return connid.Compute(network, safeLocalAddress(conn))
-}
-
-// MeasuringDialer is a dialer that measures the underlying connection
-type MeasuringDialer struct {
-	Dialer
-}
-
-// DialContext implements Dialer.DialContext
-func (d MeasuringDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	conn, err := d.Dialer.DialContext(ctx, network, address)
 	if err != nil {
 		return nil, err
 	}
-	root := modelx.ContextMeasurementRootOrDefault(ctx)
-	return MeasuringConn{
+	return EmitterConn{
 		Conn:      conn,
 		Beginning: root.Beginning,
 		Handler:   root.Handler,
@@ -118,8 +137,8 @@ func (d MeasuringDialer) DialContext(ctx context.Context, network, address strin
 	}, nil
 }
 
-// MeasuringConn is a net.Conn used to perform measurements
-type MeasuringConn struct {
+// EmitterConn is a net.Conn used to emit measurements
+type EmitterConn struct {
 	net.Conn
 	Beginning time.Time
 	Handler   modelx.Handler
@@ -127,14 +146,9 @@ type MeasuringConn struct {
 }
 
 // Read reads data from the connection.
-func (c MeasuringConn) Read(b []byte) (n int, err error) {
+func (c EmitterConn) Read(b []byte) (n int, err error) {
 	start := time.Now()
 	n, err = c.Conn.Read(b)
-	err = errwrapper.SafeErrWrapperBuilder{
-		ConnID:    c.ID,
-		Error:     err,
-		Operation: "read",
-	}.MaybeBuild()
 	stop := time.Now()
 	c.Handler.OnMeasurement(modelx.Measurement{
 		Read: &modelx.ReadEvent{
@@ -149,14 +163,9 @@ func (c MeasuringConn) Read(b []byte) (n int, err error) {
 }
 
 // Write writes data to the connection
-func (c MeasuringConn) Write(b []byte) (n int, err error) {
+func (c EmitterConn) Write(b []byte) (n int, err error) {
 	start := time.Now()
 	n, err = c.Conn.Write(b)
-	err = errwrapper.SafeErrWrapperBuilder{
-		ConnID:    c.ID,
-		Error:     err,
-		Operation: "write",
-	}.MaybeBuild()
 	stop := time.Now()
 	c.Handler.OnMeasurement(modelx.Measurement{
 		Write: &modelx.WriteEvent{
@@ -171,14 +180,9 @@ func (c MeasuringConn) Write(b []byte) (n int, err error) {
 }
 
 // Close closes the connection
-func (c MeasuringConn) Close() (err error) {
+func (c EmitterConn) Close() (err error) {
 	start := time.Now()
 	err = c.Conn.Close()
-	err = errwrapper.SafeErrWrapperBuilder{
-		ConnID:    c.ID,
-		Error:     err,
-		Operation: "close",
-	}.MaybeBuild()
 	stop := time.Now()
 	c.Handler.OnMeasurement(modelx.Measurement{
 		Close: &modelx.CloseEvent{
@@ -189,4 +193,15 @@ func (c MeasuringConn) Close() (err error) {
 		},
 	})
 	return
+}
+
+func safeLocalAddress(conn net.Conn) (s string) {
+	if conn != nil && conn.LocalAddr() != nil {
+		s = conn.LocalAddr().String()
+	}
+	return
+}
+
+func safeConnID(network string, conn net.Conn) int64 {
+	return connid.Compute(network, safeLocalAddress(conn))
 }
