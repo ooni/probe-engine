@@ -12,7 +12,7 @@ import (
 
 func TestIntegrationTLSDialerSuccess(t *testing.T) {
 	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
-	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestIntegrationTLSDialerSuccess(t *testing.T) {
 
 func TestIntegrationTLSDialerNilConfig(t *testing.T) {
 	dialer := dialer.NewTLSDialer(new(net.Dialer), nil)
-	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestIntegrationTLSDialerNilConfig(t *testing.T) {
 
 func TestIntegrationTLSDialerFailureSplitHostPort(t *testing.T) {
 	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
-	conn, err := dialer.DialTLS("tcp", "www.google.com") // missing port
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com") // missing port
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -66,7 +66,7 @@ func TestIntegrationTLSDialerFailureTLSHandshakeTimeout(t *testing.T) {
 			HandshakeTimeout: time.Microsecond,
 		},
 	}
-	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -77,7 +77,7 @@ func TestIntegrationTLSDialerFailureTLSHandshakeTimeout(t *testing.T) {
 
 func TestIntegrationTLSDialerFailureTLSHandshakeFailure(t *testing.T) {
 	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
-	conn, err := dialer.DialTLS("tcp", "self-signed.badssl.com:443")
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "self-signed.badssl.com:443")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

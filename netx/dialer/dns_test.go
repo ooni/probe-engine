@@ -13,7 +13,7 @@ import (
 
 func TestIntegrationDNSDialerDial(t *testing.T) {
 	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	conn, err := dialer.Dial("tcp", "www.google.com:80")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "www.google.com:80")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestIntegrationDNSDialerDial(t *testing.T) {
 
 func TestIntegrationDNSDialerDialAddress(t *testing.T) {
 	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	conn, err := dialer.Dial("tcp", "8.8.8.8:853")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "8.8.8.8:853")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestIntegrationDNSDialerDialAddress(t *testing.T) {
 
 func TestIntegrationDNSDialerNoPort(t *testing.T) {
 	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	conn, err := dialer.Dial("tcp", "antani.ooni.io")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -42,7 +42,7 @@ func TestIntegrationDNSDialerNoPort(t *testing.T) {
 
 func TestIntegrationDNSDialerLookupFailure(t *testing.T) {
 	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	conn, err := dialer.Dial("tcp", "antani.ooni.io:443")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.io:443")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

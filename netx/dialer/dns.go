@@ -13,8 +13,8 @@ import (
 // DNSDialer defines the dialer API. We implement the most basic form
 // of DNS, but more advanced resolutions are possible.
 type DNSDialer struct {
-	modelx.Dialer
-	Resolver modelx.DNSResolver
+	Dialer
+	Resolver Resolver
 }
 
 // DialContext is like Dial but the context allows to interrupt a

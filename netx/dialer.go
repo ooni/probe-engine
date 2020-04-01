@@ -69,7 +69,7 @@ func (d *Dialer) DialTLS(network, address string) (net.Conn, error) {
 	return d.DialTLSContext(context.Background(), network, address)
 }
 
-func newFullDialer(resolver modelx.DNSResolver) modelx.Dialer {
+func newFullDialer(resolver modelx.DNSResolver) dialer.Dialer {
 	return dialer.DNSDialer{
 		Dialer: dialer.MeasuringDialer{
 			Dialer: dialer.EmitterDialer{
