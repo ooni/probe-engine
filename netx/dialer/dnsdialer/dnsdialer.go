@@ -12,29 +12,29 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Dialer defines the dialer API. We implement the most basic form
+// DNSDialer defines the dialer API. We implement the most basic form
 // of DNS, but more advanced resolutions are possible.
-type Dialer struct {
+type DNSDialer struct {
 	dialer   modelx.Dialer
 	resolver modelx.DNSResolver
 }
 
-// New creates a new Dialer.
-func New(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *Dialer) {
-	return &Dialer{
+// NewDNSDialer creates a new DNSDialer.
+func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDialer) {
+	return &DNSDialer{
 		dialer:   dialer,
 		resolver: resolver,
 	}
 }
 
 // Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d *Dialer) Dial(network, address string) (net.Conn, error) {
+func (d *DNSDialer) Dial(network, address string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, address)
 }
 
 // DialContext is like Dial but the context allows to interrupt a
 // pending connection attempt at any time.
-func (d *Dialer) DialContext(
+func (d *DNSDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	root := modelx.ContextMeasurementRootOrDefault(ctx)
@@ -51,7 +51,7 @@ func (d *Dialer) DialContext(
 	}
 	var errorslist []error
 	for _, addr := range addrs {
-		dialer := dialerbase.New(
+		dialer := dialerbase.NewBaseDialer(
 			root.Beginning, root.Handler, d.dialer, dialID,
 		)
 		target := net.JoinHostPort(addr, onlyport)
@@ -87,7 +87,7 @@ func reduceErrors(errorslist []error) error {
 	return errorslist[0]
 }
 
-func (d *Dialer) lookupHost(
+func (d *DNSDialer) lookupHost(
 	ctx context.Context, hostname string,
 ) ([]string, error) {
 	if net.ParseIP(hostname) != nil {

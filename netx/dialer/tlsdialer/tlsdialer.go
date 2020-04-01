@@ -21,8 +21,8 @@ type TLSDialer struct {
 	setDeadline         func(net.Conn, time.Time) error
 }
 
-// New creates a new TLS dialer
-func New(dialer modelx.Dialer, config *tls.Config) *TLSDialer {
+// NewTLSDialer creates a new TLSDialer
+func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) *TLSDialer {
 	return &TLSDialer{
 		ConnectTimeout:      30 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second,

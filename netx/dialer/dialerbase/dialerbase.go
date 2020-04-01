@@ -14,23 +14,23 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Dialer is a net.Dialer that is only able to connect to
+// BaseDialer is a net.BaseDialer that is only able to connect to
 // remote TCP/UDP endpoints. DNS is not supported.
-type Dialer struct {
+type BaseDialer struct {
 	dialer    modelx.Dialer
 	beginning time.Time
 	handler   modelx.Handler
 	dialID    int64
 }
 
-// New creates a new dialer
-func New(
+// NewBaseDialer creates a new BaseDialer
+func NewBaseDialer(
 	beginning time.Time,
 	handler modelx.Handler,
 	dialer modelx.Dialer,
 	dialID int64,
-) *Dialer {
-	return &Dialer{
+) *BaseDialer {
+	return &BaseDialer{
 		dialer:    dialer,
 		beginning: beginning,
 		handler:   handler,
@@ -39,12 +39,12 @@ func New(
 }
 
 // Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d *Dialer) Dial(network, address string) (net.Conn, error) {
+func (d *BaseDialer) Dial(network, address string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, address)
 }
 
 // DialContext dials a new connection with context.
-func (d *Dialer) DialContext(
+func (d *BaseDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
 	// this is the same timeout used by Go's net/http.DefaultTransport
