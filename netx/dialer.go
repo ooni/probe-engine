@@ -61,7 +61,7 @@ func (d *Dialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
-	return dialer.New(
+	return dialer.NewDNSDialer(
 		d.Resolver, new(net.Dialer),
 	).DialContext(ctx, network, address)
 }
@@ -77,8 +77,8 @@ func (d *Dialer) DialTLSContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
-	return dialer.NewTLS(
-		dialer.New(d.Resolver, new(net.Dialer)),
+	return dialer.NewTLSDialer(
+		dialer.NewDNSDialer(d.Resolver, new(net.Dialer)),
 		d.TLSConfig,
 	).DialTLSContext(ctx, network, address)
 }
