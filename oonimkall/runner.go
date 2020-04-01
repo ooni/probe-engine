@@ -194,8 +194,6 @@ func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
 // when to stop when processing multiple inputs, as well as when to stop
 // experiments explicitly marked as interruptible.
 func (r *runner) Run(ctx context.Context) {
-	// TODO(bassosimone): intercept all options we ignore
-
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
@@ -215,8 +213,6 @@ func (r *runner) Run(ctx context.Context) {
 		})
 	}()
 
-	// TODO(bassosimone): set experiment options here
-	// TODO(bassosimone): we should probably also set callbacks here?
 	builder, err := sess.NewExperimentBuilder(r.settings.Name)
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
