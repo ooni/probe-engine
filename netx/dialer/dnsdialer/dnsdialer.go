@@ -7,7 +7,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ooni/probe-engine/netx/internal/dialer/dialerbase"
+	"github.com/ooni/probe-engine/netx/dialer/dialerbase"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )

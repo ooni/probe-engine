@@ -5,8 +5,8 @@ package dialer
 import (
 	"crypto/tls"
 
-	"github.com/ooni/probe-engine/netx/internal/dialer/dnsdialer"
-	"github.com/ooni/probe-engine/netx/internal/dialer/tlsdialer"
+	"github.com/ooni/probe-engine/netx/dialer/dnsdialer"
+	"github.com/ooni/probe-engine/netx/dialer/tlsdialer"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
