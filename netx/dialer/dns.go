@@ -13,29 +13,8 @@ import (
 // DNSDialer defines the dialer API. We implement the most basic form
 // of DNS, but more advanced resolutions are possible.
 type DNSDialer struct {
-	dialer   modelx.Dialer
-	resolver modelx.DNSResolver
-}
-
-// NewDNSDialer creates a new DNSDialer.
-func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) DNSDialer {
-	return DNSDialer{
-		dialer: MeasuringDialer{
-			Dialer: EmitterDialer{
-				Dialer: ErrWrapperDialer{
-					Dialer: TimeoutDialer{
-						Dialer: dialer,
-					},
-				},
-			},
-		},
-		resolver: resolver,
-	}
-}
-
-// Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d DNSDialer) Dial(network, address string) (net.Conn, error) {
-	return d.DialContext(context.Background(), network, address)
+	modelx.Dialer
+	Resolver modelx.DNSResolver
 }
 
 // DialContext is like Dial but the context allows to interrupt a
@@ -56,7 +35,7 @@ func (d DNSDialer) DialContext(
 	var errorslist []error
 	for _, addr := range addrs {
 		target := net.JoinHostPort(addr, onlyport)
-		conn, err = d.dialer.DialContext(ctx, network, target)
+		conn, err = d.Dialer.DialContext(ctx, network, target)
 		if err == nil {
 			return
 		}
@@ -97,7 +76,7 @@ func (d DNSDialer) lookupHost(
 	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	lookupHost := root.LookupHost
 	if root.LookupHost == nil {
-		lookupHost = d.resolver.LookupHost
+		lookupHost = d.Resolver.LookupHost
 	}
 	addrs, err := lookupHost(ctx, hostname)
 	return addrs, err

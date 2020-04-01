@@ -61,15 +61,27 @@ func (d *Dialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
-	return dialer.NewDNSDialer(
-		d.Resolver, new(net.Dialer),
-	).DialContext(ctx, network, address)
+	return newFullDialer(d.Resolver).DialContext(ctx, network, address)
 }
 
 // DialTLS is like Dial, but creates TLS connections.
 func (d *Dialer) DialTLS(network, address string) (net.Conn, error) {
-	ctx := context.Background()
-	return d.DialTLSContext(ctx, network, address)
+	return d.DialTLSContext(context.Background(), network, address)
+}
+
+func newFullDialer(resolver modelx.DNSResolver) modelx.Dialer {
+	return dialer.DNSDialer{
+		Dialer: dialer.MeasuringDialer{
+			Dialer: dialer.EmitterDialer{
+				Dialer: dialer.ErrWrapperDialer{
+					Dialer: dialer.TimeoutDialer{
+						Dialer: new(net.Dialer),
+					},
+				},
+			},
+		},
+		Resolver: resolver,
+	}
 }
 
 // DialTLSContext is like DialTLS, but with context
@@ -78,7 +90,7 @@ func (d *Dialer) DialTLSContext(
 ) (net.Conn, error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
 	return dialer.NewTLSDialer(
-		dialer.NewDNSDialer(d.Resolver, new(net.Dialer)),
+		newFullDialer(d.Resolver),
 		d.TLSConfig,
 	).DialTLSContext(ctx, network, address)
 }
