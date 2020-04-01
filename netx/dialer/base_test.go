@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestIntegrationBaseDialerSuccess(t *testing.T) {
@@ -36,7 +35,7 @@ func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 }
 
 // see whether we implement the interface
-func newBaseDialer() modelx.Dialer {
+func newBaseDialer() Dialer {
 	return MeasuringDialer{
 		Dialer: EmitterDialer{
 			Dialer: ErrWrapperDialer{

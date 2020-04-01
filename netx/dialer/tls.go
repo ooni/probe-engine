@@ -100,12 +100,12 @@ func (h TLSHandshakerEmitter) Handshake(
 // TLSDialer is the TLS dialer
 type TLSDialer struct {
 	Config        *tls.Config
-	Dialer        modelx.Dialer
+	Dialer        Dialer
 	TLSHandshaker TLSHandshaker
 }
 
 // NewTLSDialer creates a new TLSDialer
-func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) TLSDialer {
+func NewTLSDialer(dialer Dialer, config *tls.Config) TLSDialer {
 	return TLSDialer{
 		Config: config,
 		Dialer: dialer,
@@ -115,11 +115,6 @@ func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) TLSDialer {
 			},
 		},
 	}
-}
-
-// DialTLS dials a new TLS connection
-func (d TLSDialer) DialTLS(network, address string) (net.Conn, error) {
-	return d.DialTLSContext(context.Background(), network, address)
 }
 
 // DialTLSContext is like DialTLS, but with context

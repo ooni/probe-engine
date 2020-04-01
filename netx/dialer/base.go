@@ -12,9 +12,22 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
+// Dialer is a dialer for network connections.
+type Dialer interface {
+	// DialContext is like Dial but with context
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+// Resolver is a DNS resolver. The *net.Resolver used by Go implements
+// this interface, but other implementations are possible.
+type Resolver interface {
+	// LookupHost resolves a hostname to a list of IP addresses.
+	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
+}
+
 // TimeoutDialer is a wrapper for the system dialer
 type TimeoutDialer struct {
-	modelx.Dialer
+	Dialer
 	ConnectTimeout time.Duration // default: 30 seconds
 }
 
@@ -31,7 +44,7 @@ func (d TimeoutDialer) DialContext(ctx context.Context, network, address string)
 
 // ErrWrapperDialer is a dialer that performs err wrapping
 type ErrWrapperDialer struct {
-	modelx.Dialer
+	Dialer
 }
 
 // DialContext implements Dialer.DialContext
@@ -50,7 +63,7 @@ func (d ErrWrapperDialer) DialContext(ctx context.Context, network, address stri
 
 // EmitterDialer is a dialer that emits events
 type EmitterDialer struct {
-	modelx.Dialer
+	Dialer
 }
 
 // DialContext implements Dialer.DialContext
@@ -87,7 +100,7 @@ func safeConnID(network string, conn net.Conn) int64 {
 
 // MeasuringDialer is a dialer that measures the underlying connection
 type MeasuringDialer struct {
-	modelx.Dialer
+	Dialer
 }
 
 // DialContext implements Dialer.DialContext
