@@ -1,18 +1,17 @@
-package dialer
+package dialer_test
 
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net"
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/dialer"
 )
 
 func TestIntegrationTLSDialerSuccess(t *testing.T) {
-	dialer := newTLSDialer()
+	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)
@@ -23,9 +22,8 @@ func TestIntegrationTLSDialerSuccess(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationTLSDialerSuccessWithMeasuringConn(t *testing.T) {
-	dialer := newTLSDialer()
-	dialer.(*TLSDialer).dialer = new(net.Dialer)
+func TestIntegrationTLSDialerNilConfig(t *testing.T) {
+	dialer := dialer.NewTLSDialer(new(net.Dialer), nil)
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +35,7 @@ func TestIntegrationTLSDialerSuccessWithMeasuringConn(t *testing.T) {
 }
 
 func TestIntegrationTLSDialerFailureSplitHostPort(t *testing.T) {
-	dialer := newTLSDialer()
+	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
 	conn, err := dialer.DialTLS("tcp", "www.google.com") // missing port
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -50,7 +48,7 @@ func TestIntegrationTLSDialerFailureSplitHostPort(t *testing.T) {
 func TestIntegrationTLSDialerFailureConnectTimeout(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause immediate timeout
-	dialer := newTLSDialer()
+	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
 	conn, err := dialer.DialTLSContext(ctx, "tcp", "www.google.com:443")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -61,21 +59,12 @@ func TestIntegrationTLSDialerFailureConnectTimeout(t *testing.T) {
 }
 
 func TestIntegrationTLSDialerFailureTLSHandshakeTimeout(t *testing.T) {
-	dialer := newTLSDialer()
-	dialer.(*TLSDialer).TLSHandshakeTimeout = 10 * time.Microsecond
-	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if conn != nil {
-		t.Fatal("connection is not nil")
-	}
-}
-
-func TestIntegrationTLSDialerFailureSetDeadline(t *testing.T) {
-	dialer := newTLSDialer()
-	dialer.(*TLSDialer).setDeadline = func(conn net.Conn, t time.Time) error {
-		return errors.New("mocked error")
+	dialer := &dialer.TLSDialer{
+		Config: new(tls.Config),
+		Dialer: new(net.Dialer),
+		TLSHandshaker: dialer.TLSHandshakerSystem{
+			HandshakeTimeout: time.Microsecond,
+		},
 	}
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err == nil {
@@ -86,6 +75,13 @@ func TestIntegrationTLSDialerFailureSetDeadline(t *testing.T) {
 	}
 }
 
-func newTLSDialer() modelx.TLSDialer {
-	return NewTLSDialer(new(net.Dialer), new(tls.Config))
+func TestIntegrationTLSDialerFailureTLSHandshakeFailure(t *testing.T) {
+	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
+	conn, err := dialer.DialTLS("tcp", "self-signed.badssl.com:443")
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if conn != nil {
+		t.Fatal("connection is not nil")
+	}
 }
