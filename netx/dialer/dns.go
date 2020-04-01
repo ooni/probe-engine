@@ -18,13 +18,13 @@ type DNSDialer struct {
 }
 
 // NewDNSDialer creates a new DNSDialer.
-func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDialer) {
-	return &DNSDialer{
+func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) DNSDialer {
+	return DNSDialer{
 		dialer: MeasuringDialer{
 			Dialer: EmitterDialer{
 				Dialer: ErrWrapperDialer{
 					Dialer: TimeoutDialer{
-						Dialer: new(net.Dialer),
+						Dialer: dialer,
 					},
 				},
 			},
@@ -34,13 +34,13 @@ func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDial
 }
 
 // Dial creates a TCP or UDP connection. See net.Dial docs.
-func (d *DNSDialer) Dial(network, address string) (net.Conn, error) {
+func (d DNSDialer) Dial(network, address string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, address)
 }
 
 // DialContext is like Dial but the context allows to interrupt a
 // pending connection attempt at any time.
-func (d *DNSDialer) DialContext(
+func (d DNSDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	onlyhost, onlyport, err := net.SplitHostPort(address)
@@ -88,7 +88,7 @@ func reduceErrors(errorslist []error) error {
 	return errorslist[0]
 }
 
-func (d *DNSDialer) lookupHost(
+func (d DNSDialer) lookupHost(
 	ctx context.Context, hostname string,
 ) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
