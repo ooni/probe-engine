@@ -13,19 +13,43 @@ import (
 
 func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	out := make(chan *eventRecord)
+	var falsebool bool
+	var zerodotzero float64
+	var zero int64
+	var emptystring string
 	settings := &settingsRecord{
 		InputFilepaths: []string{"foo"},
 		Options: settingsOptions{
-			Backend:          "foo",
-			CABundlePath:     "foo",
-			GeoIPASNPath:     "foo",
-			GeoIPCountryPath: "foo",
-			NoFileReport:     false,
-			ProbeASN:         "AS0",
-			ProbeCC:          "ZZ",
-			ProbeIP:          "127.0.0.1",
-			ProbeNetworkName: "XXX",
-			RandomizeInput:   true,
+			AllEndpoints:          &falsebool,
+			Backend:               "foo",
+			CABundlePath:          "foo",
+			ConstantBitrate:       &falsebool,
+			DNSNameserver:         &emptystring,
+			DNSEngine:             &emptystring,
+			ExpectedBody:          &emptystring,
+			GeoIPASNPath:          "foo",
+			GeoIPCountryPath:      "foo",
+			Hostname:              &emptystring,
+			IgnoreBouncerError:    &falsebool,
+			IgnoreOpenReportError: &falsebool,
+			MLabNSAddressFamily:   &emptystring,
+			MLabNSBaseURL:         &emptystring,
+			MLabNSCountry:         &emptystring,
+			MLabNSMetro:           &emptystring,
+			MLabNSPolicy:          &emptystring,
+			MLabNSToolName:        &emptystring,
+			NoFileReport:          false,
+			Port:                  &zero,
+			ProbeASN:              "AS0",
+			ProbeCC:               "ZZ",
+			ProbeIP:               "127.0.0.1",
+			ProbeNetworkName:      "XXX",
+			RandomizeInput:        true,
+			SaveRealResolverIP:    &falsebool,
+			Server:                &emptystring,
+			TestSuite:             &zero,
+			Timeout:               &zerodotzero,
+			UUID:                  &emptystring,
 		},
 		OutputFilepath: "foo",
 	}
@@ -56,7 +80,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 			log.Fatalf("invalid key: %s", ev.Key)
 		}
 	}
-	const expected = 11
+	const expected = 31
 	if len(seen) != expected {
 		t.Fatalf("expected: %d; seen %+v", expected, seen)
 	}

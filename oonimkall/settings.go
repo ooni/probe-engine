@@ -55,6 +55,12 @@ type settingsRecord struct {
 
 // settingsOptions contains the settings options
 type settingsOptions struct {
+	// AllEndpoints is a WhatsApp specific option indicating that we
+	// should test all endpoints rather than a random susbet. This
+	// library does not support this setting and fails if you provide
+	// it as input.
+	AllEndpoints *bool `json:"all_endpoints,omitempty"`
+
 	// Backend is a test helper for a nettest. This
 	// option is not implemented by this library. Attempting
 	// to set it will cause a startup error.
@@ -72,6 +78,23 @@ type settingsOptions struct {
 	// CollectorBaseURL contains the collector base URL
 	CollectorBaseURL string `json:"collector_base_url,omitempty"`
 
+	// ConstantBitrate was an option for the DASH experiment that
+	// this library does not support. Setting it to any value will
+	// cause the code to stop early with a startup failure.
+	ConstantBitrate *bool `json:"constant_bitrate,omitempty"`
+
+	// DNSNameserver is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	DNSNameserver *string `json:"dns_nameserver,omitempty"`
+
+	// DNSEngine is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	DNSEngine *string `json:"dns_engine,omitempty"`
+
+	// ExpectedBody is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	ExpectedBody *string `json:"expected_body,omitempty"`
+
 	// GeoIPASNPath is the ASN database path. This
 	// option is not implemented by this library. Attempting
 	// to set it will cause a startup warning, and the
@@ -84,10 +107,48 @@ type settingsOptions struct {
 	// library will otherwise ignore this setting.
 	GeoIPCountryPath string `json:"geoip_country_path,omitempty"`
 
+	// Hostname is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	Hostname *string `json:"hostname,omitempty"`
+
+	// IgnoreBouncerError is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	IgnoreBouncerError *bool `json:"ignore_bouncer_error,omitempty"`
+
+	// IgnoreOpenReportError is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	IgnoreOpenReportError *bool `json:"ignore_open_report_error,omitempty"`
+
 	// MaxRuntime is the maximum runtime expressed. A negative
-	// value for this filed disables the maximum runtime. Using
-	// a zero value will cause the task to fail quickly.
-	MaxRuntime float32 `json:"max_runtime,omitempty"`
+	// value for this field disables the maximum runtime. Using
+	// a zero value will also mean disabled. This is not the
+	// original behaviour of Measurement Kit, which used to run
+	// for zero time in such case.
+	MaxRuntime float64 `json:"max_runtime,omitempty"`
+
+	// MLabNSAddressFamily is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSAddressFamily *string `json:"mlabns/address_family,omitempty"`
+
+	// MLabNSBaseURL is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSBaseURL *string `json:"mlabns/base_url,omitempty"`
+
+	// MLabNSCountry is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSCountry *string `json:"mlabns/country,omitempty"`
+
+	// MLabNSMetro is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSMetro *string `json:"mlabns/metro,omitempty"`
+
+	// MLabNSPolicy is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSPolicy *string `json:"mlabns/policy,omitempty"`
+
+	// MLabNSToolName is a legacy option that this library does
+	// not support. Setting it causes the experiment to fail.
+	MLabNSToolName *string `json:"mlabns_tool_name,omitempty"`
 
 	// NoBouncer indicates whether to use a bouncer
 	NoBouncer bool `json:"no_bouncer,omitempty"`
@@ -110,6 +171,10 @@ type settingsOptions struct {
 	// library fails if NoGeoIP and NoResolverLookup have different
 	// values since these two steps are performed together.
 	NoResolverLookup bool `json:"no_resolver_lookup"`
+
+	// Port is the port used by performance tests. This library does not
+	// support this option and fails if it is set by the user.
+	Port *int64 `json:"port"`
 
 	// ProbeASN is the AS number. This
 	// option is not implemented by this library. Attempting
@@ -140,14 +205,23 @@ type settingsOptions struct {
 	// to set it to true will cause a startup error.
 	RandomizeInput bool `json:"randomize_input,omitempty"`
 
-	// SaveRealProbeIP indicates whether to save the real probe IP
-	SaveRealProbeIP bool `json:"save_real_probe_ip,omitempty"`
-
 	// SaveRealProbeIP indicates whether to save the real probe ASN
 	SaveRealProbeASN bool `json:"save_real_probe_asn,omitempty"`
 
 	// SaveRealProbeCC indicates whether to save the real probe CC
 	SaveRealProbeCC bool `json:"save_real_probe_cc,omitempty"`
+
+	// SaveRealProbeIP indicates whether to save the real probe IP
+	SaveRealProbeIP bool `json:"save_real_probe_ip,omitempty"`
+
+	// SaveRealResolverIP is a legacy option that this library
+	// does not support. We will stop if you provide it.
+	SaveRealResolverIP *bool `json:"save_real_resolver_ip,omitempty"`
+
+	// Server is used by performance tests to indicate the specific
+	// hostname that shall be used for the server. This library does
+	// not support this setting and fails if you provide it.
+	Server *string `json:"server,omitempty"`
 
 	// SoftwareName is the software name. If this option is not
 	// present, then the library startup will fail.
@@ -156,4 +230,13 @@ type settingsOptions struct {
 	// SoftwareVersion is the software version. If this option is not
 	// present, then the library startup will fail.
 	SoftwareVersion string `json:"software_version,omitempty"`
+
+	// TestSuite is a legacy option that this library does not support.
+	TestSuite *int64 `json:"test_suite,omitempty"`
+
+	// Timeout is a legacy option that this library does not support.
+	Timeout *float64 `json:"timeout,omitempty"`
+
+	// UUID is a legacy option that this library does not support.
+	UUID *string `json:"uuid,omitempty"`
 }
