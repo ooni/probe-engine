@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -25,9 +24,7 @@ func TestIntegrationTLSDialerSuccess(t *testing.T) {
 
 func TestIntegrationTLSDialerSuccessWithMeasuringConn(t *testing.T) {
 	dialer := newTLSDialer()
-	dialer.(*TLSDialer).dialer = NewBaseDialer(
-		time.Now(), handlers.NoHandler, new(net.Dialer),
-	)
+	dialer.(*TLSDialer).dialer = new(net.Dialer)
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err != nil {
 		t.Fatal(err)

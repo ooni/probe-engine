@@ -15,22 +15,7 @@ import (
 // BaseDialer is a net.BaseDialer that is only able to connect to
 // remote TCP/UDP endpoints. DNS is not supported.
 type BaseDialer struct {
-	dialer    modelx.Dialer
-	beginning time.Time
-	handler   modelx.Handler
-}
-
-// NewBaseDialer creates a new BaseDialer
-func NewBaseDialer(
-	beginning time.Time,
-	handler modelx.Handler,
-	dialer modelx.Dialer,
-) *BaseDialer {
-	return &BaseDialer{
-		dialer:    dialer,
-		beginning: beginning,
-		handler:   handler,
-	}
+	Dialer modelx.Dialer
 }
 
 // Dial creates a TCP or UDP connection. See net.Dial docs.
@@ -42,12 +27,13 @@ func (d *BaseDialer) Dial(network, address string) (net.Conn, error) {
 func (d *BaseDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
+	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	dialID := dialid.ContextDialID(ctx)
 	// this is the same timeout used by Go's net/http.DefaultTransport
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	start := time.Now()
-	conn, err := d.dialer.DialContext(ctx, network, address)
+	conn, err := d.Dialer.DialContext(ctx, network, address)
 	stop := time.Now()
 	err = errwrapper.SafeErrWrapperBuilder{
 		// ConnID does not make any sense if we've failed and the error
@@ -58,11 +44,11 @@ func (d *BaseDialer) DialContext(
 	}.MaybeBuild()
 	connID := safeConnID(network, conn)
 	txID := transactionid.ContextTransactionID(ctx)
-	d.handler.OnMeasurement(modelx.Measurement{
+	root.Handler.OnMeasurement(modelx.Measurement{
 		Connect: &modelx.ConnectEvent{
 			ConnID:                 connID,
 			DialID:                 dialID,
-			DurationSinceBeginning: stop.Sub(d.beginning),
+			DurationSinceBeginning: stop.Sub(root.Beginning),
 			Error:                  err,
 			Network:                network,
 			RemoteAddress:          address,
@@ -75,8 +61,8 @@ func (d *BaseDialer) DialContext(
 	}
 	return &MeasuringConn{
 		Conn:      conn,
-		Beginning: d.beginning,
-		Handler:   d.handler,
+		Beginning: root.Beginning,
+		Handler:   root.Handler,
 		ID:        connID,
 	}, nil
 }
