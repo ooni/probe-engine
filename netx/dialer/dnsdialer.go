@@ -1,5 +1,4 @@
-// Package dnsdialer contains a dialer with DNS lookups.
-package dnsdialer
+package dialer
 
 import (
 	"context"
@@ -7,7 +6,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ooni/probe-engine/netx/dialer/dialerbase"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -51,7 +49,7 @@ func (d *DNSDialer) DialContext(
 	}
 	var errorslist []error
 	for _, addr := range addrs {
-		dialer := dialerbase.NewBaseDialer(
+		dialer := NewBaseDialer(
 			root.Beginning, root.Handler, d.dialer, dialID,
 		)
 		target := net.JoinHostPort(addr, onlyport)

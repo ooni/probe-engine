@@ -1,4 +1,4 @@
-package dnsdialer
+package dialer
 
 import (
 	"context"

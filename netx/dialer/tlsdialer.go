@@ -1,5 +1,4 @@
-// Package tlsdialer contains the TLS dialer
-package tlsdialer
+package dialer
 
 import (
 	"context"
@@ -7,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/dialer/connx"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -65,7 +63,7 @@ func (d *TLSDialer) DialTLSContext(
 	}
 	tlsconn := tls.Client(conn, config)
 	var connID int64
-	if mconn, ok := conn.(*connx.MeasuringConn); ok {
+	if mconn, ok := conn.(*MeasuringConn); ok {
 		connID = mconn.ID
 	}
 	root := modelx.ContextMeasurementRootOrDefault(ctx)

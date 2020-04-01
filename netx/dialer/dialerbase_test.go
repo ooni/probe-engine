@@ -1,4 +1,4 @@
-package dialerbase
+package dialer
 
 import (
 	"context"
