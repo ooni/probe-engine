@@ -17,21 +17,13 @@ type TLSHandshaker interface {
 		net.Conn, tls.ConnectionState, error)
 }
 
-// TLSHandshakerSystem is the system TLS handshaker.
-type TLSHandshakerSystem struct {
-	HandshakeTimeout time.Duration // default: 10 second
-}
+// SystemTLSHandshaker is the system TLS handshaker.
+type SystemTLSHandshaker struct{}
 
 // Handshake implements Handshaker.Handshake
-func (h TLSHandshakerSystem) Handshake(
+func (h SystemTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
-	timeout := h.HandshakeTimeout
-	if timeout == 0 {
-		timeout = 10 * time.Second
-	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
 	tlsconn := tls.Client(conn, config)
 	errch := make(chan error, 1)
 	go func() {
@@ -48,13 +40,32 @@ func (h TLSHandshakerSystem) Handshake(
 	}
 }
 
-// TLSHandshakerErrWrapper wraps the returned error to be an OONI error
-type TLSHandshakerErrWrapper struct {
+// TimeoutTLSHandshaker is a TLSHandshaker with timeout
+type TimeoutTLSHandshaker struct {
+	TLSHandshaker
+	HandshakeTimeout time.Duration // default: 10 second
+}
+
+// Handshake implements Handshaker.Handshake
+func (h TimeoutTLSHandshaker) Handshake(
+	ctx context.Context, conn net.Conn, config *tls.Config,
+) (net.Conn, tls.ConnectionState, error) {
+	timeout := h.HandshakeTimeout
+	if timeout == 0 {
+		timeout = 10 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return h.TLSHandshaker.Handshake(ctx, conn, config)
+}
+
+// ErrWrapperTLSHandshaker wraps the returned error to be an OONI error
+type ErrWrapperTLSHandshaker struct {
 	TLSHandshaker
 }
 
 // Handshake implements Handshaker.Handshake
-func (h TLSHandshakerErrWrapper) Handshake(
+func (h ErrWrapperTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
 	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
@@ -67,13 +78,13 @@ func (h TLSHandshakerErrWrapper) Handshake(
 	return tlsconn, state, err
 }
 
-// TLSHandshakerEmitter emits events using the MeasurementRoot
-type TLSHandshakerEmitter struct {
+// EmitterTLSHandshaker emits events using the MeasurementRoot
+type EmitterTLSHandshaker struct {
 	TLSHandshaker
 }
 
 // Handshake implements Handshaker.Handshake
-func (h TLSHandshakerEmitter) Handshake(
+func (h EmitterTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
 	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
@@ -109,9 +120,11 @@ func NewTLSDialer(dialer Dialer, config *tls.Config) TLSDialer {
 	return TLSDialer{
 		Config: config,
 		Dialer: dialer,
-		TLSHandshaker: TLSHandshakerEmitter{
-			TLSHandshaker: TLSHandshakerErrWrapper{
-				TLSHandshaker: TLSHandshakerSystem{},
+		TLSHandshaker: EmitterTLSHandshaker{
+			TLSHandshaker: ErrWrapperTLSHandshaker{
+				TLSHandshaker: TimeoutTLSHandshaker{
+					TLSHandshaker: SystemTLSHandshaker{},
+				},
 			},
 		},
 	}

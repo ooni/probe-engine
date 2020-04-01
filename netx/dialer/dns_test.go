@@ -1,4 +1,4 @@
-package dialer
+package dialer_test
 
 import (
 	"context"
@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestIntegrationDNSDialerDial(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "www.google.com:80")
 	if err != nil {
 		t.Fatal(err)
@@ -21,7 +22,7 @@ func TestIntegrationDNSDialerDial(t *testing.T) {
 }
 
 func TestIntegrationDNSDialerDialAddress(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "8.8.8.8:853")
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +31,7 @@ func TestIntegrationDNSDialerDialAddress(t *testing.T) {
 }
 
 func TestIntegrationDNSDialerNoPort(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -41,7 +42,7 @@ func TestIntegrationDNSDialerNoPort(t *testing.T) {
 }
 
 func TestIntegrationDNSDialerLookupFailure(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.io:443")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -52,7 +53,7 @@ func TestIntegrationDNSDialerLookupFailure(t *testing.T) {
 }
 
 func TestIntegrationDNSDialerDialTCPFailure(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	// The port is unreachable and filtered. The timeout is here
 	// to make sure that we don't run for too much time.
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
@@ -68,7 +69,7 @@ func TestIntegrationDNSDialerDialTCPFailure(t *testing.T) {
 
 func TestUnitReduceErrors(t *testing.T) {
 	t.Run("no errors", func(t *testing.T) {
-		result := reduceErrors(nil)
+		result := dialer.ReduceErrors(nil)
 		if result != nil {
 			t.Fatal("wrong result")
 		}
@@ -76,7 +77,7 @@ func TestUnitReduceErrors(t *testing.T) {
 
 	t.Run("single error", func(t *testing.T) {
 		err := errors.New("mocked error")
-		result := reduceErrors([]error{err})
+		result := dialer.ReduceErrors([]error{err})
 		if result != err {
 			t.Fatal("wrong result")
 		}
@@ -85,7 +86,7 @@ func TestUnitReduceErrors(t *testing.T) {
 	t.Run("multiple errors", func(t *testing.T) {
 		err1 := errors.New("mocked error #1")
 		err2 := errors.New("mocked error #2")
-		result := reduceErrors([]error{err1, err2})
+		result := dialer.ReduceErrors([]error{err1, err2})
 		if result.Error() != "mocked error #1" {
 			t.Fatal("wrong result")
 		}
@@ -100,7 +101,7 @@ func TestUnitReduceErrors(t *testing.T) {
 			Failure: modelx.FailureConnectionRefused,
 		}
 		err4 := errors.New("mocked error #3")
-		result := reduceErrors([]error{err1, err2, err3, err4})
+		result := dialer.ReduceErrors([]error{err1, err2, err3, err4})
 		if result.Error() != modelx.FailureConnectionRefused {
 			t.Fatal("wrong result")
 		}
@@ -108,7 +109,7 @@ func TestUnitReduceErrors(t *testing.T) {
 }
 
 func TestIntegrationDNSDialerDivertLookupHost(t *testing.T) {
-	dialer := DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
+	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	failure := errors.New("mocked error")
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),

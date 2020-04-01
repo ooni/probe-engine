@@ -62,8 +62,9 @@ func TestIntegrationTLSDialerFailureTLSHandshakeTimeout(t *testing.T) {
 	dialer := &dialer.TLSDialer{
 		Config: new(tls.Config),
 		Dialer: new(net.Dialer),
-		TLSHandshaker: dialer.TLSHandshakerSystem{
+		TLSHandshaker: dialer.TimeoutTLSHandshaker{
 			HandshakeTimeout: time.Microsecond,
+			TLSHandshaker:    dialer.SystemTLSHandshaker{},
 		},
 	}
 	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com:443")

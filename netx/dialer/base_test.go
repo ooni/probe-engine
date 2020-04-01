@@ -1,4 +1,4 @@
-package dialer
+package dialer_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/handlers"
 )
 
@@ -40,10 +41,10 @@ func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 }
 
 // see whether we implement the interface
-func newBaseDialer() Dialer {
-	return EmitterDialer{
-		Dialer: ErrWrapperDialer{
-			Dialer: TimeoutDialer{
+func newBaseDialer() dialer.Dialer {
+	return dialer.EmitterDialer{
+		Dialer: dialer.ErrWrapperDialer{
+			Dialer: dialer.TimeoutDialer{
 				Dialer: new(net.Dialer),
 			},
 		},
@@ -51,7 +52,7 @@ func newBaseDialer() Dialer {
 }
 
 func TestIntegrationEmitterConn(t *testing.T) {
-	conn := net.Conn(&EmitterConn{
+	conn := net.Conn(&dialer.EmitterConn{
 		Conn:    fakeconn{},
 		Handler: handlers.NoHandler,
 	})
