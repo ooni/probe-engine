@@ -11,59 +11,73 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// TLSDialer is the TLS dialer
-type TLSDialer struct {
-	TLSHandshakeTimeout time.Duration // default: 10 second
-	config              *tls.Config
-	dialer              modelx.Dialer
-	setDeadline         func(net.Conn, time.Time) error
+// TLSHandshaker is the generic TLS handshaker
+type TLSHandshaker interface {
+	Handshake(ctx context.Context, conn net.Conn, config *tls.Config) (
+		net.Conn, tls.ConnectionState, error)
 }
 
-// NewTLSDialer creates a new TLSDialer
-func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) *TLSDialer {
-	return &TLSDialer{
-		TLSHandshakeTimeout: 10 * time.Second,
-		config:              config,
-		dialer:              dialer,
-		setDeadline: func(conn net.Conn, t time.Time) error {
-			return conn.SetDeadline(t)
-		},
-	}
+// TLSHandshakerSystem is the system TLS handshaker.
+type TLSHandshakerSystem struct {
+	HandshakeTimeout time.Duration // default: 10 second
 }
 
-// DialTLS dials a new TLS connection
-func (d *TLSDialer) DialTLS(network, address string) (net.Conn, error) {
-	return d.DialTLSContext(context.Background(), network, address)
-}
-
-// DialTLSContext is like DialTLS, but with context
-func (d *TLSDialer) DialTLSContext(
-	ctx context.Context, network, address string,
-) (net.Conn, error) {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return nil, err
+// Handshake implements Handshaker.Handshake
+func (h TLSHandshakerSystem) Handshake(
+	ctx context.Context, conn net.Conn, config *tls.Config,
+) (net.Conn, tls.ConnectionState, error) {
+	timeout := h.HandshakeTimeout
+	if timeout == 0 {
+		timeout = 10 * time.Second
 	}
-	conn, err := d.dialer.DialContext(ctx, network, address)
-	if err != nil {
-		return nil, err
-	}
-	config := d.config.Clone() // avoid polluting original config
-	if config.ServerName == "" {
-		config.ServerName = host
-	}
-	err = d.setDeadline(conn, time.Now().Add(d.TLSHandshakeTimeout))
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 	tlsconn := tls.Client(conn, config)
+	errch := make(chan error, 1)
+	go func() {
+		errch <- tlsconn.Handshake()
+	}()
+	select {
+	case err := <-errch:
+		if err != nil {
+			return nil, tls.ConnectionState{}, err
+		}
+		return tlsconn, tlsconn.ConnectionState(), nil
+	case <-ctx.Done():
+		return nil, tls.ConnectionState{}, ctx.Err()
+	}
+}
+
+// TLSHandshakerErrWrapper wraps the returned error to be an OONI error
+type TLSHandshakerErrWrapper struct {
+	TLSHandshaker
+}
+
+// Handshake implements Handshaker.Handshake
+func (h TLSHandshakerErrWrapper) Handshake(
+	ctx context.Context, conn net.Conn, config *tls.Config,
+) (net.Conn, tls.ConnectionState, error) {
+	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
+	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
+	err = errwrapper.SafeErrWrapperBuilder{
+		ConnID:    connID,
+		Error:     err,
+		Operation: "tls_handshake",
+	}.MaybeBuild()
+	return tlsconn, state, err
+}
+
+// TLSHandshakerEmitter emits events using the MeasurementRoot
+type TLSHandshakerEmitter struct {
+	TLSHandshaker
+}
+
+// Handshake implements Handshaker.Handshake
+func (h TLSHandshakerEmitter) Handshake(
+	ctx context.Context, conn net.Conn, config *tls.Config,
+) (net.Conn, tls.ConnectionState, error) {
+	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
 	root := modelx.ContextMeasurementRootOrDefault(ctx)
-	// Implementation note: when DialTLS is not set, the code in
-	// net/http will perform the handshake. Otherwise, if DialTLS
-	// is set, we will end up here. This code is still used when
-	// performing non-HTTP TLS-enabled dial operations.
 	root.Handler.OnMeasurement(modelx.Measurement{
 		TLSHandshakeStart: &modelx.TLSHandshakeStartEvent{
 			ConnID:                 connID,
@@ -71,24 +85,70 @@ func (d *TLSDialer) DialTLSContext(
 			SNI:                    config.ServerName,
 		},
 	})
-	err = tlsconn.Handshake()
-	err = errwrapper.SafeErrWrapperBuilder{
-		ConnID:    connID,
-		Error:     err,
-		Operation: "tls_handshake",
-	}.MaybeBuild()
+	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
 	root.Handler.OnMeasurement(modelx.Measurement{
 		TLSHandshakeDone: &modelx.TLSHandshakeDoneEvent{
 			ConnID:                 connID,
-			ConnectionState:        modelx.NewTLSConnectionState(tlsconn.ConnectionState()),
+			ConnectionState:        modelx.NewTLSConnectionState(state),
 			Error:                  err,
 			DurationSinceBeginning: time.Now().Sub(root.Beginning),
 		},
 	})
-	conn.SetDeadline(time.Time{}) // clear deadline
+	return tlsconn, state, err
+}
+
+// TLSDialer is the TLS dialer
+type TLSDialer struct {
+	Config        *tls.Config
+	Dialer        modelx.Dialer
+	TLSHandshaker TLSHandshaker
+}
+
+// NewTLSDialer creates a new TLSDialer
+func NewTLSDialer(dialer modelx.Dialer, config *tls.Config) TLSDialer {
+	return TLSDialer{
+		Config: config,
+		Dialer: dialer,
+		TLSHandshaker: TLSHandshakerEmitter{
+			TLSHandshaker: TLSHandshakerErrWrapper{
+				TLSHandshaker: TLSHandshakerSystem{},
+			},
+		},
+	}
+}
+
+// DialTLS dials a new TLS connection
+func (d TLSDialer) DialTLS(network, address string) (net.Conn, error) {
+	return d.DialTLSContext(context.Background(), network, address)
+}
+
+// DialTLSContext is like DialTLS, but with context
+func (d TLSDialer) DialTLSContext(ctx context.Context, network, address string) (net.Conn, error) {
+	// Implementation note: when DialTLS is not set, the code in
+	// net/http will perform the handshake. Otherwise, if DialTLS
+	// is set, we will end up here. This code is still used when
+	// performing non-HTTP TLS-enabled dial operations.
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	conn, err := d.Dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	config := d.Config
+	if config == nil {
+		config = new(tls.Config)
+	} else {
+		config = config.Clone()
+	}
+	if config.ServerName == "" {
+		config.ServerName = host
+	}
+	tlsconn, _, err := d.TLSHandshaker.Handshake(ctx, conn, config)
 	if err != nil {
 		conn.Close()
 		return nil, err
 	}
-	return tlsconn, err
+	return tlsconn, nil
 }
