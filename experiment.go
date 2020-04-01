@@ -311,10 +311,7 @@ func (e *Experiment) CloseReport() (err error) {
 func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	utctimenow := time.Now().UTC()
 	m := model.Measurement{
-		// Since v0.4.0 we always send the 0.2.0 data format on the
-		// wire to avoid confusing the pipeline. The real data format
-		// version is instead submitted as an annotation.
-		DataFormatVersion:         "0.2.0",
+		DataFormatVersion:         collector.DefaultDataFormatVersion,
 		Input:                     input,
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
@@ -331,7 +328,6 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		TestStartTime:             e.testStartTime,
 		TestVersion:               e.testVersion,
 	}
-	m.AddAnnotation("real_data_format_version", collector.DefaultDataFormatVersion)
 	return &m
 }
 

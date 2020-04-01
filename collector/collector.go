@@ -19,7 +19,7 @@ const (
 	// DefaultDataFormatVersion is the default data format version.
 	//
 	// See https://github.com/ooni/spec/tree/master/data-formats#history.
-	DefaultDataFormatVersion = "0.4.0"
+	DefaultDataFormatVersion = "0.2.0"
 
 	// DefaultFormat is the default format
 	DefaultFormat = "json"
