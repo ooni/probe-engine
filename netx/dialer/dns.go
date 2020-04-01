@@ -81,3 +81,17 @@ func (d DNSDialer) lookupHost(
 	addrs, err := lookupHost(ctx, hostname)
 	return addrs, err
 }
+
+// NewDNSDialer creates a new DNS dialer
+func NewDNSDialer(resolver Resolver) DNSDialer {
+	return DNSDialer{
+		Dialer: EmitterDialer{
+			Dialer: ErrWrapperDialer{
+				Dialer: TimeoutDialer{
+					Dialer: new(net.Dialer),
+				},
+			},
+		},
+		Resolver: resolver,
+	}
+}
