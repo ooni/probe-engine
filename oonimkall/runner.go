@@ -56,17 +56,62 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	if r.settings.InputFilepaths != nil {
 		sadly("InputFilepaths: not supported")
 	}
+	if r.settings.Options.AllEndpoints != nil {
+		sadly("Options.AllEndpoints: not supported")
+	}
 	if r.settings.Options.Backend != "" {
 		sadly("Options.Backend: not supported")
 	}
 	if r.settings.Options.CABundlePath != "" {
 		logger.Warn("Options.CABundlePath: not supported")
 	}
+	if r.settings.Options.ConstantBitrate != nil {
+		logger.Warn("Options.ConstantBitrate: not supported")
+	}
+	if r.settings.Options.DNSNameserver != nil {
+		logger.Warn("Options.DNSNameserver: not supported")
+	}
+	if r.settings.Options.DNSEngine != nil {
+		logger.Warn("Options.DNSEngine: not supported")
+	}
+	if r.settings.Options.ExpectedBody != nil {
+		logger.Warn("Options.ExpectedBody: not supported")
+	}
 	if r.settings.Options.GeoIPASNPath != "" {
 		logger.Warn("Options.GeoIPASNPath: not supported")
 	}
 	if r.settings.Options.GeoIPCountryPath != "" {
 		logger.Warn("Options.GeoIPCountryPath: not supported")
+	}
+	if r.settings.Options.Hostname != nil {
+		logger.Warn("Options.Hostname: not supported")
+	}
+	if r.settings.Options.IgnoreBouncerError != nil {
+		logger.Warn("Options.IgnoreBouncerError: not supported")
+	}
+	if r.settings.Options.IgnoreOpenReportError != nil {
+		logger.Warn("Options.IgnoreOpenReportError: not supported")
+	}
+	if r.settings.Options.MLabNSAddressFamily != nil {
+		logger.Warn("Options.MLabNSAddressFamily: not supported")
+	}
+	if r.settings.Options.MLabNSBaseURL != nil {
+		logger.Warn("Options.MLabNSBaseURL: not supported")
+	}
+	if r.settings.Options.MLabNSCountry != nil {
+		logger.Warn("Options.MLabNSCountry: not supported")
+	}
+	if r.settings.Options.MLabNSMetro != nil {
+		logger.Warn("Options.MLabNSMetro: not supported")
+	}
+	if r.settings.Options.MLabNSPolicy != nil {
+		logger.Warn("Options.MLabNSPolicy: not supported")
+	}
+	if r.settings.Options.MLabNSToolName != nil {
+		logger.Warn("Options.MLabNSToolName: not supported")
+	}
+	if r.settings.Options.Port != nil {
+		sadly("Options.Port: not supported")
 	}
 	if r.settings.Options.ProbeASN != "" {
 		logger.Warn("Options.ProbeASN: not supported")
@@ -82,6 +127,21 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	}
 	if r.settings.Options.RandomizeInput != false {
 		sadly("Options.RandomizeInput: not supported")
+	}
+	if r.settings.Options.SaveRealResolverIP != nil {
+		sadly("Options.SaveRealResolverIP: not supported")
+	}
+	if r.settings.Options.Server != nil {
+		sadly("Options.Server: not supported")
+	}
+	if r.settings.Options.TestSuite != nil {
+		sadly("Options.TestSuite: not supported")
+	}
+	if r.settings.Options.Timeout != nil {
+		sadly("Options.Timeout: not supported")
+	}
+	if r.settings.Options.UUID != nil {
+		sadly("Options.UUID: not supported")
 	}
 	if r.settings.OutputFilepath != "" && r.settings.Options.NoFileReport == false {
 		sadly("OutputFilepath && !NoFileReport: not supported")
