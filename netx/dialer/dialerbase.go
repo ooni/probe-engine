@@ -1,13 +1,10 @@
-// Package dialerbase contains the base dialer functionality. We connect
-// to a remote endpoint, but we don't support DNS.
-package dialerbase
+package dialer
 
 import (
 	"context"
 	"net"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/dialer/connx"
 	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
@@ -77,7 +74,7 @@ func (d *BaseDialer) DialContext(
 	if err != nil {
 		return nil, err
 	}
-	return &connx.MeasuringConn{
+	return &MeasuringConn{
 		Conn:      conn,
 		Beginning: d.beginning,
 		Handler:   d.handler,

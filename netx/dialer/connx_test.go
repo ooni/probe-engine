@@ -1,4 +1,4 @@
-package connx
+package dialer
 
 import (
 	"net"

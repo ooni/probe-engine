@@ -1,5 +1,4 @@
-// Package connx contains net.Conn extensions
-package connx
+package dialer
 
 import (
 	"net"
