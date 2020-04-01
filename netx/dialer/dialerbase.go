@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/internal/connid"
-	"github.com/ooni/probe-engine/netx/internal/errwrapper"
+	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -17,7 +17,6 @@ type BaseDialer struct {
 	dialer    modelx.Dialer
 	beginning time.Time
 	handler   modelx.Handler
-	dialID    int64
 }
 
 // NewBaseDialer creates a new BaseDialer
@@ -25,13 +24,11 @@ func NewBaseDialer(
 	beginning time.Time,
 	handler modelx.Handler,
 	dialer modelx.Dialer,
-	dialID int64,
 ) *BaseDialer {
 	return &BaseDialer{
 		dialer:    dialer,
 		beginning: beginning,
 		handler:   handler,
-		dialID:    dialID,
 	}
 }
 
@@ -44,25 +41,16 @@ func (d *BaseDialer) Dial(network, address string) (net.Conn, error) {
 func (d *BaseDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
-	// this is the same timeout used by Go's net/http.DefaultTransport
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+	dialID := dialid.ContextDialID(ctx)
 	start := time.Now()
 	conn, err := d.dialer.DialContext(ctx, network, address)
 	stop := time.Now()
-	err = errwrapper.SafeErrWrapperBuilder{
-		// ConnID does not make any sense if we've failed and the error
-		// does not make any sense (and is nil) if we succeded.
-		DialID:    d.dialID,
-		Error:     err,
-		Operation: "connect",
-	}.MaybeBuild()
 	connID := safeConnID(network, conn)
 	txID := transactionid.ContextTransactionID(ctx)
 	d.handler.OnMeasurement(modelx.Measurement{
 		Connect: &modelx.ConnectEvent{
 			ConnID:                 connID,
-			DialID:                 d.dialID,
+			DialID:                 dialID,
 			DurationSinceBeginning: stop.Sub(d.beginning),
 			Error:                  err,
 			Network:                network,

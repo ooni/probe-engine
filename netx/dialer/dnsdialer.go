@@ -41,7 +41,6 @@ func (d *DNSDialer) DialContext(
 		return nil, err
 	}
 	ctx = dialid.WithDialID(ctx) // important to create before lookupHost
-	dialID := dialid.ContextDialID(ctx)
 	var addrs []string
 	addrs, err = d.lookupHost(ctx, onlyhost)
 	if err != nil {
@@ -50,7 +49,7 @@ func (d *DNSDialer) DialContext(
 	var errorslist []error
 	for _, addr := range addrs {
 		dialer := NewBaseDialer(
-			root.Beginning, root.Handler, d.dialer, dialID,
+			root.Beginning, root.Handler, d.dialer,
 		)
 		target := net.JoinHostPort(addr, onlyport)
 		conn, err = dialer.DialContext(ctx, network, target)
