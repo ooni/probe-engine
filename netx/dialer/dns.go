@@ -20,7 +20,15 @@ type DNSDialer struct {
 // NewDNSDialer creates a new DNSDialer.
 func NewDNSDialer(resolver modelx.DNSResolver, dialer modelx.Dialer) (d *DNSDialer) {
 	return &DNSDialer{
-		dialer:   &BaseDialer{Dialer: dialer},
+		dialer: MeasuringDialer{
+			Dialer: EmitterDialer{
+				Dialer: ErrWrapperDialer{
+					Dialer: TimeoutDialer{
+						Dialer: new(net.Dialer),
+					},
+				},
+			},
+		},
 		resolver: resolver,
 	}
 }
@@ -62,7 +70,7 @@ func reduceErrors(errorslist []error) error {
 	if len(errorslist) == 0 {
 		return nil
 	}
-	// If we have a know error, let's consider this the real error
+	// If we have a known error, let's consider this the real error
 	// since it's probably most relevant. Otherwise let's return the
 	// first considering that (1) local resolvers likely will give
 	// us IPv4 first and (2) also our resolver does that. So, in case

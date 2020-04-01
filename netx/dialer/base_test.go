@@ -4,13 +4,15 @@ import (
 	"context"
 	"net"
 	"testing"
+	"time"
 
+	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestIntegrationBaseDialerSuccess(t *testing.T) {
 	dialer := newBaseDialer()
-	conn, err := dialer.Dial("tcp", "8.8.8.8:53")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,8 +21,8 @@ func TestIntegrationBaseDialerSuccess(t *testing.T) {
 
 func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 	dialer := newBaseDialer()
-	ctx, cancel := context.WithTimeout(context.Background(), 1)
-	defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // stop immediately
 	conn, err := dialer.DialContext(ctx, "tcp", "8.8.8.8:53")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -35,5 +37,65 @@ func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 
 // see whether we implement the interface
 func newBaseDialer() modelx.Dialer {
-	return &BaseDialer{Dialer: new(net.Dialer)}
+	return MeasuringDialer{
+		Dialer: EmitterDialer{
+			Dialer: ErrWrapperDialer{
+				Dialer: TimeoutDialer{
+					Dialer: new(net.Dialer),
+				},
+			},
+		},
+	}
+}
+
+func TestIntegrationMeasuringConn(t *testing.T) {
+	conn := net.Conn(&MeasuringConn{
+		Conn:    fakeconn{},
+		Handler: handlers.NoHandler,
+	})
+	defer conn.Close()
+	data := make([]byte, 1<<17)
+	n, err := conn.Read(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(data) {
+		t.Fatal("invalid number of bytes read")
+	}
+	n, err = conn.Write(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(data) {
+		t.Fatal("invalid number of bytes written")
+	}
+}
+
+type fakeconn struct{}
+
+func (fakeconn) Read(b []byte) (n int, err error) {
+	n = len(b)
+	return
+}
+func (fakeconn) Write(b []byte) (n int, err error) {
+	n = len(b)
+	return
+}
+func (fakeconn) Close() (err error) {
+	return
+}
+func (fakeconn) LocalAddr() net.Addr {
+	return &net.TCPAddr{}
+}
+func (fakeconn) RemoteAddr() net.Addr {
+	return &net.TCPAddr{}
+}
+func (fakeconn) SetDeadline(t time.Time) (err error) {
+	return
+}
+func (fakeconn) SetReadDeadline(t time.Time) (err error) {
+	return
+}
+func (fakeconn) SetWriteDeadline(t time.Time) (err error) {
+	return
 }
