@@ -7,6 +7,7 @@ import (
 
 	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
+	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -42,9 +43,19 @@ func (d *BaseDialer) DialContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
 	dialID := dialid.ContextDialID(ctx)
+	// this is the same timeout used by Go's net/http.DefaultTransport
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	start := time.Now()
 	conn, err := d.dialer.DialContext(ctx, network, address)
 	stop := time.Now()
+	err = errwrapper.SafeErrWrapperBuilder{
+		// ConnID does not make any sense if we've failed and the error
+		// does not make any sense (and is nil) if we succeded.
+		DialID:    dialID,
+		Error:     err,
+		Operation: "connect",
+	}.MaybeBuild()
 	connID := safeConnID(network, conn)
 	txID := transactionid.ContextTransactionID(ctx)
 	d.handler.OnMeasurement(modelx.Measurement{
