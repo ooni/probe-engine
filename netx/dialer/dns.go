@@ -58,7 +58,7 @@ func reduceErrors(errorslist []error) error {
 	for _, err := range errorslist {
 		var wrapper *modelx.ErrWrapper
 		if errors.As(err, &wrapper) && !strings.HasPrefix(
-			err.Error(), "unknown_error",
+			err.Error(), "unknown_failure",
 		) {
 			return err
 		}

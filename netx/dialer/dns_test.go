@@ -95,7 +95,7 @@ func TestUnitReduceErrors(t *testing.T) {
 	t.Run("multiple errors with meaningful ones", func(t *testing.T) {
 		err1 := errors.New("mocked error #1")
 		err2 := &modelx.ErrWrapper{
-			Failure: "unknown_error: antani",
+			Failure: "unknown_failure: antani",
 		}
 		err3 := &modelx.ErrWrapper{
 			Failure: modelx.FailureConnectionRefused,
