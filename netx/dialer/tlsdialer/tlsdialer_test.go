@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/dialer/dialerbase"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/internal/dialer/dialerbase"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 

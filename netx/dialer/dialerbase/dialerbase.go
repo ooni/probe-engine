@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/dialer/connx"
 	"github.com/ooni/probe-engine/netx/internal/connid"
-	"github.com/ooni/probe-engine/netx/internal/dialer/connx"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
