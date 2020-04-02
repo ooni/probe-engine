@@ -1,6 +1,4 @@
-// Package dnsovertcp implements DNS over TCP. It is possible to
-// use both plaintext TCP and TLS.
-package dnsovertcp
+package resolver
 
 import (
 	"bufio"
@@ -13,11 +11,11 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Transport is a DNS over TCP/TLS modelx.DNSRoundTripper.
+// DNSOverTCP is a DNS over TCP/TLS modelx.DNSRoundTripper.
 //
 // As a known bug, this implementation always creates a new connection
 // for each incoming query, thus increasing the response delay.
-type Transport struct {
+type DNSOverTCP struct {
 	dialer          dialerAdapter
 	address         string
 	requiresPadding bool
@@ -28,18 +26,18 @@ type dialerAdapter interface {
 	Network() string
 }
 
-// NewTransportTCP creates a new TCP Transport
-func NewTransportTCP(dialer modelx.Dialer, address string) *Transport {
-	return &Transport{
+// NewDNSOverTCP creates a new TCP Transport
+func NewDNSOverTCP(dialer modelx.Dialer, address string) *DNSOverTCP {
+	return &DNSOverTCP{
 		dialer:          newTCPDialerAdapter(dialer),
 		address:         address,
 		requiresPadding: false,
 	}
 }
 
-// NewTransportTLS creates a new TLS Transport
-func NewTransportTLS(dialer modelx.TLSDialer, address string) *Transport {
-	return &Transport{
+// NewDNSOverTLS creates a new TLS Transport
+func NewDNSOverTLS(dialer modelx.TLSDialer, address string) *DNSOverTCP {
+	return &DNSOverTCP{
 		dialer:          newTLSDialerAdapter(dialer),
 		address:         address,
 		requiresPadding: true,
@@ -47,7 +45,7 @@ func NewTransportTLS(dialer modelx.TLSDialer, address string) *Transport {
 }
 
 // RoundTrip sends a request and receives a response.
-func (t *Transport) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
+func (t *DNSOverTCP) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	conn, err := t.dialer.DialContext(ctx, "tcp", t.address)
 	if err != nil {
 		return nil, err
@@ -58,11 +56,11 @@ func (t *Transport) RoundTrip(ctx context.Context, query []byte) ([]byte, error)
 
 // RequiresPadding returns true for DoT and false for TCP
 // according to RFC8467.
-func (t *Transport) RequiresPadding() bool {
+func (t *DNSOverTCP) RequiresPadding() bool {
 	return t.requiresPadding
 }
 
-func (t *Transport) doWithConn(conn net.Conn, query []byte) (reply []byte, err error) {
+func (t *DNSOverTCP) doWithConn(conn net.Conn, query []byte) (reply []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			reply = nil // we already got the error just clear the reply
@@ -126,11 +124,11 @@ func (d *tcpDialerAdapter) Network() string {
 }
 
 // Network returns the transport network (e.g., doh, dot)
-func (t *Transport) Network() string {
+func (t *DNSOverTCP) Network() string {
 	return t.dialer.Network()
 }
 
 // Address returns the upstream server address.
-func (t *Transport) Address() string {
+func (t *DNSOverTCP) Address() string {
 	return t.address
 }

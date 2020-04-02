@@ -1,9 +1,4 @@
-// Package bogondetector contains code to determine if an IP is private/bogon. The
-// code was adapted from https://stackoverflow.com/a/50825191/4354461.
-//
-// See https://badpackets.net/hunting-for-bogons-and-the-isps-that-announce-them/
-// from which I have drawn the full list of private/bogons.
-package bogondetector
+package resolver
 
 import (
 	"net"
@@ -45,9 +40,9 @@ func isPrivate(ip net.IP) bool {
 	return false
 }
 
-// Check returns whether if an IP address is bogon. Passing to this
+// IsBogon returns whether if an IP address is bogon. Passing to this
 // function a non-IP address causes it to return bogon.
-func Check(address string) bool {
+func IsBogon(address string) bool {
 	ip := net.ParseIP(address)
 	return ip == nil || isPrivate(ip)
 }

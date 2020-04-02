@@ -1,54 +1,42 @@
-// Package parentresolver contains the parent resolver
-package parentresolver
+package resolver
 
 import (
 	"context"
 	"errors"
-	"net"
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
-	"github.com/ooni/probe-engine/netx/internal/resolver/bogondetector"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Resolver is the emitter resolver
-type Resolver struct {
+// ParentResolver is the emitter resolver
+type ParentResolver struct {
 	bogonsCount *atomicx.Int64
 	resolver    modelx.DNSResolver
 }
 
-// New creates a new emitter resolver
-func New(resolver modelx.DNSResolver) *Resolver {
-	return &Resolver{
+// NewParentResolver creates a new emitter resolver
+func NewParentResolver(resolver modelx.DNSResolver) *ParentResolver {
+	return &ParentResolver{
 		bogonsCount: atomicx.NewInt64(),
 		resolver:    resolver,
 	}
 }
 
-// LookupAddr returns the name of the provided IP address
-func (r *Resolver) LookupAddr(ctx context.Context, addr string) ([]string, error) {
-	return r.resolver.LookupAddr(ctx, addr)
-}
-
-// LookupCNAME returns the canonical name of a host
-func (r *Resolver) LookupCNAME(ctx context.Context, host string) (string, error) {
-	return r.resolver.LookupCNAME(ctx, host)
-}
-
 type queryableTransport interface {
 	Network() string
 	Address() string
+	RequiresPadding() bool
 }
 
 type queryableResolver interface {
 	Transport() modelx.DNSRoundTripper
 }
 
-func (r *Resolver) queryTransport() (network string, address string) {
+func (r *ParentResolver) queryTransport() (network string, address string) {
 	if reso, okay := r.resolver.(queryableResolver); okay {
 		if transport, okay := reso.Transport().(queryableTransport); okay {
 			network, address = transport.Network(), transport.Address()
@@ -58,7 +46,7 @@ func (r *Resolver) queryTransport() (network string, address string) {
 }
 
 // LookupHost returns the IP addresses of a host
-func (r *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r *ParentResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	network, address := r.queryTransport()
 	dialID := dialid.ContextDialID(ctx)
 	txID := transactionid.ContextTransactionID(ctx)
@@ -113,29 +101,19 @@ func (r *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, e
 	return addrs, err
 }
 
-func (r *Resolver) lookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r *ParentResolver) lookupHost(ctx context.Context, hostname string) ([]string, error) {
 	addrs, err := r.resolver.LookupHost(ctx, hostname)
 	for _, addr := range addrs {
-		if bogondetector.Check(addr) == true {
+		if IsBogon(addr) == true {
 			return r.detectedBogon(ctx, hostname, addrs)
 		}
 	}
 	return addrs, err
 }
 
-func (r *Resolver) detectedBogon(
+func (r *ParentResolver) detectedBogon(
 	ctx context.Context, hostname string, addrs []string,
 ) ([]string, error) {
 	r.bogonsCount.Add(1)
 	return addrs, modelx.ErrDNSBogon
-}
-
-// LookupMX returns the MX records of a specific name
-func (r *Resolver) LookupMX(ctx context.Context, name string) ([]*net.MX, error) {
-	return r.resolver.LookupMX(ctx, name)
-}
-
-// LookupNS returns the NS records of a specific name
-func (r *Resolver) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
-	return r.resolver.LookupNS(ctx, name)
 }

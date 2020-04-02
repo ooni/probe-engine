@@ -7,36 +7,8 @@ import (
 
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/internal/resolver/brokenresolver"
+	"github.com/ooni/probe-engine/netx/resolver"
 )
-
-func TestIntegrationResolverLookupAddr(t *testing.T) {
-	resolver, err := netx.NewResolver("system", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	names, err := resolver.LookupAddr(context.Background(), "8.8.8.8")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(names) < 1 {
-		t.Fatal("unexpected result")
-	}
-}
-
-func TestIntegrationResolverLookupCNAME(t *testing.T) {
-	resolver, err := netx.NewResolver("system", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cname, err := resolver.LookupCNAME(context.Background(), "www.ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cname == "" {
-		t.Fatal("unexpected result")
-	}
-}
 
 func testresolverquick(t *testing.T, network, address string) {
 	resolver, err := netx.NewResolver(network, address)
@@ -137,7 +109,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	primary := brokenresolver.New()
+	primary := resolver.NewBrokenResolver()
 	dialer := netx.NewDialer()
 	resolver := netx.ChainResolvers(primary, fallback)
 	dialer.SetResolver(resolver)
@@ -149,34 +121,6 @@ func TestIntegrationChainResolvers(t *testing.T) {
 		t.Fatal("primary has not been used")
 	}
 	defer conn.Close()
-}
-
-func TestIntegrationResolverLookupMX(t *testing.T) {
-	resolver, err := netx.NewResolver("system", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	records, err := resolver.LookupMX(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(records) < 1 {
-		t.Fatal("unexpected result")
-	}
-}
-
-func TestIntegrationResolverLookupNS(t *testing.T) {
-	resolver, err := netx.NewResolver("system", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	records, err := resolver.LookupNS(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(records) < 1 {
-		t.Fatal("unexpected result")
-	}
 }
 
 func TestUnitNewHTTPClientForDoH(t *testing.T) {

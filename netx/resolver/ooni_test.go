@@ -1,4 +1,4 @@
-package ooniresolver
+package resolver
 
 import (
 	"context"
@@ -8,51 +8,27 @@ import (
 	"testing"
 
 	"github.com/miekg/dns"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsovertcp"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsoverudp"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func newtransport() modelx.DNSRoundTripper {
-	return dnsovertcp.NewTransportTCP(&net.Dialer{}, "dns.quad9.net:53")
+	return NewDNSOverTCP(&net.Dialer{}, "dns.quad9.net:53")
 }
 
-func TestGettingTransport(t *testing.T) {
+func TestOONIGettingTransport(t *testing.T) {
 	transport := newtransport()
-	client := New(transport)
+	client := NewOONIResolver(transport)
 	if transport != client.Transport() {
 		t.Fatal("the transport is not correctly set")
 	}
 }
 
-func TestLookupAddr(t *testing.T) {
-	client := New(newtransport())
-	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if names != nil {
-		t.Fatal("expected nil result here")
-	}
-}
-
-func TestLookupCNAME(t *testing.T) {
-	client := New(newtransport())
-	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if cname != "" {
-		t.Fatal("expected empty result here")
-	}
-}
-
-func TestLookupHostWithRetry(t *testing.T) {
+func TestOONILookupHostWithRetry(t *testing.T) {
 	// Because there is no server there, if there is no DNS injection
 	// then we are going to see several timeouts. However, this test is
 	// going to fail if you're under permanent DNS hijacking, which is
 	// what happens with Vodafone "Rete Sicura" (on by default) in Italy.
-	client := New(dnsoverudp.NewTransport(
+	client := NewOONIResolver(NewDNSOverUDP(
 		&net.Dialer{}, "www.example.com:53",
 	))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
@@ -82,8 +58,8 @@ func (t *faketransport) RequiresPadding() bool {
 	return true
 }
 
-func TestLookupHostWithNonTimeoutError(t *testing.T) {
-	client := New(&faketransport{})
+func TestOONILookupHostWithNonTimeoutError(t *testing.T) {
+	client := NewOONIResolver(&faketransport{})
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -101,8 +77,8 @@ func TestLookupHostWithNonTimeoutError(t *testing.T) {
 	}
 }
 
-func TestLookupHost(t *testing.T) {
-	client := New(newtransport())
+func TestOONILookupHost(t *testing.T) {
+	client := NewOONIResolver(newtransport())
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -112,8 +88,8 @@ func TestLookupHost(t *testing.T) {
 	}
 }
 
-func TestLookupNonexistent(t *testing.T) {
-	client := New(newtransport())
+func TestOONILookupNonexistent(t *testing.T) {
+	client := NewOONIResolver(newtransport())
 	addrs, err := client.LookupHost(context.Background(), "nonexistent.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -126,30 +102,8 @@ func TestLookupNonexistent(t *testing.T) {
 	}
 }
 
-func TestLookupMX(t *testing.T) {
-	client := New(newtransport())
-	records, err := client.LookupMX(context.Background(), "ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if records != nil {
-		t.Fatal("expected nil result here")
-	}
-}
-
-func TestLookupNS(t *testing.T) {
-	client := New(newtransport())
-	records, err := client.LookupNS(context.Background(), "ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if records != nil {
-		t.Fatal("expected nil result here")
-	}
-}
-
-func TestRoundTripExPackFailure(t *testing.T) {
-	client := New(newtransport())
+func TestOONIRoundTripExPackFailure(t *testing.T) {
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -167,8 +121,8 @@ func TestRoundTripExPackFailure(t *testing.T) {
 	}
 }
 
-func TestRoundTripExRoundTripFailure(t *testing.T) {
-	client := New(newtransport())
+func TestOONIRoundTripExRoundTripFailure(t *testing.T) {
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -186,8 +140,8 @@ func TestRoundTripExRoundTripFailure(t *testing.T) {
 	}
 }
 
-func TestRoundTripExUnpackFailure(t *testing.T) {
-	client := New(newtransport())
+func TestOONIRoundTripExUnpackFailure(t *testing.T) {
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -205,7 +159,7 @@ func TestRoundTripExUnpackFailure(t *testing.T) {
 	}
 }
 
-func TestLookupHostResultNoName(t *testing.T) {
+func TestOONILookupHostResultNoName(t *testing.T) {
 	addrs, err := lookupHostResult(nil, nil, nil)
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -215,7 +169,7 @@ func TestLookupHostResultNoName(t *testing.T) {
 	}
 }
 
-func TestLookupHostResultAAAAError(t *testing.T) {
+func TestOONILookupHostResultAAAAError(t *testing.T) {
 	addrs, err := lookupHostResult(nil, nil, errors.New("mocked error"))
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -225,7 +179,7 @@ func TestLookupHostResultAAAAError(t *testing.T) {
 	}
 }
 
-func TestUnitMapError(t *testing.T) {
+func TestOONIUnitMapError(t *testing.T) {
 	if mapError(dns.RcodeSuccess) != nil {
 		t.Fatal("unexpected return value")
 	}
@@ -241,11 +195,11 @@ func TestUnitMapError(t *testing.T) {
 	}
 }
 
-func TestUnitPadding(t *testing.T) {
+func TestOONIUnitPadding(t *testing.T) {
 	// The purpose of this unit test is to make sure that for a wide
 	// array of values we obtain the right query size.
 	getquerylen := func(domainlen int, padding bool) int {
-		reso := new(Resolver)
+		reso := new(OONIResolver)
 		query := reso.newQueryWithQuestion(dns.Question{
 			// This is not a valid name because it ends up being way
 			// longer than 255 octets. However, the library is allowing

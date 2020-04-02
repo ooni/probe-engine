@@ -1,4 +1,4 @@
-package parentresolver
+package resolver_test
 
 import (
 	"context"
@@ -7,31 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/internal/resolver/systemresolver"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver"
 )
-
-func TestLookupAddr(t *testing.T) {
-	client := New(new(net.Resolver))
-	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if names == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestLookupCNAME(t *testing.T) {
-	client := New(new(net.Resolver))
-	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cname == "" {
-		t.Fatal("expected non-empty result here")
-	}
-}
 
 type emitterchecker struct {
 	containsBogons  bool
@@ -52,8 +30,8 @@ func (h *emitterchecker) OnMeasurement(m modelx.Measurement) {
 	}
 }
 
-func TestLookupHost(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+func TestParentLookupHost(t *testing.T) {
+	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -80,8 +58,8 @@ func TestLookupHost(t *testing.T) {
 	}
 }
 
-func TestLookupHostBogonHardError(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+func TestParentLookupHostBogonHardError(t *testing.T) {
+	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -107,8 +85,8 @@ func TestLookupHostBogonHardError(t *testing.T) {
 	}
 }
 
-func TestLookupHostBogonAsWarning(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+func TestParentLookupHostBogonAsWarning(t *testing.T) {
+	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -127,27 +105,5 @@ func TestLookupHostBogonAsWarning(t *testing.T) {
 	}
 	if handler.containsBogons == false {
 		t.Fatal("expected acknowledgement of bogons")
-	}
-}
-
-func TestLookupMX(t *testing.T) {
-	client := New(new(net.Resolver))
-	records, err := client.LookupMX(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestLookupNS(t *testing.T) {
-	client := New(new(net.Resolver))
-	records, err := client.LookupNS(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
-		t.Fatal("expected non-nil result here")
 	}
 }
