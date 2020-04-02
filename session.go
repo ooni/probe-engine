@@ -69,6 +69,7 @@ func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Cli
 	return &http.Client{Transport: &sessHTTPTransport{
 		beginning: time.Now(),
 		logger:    logger,
+		sess:      sess,
 		transport: txp,
 	}}
 }
@@ -76,14 +77,16 @@ func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Cli
 type sessHTTPTransport struct {
 	beginning time.Time
 	logger    model.Logger
+	sess      *Session
 	transport *netx.HTTPTransport
 }
 
 func (t *sessHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req = req.WithContext(modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
+	ctx := modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
 		Beginning: t.beginning,
 		Handler:   netxlogger.NewHandler(t.logger),
-	}))
+	})
+	req = req.WithContext(dialer.WithSessionByteCounter(ctx, t.sess.byteCounter))
 	return t.transport.RoundTrip(req)
 }
 
@@ -224,7 +227,6 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	clnt := orchestra.NewClient(
 		s.httpDefaultClient,
 		s.logger,
@@ -361,7 +363,6 @@ func (s *Session) UserAgent() string {
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
-	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	return (&resources.Client{
 		HTTPClient: s.httpDefaultClient, // proxy is OK
 		Logger:     s.logger,
@@ -412,7 +413,6 @@ func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
 }
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
-	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	return (&iplookup.Client{
 		HTTPClient: s.httpNoProxyClient, // No proxy to have the correct IP
 		Logger:     s.logger,
@@ -501,7 +501,6 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 }
 
 func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) error) error {
-	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	s.queryBouncerCount.Add(1)
 	for _, e := range s.getAvailableBouncers() {
 		if e.Type != "https" {

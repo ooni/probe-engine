@@ -221,8 +221,7 @@ func (e *Experiment) Name() string {
 // you have configured the available collectors, either manually or
 // through using the session's MaybeLookupBackends method.
 func (e *Experiment) OpenReport() (err error) {
-	ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
-	return e.openReport(ctx)
+	return e.openReport(context.Background())
 }
 
 // ReportID returns the open reportID, if we have opened a report
@@ -258,15 +257,16 @@ func (e *Experiment) Measure(input string) (*model.Measurement, error) {
 func (e *Experiment) MeasureWithContext(
 	ctx context.Context, input string,
 ) (measurement *model.Measurement, err error) {
-	ctx = dialer.WithSessionByteCounter(ctx, e.session.byteCounter)
-	err = e.session.maybeLookupLocation(ctx)
+	err = e.session.maybeLookupLocation(ctx) // this already tracks session bytes
 	if err != nil {
 		return
 	}
+	ctx = dialer.WithSessionByteCounter(ctx, e.session.byteCounter)
 	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
 	measurement = e.newMeasurement(input)
 	start := time.Now()
 	err = e.measurer.Run(ctx, e.session, measurement, &sessionExperimentCallbacks{
+		exp:   e,
 		inner: e.callbacks,
 		sess:  e.session,
 	})
@@ -282,13 +282,16 @@ func (e *Experiment) MeasureWithContext(
 }
 
 type sessionExperimentCallbacks struct {
+	exp   *Experiment
 	inner model.ExperimentCallbacks
 	sess  *Session
 }
 
 func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
 	cb.sess.byteCounter.Received.Add(dloadKiB)
+	cb.exp.byteCounter.Received.Add(dloadKiB)
 	cb.sess.byteCounter.Sent.Add(uploadKiB)
+	cb.exp.byteCounter.Sent.Add(uploadKiB)
 	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
 }
 
@@ -312,8 +315,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
-	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
+	ctx := dialer.WithExperimentByteCounter(context.Background(), e.byteCounter)
 	return e.report.SubmitMeasurement(ctx, measurement)
 }
 
@@ -321,8 +323,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 // if one has previously been opened, otherwise it does nothing.
 func (e *Experiment) CloseReport() (err error) {
 	if e.report != nil {
-		ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
-		err = e.report.Close(ctx)
+		err = e.report.Close(context.Background())
 		e.report = nil
 	}
 	return
