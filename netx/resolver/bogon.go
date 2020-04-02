@@ -1,9 +1,11 @@
 package resolver
 
 import (
+	"context"
 	"net"
 
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 var privateIPBlocks []*net.IPNet
@@ -45,4 +47,20 @@ func isPrivate(ip net.IP) bool {
 func IsBogon(address string) bool {
 	ip := net.ParseIP(address)
 	return ip == nil || isPrivate(ip)
+}
+
+// BogonAwareResolver is a bogon aware resolver.
+type BogonAwareResolver struct {
+	Resolver
+}
+
+// LookupHost implements Resolver.LookupHost
+func (r BogonAwareResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+	addrs, err := r.Resolver.LookupHost(ctx, hostname)
+	for _, addr := range addrs {
+		if IsBogon(addr) == true {
+			return nil, modelx.ErrDNSBogon
+		}
+	}
+	return addrs, err
 }
