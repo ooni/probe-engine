@@ -2,7 +2,7 @@ name: android
 on:
   push:
     branches:
-      - master
+      - mobile-staging
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
