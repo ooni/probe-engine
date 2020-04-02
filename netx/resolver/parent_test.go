@@ -2,7 +2,6 @@ package resolver_test
 
 import (
 	"context"
-	"net"
 	"sync"
 	"testing"
 	"time"
@@ -31,7 +30,7 @@ func (h *emitterchecker) OnMeasurement(m modelx.Measurement) {
 }
 
 func TestParentLookupHost(t *testing.T) {
-	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
+	client := resolver.NewParentResolver(resolver.System{})
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -59,7 +58,7 @@ func TestParentLookupHost(t *testing.T) {
 }
 
 func TestParentLookupHostBogonHardError(t *testing.T) {
-	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
+	client := resolver.NewParentResolver(resolver.System{})
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -86,7 +85,7 @@ func TestParentLookupHostBogonHardError(t *testing.T) {
 }
 
 func TestParentLookupHostBogonAsWarning(t *testing.T) {
-	client := resolver.NewParentResolver(resolver.NewSystemResolver(new(net.Resolver)))
+	client := resolver.NewParentResolver(resolver.System{})
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
