@@ -88,17 +88,6 @@ func lookupHostResult(addrs []string, errA, errAAAA error) ([]string, error) {
 	return nil, errors.New("ooniresolver: no response returned")
 }
 
-const (
-	// desiredBlockSize is the size that the padded query should be multiple of
-	desiredBlockSize = 128
-
-	// maxResponseSize is the maximum response size for EDNS0
-	maxResponseSize = 4096
-
-	// dnssecEnabled turns on support for DNSSEC when using EDNS0
-	dnssecEnabled = true
-)
-
 func (c *OONIResolver) newQueryWithQuestion(q dns.Question, needspadding bool) (query *dns.Msg) {
 	query = new(dns.Msg)
 	query.Id = dns.Id()
@@ -106,14 +95,14 @@ func (c *OONIResolver) newQueryWithQuestion(q dns.Question, needspadding bool) (
 	query.Question = make([]dns.Question, 1)
 	query.Question[0] = q
 	if needspadding {
-		query.SetEdns0(maxResponseSize, dnssecEnabled)
+		query.SetEdns0(EDNS0MaxResponseSize, DNSSECEnabled)
 		// Clients SHOULD pad queries to the closest multiple of
 		// 128 octets RFC8467#section-4.1. We inflate the query
 		// length by the size of the option (i.e. 4 octets). The
 		// cast to uint is necessary to make the modulus operation
 		// work as intended when the desiredBlockSize is smaller
 		// than (query.Len()+4) ¯\_(ツ)_/¯.
-		remainder := (desiredBlockSize - uint(query.Len()+4)) % desiredBlockSize
+		remainder := (PaddingDesiredBlockSize - uint(query.Len()+4)) % PaddingDesiredBlockSize
 		opt := new(dns.EDNS0_PADDING)
 		opt.Padding = make([]byte, remainder)
 		query.IsEdns0().Option = append(query.IsEdns0().Option, opt)

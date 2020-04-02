@@ -221,7 +221,7 @@ func TestOONIUnitPadding(t *testing.T) {
 		if vanillalen < domainlen {
 			t.Fatal("vanillalen is smaller than domainlen")
 		}
-		if (paddedlen % desiredBlockSize) != 0 {
+		if (paddedlen % PaddingDesiredBlockSize) != 0 {
 			t.Fatal("paddedlen is not a multiple of desiredQuerySize")
 		}
 		if paddedlen < vanillalen {
