@@ -14,9 +14,7 @@ type BrokenResolver struct {
 
 // NewBrokenResolver creates a new broken Resolver instance.
 func NewBrokenResolver() *BrokenResolver {
-	return &BrokenResolver{
-		NumErrors: atomicx.NewInt64(),
-	}
+	return &BrokenResolver{NumErrors: atomicx.NewInt64()}
 }
 
 var errNotFound = &net.DNSError{
