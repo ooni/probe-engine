@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 type tlsdialer struct {
@@ -91,7 +90,7 @@ func TestUnitDNSOverTCPRoundTripWithConnFailure(t *testing.T) {
 	}
 }
 
-func threeRounds(transport modelx.DNSRoundTripper) error {
+func threeRounds(transport RoundTripper) error {
 	err := roundTrip(transport, "ooni.io.")
 	if err != nil {
 		return err
@@ -107,7 +106,7 @@ func threeRounds(transport modelx.DNSRoundTripper) error {
 	return nil
 }
 
-func roundTrip(transport modelx.DNSRoundTripper, domain string) error {
+func roundTrip(transport RoundTripper, domain string) error {
 	query := new(dns.Msg)
 	query.SetQuestion(domain, dns.TypeA)
 	data, err := query.Pack()

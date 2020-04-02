@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// DNSOverTCP is a DNS over TCP/TLS modelx.DNSRoundTripper.
+// DNSOverTCP is a DNS over TCP/TLS RoundTripper.
 //
 // As a known bug, this implementation always creates a new connection
 // for each incoming query, thus increasing the response delay.

@@ -1,11 +1,19 @@
 package resolver
 
 import (
+	"context"
 	"net"
 	"net/http"
 
 	"github.com/ooni/probe-engine/netx/modelx"
 )
+
+// Resolver is a DNS resolver. The *net.Resolver used by Go implements
+// this interface, but other implementations are possible.
+type Resolver interface {
+	// LookupHost resolves a hostname to a list of IP addresses.
+	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
+}
 
 // NewResolverSystem creates a new Go/system resolver.
 func NewResolverSystem() *ParentResolver {

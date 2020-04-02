@@ -705,15 +705,6 @@ type DNSResolver interface {
 	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
 }
 
-// DNSRoundTripper represents an abstract DNS transport.
-type DNSRoundTripper interface {
-	// RoundTrip sends a DNS query and receives the reply.
-	RoundTrip(ctx context.Context, query []byte) (reply []byte, err error)
-
-	// RequiresPadding return true for DoH and DoT according to RFC8467
-	RequiresPadding() bool
-}
-
 // Dialer is a dialer for network connections.
 type Dialer interface {
 	// Dial dials a new connection

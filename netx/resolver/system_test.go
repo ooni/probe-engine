@@ -4,12 +4,10 @@ import (
 	"context"
 	"net"
 	"testing"
-
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestCanQuery(t *testing.T) {
-	var client modelx.DNSResolver = NewSystemResolver(new(net.Resolver))
+	var client Resolver = NewSystemResolver(new(net.Resolver))
 	transport := client.(queryableResolver).Transport()
 	reply, err := transport.RoundTrip(context.Background(), nil)
 	if err == nil {

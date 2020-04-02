@@ -12,16 +12,25 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
+// RoundTripper represents an abstract DNS transport.
+type RoundTripper interface {
+	// RoundTrip sends a DNS query and receives the reply.
+	RoundTrip(ctx context.Context, query []byte) (reply []byte, err error)
+
+	// RequiresPadding return true for DoH and DoT according to RFC8467
+	RequiresPadding() bool
+}
+
 // OONIResolver is OONI's DNS client. It is a simplistic client where we
 // manually create and submit queries. It can use all the transports
 // for DNS supported by this library, however.
 type OONIResolver struct {
 	ntimeouts *atomicx.Int64
-	transport modelx.DNSRoundTripper
+	transport RoundTripper
 }
 
 // NewOONIResolver creates a new OONI Resolver instance.
-func NewOONIResolver(t modelx.DNSRoundTripper) *OONIResolver {
+func NewOONIResolver(t RoundTripper) *OONIResolver {
 	return &OONIResolver{
 		ntimeouts: atomicx.NewInt64(),
 		transport: t,
@@ -29,7 +38,7 @@ func NewOONIResolver(t modelx.DNSRoundTripper) *OONIResolver {
 }
 
 // Transport returns the transport being used.
-func (c *OONIResolver) Transport() modelx.DNSRoundTripper {
+func (c *OONIResolver) Transport() RoundTripper {
 	return c.transport
 }
 
@@ -142,7 +151,7 @@ func (c *OONIResolver) roundTrip(ctx context.Context, query *dns.Msg) (reply *dn
 		ctx, query, func(msg *dns.Msg) ([]byte, error) {
 			return msg.Pack()
 		},
-		func(t modelx.DNSRoundTripper, query []byte) (reply []byte, err error) {
+		func(t RoundTripper, query []byte) (reply []byte, err error) {
 			// Pass ctx to round tripper for cancellation as well
 			// as to propagate context information
 			return t.RoundTrip(ctx, query)
@@ -157,7 +166,7 @@ func (c *OONIResolver) mockableRoundTrip(
 	ctx context.Context,
 	query *dns.Msg,
 	pack func(msg *dns.Msg) ([]byte, error),
-	roundTrip func(t modelx.DNSRoundTripper, query []byte) (reply []byte, err error),
+	roundTrip func(t RoundTripper, query []byte) (reply []byte, err error),
 	unpack func(msg *dns.Msg, data []byte) (err error),
 ) (reply *dns.Msg, err error) {
 	var (

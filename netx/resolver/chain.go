@@ -2,18 +2,16 @@ package resolver
 
 import (
 	"context"
-
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // ChainResolver is a chain resolver.
 type ChainResolver struct {
-	primary   modelx.DNSResolver
-	secondary modelx.DNSResolver
+	primary   Resolver
+	secondary Resolver
 }
 
 // NewChainResolver creates a new chain Resolver instance.
-func NewChainResolver(primary, secondary modelx.DNSResolver) *ChainResolver {
+func NewChainResolver(primary, secondary Resolver) *ChainResolver {
 	return &ChainResolver{
 		primary:   primary,
 		secondary: secondary,

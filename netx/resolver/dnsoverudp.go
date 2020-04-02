@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// DNSOverUDP is a DNS over UDP modelx.DNSRoundTripper.
+// DNSOverUDP is a DNS over UDP RoundTripper.
 type DNSOverUDP struct {
 	dialer  modelx.Dialer
 	address string
