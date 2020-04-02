@@ -1,85 +1,107 @@
-package resolver
+package resolver_test
 
 import (
 	"context"
 	"errors"
 	"net"
 	"testing"
+
+	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestIntegrationDNSOverUDPSuccessWithAddress(t *testing.T) {
+func TestUnitDNSOverUDPDialFailure(t *testing.T) {
+	mocked := errors.New("mocked error")
 	const address = "9.9.9.9:53"
-	transport := NewDNSOverUDP(
-		&net.Dialer{}, address,
-	)
-	if transport.Network() != "udp" {
-		t.Fatal("invalid network")
+	txp := resolver.NewDNSOverUDP(resolver.FakeDialer{Err: mocked}, address)
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, mocked) {
+		t.Fatal("not the error we expected")
 	}
-	if transport.Address() != address {
-		t.Fatal("invalid address")
-	}
-	err := threeRounds(transport)
-	if err != nil {
-		t.Fatal(err)
+	if data != nil {
+		t.Fatal("expected no response here")
 	}
 }
 
-func TestIntegrationDNSOverUDPSuccessWithDomain(t *testing.T) {
-	transport := NewDNSOverUDP(
-		&net.Dialer{}, "dns.quad9.net:53",
-	)
-	err := threeRounds(transport)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestIntegrationDNSOverUDPDialFailure(t *testing.T) {
-	transport := NewDNSOverUDP(
-		&failingDialer{}, "9.9.9.9:53",
-	)
-	err := threeRounds(transport)
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-}
-
-func TestIntegrationDNSOverUDPSetDeadlineError(t *testing.T) {
-	transport := NewDNSOverUDP(
-		&fakeconnDialer{
-			fakeconn: fakeconn{
-				setDeadlineError: errors.New("mocked error"),
+func TestUnitDNSOverUDPSetDeadlineError(t *testing.T) {
+	mocked := errors.New("mocked error")
+	txp := resolver.NewDNSOverUDP(
+		resolver.FakeDialer{
+			Conn: resolver.FakeConn{
+				SetDeadlineError: mocked,
 			},
 		}, "9.9.9.9:53",
 	)
-	err := threeRounds(transport)
-	if err == nil {
-		t.Fatal("expected an error here")
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, mocked) {
+		t.Fatal("not the error we expected")
+	}
+	if data != nil {
+		t.Fatal("expected no response here")
 	}
 }
 
-func TestIntegrationDNSOverUDPWriteError(t *testing.T) {
-	transport := NewDNSOverUDP(
-		&fakeconnDialer{
-			fakeconn: fakeconn{
-				writeError: errors.New("mocked error"),
+func TestUnitDNSOverUDPWriteFailure(t *testing.T) {
+	mocked := errors.New("mocked error")
+	txp := resolver.NewDNSOverUDP(
+		resolver.FakeDialer{
+			Conn: resolver.FakeConn{
+				WriteError: mocked,
 			},
 		}, "9.9.9.9:53",
 	)
-	err := threeRounds(transport)
-	if err == nil {
-		t.Fatal("expected an error here")
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, mocked) {
+		t.Fatal("not the error we expected")
+	}
+	if data != nil {
+		t.Fatal("expected no response here")
 	}
 }
 
-type failingDialer struct{}
-
-func (d *failingDialer) Dial(network, address string) (net.Conn, error) {
-	return d.DialContext(context.Background(), network, address)
+func TestUnitDNSOverUDPReadFailure(t *testing.T) {
+	mocked := errors.New("mocked error")
+	txp := resolver.NewDNSOverUDP(
+		resolver.FakeDialer{
+			Conn: resolver.FakeConn{
+				ReadError: mocked,
+			},
+		}, "9.9.9.9:53",
+	)
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, mocked) {
+		t.Fatal("not the error we expected")
+	}
+	if data != nil {
+		t.Fatal("expected no response here")
+	}
 }
 
-func (d *failingDialer) DialContext(
-	ctx context.Context, network, address string,
-) (net.Conn, error) {
-	return nil, errors.New("mocked error")
+func TestUnitDNSOverUDPReadSuccess(t *testing.T) {
+	const expected = 17
+	txp := resolver.NewDNSOverUDP(
+		resolver.FakeDialer{
+			Conn: resolver.FakeConn{ReadCount: expected},
+		}, "9.9.9.9:53",
+	)
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data) != expected {
+		t.Fatal("expected non nil data")
+	}
+}
+
+func TestUnitDNSOverUDPTransportOK(t *testing.T) {
+	const address = "9.9.9.9:53"
+	txp := resolver.NewDNSOverUDP(&net.Dialer{}, address)
+	if txp.RequiresPadding() != false {
+		t.Fatal("invalid RequiresPadding")
+	}
+	if txp.Network() != "udp" {
+		t.Fatal("invalid Network")
+	}
+	if txp.Address() != address {
+		t.Fatal("invalid Address")
+	}
 }
