@@ -8,22 +8,22 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Transport is a DNS over UDP modelx.DNSRoundTripper.
-type Transport struct {
+// DNSOverUDP is a DNS over UDP modelx.DNSRoundTripper.
+type DNSOverUDP struct {
 	dialer  modelx.Dialer
 	address string
 }
 
-// NewTransport creates a new Transport
-func NewTransport(dialer modelx.Dialer, address string) *Transport {
-	return &Transport{
+// NewDNSOverUDP creates a new Transport
+func NewDNSOverUDP(dialer modelx.Dialer, address string) *DNSOverUDP {
+	return &DNSOverUDP{
 		dialer:  dialer,
 		address: address,
 	}
 }
 
 // RoundTrip sends a request and receives a response.
-func (t *Transport) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
+func (t *DNSOverUDP) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
 	conn, err := t.dialer.DialContext(ctx, "udp", t.address)
 	if err != nil {
 		return
@@ -49,16 +49,16 @@ func (t *Transport) RoundTrip(ctx context.Context, query []byte) (reply []byte, 
 }
 
 // RequiresPadding returns false for UDP according to RFC8467
-func (t *Transport) RequiresPadding() bool {
+func (t *DNSOverUDP) RequiresPadding() bool {
 	return false
 }
 
 // Network returns the transport network (e.g., doh, dot)
-func (t *Transport) Network() string {
+func (t *DNSOverUDP) Network() string {
 	return "udp"
 }
 
 // Address returns the upstream server address.
-func (t *Transport) Address() string {
+func (t *DNSOverUDP) Address() string {
 	return t.address
 }

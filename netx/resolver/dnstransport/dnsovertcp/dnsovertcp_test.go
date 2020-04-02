@@ -25,12 +25,12 @@ func (d *tlsdialer) DialTLSContext(
 	return tls.Dial(network, address, d.config)
 }
 
-func TestIntegrationSuccessTLS(t *testing.T) {
+func TestIntegrationDNSOverTCPSuccessTLS(t *testing.T) {
 	// "Dial interprets a nil configuration as equivalent to
 	// the zero configuration; see the documentation of Config
 	// for the defaults."
 	address := "dns.quad9.net:853"
-	transport := NewTransportTLS(&tlsdialer{}, address)
+	transport := NewDNSOverTLS(&tlsdialer{}, address)
 	if transport.Network() != "dot" {
 		t.Fatal("unexpected network")
 	}
@@ -42,9 +42,9 @@ func TestIntegrationSuccessTLS(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccessTCP(t *testing.T) {
+func TestIntegrationDNSOverTCPSuccessTCP(t *testing.T) {
 	address := "9.9.9.9:53"
-	transport := NewTransportTCP(&net.Dialer{}, address)
+	transport := NewDNSOverTCP(&net.Dialer{}, address)
 	if transport.Network() != "tcp" {
 		t.Fatal("unexpected network")
 	}
@@ -56,15 +56,15 @@ func TestIntegrationSuccessTCP(t *testing.T) {
 	}
 }
 
-func TestIntegrationLookupHostError(t *testing.T) {
-	transport := NewTransportTCP(&net.Dialer{}, "antani.local")
+func TestIntegrationDNSOverTCPLookupHostError(t *testing.T) {
+	transport := NewDNSOverTCP(&net.Dialer{}, "antani.local")
 	if err := roundTrip(transport, "ooni.io."); err == nil {
 		t.Fatal("expected an error here")
 	}
 }
 
-func TestIntegrationCustomTLSConfig(t *testing.T) {
-	transport := NewTransportTLS(&tlsdialer{
+func TestIntegrationDNSOverTCPCustomTLSConfig(t *testing.T) {
+	transport := NewDNSOverTLS(&tlsdialer{
 		config: &tls.Config{
 			MinVersion: tls.VersionTLS10,
 		},
@@ -74,10 +74,10 @@ func TestIntegrationCustomTLSConfig(t *testing.T) {
 	}
 }
 
-func TestUnitRoundTripWithConnFailure(t *testing.T) {
+func TestUnitDNSOverTCPRoundTripWithConnFailure(t *testing.T) {
 	// fakeconn will fail in the SetDeadline, therefore we will have
 	// an immediate error and we expect all errors the be alike
-	transport := NewTransportTCP(&fakeconnDialer{}, "8.8.8.8:53")
+	transport := NewDNSOverTCP(&fakeconnDialer{}, "8.8.8.8:53")
 	query := make([]byte, 1<<10)
 	reply, err := transport.doWithConn(&fakeconn{}, query)
 	if err == nil {
@@ -88,7 +88,7 @@ func TestUnitRoundTripWithConnFailure(t *testing.T) {
 	}
 }
 
-func threeRounds(transport *Transport) error {
+func threeRounds(transport *DNSOverTCP) error {
 	err := roundTrip(transport, "ooni.io.")
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func threeRounds(transport *Transport) error {
 	return nil
 }
 
-func roundTrip(transport *Transport, domain string) error {
+func roundTrip(transport *DNSOverTCP, domain string) error {
 	query := new(dns.Msg)
 	query.SetQuestion(domain, dns.TypeA)
 	data, err := query.Pack()

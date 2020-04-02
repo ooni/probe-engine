@@ -10,9 +10,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-func TestIntegrationSuccessWithAddress(t *testing.T) {
+func TestIntegrationDNSOverUDPSuccessWithAddress(t *testing.T) {
 	const address = "9.9.9.9:53"
-	transport := NewTransport(
+	transport := NewDNSOverUDP(
 		&net.Dialer{}, address,
 	)
 	if transport.Network() != "udp" {
@@ -27,8 +27,8 @@ func TestIntegrationSuccessWithAddress(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccessWithDomain(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverUDPSuccessWithDomain(t *testing.T) {
+	transport := NewDNSOverUDP(
 		&net.Dialer{}, "dns.quad9.net:53",
 	)
 	err := threeRounds(transport)
@@ -37,8 +37,8 @@ func TestIntegrationSuccessWithDomain(t *testing.T) {
 	}
 }
 
-func TestIntegrationDialFailure(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverUDPDialFailure(t *testing.T) {
+	transport := NewDNSOverUDP(
 		&failingDialer{}, "9.9.9.9:53",
 	)
 	err := threeRounds(transport)
@@ -47,8 +47,8 @@ func TestIntegrationDialFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationSetDeadlineError(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverUDPSetDeadlineError(t *testing.T) {
+	transport := NewDNSOverUDP(
 		&fakeconnDialer{
 			fakeconn: fakeconn{
 				setDeadlineError: errors.New("mocked error"),
@@ -61,8 +61,8 @@ func TestIntegrationSetDeadlineError(t *testing.T) {
 	}
 }
 
-func TestIntegrationWriteError(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverUDPWriteError(t *testing.T) {
+	transport := NewDNSOverUDP(
 		&fakeconnDialer{
 			fakeconn: fakeconn{
 				writeError: errors.New("mocked error"),
@@ -75,7 +75,7 @@ func TestIntegrationWriteError(t *testing.T) {
 	}
 }
 
-func threeRounds(transport *Transport) error {
+func threeRounds(transport *DNSOverUDP) error {
 	err := roundTrip(transport, "ooni.io.")
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func threeRounds(transport *Transport) error {
 	return nil
 }
 
-func roundTrip(transport *Transport, domain string) error {
+func roundTrip(transport *DNSOverUDP, domain string) error {
 	query := new(dns.Msg)
 	query.SetQuestion(domain, dns.TypeA)
 	data, err := query.Pack()

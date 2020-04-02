@@ -11,9 +11,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestIntegrationDNSOverHTTPSSuccess(t *testing.T) {
 	const queryURL = "https://cloudflare-dns.com/dns-query"
-	transport := NewTransport(
+	transport := NewDNSOverHTTPS(
 		http.DefaultClient, queryURL,
 	)
 	if transport.Network() != "doh" {
@@ -28,8 +28,8 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationNewRequestFailure(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverHTTPSNewRequestFailure(t *testing.T) {
+	transport := NewDNSOverHTTPS(
 		http.DefaultClient, "\t", // invalid URL
 	)
 	err := threeRounds(transport)
@@ -38,8 +38,8 @@ func TestIntegrationNewRequestFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationClientDoFailure(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverHTTPSClientDoFailure(t *testing.T) {
+	transport := NewDNSOverHTTPS(
 		http.DefaultClient, "https://cloudflare-dns.com/dns-query",
 	)
 	transport.clientDo = func(*http.Request) (*http.Response, error) {
@@ -51,8 +51,8 @@ func TestIntegrationClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPFailure(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverHTTPSHTTPFailure(t *testing.T) {
+	transport := NewDNSOverHTTPS(
 		http.DefaultClient, "https://cloudflare-dns.com/dns-query",
 	)
 	transport.clientDo = func(*http.Request) (*http.Response, error) {
@@ -67,8 +67,8 @@ func TestIntegrationHTTPFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationMissingHeader(t *testing.T) {
-	transport := NewTransport(
+func TestIntegrationDNSOverHTTPSMissingHeader(t *testing.T) {
+	transport := NewDNSOverHTTPS(
 		http.DefaultClient, "https://cloudflare-dns.com/dns-query",
 	)
 	transport.clientDo = func(*http.Request) (*http.Response, error) {
@@ -83,7 +83,7 @@ func TestIntegrationMissingHeader(t *testing.T) {
 	}
 }
 
-func threeRounds(transport *Transport) error {
+func threeRounds(transport *DNSOverHTTPS) error {
 	err := roundTrip(transport, "ooni.io.")
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func threeRounds(transport *Transport) error {
 	return nil
 }
 
-func roundTrip(transport *Transport, domain string) error {
+func roundTrip(transport *DNSOverHTTPS, domain string) error {
 	query := new(dns.Msg)
 	query.SetQuestion(domain, dns.TypeA)
 	data, err := query.Pack()

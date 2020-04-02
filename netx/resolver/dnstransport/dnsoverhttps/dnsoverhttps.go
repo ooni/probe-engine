@@ -9,25 +9,25 @@ import (
 	"net/http"
 )
 
-// Transport is a DNS over HTTPS modelx.DNSRoundTripper.
+// DNSOverHTTPS is a DNS over HTTPS modelx.DNSRoundTripper.
 //
 // As a known bug, this implementation does not cache the domain
 // name in the URL for reuse, but this should be easy to fix.
-type Transport struct {
+type DNSOverHTTPS struct {
 	clientDo func(req *http.Request) (*http.Response, error)
 	url      string
 }
 
-// NewTransport creates a new Transport
-func NewTransport(client *http.Client, URL string) *Transport {
-	return &Transport{
+// NewDNSOverHTTPS creates a new Transport
+func NewDNSOverHTTPS(client *http.Client, URL string) *DNSOverHTTPS {
+	return &DNSOverHTTPS{
 		clientDo: client.Do,
 		url:      URL,
 	}
 }
 
 // RoundTrip sends a request and receives a response.
-func (t *Transport) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
+func (t *DNSOverHTTPS) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
 	req, err := http.NewRequest("POST", t.url, bytes.NewReader(query))
 	if err != nil {
 		return nil, err
@@ -54,16 +54,16 @@ func (t *Transport) RoundTrip(ctx context.Context, query []byte) (reply []byte, 
 }
 
 // RequiresPadding returns true for DoH according to RFC8467
-func (t *Transport) RequiresPadding() bool {
+func (t *DNSOverHTTPS) RequiresPadding() bool {
 	return true
 }
 
 // Network returns the transport network (e.g., doh, dot)
-func (t *Transport) Network() string {
+func (t *DNSOverHTTPS) Network() string {
 	return "doh"
 }
 
 // Address returns the upstream server address.
-func (t *Transport) Address() string {
+func (t *DNSOverHTTPS) Address() string {
 	return t.url
 }
