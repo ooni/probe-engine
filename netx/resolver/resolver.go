@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"context"
-	"net"
 	"net/http"
 
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -17,9 +16,7 @@ type Resolver interface {
 
 // NewResolverSystem creates a new Go/system resolver.
 func NewResolverSystem() *ParentResolver {
-	return NewParentResolver(
-		NewSystemResolver(new(net.Resolver)),
-	)
+	return NewParentResolver(System{})
 }
 
 // NewResolverUDP creates a new UDP resolver.

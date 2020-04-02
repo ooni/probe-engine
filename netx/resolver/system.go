@@ -3,44 +3,41 @@ package resolver
 import (
 	"context"
 	"errors"
+	"net"
 )
 
-// SystemResolver is the system resolver
-type SystemResolver struct {
-	resolver Resolver
-}
+// System is the system resolver
+type System struct{}
 
-// NewSystemResolver creates a new system resolver
-func NewSystemResolver(resolver Resolver) *SystemResolver {
-	return &SystemResolver{resolver: resolver}
-}
+// SystemTransport is the fake transport for the system resolver
+type SystemTransport struct{}
 
-type fakeTransport struct{}
-
-func (*fakeTransport) RoundTrip(
-	ctx context.Context, query []byte,
-) (reply []byte, err error) {
+// RoundTrip implements RoundTripper.RoundTrip
+func (SystemTransport) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
 	return nil, errors.New("not implemented")
 }
 
-func (*fakeTransport) RequiresPadding() bool {
+// RequiresPadding implements RoundTripper.RequiresPadding
+func (SystemTransport) RequiresPadding() bool {
 	return false
 }
 
-func (*fakeTransport) Network() string {
+// Network implements RoundTripper.Network
+func (SystemTransport) Network() string {
 	return "system"
 }
 
-func (*fakeTransport) Address() string {
+// Address implements RoundTripper.Address
+func (SystemTransport) Address() string {
 	return ""
 }
 
 // Transport returns the transport being used
-func (r *SystemResolver) Transport() RoundTripper {
-	return &fakeTransport{}
+func (r System) Transport() RoundTripper {
+	return SystemTransport{}
 }
 
 // LookupHost returns the IP addresses of a host
-func (r *SystemResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	return r.resolver.LookupHost(ctx, hostname)
+func (r System) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+	return net.DefaultResolver.LookupHost(ctx, hostname)
 }

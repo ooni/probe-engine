@@ -19,6 +19,12 @@ type RoundTripper interface {
 
 	// RequiresPadding return true for DoH and DoT according to RFC8467
 	RequiresPadding() bool
+
+	// Network is the network of the round tripper (e.g. "dot")
+	Network() string
+
+	// Address is the address of the round tripper (e.g. "1.1.1.1:853")
+	Address() string
 }
 
 // OONIResolver is OONI's DNS client. It is a simplistic client where we

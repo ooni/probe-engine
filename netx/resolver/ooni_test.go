@@ -58,7 +58,7 @@ func (t *faketransport) RequiresPadding() bool {
 }
 
 func TestOONILookupHostWithNonTimeoutError(t *testing.T) {
-	client := NewOONIResolver(&faketransport{})
+	client := NewOONIResolver(SystemTransport{})
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err == nil {
 		t.Fatal("expected an error here")

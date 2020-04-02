@@ -1,39 +1,36 @@
-package resolver
+package resolver_test
 
 import (
 	"context"
-	"net"
 	"testing"
+
+	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestCanQuery(t *testing.T) {
-	var client Resolver = NewSystemResolver(new(net.Resolver))
-	transport := client.(queryableResolver).Transport()
+func TestUnitSystemResolverTransport(t *testing.T) {
+	r := resolver.System{}
+	transport := r.Transport()
 	reply, err := transport.RoundTrip(context.Background(), nil)
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if err.Error() != "not implemented" {
+	if err == nil || err.Error() != "not implemented" {
 		t.Fatal("not the error we expected")
 	}
 	if reply != nil {
 		t.Fatal("expected nil reply here")
 	}
-	queryableTransport := transport.(queryableTransport)
-	if queryableTransport.Address() != "" {
+	if transport.Address() != "" {
 		t.Fatal("invalid address")
 	}
-	if queryableTransport.Network() != "system" {
+	if transport.Network() != "system" {
 		t.Fatal("invalid network")
 	}
-	if queryableTransport.RequiresPadding() != false {
+	if transport.RequiresPadding() != false {
 		t.Fatal("we should require padding here")
 	}
 }
 
-func TestLookupHost(t *testing.T) {
-	client := NewSystemResolver(new(net.Resolver))
-	addrs, err := client.LookupHost(context.Background(), "www.google.com")
+func TestIntegrationSystemResolverLookupHost(t *testing.T) {
+	r := resolver.System{}
+	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
 		t.Fatal(err)
 	}
