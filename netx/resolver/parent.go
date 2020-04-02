@@ -15,11 +15,11 @@ import (
 // ParentResolver is the emitter resolver
 type ParentResolver struct {
 	bogonsCount *atomicx.Int64
-	resolver    modelx.DNSResolver
+	resolver    Resolver
 }
 
 // NewParentResolver creates a new emitter resolver
-func NewParentResolver(resolver modelx.DNSResolver) *ParentResolver {
+func NewParentResolver(resolver Resolver) *ParentResolver {
 	return &ParentResolver{
 		bogonsCount: atomicx.NewInt64(),
 		resolver:    resolver,
@@ -33,7 +33,7 @@ type queryableTransport interface {
 }
 
 type queryableResolver interface {
-	Transport() modelx.DNSRoundTripper
+	Transport() RoundTripper
 }
 
 func (r *ParentResolver) queryTransport() (network string, address string) {

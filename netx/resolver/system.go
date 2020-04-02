@@ -3,17 +3,15 @@ package resolver
 import (
 	"context"
 	"errors"
-
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // SystemResolver is the system resolver
 type SystemResolver struct {
-	resolver modelx.DNSResolver
+	resolver Resolver
 }
 
 // NewSystemResolver creates a new system resolver
-func NewSystemResolver(resolver modelx.DNSResolver) *SystemResolver {
+func NewSystemResolver(resolver Resolver) *SystemResolver {
 	return &SystemResolver{resolver: resolver}
 }
 
@@ -38,7 +36,7 @@ func (*fakeTransport) Address() string {
 }
 
 // Transport returns the transport being used
-func (r *SystemResolver) Transport() modelx.DNSRoundTripper {
+func (r *SystemResolver) Transport() RoundTripper {
 	return &fakeTransport{}
 }
 

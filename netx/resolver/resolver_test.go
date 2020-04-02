@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-func testresolverquick(t *testing.T, resolver modelx.DNSResolver) {
+func testresolverquick(t *testing.T, resolver Resolver) {
 	addrs, err := resolver.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
 		t.Fatal(err)
