@@ -52,7 +52,7 @@ Omit `-tags nomk` to link with MK.
 ```
 
 When building Android bindings, we automatically omit linking with MK. We
-automatically build Android brindings whenever commits are pushed to the
+automatically build Android bindings whenever commits are pushed to the
 `mobile-staging` branch. Such builds could be integrated by using:
 
 ```Groovy
