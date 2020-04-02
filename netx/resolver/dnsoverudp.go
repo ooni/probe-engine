@@ -2,49 +2,48 @@ package resolver
 
 import (
 	"context"
+	"net"
 	"time"
-
-	"github.com/ooni/probe-engine/netx/modelx"
 )
+
+// Dialer is the network dialer as assumed by this package.
+type Dialer interface {
+	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
 
 // DNSOverUDP is a DNS over UDP RoundTripper.
 type DNSOverUDP struct {
-	dialer  modelx.Dialer
+	dialer  Dialer
 	address string
 }
 
 // NewDNSOverUDP creates a new Transport
-func NewDNSOverUDP(dialer modelx.Dialer, address string) *DNSOverUDP {
-	return &DNSOverUDP{
-		dialer:  dialer,
-		address: address,
-	}
+func NewDNSOverUDP(dialer Dialer, address string) *DNSOverUDP {
+	return &DNSOverUDP{dialer: dialer, address: address}
 }
 
 // RoundTrip sends a request and receives a response.
-func (t *DNSOverUDP) RoundTrip(ctx context.Context, query []byte) (reply []byte, err error) {
+func (t *DNSOverUDP) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	conn, err := t.dialer.DialContext(ctx, "udp", t.address)
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer conn.Close()
 	// Use five seconds timeout like Bionic does. See
 	// https://labs.ripe.net/Members/baptiste_jonglez_1/persistent-dns-connections-for-reliability-and-performance
-	err = conn.SetDeadline(time.Now().Add(5 * time.Second))
-	if err != nil {
-		return
+	if err = conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+		return nil, err
 	}
-	_, err = conn.Write(query)
-	if err != nil {
-		return
+	if _, err = conn.Write(query); err != nil {
+		return nil, err
 	}
-	reply = make([]byte, 1<<17)
+	reply := make([]byte, 1<<17)
 	var n int
 	n, err = conn.Read(reply)
-	if err == nil {
-		reply = reply[:n]
+	if err != nil {
+		return nil, err
 	}
-	return
+	return reply[:n], nil
 }
 
 // RequiresPadding returns false for UDP according to RFC8467
