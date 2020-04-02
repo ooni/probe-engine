@@ -3,8 +3,6 @@ package resolver
 import (
 	"context"
 	"net/http"
-
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // Resolver is a DNS resolver. The *net.Resolver used by Go implements
@@ -20,23 +18,23 @@ func NewResolverSystem() *ParentResolver {
 }
 
 // NewResolverUDP creates a new UDP resolver.
-func NewResolverUDP(dialer modelx.Dialer, address string) *ParentResolver {
+func NewResolverUDP(dialer Dialer, address string) *ParentResolver {
 	return NewParentResolver(
 		NewOONIResolver(NewDNSOverUDP(dialer, address)),
 	)
 }
 
 // NewResolverTCP creates a new TCP resolver.
-func NewResolverTCP(dialer modelx.Dialer, address string) *ParentResolver {
+func NewResolverTCP(dial DialContextFunc, address string) *ParentResolver {
 	return NewParentResolver(
-		NewOONIResolver(NewDNSOverTCP(dialer, address)),
+		NewOONIResolver(NewDNSOverTCP(dial, address)),
 	)
 }
 
 // NewResolverTLS creates a new DoT resolver.
-func NewResolverTLS(dialer modelx.TLSDialer, address string) *ParentResolver {
+func NewResolverTLS(dial DialContextFunc, address string) *ParentResolver {
 	return NewParentResolver(
-		NewOONIResolver(NewDNSOverTLS(dialer, address)),
+		NewOONIResolver(NewDNSOverTLS(dial, address)),
 	)
 }
 
