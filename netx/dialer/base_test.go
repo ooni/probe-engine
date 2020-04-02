@@ -43,7 +43,7 @@ func TestIntegrationBaseDialerErrorNoConnect(t *testing.T) {
 // see whether we implement the interface
 func newBaseDialer() dialer.Dialer {
 	return dialer.EmitterDialer{
-		Dialer: dialer.ErrWrapperDialer{
+		Dialer: dialer.ErrorWrapperDialer{
 			Dialer: dialer.TimeoutDialer{
 				Dialer: new(net.Dialer),
 			},
