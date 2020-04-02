@@ -1,15 +1,15 @@
-package chainresolver
+package resolver_test
 
 import (
 	"context"
 	"net"
 	"testing"
 
-	"github.com/ooni/probe-engine/netx/resolver/brokenresolver"
+	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestLookupAddr(t *testing.T) {
-	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
+func TestChainLookupAddr(t *testing.T) {
+	client := resolver.NewChainResolver(resolver.NewBrokenResolver(), new(net.Resolver))
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err != nil {
 		t.Fatal(err)
@@ -19,8 +19,8 @@ func TestLookupAddr(t *testing.T) {
 	}
 }
 
-func TestLookupCNAME(t *testing.T) {
-	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
+func TestChainLookupCNAME(t *testing.T) {
+	client := resolver.NewChainResolver(resolver.NewBrokenResolver(), new(net.Resolver))
 	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -30,8 +30,8 @@ func TestLookupCNAME(t *testing.T) {
 	}
 }
 
-func TestLookupHost(t *testing.T) {
-	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
+func TestChainLookupHost(t *testing.T) {
+	client := resolver.NewChainResolver(resolver.NewBrokenResolver(), new(net.Resolver))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -41,8 +41,8 @@ func TestLookupHost(t *testing.T) {
 	}
 }
 
-func TestLookupMX(t *testing.T) {
-	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
+func TestChainLookupMX(t *testing.T) {
+	client := resolver.NewChainResolver(resolver.NewBrokenResolver(), new(net.Resolver))
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -52,8 +52,8 @@ func TestLookupMX(t *testing.T) {
 	}
 }
 
-func TestLookupNS(t *testing.T) {
-	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
+func TestChainLookupNS(t *testing.T) {
+	client := resolver.NewChainResolver(resolver.NewBrokenResolver(), new(net.Resolver))
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)

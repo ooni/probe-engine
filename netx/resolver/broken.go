@@ -1,5 +1,4 @@
-// Package brokenresolver is a broken resolver
-package brokenresolver
+package resolver
 
 import (
 	"context"

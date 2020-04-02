@@ -1,5 +1,4 @@
-// Package ooniresolver is OONI's DNS resolver.
-package ooniresolver
+package resolver
 
 import (
 	"context"

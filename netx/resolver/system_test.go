@@ -1,4 +1,4 @@
-package systemresolver
+package resolver
 
 import (
 	"context"
@@ -7,16 +7,6 @@ import (
 
 	"github.com/ooni/probe-engine/netx/modelx"
 )
-
-type queryableTransport interface {
-	Network() string
-	Address() string
-	RequiresPadding() bool
-}
-
-type queryableResolver interface {
-	Transport() modelx.DNSRoundTripper
-}
 
 func TestCanQuery(t *testing.T) {
 	var client modelx.DNSResolver = NewSystemResolver(new(net.Resolver))

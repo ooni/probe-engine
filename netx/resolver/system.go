@@ -1,5 +1,4 @@
-// Package systemresolver contains the system resolver
-package systemresolver
+package resolver
 
 import (
 	"context"

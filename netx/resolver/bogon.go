@@ -1,9 +1,4 @@
-// Package bogondetector contains code to determine if an IP is private/bogon. The
-// code was adapted from https://stackoverflow.com/a/50825191/4354461.
-//
-// See https://badpackets.net/hunting-for-bogons-and-the-isps-that-announce-them/
-// from which I have drawn the full list of private/bogons.
-package bogondetector
+package resolver
 
 import (
 	"net"

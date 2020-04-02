@@ -1,5 +1,4 @@
-// Package parentresolver contains the parent resolver
-package parentresolver
+package resolver
 
 import (
 	"context"
@@ -12,7 +11,6 @@ import (
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/netx/resolver/bogondetector"
 )
 
 // ParentResolver is the emitter resolver
@@ -42,6 +40,7 @@ func (r *ParentResolver) LookupCNAME(ctx context.Context, host string) (string, 
 type queryableTransport interface {
 	Network() string
 	Address() string
+	RequiresPadding() bool
 }
 
 type queryableResolver interface {
@@ -116,7 +115,7 @@ func (r *ParentResolver) LookupHost(ctx context.Context, hostname string) ([]str
 func (r *ParentResolver) lookupHost(ctx context.Context, hostname string) ([]string, error) {
 	addrs, err := r.resolver.LookupHost(ctx, hostname)
 	for _, addr := range addrs {
-		if bogondetector.IsBogon(addr) == true {
+		if IsBogon(addr) == true {
 			return r.detectedBogon(ctx, hostname, addrs)
 		}
 	}

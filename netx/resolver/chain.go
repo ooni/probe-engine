@@ -1,5 +1,4 @@
-// Package chainresolver allows to chain two resolvers
-package chainresolver
+package resolver
 
 import (
 	"context"

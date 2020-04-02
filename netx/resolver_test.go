@@ -7,7 +7,7 @@ import (
 
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/resolver/brokenresolver"
+	"github.com/ooni/probe-engine/netx/resolver"
 )
 
 func TestIntegrationResolverLookupAddr(t *testing.T) {
@@ -137,7 +137,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	primary := brokenresolver.NewBrokenResolver()
+	primary := resolver.NewBrokenResolver()
 	dialer := netx.NewDialer()
 	resolver := netx.ChainResolvers(primary, fallback)
 	dialer.SetResolver(resolver)
