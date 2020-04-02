@@ -35,18 +35,6 @@ func (c *OONIResolver) Transport() modelx.DNSRoundTripper {
 
 var errNotImpl = errors.New("Not implemented")
 
-// LookupAddr returns the name of the provided IP address
-func (c *OONIResolver) LookupAddr(ctx context.Context, addr string) (names []string, err error) {
-	err = errNotImpl
-	return
-}
-
-// LookupCNAME returns the canonical name of a host
-func (c *OONIResolver) LookupCNAME(ctx context.Context, host string) (cname string, err error) {
-	err = errNotImpl
-	return
-}
-
 // LookupHost returns the IP addresses of a host
 func (c *OONIResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string
@@ -83,18 +71,6 @@ func lookupHostResult(addrs []string, errA, errAAAA error) ([]string, error) {
 		return nil, errAAAA
 	}
 	return nil, errors.New("ooniresolver: no response returned")
-}
-
-// LookupMX returns the MX records of a specific name
-func (c *OONIResolver) LookupMX(ctx context.Context, name string) (mx []*net.MX, err error) {
-	err = errNotImpl
-	return
-}
-
-// LookupNS returns the NS records of a specific name
-func (c *OONIResolver) LookupNS(ctx context.Context, name string) (ns []*net.NS, err error) {
-	err = errNotImpl
-	return
 }
 
 const (

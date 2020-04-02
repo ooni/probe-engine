@@ -2,7 +2,7 @@
 
 | Author       | Simone Basso |
 |--------------|--------------|
-| Last-Updated | 2020-03-03   |
+| Last-Updated | 2020-04-02   |
 | Status       | approved     |
 
 ## Introduction
@@ -154,11 +154,7 @@ the `github.com/ooni/probe-engine/netx/modelx` package:
 
 ```Go
 type DNSResolver interface {
-	LookupAddr(ctx context.Context, addr string) ([]string, error)
-	LookupCNAME(ctx context.Context, host string) (string, error)
 	LookupHost(ctx context.Context, hostname string) ([]string, error)
-	LookupMX(ctx context.Context, name string) ([]*net.MX, error)
-	LookupNS(ctx context.Context, name string) ([]*net.NS, error)
 }
 
 type Dialer interface {

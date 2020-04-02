@@ -25,28 +25,6 @@ func TestOONIGettingTransport(t *testing.T) {
 	}
 }
 
-func TestOONILookupAddr(t *testing.T) {
-	client := NewOONIResolver(newtransport())
-	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if names != nil {
-		t.Fatal("expected nil result here")
-	}
-}
-
-func TestOONILookupCNAME(t *testing.T) {
-	client := NewOONIResolver(newtransport())
-	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if cname != "" {
-		t.Fatal("expected empty result here")
-	}
-}
-
 func TestOONILookupHostWithRetry(t *testing.T) {
 	// Because there is no server there, if there is no DNS injection
 	// then we are going to see several timeouts. However, this test is
@@ -123,28 +101,6 @@ func TestOONILookupNonexistent(t *testing.T) {
 	}
 	if addrs != nil {
 		t.Fatal("expected nil addr here")
-	}
-}
-
-func TestOONILookupMX(t *testing.T) {
-	client := NewOONIResolver(newtransport())
-	records, err := client.LookupMX(context.Background(), "ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if records != nil {
-		t.Fatal("expected nil result here")
-	}
-}
-
-func TestOONILookupNS(t *testing.T) {
-	client := NewOONIResolver(newtransport())
-	records, err := client.LookupNS(context.Background(), "ooni.io")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if records != nil {
-		t.Fatal("expected nil result here")
 	}
 }
 

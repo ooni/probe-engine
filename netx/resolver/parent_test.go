@@ -11,28 +11,6 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestParentLookupAddr(t *testing.T) {
-	client := resolver.NewParentResolver(new(net.Resolver))
-	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if names == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestParentLookupCNAME(t *testing.T) {
-	client := resolver.NewParentResolver(new(net.Resolver))
-	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cname == "" {
-		t.Fatal("expected non-empty result here")
-	}
-}
-
 type emitterchecker struct {
 	containsBogons  bool
 	gotResolveStart bool
@@ -127,27 +105,5 @@ func TestParentLookupHostBogonAsWarning(t *testing.T) {
 	}
 	if handler.containsBogons == false {
 		t.Fatal("expected acknowledgement of bogons")
-	}
-}
-
-func TestParentLookupMX(t *testing.T) {
-	client := resolver.NewParentResolver(new(net.Resolver))
-	records, err := client.LookupMX(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestParentLookupNS(t *testing.T) {
-	client := resolver.NewParentResolver(new(net.Resolver))
-	records, err := client.LookupNS(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
-		t.Fatal("expected non-nil result here")
 	}
 }

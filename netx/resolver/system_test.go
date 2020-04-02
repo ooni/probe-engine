@@ -33,28 +33,6 @@ func TestCanQuery(t *testing.T) {
 	}
 }
 
-func TestLookupAddr(t *testing.T) {
-	client := NewSystemResolver(new(net.Resolver))
-	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if names == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestLookupCNAME(t *testing.T) {
-	client := NewSystemResolver(new(net.Resolver))
-	name, err := client.LookupCNAME(context.Background(), "www.ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if name == "" {
-		t.Fatal("expected non-empty result here")
-	}
-}
-
 func TestLookupHost(t *testing.T) {
 	client := NewSystemResolver(new(net.Resolver))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
@@ -62,28 +40,6 @@ func TestLookupHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	if addrs == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestLookupMX(t *testing.T) {
-	client := NewSystemResolver(new(net.Resolver))
-	records, err := client.LookupMX(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
-		t.Fatal("expected non-nil result here")
-	}
-}
-
-func TestLookupNS(t *testing.T) {
-	client := NewSystemResolver(new(net.Resolver))
-	records, err := client.LookupNS(context.Background(), "ooni.io")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if records == nil {
 		t.Fatal("expected non-nil result here")
 	}
 }

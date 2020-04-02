@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"errors"
-	"net"
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
@@ -25,16 +24,6 @@ func NewParentResolver(resolver modelx.DNSResolver) *ParentResolver {
 		bogonsCount: atomicx.NewInt64(),
 		resolver:    resolver,
 	}
-}
-
-// LookupAddr returns the name of the provided IP address
-func (r *ParentResolver) LookupAddr(ctx context.Context, addr string) ([]string, error) {
-	return r.resolver.LookupAddr(ctx, addr)
-}
-
-// LookupCNAME returns the canonical name of a host
-func (r *ParentResolver) LookupCNAME(ctx context.Context, host string) (string, error) {
-	return r.resolver.LookupCNAME(ctx, host)
 }
 
 type queryableTransport interface {
@@ -127,14 +116,4 @@ func (r *ParentResolver) detectedBogon(
 ) ([]string, error) {
 	r.bogonsCount.Add(1)
 	return addrs, modelx.ErrDNSBogon
-}
-
-// LookupMX returns the MX records of a specific name
-func (r *ParentResolver) LookupMX(ctx context.Context, name string) ([]*net.MX, error) {
-	return r.resolver.LookupMX(ctx, name)
-}
-
-// LookupNS returns the NS records of a specific name
-func (r *ParentResolver) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
-	return r.resolver.LookupNS(ctx, name)
 }

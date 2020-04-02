@@ -79,34 +79,10 @@ func newResolverWrapper(
 	}
 }
 
-// LookupAddr returns the name of the provided IP address
-func (r *resolverWrapper) LookupAddr(ctx context.Context, addr string) ([]string, error) {
-	ctx = maybeWithMeasurementRoot(ctx, r.beginning, r.handler)
-	return r.resolver.LookupAddr(ctx, addr)
-}
-
-// LookupCNAME returns the canonical name of a host
-func (r *resolverWrapper) LookupCNAME(ctx context.Context, host string) (string, error) {
-	ctx = maybeWithMeasurementRoot(ctx, r.beginning, r.handler)
-	return r.resolver.LookupCNAME(ctx, host)
-}
-
 // LookupHost returns the IP addresses of a host
 func (r *resolverWrapper) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	ctx = maybeWithMeasurementRoot(ctx, r.beginning, r.handler)
 	return r.resolver.LookupHost(ctx, hostname)
-}
-
-// LookupMX returns the MX records of a specific name
-func (r *resolverWrapper) LookupMX(ctx context.Context, name string) ([]*net.MX, error) {
-	ctx = maybeWithMeasurementRoot(ctx, r.beginning, r.handler)
-	return r.resolver.LookupMX(ctx, name)
-}
-
-// LookupNS returns the NS records of a specific name
-func (r *resolverWrapper) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
-	ctx = maybeWithMeasurementRoot(ctx, r.beginning, r.handler)
-	return r.resolver.LookupNS(ctx, name)
 }
 
 func newResolver(
