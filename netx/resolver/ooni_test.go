@@ -11,7 +11,7 @@ import (
 )
 
 func newtransport() RoundTripper {
-	return NewDNSOverTCP(&net.Dialer{}, "dns.quad9.net:53")
+	return NewDNSOverTCP(new(net.Dialer).DialContext, "dns.quad9.net:53")
 }
 
 func TestOONIGettingTransport(t *testing.T) {

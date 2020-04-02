@@ -104,13 +104,13 @@ func newResolver(
 		// dialer will ask us to resolve, we'll tell the dialer to dial, it
 		// will ask us to resolve, ...
 		return newResolverWrapper(beginning, handler, resolver.NewResolverTLS(
-			newDialer(beginning, handler), withPort(address, "853"),
+			newDialer(beginning, handler).DialTLSContext, withPort(address, "853"),
 		)), nil
 	}
 	if network == "tcp" {
 		// Same rationale as above: avoid possible endless loop
 		return newResolverWrapper(beginning, handler, resolver.NewResolverTCP(
-			newDialer(beginning, handler), withPort(address, "53"),
+			newDialer(beginning, handler).DialContext, withPort(address, "53"),
 		)), nil
 	}
 	if network == "udp" {

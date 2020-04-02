@@ -26,7 +26,7 @@ func TestUnitDNSOverUDPSetDeadlineError(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.NewDNSOverUDP(
 		resolver.FakeDialer{
-			Conn: resolver.FakeConn{
+			Conn: &resolver.FakeConn{
 				SetDeadlineError: mocked,
 			},
 		}, "9.9.9.9:53",
@@ -44,7 +44,7 @@ func TestUnitDNSOverUDPWriteFailure(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.NewDNSOverUDP(
 		resolver.FakeDialer{
-			Conn: resolver.FakeConn{
+			Conn: &resolver.FakeConn{
 				WriteError: mocked,
 			},
 		}, "9.9.9.9:53",
@@ -62,7 +62,7 @@ func TestUnitDNSOverUDPReadFailure(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.NewDNSOverUDP(
 		resolver.FakeDialer{
-			Conn: resolver.FakeConn{
+			Conn: &resolver.FakeConn{
 				ReadError: mocked,
 			},
 		}, "9.9.9.9:53",
@@ -80,7 +80,7 @@ func TestUnitDNSOverUDPReadSuccess(t *testing.T) {
 	const expected = 17
 	txp := resolver.NewDNSOverUDP(
 		resolver.FakeDialer{
-			Conn: resolver.FakeConn{ReadCount: expected},
+			Conn: &resolver.FakeConn{ReadData: make([]byte, 17)},
 		}, "9.9.9.9:53",
 	)
 	data, err := txp.RoundTrip(context.Background(), nil)

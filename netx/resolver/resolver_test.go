@@ -66,22 +66,22 @@ func TestIntegrationNewResolverUDPDomain(t *testing.T) {
 
 func TestIntegrationNewResolverTCPAddress(t *testing.T) {
 	testresolverquick(t, NewResolverTCP(
-		new(net.Dialer), "8.8.8.8:53"))
+		new(net.Dialer).DialContext, "8.8.8.8:53"))
 }
 
 func TestIntegrationNewResolverTCPDomain(t *testing.T) {
 	testresolverquick(t, NewResolverTCP(
-		new(net.Dialer), "dns.google.com:53"))
+		new(net.Dialer).DialContext, "dns.google.com:53"))
 }
 
 func TestIntegrationNewResolverDoTAddress(t *testing.T) {
 	testresolverquick(t, NewResolverTLS(
-		&tlsdialer{}, "9.9.9.9:853"))
+		DialTLSContext, "9.9.9.9:853"))
 }
 
 func TestIntegrationNewResolverDoTDomain(t *testing.T) {
 	testresolverquick(t, NewResolverTLS(
-		&tlsdialer{}, "dns.quad9.net:853"))
+		DialTLSContext, "dns.quad9.net:853"))
 }
 
 func TestIntegrationNewResolverDoH(t *testing.T) {
