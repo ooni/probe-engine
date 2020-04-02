@@ -142,21 +142,17 @@ func TestSetCallbacks(t *testing.T) {
 	if _, err := builder.NewExperiment().Measure(""); err != nil {
 		t.Fatal(err)
 	}
-	if register.onDataUsageCalled == false {
-		t.Fatal("OnDataUsage not called")
-	}
 	if register.onProgressCalled == false {
 		t.Fatal("OnProgress not called")
 	}
 }
 
 type registerCallbacksCalled struct {
-	onProgressCalled  bool
-	onDataUsageCalled bool
+	onProgressCalled bool
 }
 
 func (c *registerCallbacksCalled) OnDataUsage(dloadKiB, uploadKiB float64) {
-	c.onDataUsageCalled = true
+	// nothing - unused
 }
 
 func (c *registerCallbacksCalled) OnProgress(percentage float64, message string) {

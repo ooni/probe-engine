@@ -37,8 +37,6 @@ type Config struct {
 // Subresult contains the keys of a single measurement
 // that targets either the target or the control.
 type Subresult struct {
-	BytesReceived int64                           `json:"-"`
-	BytesSent     int64                           `json:"-"`
 	Cached        bool                            `json:"-"`
 	Failure       *string                         `json:"failure"`
 	NetworkEvents oonidatamodel.NetworkEventsList `json:"network_events"`
@@ -138,8 +136,6 @@ func (m *measurer) measureone(
 	})
 	// assemble and publish the results
 	smk := Subresult{
-		BytesReceived: result.TestKeys.ReceivedBytes,
-		BytesSent:     result.TestKeys.SentBytes,
 		NetworkEvents: oonidatamodel.NewNetworkEventsList(result.TestKeys),
 		Queries:       oonidatamodel.NewDNSQueriesList(result.TestKeys),
 		Requests:      oonidatamodel.NewRequestList(result.TestKeys),
@@ -173,8 +169,6 @@ func (m *measurer) measureonewithcache(
 	}
 	smk = m.measureone(ctx, handler, beginning, sni, thaddr)
 	output <- smk
-	smk.BytesReceived = 0 // don't count them more than once
-	smk.BytesSent = 0     // ditto
 	smk.Cached = true
 	m.mu.Lock()
 	m.cache[cachekey] = smk
@@ -205,10 +199,8 @@ func processall(
 	controlSNI string,
 ) *TestKeys {
 	var (
-		current       int
-		sentBytes     int64
-		receivedBytes int64
-		testkeys      = new(TestKeys)
+		current  int
+		testkeys = new(TestKeys)
 	)
 	for smk := range outputs {
 		if smk.SNI == controlSNI {
@@ -218,8 +210,6 @@ func processall(
 		} else {
 			panic("unexpected smk.SNI")
 		}
-		sentBytes += smk.BytesSent
-		receivedBytes += smk.BytesReceived
 		current++
 		sess.Logger().Debugf(
 			"sni_blocking: %s: %s [cached: %+v]", smk.SNI,
@@ -230,10 +220,6 @@ func processall(
 	}
 	testkeys.Result = testkeys.classify()
 	sess.Logger().Infof("sni_blocking: result: %s", testkeys.Result)
-	callbacks.OnDataUsage(
-		float64(receivedBytes)/1024.0, // downloaded
-		float64(sentBytes)/1024.0,     // uploaded
-	)
 	return testkeys
 }
 

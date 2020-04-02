@@ -24,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -44,10 +45,9 @@ type Session struct {
 	availableBouncers    []model.Service
 	availableCollectors  []model.Service
 	availableTestHelpers map[string][]model.Service
+	byteCounter          *dialer.ByteCounter
 	httpDefaultClient    *http.Client
 	httpNoProxyClient    *http.Client
-	kibsReceived         *atomicx.Float64
-	kibsSent             *atomicx.Float64
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
 	explicitProxy        bool
@@ -82,29 +82,12 @@ type sessHTTPTransport struct {
 }
 
 func (t *sessHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req = req.WithContext(modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
+	ctx := modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
 		Beginning: t.beginning,
-		Handler: &sessHandler{
-			inner: netxlogger.NewHandler(t.logger),
-			sess:  t.sess,
-		},
-	}))
+		Handler:   netxlogger.NewHandler(t.logger),
+	})
+	req = req.WithContext(dialer.WithSessionByteCounter(ctx, t.sess.byteCounter))
 	return t.transport.RoundTrip(req)
-}
-
-type sessHandler struct {
-	inner modelx.Handler
-	sess  *Session
-}
-
-func (h *sessHandler) OnMeasurement(m modelx.Measurement) {
-	if m.Read != nil {
-		h.sess.kibsReceived.Add(float64(m.Read.NumBytes) / 1024)
-	}
-	if m.Write != nil {
-		h.sess.kibsSent.Add(float64(m.Write.NumBytes) / 1024)
-	}
-	h.inner.OnMeasurement(m)
 }
 
 // NewSession creates a new session or returns an error
@@ -128,10 +111,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
 	sess := &Session{
-		assetsDir:    config.AssetsDir,
-		kibsReceived: atomicx.NewFloat64(),
-		kibsSent:     atomicx.NewFloat64(),
-		kvStore:      config.KVStore,
+		assetsDir:   config.AssetsDir,
+		byteCounter: dialer.NewByteCounter(),
+		kvStore:     config.KVStore,
 		privacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
@@ -175,12 +157,12 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 // KiBsReceived accounts for the KiBs received by the HTTP clients
 // managed by this session so far, including experiments.
 func (s *Session) KiBsReceived() float64 {
-	return s.kibsReceived.Load()
+	return s.byteCounter.Received.Load()
 }
 
 // KiBsSent is like KiBsReceived but for the bytes sent.
 func (s *Session) KiBsSent() float64 {
-	return s.kibsSent.Load()
+	return s.byteCounter.Sent.Load()
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.

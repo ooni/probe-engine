@@ -284,6 +284,12 @@ func main() {
 		}
 	}
 	experiment := builder.NewExperiment()
+	defer func() {
+		log.Infof("experiment: recv %s, sent %s",
+			humanize.SI(experiment.KiBsReceived()*1024, "byte"),
+			humanize.SI(experiment.KiBsSent()*1024, "byte"),
+		)
+	}()
 
 	if !globalOptions.noCollector {
 		if err := experiment.OpenReport(); err != nil {

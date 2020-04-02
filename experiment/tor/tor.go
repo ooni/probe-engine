@@ -212,10 +212,6 @@ func (m *measurer) measureTargets(
 	testkeys := &TestKeys{Targets: rc.targetresults}
 	testkeys.fillToplevelKeys()
 	measurement.TestKeys = testkeys
-	callbacks.OnDataUsage(
-		float64(rc.receivedBytes.Load())/1024.0, // downloaded
-		float64(rc.sentBytes.Load())/1024.0,     // uploaded
-	)
 }
 
 type resultsCollector struct {
@@ -224,8 +220,6 @@ type resultsCollector struct {
 	flexibleConnect func(context.Context, model.TorTarget) (oonitemplates.Results, error)
 	measurement     *model.Measurement
 	mu              sync.Mutex
-	receivedBytes   *atomicx.Int64
-	sentBytes       *atomicx.Int64
 	sess            model.ExperimentSession
 	targetresults   map[string]TargetResults
 }
@@ -239,8 +233,6 @@ func newResultsCollector(
 		callbacks:     callbacks,
 		completed:     atomicx.NewInt64(),
 		measurement:   measurement,
-		receivedBytes: atomicx.NewInt64(),
-		sentBytes:     atomicx.NewInt64(),
 		sess:          sess,
 		targetresults: make(map[string]TargetResults),
 	}
@@ -268,8 +260,6 @@ func (rc *resultsCollector) measureSingleTarget(
 	tr.fillSummary()
 	rc.targetresults[kt.key] = tr
 	rc.mu.Unlock()
-	rc.sentBytes.Add(tk.SentBytes)
-	rc.receivedBytes.Add(tk.ReceivedBytes)
 	sofar := rc.completed.Add(1)
 	percentage := 0.0
 	if total > 0 {
