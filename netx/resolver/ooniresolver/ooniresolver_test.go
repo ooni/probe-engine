@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/miekg/dns"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsovertcp"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsoverudp"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsovertcp"
+	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsoverudp"
 )
 
 func newtransport() modelx.DNSRoundTripper {

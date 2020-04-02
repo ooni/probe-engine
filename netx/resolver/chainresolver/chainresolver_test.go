@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ooni/probe-engine/netx/internal/resolver/brokenresolver"
+	"github.com/ooni/probe-engine/netx/resolver/brokenresolver"
 )
 
 func TestLookupAddr(t *testing.T) {

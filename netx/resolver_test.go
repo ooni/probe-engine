@@ -7,7 +7,7 @@ import (
 
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/internal/resolver/brokenresolver"
+	"github.com/ooni/probe-engine/netx/resolver/brokenresolver"
 )
 
 func TestIntegrationResolverLookupAddr(t *testing.T) {

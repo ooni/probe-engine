@@ -5,13 +5,13 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsoverhttps"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsovertcp"
-	"github.com/ooni/probe-engine/netx/internal/resolver/dnstransport/dnsoverudp"
-	"github.com/ooni/probe-engine/netx/internal/resolver/ooniresolver"
-	"github.com/ooni/probe-engine/netx/internal/resolver/parentresolver"
-	"github.com/ooni/probe-engine/netx/internal/resolver/systemresolver"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsoverhttps"
+	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsovertcp"
+	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsoverudp"
+	"github.com/ooni/probe-engine/netx/resolver/ooniresolver"
+	"github.com/ooni/probe-engine/netx/resolver/parentresolver"
+	"github.com/ooni/probe-engine/netx/resolver/systemresolver"
 )
 
 // NewResolverSystem creates a new Go/system resolver.

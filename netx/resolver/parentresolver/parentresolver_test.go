@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/internal/resolver/systemresolver"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver/systemresolver"
 )
 
 func TestLookupAddr(t *testing.T) {

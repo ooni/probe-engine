@@ -10,9 +10,9 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
-	"github.com/ooni/probe-engine/netx/internal/resolver/bogondetector"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver/bogondetector"
 )
 
 // Resolver is the emitter resolver

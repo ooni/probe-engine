@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/internal/resolver"
-	"github.com/ooni/probe-engine/netx/internal/resolver/chainresolver"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/resolver"
+	"github.com/ooni/probe-engine/netx/resolver/chainresolver"
 )
 
 var (
