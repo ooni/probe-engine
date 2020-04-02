@@ -115,7 +115,14 @@ type TLSDialer struct {
 	TLSHandshaker TLSHandshaker
 }
 
-// NewTLSDialer creates a new TLSDialer
+// NewTLSDialer creates a new TLSDialer using:
+//
+// - EmitterTLSHandshaker (topmost)
+// - ErrWrapperTLSHandshaker
+// - TimeoutTLSHandshaker
+// - SystemTLSHandshaker
+//
+// If you have others needs, manually build the chain you need.
 func NewTLSDialer(dialer Dialer, config *tls.Config) TLSDialer {
 	return TLSDialer{
 		Config: config,
