@@ -34,8 +34,6 @@ func (d MiekgDecoder) Decode(data []byte) ([]string, error) {
 			ip := rra.A
 			addrs = append(addrs, ip.String())
 		}
-	}
-	for _, answer := range reply.Answer {
 		if rra, ok := answer.(*dns.AAAA); ok {
 			ip := rra.AAAA
 			addrs = append(addrs, ip.String())
