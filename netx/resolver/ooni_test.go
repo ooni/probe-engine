@@ -9,12 +9,10 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsovertcp"
-	"github.com/ooni/probe-engine/netx/resolver/dnstransport/dnsoverudp"
 )
 
 func newtransport() modelx.DNSRoundTripper {
-	return dnsovertcp.NewDNSOverTCP(&net.Dialer{}, "dns.quad9.net:53")
+	return NewDNSOverTCP(&net.Dialer{}, "dns.quad9.net:53")
 }
 
 func TestOONIGettingTransport(t *testing.T) {
@@ -30,7 +28,7 @@ func TestOONILookupHostWithRetry(t *testing.T) {
 	// then we are going to see several timeouts. However, this test is
 	// going to fail if you're under permanent DNS hijacking, which is
 	// what happens with Vodafone "Rete Sicura" (on by default) in Italy.
-	client := NewOONIResolver(dnsoverudp.NewDNSOverUDP(
+	client := NewOONIResolver(NewDNSOverUDP(
 		&net.Dialer{}, "www.example.com:53",
 	))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")

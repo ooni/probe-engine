@@ -1,14 +1,11 @@
-package dnsoverhttps
+package resolver
 
 import (
-	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/miekg/dns"
 )
 
 func TestIntegrationDNSOverHTTPSSuccess(t *testing.T) {
@@ -81,34 +78,4 @@ func TestIntegrationDNSOverHTTPSMissingHeader(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-}
-
-func threeRounds(transport *DNSOverHTTPS) error {
-	err := roundTrip(transport, "ooni.io.")
-	if err != nil {
-		return err
-	}
-	err = roundTrip(transport, "slashdot.org.")
-	if err != nil {
-		return err
-	}
-	err = roundTrip(transport, "kernel.org.")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func roundTrip(transport *DNSOverHTTPS, domain string) error {
-	query := new(dns.Msg)
-	query.SetQuestion(domain, dns.TypeA)
-	data, err := query.Pack()
-	if err != nil {
-		return err
-	}
-	data, err = transport.RoundTrip(context.Background(), data)
-	if err != nil {
-		return err
-	}
-	return query.Unpack(data)
 }

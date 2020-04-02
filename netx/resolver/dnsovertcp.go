@@ -1,6 +1,4 @@
-// Package dnsovertcp implements DNS over TCP. It is possible to
-// use both plaintext TCP and TLS.
-package dnsovertcp
+package resolver
 
 import (
 	"bufio"

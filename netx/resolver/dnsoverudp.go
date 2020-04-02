@@ -1,5 +1,4 @@
-// Package dnsoverudp implements DNS over UDP.
-package dnsoverudp
+package resolver
 
 import (
 	"context"

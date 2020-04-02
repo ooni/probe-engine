@@ -1,5 +1,4 @@
-// Package dnsoverhttps implements DNS over HTTPS.
-package dnsoverhttps
+package resolver
 
 import (
 	"bytes"

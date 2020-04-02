@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"context"
-	"crypto/tls"
 	"net"
 	"net/http"
 	"testing"
@@ -88,16 +87,4 @@ func TestIntegrationNewResolverDoTDomain(t *testing.T) {
 func TestIntegrationNewResolverDoH(t *testing.T) {
 	testresolverquick(t, NewResolverHTTPS(
 		http.DefaultClient, "https://cloudflare-dns.com/dns-query"))
-}
-
-type tlsdialer struct{}
-
-func (*tlsdialer) DialTLS(network, address string) (net.Conn, error) {
-	return tls.Dial(network, address, new(tls.Config))
-}
-
-func (*tlsdialer) DialTLSContext(
-	ctx context.Context, network, address string,
-) (net.Conn, error) {
-	return tls.Dial(network, address, new(tls.Config))
 }

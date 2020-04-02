@@ -1,4 +1,4 @@
-package dnsovertcp
+package resolver
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 type tlsdialer struct {
@@ -79,7 +80,9 @@ func TestUnitDNSOverTCPRoundTripWithConnFailure(t *testing.T) {
 	// an immediate error and we expect all errors the be alike
 	transport := NewDNSOverTCP(&fakeconnDialer{}, "8.8.8.8:53")
 	query := make([]byte, 1<<10)
-	reply, err := transport.doWithConn(&fakeconn{}, query)
+	reply, err := transport.doWithConn(&fakeconn{
+		setDeadlineError: errors.New("mocked error"),
+	}, query)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -88,7 +91,7 @@ func TestUnitDNSOverTCPRoundTripWithConnFailure(t *testing.T) {
 	}
 }
 
-func threeRounds(transport *DNSOverTCP) error {
+func threeRounds(transport modelx.DNSRoundTripper) error {
 	err := roundTrip(transport, "ooni.io.")
 	if err != nil {
 		return err
@@ -104,7 +107,7 @@ func threeRounds(transport *DNSOverTCP) error {
 	return nil
 }
 
-func roundTrip(transport *DNSOverTCP, domain string) error {
+func roundTrip(transport modelx.DNSRoundTripper, domain string) error {
 	query := new(dns.Msg)
 	query.SetQuestion(domain, dns.TypeA)
 	data, err := query.Pack()
@@ -132,13 +135,19 @@ func (d *fakeconnDialer) DialContext(
 	return &d.fakeconn, nil
 }
 
-type fakeconn struct{}
+type fakeconn struct {
+	setDeadlineError error
+	writeError       error
+}
 
 func (fakeconn) Read(b []byte) (n int, err error) {
 	n = len(b)
 	return
 }
-func (fakeconn) Write(b []byte) (n int, err error) {
+func (c fakeconn) Write(b []byte) (n int, err error) {
+	if c.writeError != nil {
+		return 0, c.writeError
+	}
 	n = len(b)
 	return
 }
@@ -151,8 +160,8 @@ func (fakeconn) LocalAddr() net.Addr {
 func (fakeconn) RemoteAddr() net.Addr {
 	return &net.TCPAddr{}
 }
-func (fakeconn) SetDeadline(t time.Time) (err error) {
-	return errors.New("cannot set deadline")
+func (c fakeconn) SetDeadline(t time.Time) (err error) {
+	return c.setDeadlineError
 }
 func (fakeconn) SetReadDeadline(t time.Time) (err error) {
 	return
