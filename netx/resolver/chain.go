@@ -4,22 +4,22 @@ import (
 	"context"
 )
 
-// ChainResolver is a chain resolver.
-type ChainResolver struct {
+// Chain is a chain resolver.
+type Chain struct {
 	primary   Resolver
 	secondary Resolver
 }
 
-// NewChainResolver creates a new chain Resolver instance.
-func NewChainResolver(primary, secondary Resolver) *ChainResolver {
-	return &ChainResolver{
+// ChainResolvers chains two resolvers.
+func ChainResolvers(primary, secondary Resolver) Chain {
+	return Chain{
 		primary:   primary,
 		secondary: secondary,
 	}
 }
 
 // LookupHost returns the IP addresses of a host
-func (c *ChainResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (c Chain) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	addrs, err := c.primary.LookupHost(ctx, hostname)
 	if err != nil {
 		addrs, err = c.secondary.LookupHost(ctx, hostname)
