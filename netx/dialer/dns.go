@@ -86,7 +86,7 @@ func (d DNSDialer) lookupHost(
 //
 // - DNSDialer (topmost)
 // - EmitterDialer
-// - ErrWrapperDialer
+// - ErrorWrapperDialer
 // - TimeoutDialer
 // - ByteCountingDialer
 // - net.Dialer
@@ -95,7 +95,7 @@ func (d DNSDialer) lookupHost(
 func NewDNSDialer(resolver Resolver) DNSDialer {
 	return DNSDialer{
 		Dialer: EmitterDialer{
-			Dialer: ErrWrapperDialer{
+			Dialer: ErrorWrapperDialer{
 				Dialer: TimeoutDialer{
 					Dialer: ByteCounterDialer{
 						Dialer: new(net.Dialer),

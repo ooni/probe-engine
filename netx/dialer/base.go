@@ -42,13 +42,13 @@ func (d TimeoutDialer) DialContext(ctx context.Context, network, address string)
 	return d.Dialer.DialContext(ctx, network, address)
 }
 
-// ErrWrapperDialer is a dialer that performs err wrapping
-type ErrWrapperDialer struct {
+// ErrorWrapperDialer is a dialer that performs err wrapping
+type ErrorWrapperDialer struct {
 	Dialer
 }
 
 // DialContext implements Dialer.DialContext
-func (d ErrWrapperDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+func (d ErrorWrapperDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	dialID := dialid.ContextDialID(ctx)
 	conn, err := d.Dialer.DialContext(ctx, network, address)
 	err = errwrapper.SafeErrWrapperBuilder{
@@ -61,17 +61,17 @@ func (d ErrWrapperDialer) DialContext(ctx context.Context, network, address stri
 	if err != nil {
 		return nil, err
 	}
-	return &ErrWrapperConn{Conn: conn, ID: safeConnID(network, conn)}, err
+	return &ErrorWrapperConn{Conn: conn, ID: safeConnID(network, conn)}, err
 }
 
-// ErrWrapperConn is a net.Conn that performs error wrapping.
-type ErrWrapperConn struct {
+// ErrorWrapperConn is a net.Conn that performs error wrapping.
+type ErrorWrapperConn struct {
 	net.Conn
 	ID int64
 }
 
 // Read reads data from the connection.
-func (c ErrWrapperConn) Read(b []byte) (n int, err error) {
+func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 	n, err = c.Conn.Read(b)
 	err = errwrapper.SafeErrWrapperBuilder{
 		ConnID:    c.ID,
@@ -82,7 +82,7 @@ func (c ErrWrapperConn) Read(b []byte) (n int, err error) {
 }
 
 // Write writes data to the connection
-func (c ErrWrapperConn) Write(b []byte) (n int, err error) {
+func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 	n, err = c.Conn.Write(b)
 	err = errwrapper.SafeErrWrapperBuilder{
 		ConnID:    c.ID,
@@ -93,7 +93,7 @@ func (c ErrWrapperConn) Write(b []byte) (n int, err error) {
 }
 
 // Close closes the connection
-func (c ErrWrapperConn) Close() (err error) {
+func (c ErrorWrapperConn) Close() (err error) {
 	err = c.Conn.Close()
 	err = errwrapper.SafeErrWrapperBuilder{
 		ConnID:    c.ID,

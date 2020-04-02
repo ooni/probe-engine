@@ -59,13 +59,13 @@ func (h TimeoutTLSHandshaker) Handshake(
 	return h.TLSHandshaker.Handshake(ctx, conn, config)
 }
 
-// ErrWrapperTLSHandshaker wraps the returned error to be an OONI error
-type ErrWrapperTLSHandshaker struct {
+// ErrorWrapperTLSHandshaker wraps the returned error to be an OONI error
+type ErrorWrapperTLSHandshaker struct {
 	TLSHandshaker
 }
 
 // Handshake implements Handshaker.Handshake
-func (h ErrWrapperTLSHandshaker) Handshake(
+func (h ErrorWrapperTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
 	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
@@ -118,7 +118,7 @@ type TLSDialer struct {
 // NewTLSDialer creates a new TLSDialer using:
 //
 // - EmitterTLSHandshaker (topmost)
-// - ErrWrapperTLSHandshaker
+// - ErrorWrapperTLSHandshaker
 // - TimeoutTLSHandshaker
 // - SystemTLSHandshaker
 //
@@ -128,7 +128,7 @@ func NewTLSDialer(dialer Dialer, config *tls.Config) TLSDialer {
 		Config: config,
 		Dialer: dialer,
 		TLSHandshaker: EmitterTLSHandshaker{
-			TLSHandshaker: ErrWrapperTLSHandshaker{
+			TLSHandshaker: ErrorWrapperTLSHandshaker{
 				TLSHandshaker: TimeoutTLSHandshaker{
 					TLSHandshaker: SystemTLSHandshaker{},
 				},
