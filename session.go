@@ -24,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -44,10 +45,9 @@ type Session struct {
 	availableBouncers    []model.Service
 	availableCollectors  []model.Service
 	availableTestHelpers map[string][]model.Service
+	byteCounter          *dialer.ByteCounter
 	httpDefaultClient    *http.Client
 	httpNoProxyClient    *http.Client
-	kibsReceived         *atomicx.Float64
-	kibsSent             *atomicx.Float64
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
 	explicitProxy        bool
@@ -69,7 +69,6 @@ func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Cli
 	return &http.Client{Transport: &sessHTTPTransport{
 		beginning: time.Now(),
 		logger:    logger,
-		sess:      sess,
 		transport: txp,
 	}}
 }
@@ -77,34 +76,15 @@ func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Cli
 type sessHTTPTransport struct {
 	beginning time.Time
 	logger    model.Logger
-	sess      *Session
 	transport *netx.HTTPTransport
 }
 
 func (t *sessHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req = req.WithContext(modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
 		Beginning: t.beginning,
-		Handler: &sessHandler{
-			inner: netxlogger.NewHandler(t.logger),
-			sess:  t.sess,
-		},
+		Handler:   netxlogger.NewHandler(t.logger),
 	}))
 	return t.transport.RoundTrip(req)
-}
-
-type sessHandler struct {
-	inner modelx.Handler
-	sess  *Session
-}
-
-func (h *sessHandler) OnMeasurement(m modelx.Measurement) {
-	if m.Read != nil {
-		h.sess.kibsReceived.Add(float64(m.Read.NumBytes) / 1024)
-	}
-	if m.Write != nil {
-		h.sess.kibsSent.Add(float64(m.Write.NumBytes) / 1024)
-	}
-	h.inner.OnMeasurement(m)
 }
 
 // NewSession creates a new session or returns an error
@@ -128,10 +108,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
 	sess := &Session{
-		assetsDir:    config.AssetsDir,
-		kibsReceived: atomicx.NewFloat64(),
-		kibsSent:     atomicx.NewFloat64(),
-		kvStore:      config.KVStore,
+		assetsDir:   config.AssetsDir,
+		byteCounter: dialer.NewByteCounter(),
+		kvStore:     config.KVStore,
 		privacySettings: model.PrivacySettings{
 			IncludeCountry: true,
 			IncludeASN:     true,
@@ -175,12 +154,12 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 // KiBsReceived accounts for the KiBs received by the HTTP clients
 // managed by this session so far, including experiments.
 func (s *Session) KiBsReceived() float64 {
-	return s.kibsReceived.Load()
+	return s.byteCounter.Received.Load()
 }
 
 // KiBsSent is like KiBsReceived but for the bytes sent.
 func (s *Session) KiBsSent() float64 {
-	return s.kibsSent.Load()
+	return s.byteCounter.Sent.Load()
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.
@@ -245,6 +224,7 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
+	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	clnt := orchestra.NewClient(
 		s.httpDefaultClient,
 		s.logger,
@@ -381,6 +361,7 @@ func (s *Session) UserAgent() string {
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
+	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	return (&resources.Client{
 		HTTPClient: s.httpDefaultClient, // proxy is OK
 		Logger:     s.logger,
@@ -431,6 +412,7 @@ func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
 }
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
+	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	return (&iplookup.Client{
 		HTTPClient: s.httpNoProxyClient, // No proxy to have the correct IP
 		Logger:     s.logger,
@@ -519,6 +501,7 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 }
 
 func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) error) error {
+	ctx = dialer.WithSessionByteCounter(ctx, s.byteCounter)
 	s.queryBouncerCount.Add(1)
 	for _, e := range s.getAvailableBouncers() {
 		if e.Type != "https" {

@@ -195,12 +195,6 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	if result.SNI != "kernel.org" {
 		t.Fatal("unexpected SNI")
 	}
-	if result.BytesReceived != 0 {
-		t.Fatal("expected to receive bytes")
-	}
-	if result.BytesSent != 0 {
-		t.Fatal("expected to send bytes")
-	}
 }
 
 func TestUnitMeasureoneSuccess(t *testing.T) {
@@ -216,12 +210,6 @@ func TestUnitMeasureoneSuccess(t *testing.T) {
 	}
 	if result.SNI != "kernel.org" {
 		t.Fatal("unexpected SNI")
-	}
-	if result.BytesReceived <= 0 {
-		t.Fatal("expected to receive bytes")
-	}
-	if result.BytesSent <= 0 {
-		t.Fatal("expected to send bytes")
 	}
 }
 
@@ -248,18 +236,6 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 		}
 		if result.SNI != "kernel.org" {
 			t.Fatal("unexpected SNI")
-		}
-		if result.BytesReceived <= 0 && !result.Cached {
-			t.Fatal("expected to receive bytes")
-		}
-		if result.BytesSent <= 0 && !result.Cached {
-			t.Fatal("expected to send bytes")
-		}
-		if result.BytesReceived != 0 && result.Cached {
-			t.Fatal("expected to not receive bytes")
-		}
-		if result.BytesSent != 0 && result.Cached {
-			t.Fatal("expected to not send bytes")
 		}
 	}
 }

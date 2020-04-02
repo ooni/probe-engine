@@ -129,12 +129,6 @@ func (r *runner) usetunnel(
 	)
 	// TODO(bassosimone): understand if there is a way to ask
 	// the tunnel the number of bytes sent and received
-	receivedBytes := results.TestKeys.ReceivedBytes
-	sentBytes := results.TestKeys.SentBytes
-	r.callbacks.OnDataUsage(
-		float64(receivedBytes)/1024.0, // downloaded
-		float64(sentBytes)/1024.0,     // uploaded
-	)
 	if results.Error != nil {
 		s := results.Error.Error()
 		r.testkeys.Failure = &s

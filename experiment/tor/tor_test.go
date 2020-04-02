@@ -207,10 +207,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, model.TorTarget) (oonitemplates.Results, error) {
-		return oonitemplates.Results{
-			SentBytes:     10,
-			ReceivedBytes: 14,
-		}, nil
+		return oonitemplates.Results{}, nil
 	}
 	rc.measureSingleTarget(
 		context.Background(), keytarget{
@@ -235,12 +232,6 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	}
 	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
-	}
-	if rc.sentBytes.Load() != 10 {
-		t.Fatal("sent bytes is invalid")
-	}
-	if rc.receivedBytes.Load() != 14 {
-		t.Fatal("received bytes is invalid")
 	}
 }
 
@@ -278,12 +269,6 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	}
 	if rc.targetresults["xx"].TargetProtocol != staticTestingTargets[0].Protocol {
 		t.Fatal("target protocol is invalid")
-	}
-	if rc.sentBytes.Load() != 0 {
-		t.Fatal("sent bytes is invalid")
-	}
-	if rc.receivedBytes.Load() != 0 {
-		t.Fatal("received bytes is invalid")
 	}
 }
 

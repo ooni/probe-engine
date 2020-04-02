@@ -60,7 +60,6 @@ func (m *measurer) Run(
 	sess.Logger().Warnf("example: %s", "remember to drink")
 	sess.Logger().Infof("example: %s", "water is key to survival")
 	callbacks.OnProgress(1.0, m.config.Message)
-	callbacks.OnDataUsage(0, 0)
 	return err
 }
 

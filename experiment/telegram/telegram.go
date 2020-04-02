@@ -169,11 +169,9 @@ func (m *measurer) Run(
 	}
 	// run all measurements in parallel
 	var (
-		completed     = atomicx.NewInt64()
-		mu            sync.Mutex
-		receivedBytes = atomicx.NewInt64()
-		sentBytes     = atomicx.NewInt64()
-		waitgroup     sync.WaitGroup
+		completed = atomicx.NewInt64()
+		mu        sync.Mutex
+		waitgroup sync.WaitGroup
 	)
 	waitgroup.Add(len(urlmeasurements))
 	for key := range urlmeasurements {
@@ -199,9 +197,6 @@ func (m *measurer) Run(
 				URL:            key,
 				UserAgent:      httpheader.RandomUserAgent(),
 			})
-			tk := &entry.results.TestKeys
-			sentBytes.Add(tk.SentBytes)
-			receivedBytes.Add(tk.ReceivedBytes)
 			sofar := completed.Add(1)
 			percentage := float64(sofar) / float64(len(urlmeasurements))
 			callbacks.OnProgress(percentage, fmt.Sprintf(
@@ -213,12 +208,7 @@ func (m *measurer) Run(
 	// fill the measurement entry
 	testkeys := newTestKeys()
 	measurement.TestKeys = &testkeys
-	err := testkeys.processall(urlmeasurements)
-	callbacks.OnDataUsage(
-		float64(receivedBytes.Load())/1024.0, // downloaded
-		float64(sentBytes.Load())/1024.0,     // uploaded
-	)
-	return err
+	return testkeys.processall(urlmeasurements)
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.

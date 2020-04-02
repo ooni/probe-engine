@@ -68,9 +68,6 @@ type Results struct {
 	NetworkEvents []*modelx.Measurement
 	Resolves      []*modelx.ResolveDoneEvent
 	TLSHandshakes []*modelx.TLSHandshakeDoneEvent
-
-	SentBytes     int64
-	ReceivedBytes int64
 }
 
 type connmapper struct {
@@ -129,14 +126,12 @@ func (r *Results) onMeasurement(m modelx.Measurement, lowLevel bool) {
 	}
 	if m.Read != nil {
 		m.Read.ConnID = cm.scramble(m.Read.ConnID)
-		r.ReceivedBytes += m.Read.NumBytes // overflow unlikely
 		if lowLevel {
 			r.NetworkEvents = append(r.NetworkEvents, &m)
 		}
 	}
 	if m.Write != nil {
 		m.Write.ConnID = cm.scramble(m.Write.ConnID)
-		r.SentBytes += m.Write.NumBytes // overflow unlikely
 		if lowLevel {
 			r.NetworkEvents = append(r.NetworkEvents, &m)
 		}

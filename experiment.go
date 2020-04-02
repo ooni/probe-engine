@@ -27,6 +27,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/dialer"
 )
 
 const dateFormat = "2006-01-02 15:04:05"
@@ -175,6 +176,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 
 // Experiment is an experiment instance.
 type Experiment struct {
+	byteCounter   *dialer.ByteCounter
 	callbacks     model.ExperimentCallbacks
 	measurer      model.ExperimentMeasurer
 	report        *collector.Report
@@ -189,6 +191,7 @@ type Experiment struct {
 // allows the programmer to create a custom, external experiment.
 func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment {
 	return &Experiment{
+		byteCounter:   dialer.NewByteCounter(),
 		callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
 		measurer:      measurer,
 		session:       sess,
@@ -196,6 +199,17 @@ func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment
 		testStartTime: formatTimeNowUTC(),
 		testVersion:   measurer.ExperimentVersion(),
 	}
+}
+
+// KiBsReceived accounts for the KiBs received by the HTTP clients
+// managed by this session so far, including experiments.
+func (e *Experiment) KiBsReceived() float64 {
+	return e.byteCounter.Received.Load()
+}
+
+// KiBsSent is like KiBsReceived but for the bytes sent.
+func (e *Experiment) KiBsSent() float64 {
+	return e.byteCounter.Sent.Load()
 }
 
 // Name returns the experiment name.
@@ -207,7 +221,8 @@ func (e *Experiment) Name() string {
 // you have configured the available collectors, either manually or
 // through using the session's MaybeLookupBackends method.
 func (e *Experiment) OpenReport() (err error) {
-	return e.openReport(context.Background())
+	ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
+	return e.openReport(ctx)
 }
 
 // ReportID returns the open reportID, if we have opened a report
@@ -243,10 +258,12 @@ func (e *Experiment) Measure(input string) (*model.Measurement, error) {
 func (e *Experiment) MeasureWithContext(
 	ctx context.Context, input string,
 ) (measurement *model.Measurement, err error) {
+	ctx = dialer.WithSessionByteCounter(ctx, e.session.byteCounter)
 	err = e.session.maybeLookupLocation(ctx)
 	if err != nil {
 		return
 	}
+	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
 	measurement = e.newMeasurement(input)
 	start := time.Now()
 	err = e.measurer.Run(ctx, e.session, measurement, &sessionExperimentCallbacks{
@@ -270,8 +287,8 @@ type sessionExperimentCallbacks struct {
 }
 
 func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	cb.sess.kibsReceived.Add(dloadKiB)
-	cb.sess.kibsSent.Add(uploadKiB)
+	cb.sess.byteCounter.Received.Add(dloadKiB)
+	cb.sess.byteCounter.Sent.Add(uploadKiB)
 	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
 }
 
@@ -295,14 +312,17 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	return e.report.SubmitMeasurement(context.Background(), measurement)
+	ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
+	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
+	return e.report.SubmitMeasurement(ctx, measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
 // if one has previously been opened, otherwise it does nothing.
 func (e *Experiment) CloseReport() (err error) {
 	if e.report != nil {
-		err = e.report.Close(context.Background())
+		ctx := dialer.WithSessionByteCounter(context.Background(), e.session.byteCounter)
+		err = e.report.Close(ctx)
 		e.report = nil
 	}
 	return
