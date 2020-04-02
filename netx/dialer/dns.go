@@ -82,13 +82,24 @@ func (d DNSDialer) lookupHost(
 	return addrs, err
 }
 
-// NewDNSDialer creates a new DNS dialer
+// NewDNSDialer creates a new DNS dialer using the following chain:
+//
+// - DNSDialer (topmost)
+// - EmitterDialer
+// - ErrWrapperDialer
+// - TimeoutDialer
+// - ByteCountingDialer
+// - net.Dialer
+//
+// If you have others needs, manually build the chain you need.
 func NewDNSDialer(resolver Resolver) DNSDialer {
 	return DNSDialer{
 		Dialer: EmitterDialer{
 			Dialer: ErrWrapperDialer{
 				Dialer: TimeoutDialer{
-					Dialer: new(net.Dialer),
+					Dialer: ByteCounterDialer{
+						Dialer: new(net.Dialer),
+					},
 				},
 			},
 		},
