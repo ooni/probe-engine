@@ -9,7 +9,7 @@ import (
 )
 
 func TestLookupAddr(t *testing.T) {
-	client := New(brokenresolver.New(), new(net.Resolver))
+	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestLookupAddr(t *testing.T) {
 }
 
 func TestLookupCNAME(t *testing.T) {
-	client := New(brokenresolver.New(), new(net.Resolver))
+	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
 	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +31,7 @@ func TestLookupCNAME(t *testing.T) {
 }
 
 func TestLookupHost(t *testing.T) {
-	client := New(brokenresolver.New(), new(net.Resolver))
+	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func TestLookupHost(t *testing.T) {
 }
 
 func TestLookupMX(t *testing.T) {
-	client := New(brokenresolver.New(), new(net.Resolver))
+	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func TestLookupMX(t *testing.T) {
 }
 
 func TestLookupNS(t *testing.T) {
-	client := New(brokenresolver.New(), new(net.Resolver))
+	client := NewChainResolver(brokenresolver.NewBrokenResolver(), new(net.Resolver))
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)

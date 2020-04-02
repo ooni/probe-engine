@@ -6,7 +6,7 @@ import (
 )
 
 func TestLookupAddr(t *testing.T) {
-	client := New()
+	client := NewBrokenResolver()
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -17,7 +17,7 @@ func TestLookupAddr(t *testing.T) {
 }
 
 func TestLookupCNAME(t *testing.T) {
-	client := New()
+	client := NewBrokenResolver()
 	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -28,7 +28,7 @@ func TestLookupCNAME(t *testing.T) {
 }
 
 func TestLookupHost(t *testing.T) {
-	client := New()
+	client := NewBrokenResolver()
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -39,7 +39,7 @@ func TestLookupHost(t *testing.T) {
 }
 
 func TestLookupMX(t *testing.T) {
-	client := New()
+	client := NewBrokenResolver()
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -50,7 +50,7 @@ func TestLookupMX(t *testing.T) {
 }
 
 func TestLookupNS(t *testing.T) {
-	client := New()
+	client := NewBrokenResolver()
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")

@@ -19,14 +19,14 @@ func newtransport() modelx.DNSRoundTripper {
 
 func TestGettingTransport(t *testing.T) {
 	transport := newtransport()
-	client := New(transport)
+	client := NewOONIResolver(transport)
 	if transport != client.Transport() {
 		t.Fatal("the transport is not correctly set")
 	}
 }
 
 func TestLookupAddr(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -37,7 +37,7 @@ func TestLookupAddr(t *testing.T) {
 }
 
 func TestLookupCNAME(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -52,7 +52,7 @@ func TestLookupHostWithRetry(t *testing.T) {
 	// then we are going to see several timeouts. However, this test is
 	// going to fail if you're under permanent DNS hijacking, which is
 	// what happens with Vodafone "Rete Sicura" (on by default) in Italy.
-	client := New(dnsoverudp.NewTransport(
+	client := NewOONIResolver(dnsoverudp.NewTransport(
 		&net.Dialer{}, "www.example.com:53",
 	))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
@@ -83,7 +83,7 @@ func (t *faketransport) RequiresPadding() bool {
 }
 
 func TestLookupHostWithNonTimeoutError(t *testing.T) {
-	client := New(&faketransport{})
+	client := NewOONIResolver(&faketransport{})
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -102,7 +102,7 @@ func TestLookupHostWithNonTimeoutError(t *testing.T) {
 }
 
 func TestLookupHost(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -113,7 +113,7 @@ func TestLookupHost(t *testing.T) {
 }
 
 func TestLookupNonexistent(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	addrs, err := client.LookupHost(context.Background(), "nonexistent.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -127,7 +127,7 @@ func TestLookupNonexistent(t *testing.T) {
 }
 
 func TestLookupMX(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -138,7 +138,7 @@ func TestLookupMX(t *testing.T) {
 }
 
 func TestLookupNS(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -149,7 +149,7 @@ func TestLookupNS(t *testing.T) {
 }
 
 func TestRoundTripExPackFailure(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -168,7 +168,7 @@ func TestRoundTripExPackFailure(t *testing.T) {
 }
 
 func TestRoundTripExRoundTripFailure(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -187,7 +187,7 @@ func TestRoundTripExRoundTripFailure(t *testing.T) {
 }
 
 func TestRoundTripExUnpackFailure(t *testing.T) {
-	client := New(newtransport())
+	client := NewOONIResolver(newtransport())
 	_, err := client.mockableRoundTrip(
 		context.Background(), nil,
 		func(msg *dns.Msg) ([]byte, error) {
@@ -245,7 +245,7 @@ func TestUnitPadding(t *testing.T) {
 	// The purpose of this unit test is to make sure that for a wide
 	// array of values we obtain the right query size.
 	getquerylen := func(domainlen int, padding bool) int {
-		reso := new(Resolver)
+		reso := new(OONIResolver)
 		query := reso.newQueryWithQuestion(dns.Question{
 			// This is not a valid name because it ends up being way
 			// longer than 255 octets. However, the library is allowing

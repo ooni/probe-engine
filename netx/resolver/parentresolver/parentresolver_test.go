@@ -12,7 +12,7 @@ import (
 )
 
 func TestLookupAddr(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewParentResolver(new(net.Resolver))
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +23,7 @@ func TestLookupAddr(t *testing.T) {
 }
 
 func TestLookupCNAME(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewParentResolver(new(net.Resolver))
 	cname, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func (h *emitterchecker) OnMeasurement(m modelx.Measurement) {
 }
 
 func TestLookupHost(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+	client := NewParentResolver(systemresolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -81,7 +81,7 @@ func TestLookupHost(t *testing.T) {
 }
 
 func TestLookupHostBogonHardError(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+	client := NewParentResolver(systemresolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -108,7 +108,7 @@ func TestLookupHostBogonHardError(t *testing.T) {
 }
 
 func TestLookupHostBogonAsWarning(t *testing.T) {
-	client := New(systemresolver.New(new(net.Resolver)))
+	client := NewParentResolver(systemresolver.NewSystemResolver(new(net.Resolver)))
 	handler := new(emitterchecker)
 	ctx := modelx.WithMeasurementRoot(
 		context.Background(), &modelx.MeasurementRoot{
@@ -131,7 +131,7 @@ func TestLookupHostBogonAsWarning(t *testing.T) {
 }
 
 func TestLookupMX(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewParentResolver(new(net.Resolver))
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +142,7 @@ func TestLookupMX(t *testing.T) {
 }
 
 func TestLookupNS(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewParentResolver(new(net.Resolver))
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)

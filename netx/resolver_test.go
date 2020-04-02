@@ -137,7 +137,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	primary := brokenresolver.New()
+	primary := brokenresolver.NewBrokenResolver()
 	dialer := netx.NewDialer()
 	resolver := netx.ChainResolvers(primary, fallback)
 	dialer.SetResolver(resolver)

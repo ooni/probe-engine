@@ -8,22 +8,22 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Resolver is a chain resolver.
-type Resolver struct {
+// ChainResolver is a chain resolver.
+type ChainResolver struct {
 	primary   modelx.DNSResolver
 	secondary modelx.DNSResolver
 }
 
-// New creates a new chain Resolver instance.
-func New(primary, secondary modelx.DNSResolver) *Resolver {
-	return &Resolver{
+// NewChainResolver creates a new chain Resolver instance.
+func NewChainResolver(primary, secondary modelx.DNSResolver) *ChainResolver {
+	return &ChainResolver{
 		primary:   primary,
 		secondary: secondary,
 	}
 }
 
 // LookupAddr returns the name of the provided IP address
-func (c *Resolver) LookupAddr(ctx context.Context, addr string) ([]string, error) {
+func (c *ChainResolver) LookupAddr(ctx context.Context, addr string) ([]string, error) {
 	names, err := c.primary.LookupAddr(ctx, addr)
 	if err != nil {
 		names, err = c.secondary.LookupAddr(ctx, addr)
@@ -32,7 +32,7 @@ func (c *Resolver) LookupAddr(ctx context.Context, addr string) ([]string, error
 }
 
 // LookupCNAME returns the canonical name of a host
-func (c *Resolver) LookupCNAME(ctx context.Context, host string) (string, error) {
+func (c *ChainResolver) LookupCNAME(ctx context.Context, host string) (string, error) {
 	cname, err := c.primary.LookupCNAME(ctx, host)
 	if err != nil {
 		cname, err = c.secondary.LookupCNAME(ctx, host)
@@ -41,7 +41,7 @@ func (c *Resolver) LookupCNAME(ctx context.Context, host string) (string, error)
 }
 
 // LookupHost returns the IP addresses of a host
-func (c *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (c *ChainResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	addrs, err := c.primary.LookupHost(ctx, hostname)
 	if err != nil {
 		addrs, err = c.secondary.LookupHost(ctx, hostname)
@@ -50,7 +50,7 @@ func (c *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, e
 }
 
 // LookupMX returns the MX records of a specific name
-func (c *Resolver) LookupMX(ctx context.Context, name string) ([]*net.MX, error) {
+func (c *ChainResolver) LookupMX(ctx context.Context, name string) ([]*net.MX, error) {
 	records, err := c.primary.LookupMX(ctx, name)
 	if err != nil {
 		records, err = c.secondary.LookupMX(ctx, name)
@@ -59,7 +59,7 @@ func (c *Resolver) LookupMX(ctx context.Context, name string) ([]*net.MX, error)
 }
 
 // LookupNS returns the NS records of a specific name
-func (c *Resolver) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
+func (c *ChainResolver) LookupNS(ctx context.Context, name string) ([]*net.NS, error) {
 	records, err := c.primary.LookupNS(ctx, name)
 	if err != nil {
 		records, err = c.secondary.LookupNS(ctx, name)

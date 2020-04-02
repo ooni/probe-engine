@@ -45,9 +45,9 @@ func isPrivate(ip net.IP) bool {
 	return false
 }
 
-// Check returns whether if an IP address is bogon. Passing to this
+// IsBogon returns whether if an IP address is bogon. Passing to this
 // function a non-IP address causes it to return bogon.
-func Check(address string) bool {
+func IsBogon(address string) bool {
 	ip := net.ParseIP(address)
 	return ip == nil || isPrivate(ip)
 }

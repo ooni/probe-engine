@@ -19,7 +19,7 @@ type queryableResolver interface {
 }
 
 func TestCanQuery(t *testing.T) {
-	var client modelx.DNSResolver = New(new(net.Resolver))
+	var client modelx.DNSResolver = NewSystemResolver(new(net.Resolver))
 	transport := client.(queryableResolver).Transport()
 	reply, err := transport.RoundTrip(context.Background(), nil)
 	if err == nil {
@@ -44,7 +44,7 @@ func TestCanQuery(t *testing.T) {
 }
 
 func TestLookupAddr(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewSystemResolver(new(net.Resolver))
 	names, err := client.LookupAddr(context.Background(), "8.8.8.8")
 	if err != nil {
 		t.Fatal(err)
@@ -55,7 +55,7 @@ func TestLookupAddr(t *testing.T) {
 }
 
 func TestLookupCNAME(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewSystemResolver(new(net.Resolver))
 	name, err := client.LookupCNAME(context.Background(), "www.ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestLookupCNAME(t *testing.T) {
 }
 
 func TestLookupHost(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewSystemResolver(new(net.Resolver))
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestLookupHost(t *testing.T) {
 }
 
 func TestLookupMX(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewSystemResolver(new(net.Resolver))
 	records, err := client.LookupMX(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)
@@ -88,7 +88,7 @@ func TestLookupMX(t *testing.T) {
 }
 
 func TestLookupNS(t *testing.T) {
-	client := New(new(net.Resolver))
+	client := NewSystemResolver(new(net.Resolver))
 	records, err := client.LookupNS(context.Background(), "ooni.io")
 	if err != nil {
 		t.Fatal(err)
