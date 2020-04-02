@@ -51,7 +51,22 @@ Omit `-tags nomk` to link with MK.
 ./build-android.bash
 ```
 
-When building Android bindings, we automatically omit linking with MK.
+When building Android bindings, we automatically omit linking with MK. We
+automatically build Android brindings whenever commits are pushed to the
+`mobile-staging` branch. Such builds could be integrated by using:
+
+```Groovy
+maven { url "https://dl.bintray.com/ooni/android/" }
+```
+
+and
+
+```Groovy
+implementation 'org.ooni:oonimkall:VERSION'
+```
+
+Where VERSION is like `2020.03.30-231914` corresponding to the moment in
+time in which the version has been built.
 
 ## Release procedure
 
