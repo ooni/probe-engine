@@ -62,7 +62,7 @@ maven { url "https://dl.bintray.com/ooni/android/" }
 and
 
 ```Groovy
-implementation 'org.ooni:oonimkall:VERSION'
+implementation "org.ooni:oonimkall:VERSION"
 ```
 
 Where VERSION is like `2020.03.30-231914` corresponding to the moment in
