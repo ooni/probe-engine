@@ -4,16 +4,19 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/miekg/dns"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
+	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestEmittingTransportSuccess(t *testing.T) {
+func TestEmitterTransportSuccess(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
 	handler := &resolver.SavingHandler{}
@@ -64,7 +67,7 @@ func TestEmittingTransportSuccess(t *testing.T) {
 	}
 }
 
-func TestEmittingTransportFailure(t *testing.T) {
+func TestEmitterTransportFailure(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
 	handler := &resolver.SavingHandler{}
@@ -104,5 +107,113 @@ func TestEmittingTransportFailure(t *testing.T) {
 	}
 	if events[0].DNSQuery.DurationSinceBeginning <= 0 {
 		t.Fatal("invalid duration since beginning")
+	}
+}
+
+func TestEmitterResolverFailure(t *testing.T) {
+	ctx := context.Background()
+	ctx = dialid.WithDialID(ctx)
+	ctx = transactionid.WithTransactionID(ctx)
+	handler := &resolver.SavingHandler{}
+	root := &modelx.MeasurementRoot{
+		Beginning: time.Now(),
+		Handler:   handler,
+	}
+	ctx = modelx.WithMeasurementRoot(ctx, root)
+	r := resolver.EmitterResolver{Resolver: resolver.NewSerialResolver(
+		resolver.DNSOverHTTPS{
+			Do: func(req *http.Request) (*http.Response, error) {
+				return nil, io.EOF
+			},
+			URL: "https://dns.google.com/",
+		},
+	)}
+	replies, err := r.LookupHost(ctx, "www.google.com")
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("not the error we expected")
+	}
+	if replies != nil {
+		t.Fatal("expected nil replies")
+	}
+	events := handler.Read()
+	if len(events) != 2 {
+		t.Fatal("unexpected number of events")
+	}
+	if events[0].ResolveStart == nil {
+		t.Fatal("missing ResolveStart field")
+	}
+	if events[0].ResolveStart.DialID == 0 {
+		t.Fatal("invalid DialID")
+	}
+	if events[0].ResolveStart.DurationSinceBeginning <= 0 {
+		t.Fatal("invalid duration since beginning")
+	}
+	if events[0].ResolveStart.Hostname != "www.google.com" {
+		t.Fatal("invalid Hostname")
+	}
+	if events[0].ResolveStart.TransactionID == 0 {
+		t.Fatal("invalid TransactionID")
+	}
+	if events[0].ResolveStart.TransportAddress != "https://dns.google.com/" {
+		t.Fatal("invalid TransportAddress")
+	}
+	if events[0].ResolveStart.TransportNetwork != "doh" {
+		t.Fatal("invalid TransportNetwork")
+	}
+	if events[1].ResolveDone == nil {
+		t.Fatal("missing ResolveDone field")
+	}
+	if events[1].ResolveDone.DialID == 0 {
+		t.Fatal("invalid DialID")
+	}
+	if events[1].ResolveDone.DurationSinceBeginning <= 0 {
+		t.Fatal("invalid duration since beginning")
+	}
+	if events[1].ResolveDone.Error != io.EOF {
+		t.Fatal("invalid Error")
+	}
+	if events[1].ResolveDone.Hostname != "www.google.com" {
+		t.Fatal("invalid Hostname")
+	}
+	if events[1].ResolveDone.TransactionID == 0 {
+		t.Fatal("invalid TransactionID")
+	}
+	if events[1].ResolveDone.TransportAddress != "https://dns.google.com/" {
+		t.Fatal("invalid TransportAddress")
+	}
+	if events[1].ResolveDone.TransportNetwork != "doh" {
+		t.Fatal("invalid TransportNetwork")
+	}
+}
+
+func TestEmitterResolverSuccess(t *testing.T) {
+	ctx := context.Background()
+	ctx = dialid.WithDialID(ctx)
+	ctx = transactionid.WithTransactionID(ctx)
+	handler := &resolver.SavingHandler{}
+	root := &modelx.MeasurementRoot{
+		Beginning: time.Now(),
+		Handler:   handler,
+	}
+	ctx = modelx.WithMeasurementRoot(ctx, root)
+	r := resolver.EmitterResolver{Resolver: resolver.NewMockableResolverWithResult(
+		[]string{"8.8.8.8"},
+	)}
+	replies, err := r.LookupHost(ctx, "dns.google.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(replies) != 1 {
+		t.Fatal("expected a single replies")
+	}
+	events := handler.Read()
+	if len(events) != 2 {
+		t.Fatal("unexpected number of events")
+	}
+	if events[1].ResolveDone == nil {
+		t.Fatal("missing ResolveDone field")
+	}
+	if events[1].ResolveDone.Addresses[0] != "8.8.8.8" {
+		t.Fatal("invalid Addresses")
 	}
 }
