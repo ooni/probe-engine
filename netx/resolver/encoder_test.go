@@ -10,7 +10,7 @@ import (
 
 func TestUnitEncoderEncodeA(t *testing.T) {
 	e := resolver.MiekgEncoder{}
-	data, err := e.EncodeA("x.org", false)
+	data, err := e.Encode("x.org", dns.TypeA, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func TestUnitEncoderEncodeA(t *testing.T) {
 
 func TestUnitEncoderEncodeAAAA(t *testing.T) {
 	e := resolver.MiekgEncoder{}
-	data, err := e.EncodeAAAA("x.org", false)
+	data, err := e.Encode("x.org", dns.TypeAAAA, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,14 +69,14 @@ func TestUnitEncoderPadding(t *testing.T) {
 	// array of values we obtain the right query size.
 	getquerylen := func(domainlen int, padding bool) int {
 		e := resolver.MiekgEncoder{}
-		data, err := e.EncodeA(
+		data, err := e.Encode(
 			// This is not a valid name because it ends up being way
 			// longer than 255 octets. However, the library is allowing
 			// us to generate such name and we are not going to send
 			// it on the wire. Also, we check below that the query that
 			// we generate is long enough, so we should be good.
 			dns.Fqdn(strings.Repeat("x.", domainlen)),
-			padding,
+			dns.TypeA, padding,
 		)
 		if err != nil {
 			t.Fatal(err)

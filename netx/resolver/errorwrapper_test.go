@@ -46,10 +46,10 @@ func TestUnitErrorWrapperFailure(t *testing.T) {
 	if errWrapper.ConnID != 0 {
 		t.Fatal("unexpected ConnID")
 	}
-	if errWrapper.DialID != 1 {
+	if errWrapper.DialID == 0 {
 		t.Fatal("unexpected DialID")
 	}
-	if errWrapper.TransactionID != 1 {
+	if errWrapper.TransactionID == 0 {
 		t.Fatal("unexpected TransactionID")
 	}
 	if errWrapper.Operation != "resolve" {
