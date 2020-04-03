@@ -4,25 +4,18 @@ import (
 	"context"
 )
 
-// Chain is a chain resolver.
+// Chain is a chain resolver. The primary resolver is used first and, if that
+// fails, we then attempt with the secondary resolver.
 type Chain struct {
-	primary   Resolver
-	secondary Resolver
+	Primary   Resolver
+	Secondary Resolver
 }
 
-// ChainResolvers chains two resolvers.
-func ChainResolvers(primary, secondary Resolver) Chain {
-	return Chain{
-		primary:   primary,
-		secondary: secondary,
-	}
-}
-
-// LookupHost returns the IP addresses of a host
+// LookupHost implements Resolver.LookupHost
 func (c Chain) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	addrs, err := c.primary.LookupHost(ctx, hostname)
+	addrs, err := c.Primary.LookupHost(ctx, hostname)
 	if err != nil {
-		addrs, err = c.secondary.LookupHost(ctx, hostname)
+		addrs, err = c.Secondary.LookupHost(ctx, hostname)
 	}
 	return addrs, err
 }

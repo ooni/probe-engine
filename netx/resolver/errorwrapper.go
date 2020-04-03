@@ -8,12 +8,12 @@ import (
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 )
 
-// ErrorWrapper is a resolver that knows about wrapping errors.
+// ErrorWrapper is a Resolver that knows about wrapping errors.
 type ErrorWrapper struct {
 	Resolver
 }
 
-// LookupHost returns the IP addresses of a host
+// LookupHost implements Resolver.LookupHost
 func (r ErrorWrapper) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	dialID := dialid.ContextDialID(ctx)
 	txID := transactionid.ContextTransactionID(ctx)

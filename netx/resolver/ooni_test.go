@@ -14,8 +14,9 @@ import (
 
 func TestUnitOONIGettingTransport(t *testing.T) {
 	txp := resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853")
-	r := resolver.NewOONIResolver(txp)
-	if txp != r.Transport() {
+	r := resolver.NewOONI(txp)
+	rtx := r.Transport()
+	if rtx.Network() != "dot" || rtx.Address() != "8.8.8.8:853" {
 		t.Fatal("not the transport we expected")
 	}
 }
@@ -36,7 +37,7 @@ func TestUnitOONIEncodeError(t *testing.T) {
 func TestUnitOONIRoundTripError(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.FakeTransport{Err: mocked}
-	r := resolver.NewOONIResolver(txp)
+	r := resolver.NewOONI(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if !errors.Is(err, mocked) {
 		t.Fatal("not the error we expected")
@@ -48,7 +49,7 @@ func TestUnitOONIRoundTripError(t *testing.T) {
 
 func TestUnitOONIWithEmptyReply(t *testing.T) {
 	txp := resolver.FakeTransport{Data: resolver.GenReplySuccess(t, dns.TypeA)}
-	r := resolver.NewOONIResolver(txp)
+	r := resolver.NewOONI(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if err == nil || !strings.HasSuffix(err.Error(), "no response returned") {
 		t.Fatal("not the error we expected")
@@ -62,7 +63,7 @@ func TestUnitOONIWithAReply(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Data: resolver.GenReplySuccess(t, dns.TypeA, "8.8.8.8"),
 	}
-	r := resolver.NewOONIResolver(txp)
+	r := resolver.NewOONI(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +77,7 @@ func TestUnitOONIWithAAAAReply(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Data: resolver.GenReplySuccess(t, dns.TypeAAAA, "::1"),
 	}
-	r := resolver.NewOONIResolver(txp)
+	r := resolver.NewOONI(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +91,7 @@ func TestUnitOONIWithTimeout(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Err: &net.OpError{Err: syscall.ETIMEDOUT, Op: "dial"},
 	}
-	r := resolver.NewOONIResolver(txp)
+	r := resolver.NewOONI(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if !errors.Is(err, syscall.ETIMEDOUT) {
 		t.Fatal("not the error we expected")

@@ -7,7 +7,8 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 )
 
-// Mockable is a broken resolver.
+// Mockable is a mockable resolver that other packages can
+// import to simulate a resolver's behaviour.
 type Mockable struct {
 	NumFailures *atomicx.Int64
 	err         error

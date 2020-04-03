@@ -49,7 +49,8 @@ func IsBogon(address string) bool {
 	return ip == nil || isPrivate(ip)
 }
 
-// Bogon is a bogon aware resolver.
+// Bogon is a bogon aware resolver. When a bogon is encountered in
+// a reply, this resolver will return an error.
 type Bogon struct {
 	Resolver
 }

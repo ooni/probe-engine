@@ -6,7 +6,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-// The Decoder decodes a DNS reply into A or AAAA entries
+// The Decoder decodes a DNS reply into A or AAAA entries. It will use the
+// provided qtype and only look for mathing entries. It will return error if
+// there are no entries for the requested qtype inside the reply.
 type Decoder interface {
 	Decode(qtype uint16, data []byte) ([]string, error)
 }
