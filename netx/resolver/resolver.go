@@ -19,23 +19,23 @@ func NewResolverSystem() *ParentResolver {
 
 // NewResolverUDP creates a new UDP resolver.
 func NewResolverUDP(dialer Dialer, address string) *ParentResolver {
-	return NewParentResolver(
-		NewOONIResolver(NewDNSOverUDP(dialer, address)),
-	)
+	return NewParentResolver(NewOONIResolver(EmittingTransport{
+		RoundTripper: NewDNSOverUDP(dialer, address),
+	}))
 }
 
 // NewResolverTCP creates a new TCP resolver.
 func NewResolverTCP(dial DialContextFunc, address string) *ParentResolver {
-	return NewParentResolver(
-		NewOONIResolver(NewDNSOverTCP(dial, address)),
-	)
+	return NewParentResolver(NewOONIResolver(EmittingTransport{
+		RoundTripper: NewDNSOverTCP(dial, address),
+	}))
 }
 
 // NewResolverTLS creates a new DoT resolver.
 func NewResolverTLS(dial DialContextFunc, address string) *ParentResolver {
-	return NewParentResolver(
-		NewOONIResolver(NewDNSOverTLS(dial, address)),
-	)
+	return NewParentResolver(NewOONIResolver(EmittingTransport{
+		RoundTripper: NewDNSOverTLS(dial, address),
+	}))
 }
 
 // NewResolverHTTPS creates a new DoH resolver.

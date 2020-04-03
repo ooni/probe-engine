@@ -68,3 +68,33 @@ func (c *FakeConn) SetReadDeadline(t time.Time) (err error) {
 func (c *FakeConn) SetWriteDeadline(t time.Time) (err error) {
 	return c.SetWriteDeadlineError
 }
+
+type FakeTransport struct {
+	Data []byte
+	Err  error
+}
+
+func (ft FakeTransport) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
+	return ft.Data, ft.Err
+}
+
+func (ft FakeTransport) RequiresPadding() bool {
+	return false
+}
+
+func (ft FakeTransport) Address() string {
+	return ""
+}
+
+func (ft FakeTransport) Network() string {
+	return "fake"
+}
+
+type FakeEncoder struct {
+	Data []byte
+	Err  error
+}
+
+func (fe FakeEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte, error) {
+	return fe.Data, fe.Err
+}
