@@ -4,22 +4,11 @@ import "github.com/miekg/dns"
 
 // The Encoder encodes DNS queries to bytes
 type Encoder interface {
-	EncodeA(domain string, padding bool) ([]byte, error)
-	EncodeAAAA(domain string, padding bool) ([]byte, error)
+	Encode(domain string, qtype uint16, padding bool) ([]byte, error)
 }
 
 // MiekgEncoder uses github.com/miekg/dns to implement the Encoder.
 type MiekgEncoder struct{}
-
-// EncodeA implements Encoder.EncodeA
-func (e MiekgEncoder) EncodeA(domain string, padding bool) ([]byte, error) {
-	return e.encode(domain, dns.TypeA, padding)
-}
-
-// EncodeAAAA implements Encoder.EncodeAAAA
-func (e MiekgEncoder) EncodeAAAA(domain string, padding bool) ([]byte, error) {
-	return e.encode(domain, dns.TypeAAAA, padding)
-}
 
 const (
 	// PaddingDesiredBlockSize is the size that the padded query should be multiple of
@@ -32,7 +21,8 @@ const (
 	DNSSECEnabled = true
 )
 
-func (e MiekgEncoder) encode(domain string, qtype uint16, padding bool) ([]byte, error) {
+// Encode implements Encoder.Encode
+func (e MiekgEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte, error) {
 	question := dns.Question{
 		Name:   dns.Fqdn(domain),
 		Qtype:  qtype,
