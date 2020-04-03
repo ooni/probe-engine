@@ -13,7 +13,6 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/netx/resolver"
 )
 
 // Dialer performs measurements while dialing.
@@ -28,7 +27,7 @@ func newDialer(beginning time.Time, handler modelx.Handler) *Dialer {
 	return &Dialer{
 		Beginning: beginning,
 		Handler:   handler,
-		Resolver:  resolver.NewResolverSystem(),
+		Resolver:  newResolverSystem(),
 		TLSConfig: new(tls.Config),
 	}
 }
