@@ -93,3 +93,5 @@ func (t DNSOverTCP) Network() string {
 func (t DNSOverTCP) Address() string {
 	return t.address
 }
+
+var _ RoundTripper = DNSOverTCP{}

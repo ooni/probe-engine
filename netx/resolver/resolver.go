@@ -14,26 +14,26 @@ type Resolver interface {
 
 // NewResolverSystem creates a new Go/system resolver.
 func NewResolverSystem() *ParentResolver {
-	return NewParentResolver(System{})
+	return NewParentResolver(SystemResolver{})
 }
 
 // NewResolverUDP creates a new UDP resolver.
 func NewResolverUDP(dialer Dialer, address string) *ParentResolver {
-	return NewParentResolver(NewSerial(Emitter{
+	return NewParentResolver(NewSerial(EmitterTransport{
 		RoundTripper: NewDNSOverUDP(dialer, address),
 	}))
 }
 
 // NewResolverTCP creates a new TCP resolver.
 func NewResolverTCP(dial DialContextFunc, address string) *ParentResolver {
-	return NewParentResolver(NewSerial(Emitter{
+	return NewParentResolver(NewSerial(EmitterTransport{
 		RoundTripper: NewDNSOverTCP(dial, address),
 	}))
 }
 
 // NewResolverTLS creates a new DoT resolver.
 func NewResolverTLS(dial DialContextFunc, address string) *ParentResolver {
-	return NewParentResolver(NewSerial(Emitter{
+	return NewParentResolver(NewSerial(EmitterTransport{
 		RoundTripper: NewDNSOverTLS(dial, address),
 	}))
 }

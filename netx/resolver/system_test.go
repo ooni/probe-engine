@@ -8,7 +8,7 @@ import (
 )
 
 func TestUnitSystemResolverTransport(t *testing.T) {
-	r := resolver.System{}
+	r := resolver.SystemResolver{}
 	transport := r.Transport()
 	reply, err := transport.RoundTrip(context.Background(), nil)
 	if err == nil || err.Error() != "not implemented" {
@@ -29,7 +29,7 @@ func TestUnitSystemResolverTransport(t *testing.T) {
 }
 
 func TestIntegrationSystemResolverLookupHost(t *testing.T) {
-	r := resolver.System{}
+	r := resolver.SystemResolver{}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
 		t.Fatal(err)

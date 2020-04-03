@@ -22,7 +22,7 @@ func TestEmittingTransportSuccess(t *testing.T) {
 		Handler:   handler,
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	txp := resolver.Emitter{RoundTripper: resolver.FakeTransport{
+	txp := resolver.EmitterTransport{RoundTripper: resolver.FakeTransport{
 		Data: resolver.GenReplySuccess(t, dns.TypeA, "8.8.8.8"),
 	}}
 	e := resolver.MiekgEncoder{}
@@ -74,7 +74,7 @@ func TestEmittingTransportFailure(t *testing.T) {
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
 	mocked := errors.New("mocked error")
-	txp := resolver.Emitter{RoundTripper: resolver.FakeTransport{
+	txp := resolver.EmitterTransport{RoundTripper: resolver.FakeTransport{
 		Err: mocked,
 	}}
 	e := resolver.MiekgEncoder{}

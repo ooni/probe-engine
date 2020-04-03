@@ -9,7 +9,7 @@ import (
 )
 
 func TestChainLookupHost(t *testing.T) {
-	client := resolver.Chain{
+	client := resolver.ChainResolver{
 		Primary:   resolver.NewMockableResolverThatFails(),
 		Secondary: new(net.Resolver),
 	}

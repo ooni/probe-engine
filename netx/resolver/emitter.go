@@ -8,13 +8,13 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Emitter is a RoundTripper that emits events when they occur.
-type Emitter struct {
+// EmitterTransport is a RoundTripper that emits events when they occur.
+type EmitterTransport struct {
 	RoundTripper
 }
 
 // RoundTrip implements RoundTripper.RoundTrip
-func (txp Emitter) RoundTrip(ctx context.Context, querydata []byte) ([]byte, error) {
+func (txp EmitterTransport) RoundTrip(ctx context.Context, querydata []byte) ([]byte, error) {
 	root := modelx.ContextMeasurementRootOrDefault(ctx)
 	root.Handler.OnMeasurement(modelx.Measurement{
 		DNSQuery: &modelx.DNSQueryEvent{
@@ -36,3 +36,5 @@ func (txp Emitter) RoundTrip(ctx context.Context, querydata []byte) ([]byte, err
 	})
 	return replydata, nil
 }
+
+var _ RoundTripper = EmitterTransport{}

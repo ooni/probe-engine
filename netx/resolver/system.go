@@ -6,8 +6,8 @@ import (
 	"net"
 )
 
-// System is the system resolver
-type System struct{}
+// SystemResolver is the system resolver
+type SystemResolver struct{}
 
 // SystemTransport is the fake transport for the system resolver
 type SystemTransport struct{}
@@ -33,11 +33,14 @@ func (SystemTransport) Address() string {
 }
 
 // Transport returns the transport being used
-func (r System) Transport() RoundTripper {
+func (r SystemResolver) Transport() RoundTripper {
 	return SystemTransport{}
 }
 
 // LookupHost returns the IP addresses of a host
-func (r System) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	return net.DefaultResolver.LookupHost(ctx, hostname)
 }
+
+var _ Resolver = SystemResolver{}
+var _ RoundTripper = SystemTransport{}

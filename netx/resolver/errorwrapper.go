@@ -8,13 +8,13 @@ import (
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 )
 
-// ErrorWrapper is a Resolver that knows about wrapping errors.
-type ErrorWrapper struct {
+// ErrorWrapperResolver is a Resolver that knows about wrapping errors.
+type ErrorWrapperResolver struct {
 	Resolver
 }
 
 // LookupHost implements Resolver.LookupHost
-func (r ErrorWrapper) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r ErrorWrapperResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	dialID := dialid.ContextDialID(ctx)
 	txID := transactionid.ContextTransactionID(ctx)
 	addrs, err := r.Resolver.LookupHost(ctx, hostname)
@@ -26,3 +26,5 @@ func (r ErrorWrapper) LookupHost(ctx context.Context, hostname string) ([]string
 	}.MaybeBuild()
 	return addrs, err
 }
+
+var _ Resolver = ErrorWrapperResolver{}

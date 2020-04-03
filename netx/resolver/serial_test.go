@@ -24,7 +24,7 @@ func TestUnitOONIGettingTransport(t *testing.T) {
 func TestUnitOONIEncodeError(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853")
-	r := resolver.Serial{Encoder: resolver.FakeEncoder{Err: mocked}, Txp: txp}
+	r := resolver.SerialResolver{Encoder: resolver.FakeEncoder{Err: mocked}, Txp: txp}
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
 	if !errors.Is(err, mocked) {
 		t.Fatal("not the error we expected")

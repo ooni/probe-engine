@@ -59,3 +59,5 @@ func (t DNSOverHTTPS) Network() string {
 func (t DNSOverHTTPS) Address() string {
 	return t.URL
 }
+
+var _ RoundTripper = DNSOverHTTPS{}

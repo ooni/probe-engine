@@ -24,9 +24,9 @@ type RoundTripper interface {
 	Address() string
 }
 
-// Serial is a resolver that first issues an A query and then
+// SerialResolver is a resolver that first issues an A query and then
 // issues an AAAA query for the requested domain.
-type Serial struct {
+type SerialResolver struct {
 	Encoder     Encoder
 	Decoder     Decoder
 	NumTimeouts *atomicx.Int64
@@ -34,8 +34,8 @@ type Serial struct {
 }
 
 // NewSerial creates a new OONI Resolver instance.
-func NewSerial(t RoundTripper) Serial {
-	return Serial{
+func NewSerial(t RoundTripper) SerialResolver {
+	return SerialResolver{
 		Encoder:     MiekgEncoder{},
 		Decoder:     MiekgDecoder{},
 		NumTimeouts: atomicx.NewInt64(),
@@ -44,12 +44,12 @@ func NewSerial(t RoundTripper) Serial {
 }
 
 // Transport returns the transport being used.
-func (r Serial) Transport() RoundTripper {
+func (r SerialResolver) Transport() RoundTripper {
 	return r.Txp
 }
 
 // LookupHost implements Resolver.LookupHost.
-func (r Serial) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r SerialResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string
 	addrsA, errA := r.roundTripWithRetry(ctx, hostname, dns.TypeA)
 	addrsAAAA, errAAAA := r.roundTripWithRetry(ctx, hostname, dns.TypeAAAA)
@@ -61,7 +61,7 @@ func (r Serial) LookupHost(ctx context.Context, hostname string) ([]string, erro
 	return addrs, nil
 }
 
-func (r Serial) roundTripWithRetry(
+func (r SerialResolver) roundTripWithRetry(
 	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
 	var errorslist []error
 	for i := 0; i < 3; i++ {
@@ -87,7 +87,7 @@ func (r Serial) roundTripWithRetry(
 	return nil, errorslist[0]
 }
 
-func (r Serial) roundTrip(
+func (r SerialResolver) roundTrip(
 	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
 	querydata, err := r.Encoder.Encode(hostname, qtype, r.Txp.RequiresPadding())
 	if err != nil {
@@ -99,3 +99,5 @@ func (r Serial) roundTrip(
 	}
 	return r.Decoder.Decode(qtype, replydata)
 }
+
+var _ Resolver = SerialResolver{}
