@@ -738,15 +738,6 @@ type MeasurementRoot struct {
 	// Beginning is the "zero" used to compute the elapsed time.
 	Beginning time.Time
 
-	// ErrDNSBogon is the kind of error that you would like this
-	// library to return when a bogon IP address is found. The
-	// default value, nil, causes this library to consider bogons
-	// as valid IP addresses. Setting this field to non-nil
-	// error causes the library instead fail when a bogon has
-	// been detected. The best value with which to initialize this
-	// field is the ErrDNSBogon variable in this package.
-	ErrDNSBogon error
-
 	// Handler is the handler that will handle events.
 	Handler Handler
 

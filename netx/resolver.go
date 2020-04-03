@@ -92,10 +92,10 @@ func newResolver(
 	// separately because it doesn't have any transport.
 	if network == "system" || network == "" {
 		return newResolverWrapper(
-			beginning, handler, resolver.NewResolverSystem()), nil
+			beginning, handler, newResolverSystem()), nil
 	}
 	if network == "doh" {
-		return newResolverWrapper(beginning, handler, resolver.NewResolverHTTPS(
+		return newResolverWrapper(beginning, handler, newResolverHTTPS(
 			newHTTPClientForDoH(beginning, handler), address,
 		)), nil
 	}
@@ -103,19 +103,19 @@ func newResolver(
 		// We need a child dialer here to avoid an endless loop where the
 		// dialer will ask us to resolve, we'll tell the dialer to dial, it
 		// will ask us to resolve, ...
-		return newResolverWrapper(beginning, handler, resolver.NewResolverTLS(
+		return newResolverWrapper(beginning, handler, newResolverTLS(
 			newDialer(beginning, handler).DialTLSContext, withPort(address, "853"),
 		)), nil
 	}
 	if network == "tcp" {
 		// Same rationale as above: avoid possible endless loop
-		return newResolverWrapper(beginning, handler, resolver.NewResolverTCP(
+		return newResolverWrapper(beginning, handler, newResolverTCP(
 			newDialer(beginning, handler).DialContext, withPort(address, "53"),
 		)), nil
 	}
 	if network == "udp" {
 		// Same rationale as above: avoid possible endless loop
-		return newResolverWrapper(beginning, handler, resolver.NewResolverUDP(
+		return newResolverWrapper(beginning, handler, newResolverUDP(
 			newDialer(beginning, handler), withPort(address, "53"),
 		)), nil
 	}
@@ -131,4 +131,33 @@ func NewResolver(network, address string) (modelx.DNSResolver, error) {
 // we can fallback to the secondary if primary is broken.
 func ChainResolvers(primary, secondary modelx.DNSResolver) modelx.DNSResolver {
 	return resolver.ChainResolver{Primary: primary, Secondary: secondary}
+}
+
+func resolverWrapResolver(r resolver.Resolver) resolver.EmitterResolver {
+	return resolver.EmitterResolver{Resolver: resolver.ErrorWrapperResolver{Resolver: r}}
+}
+
+func resolverWrapTransport(txp resolver.RoundTripper) resolver.EmitterResolver {
+	return resolverWrapResolver(resolver.NewSerialResolver(
+		resolver.EmitterTransport{RoundTripper: txp}))
+}
+
+func newResolverSystem() resolver.EmitterResolver {
+	return resolverWrapResolver(resolver.SystemResolver{})
+}
+
+func newResolverUDP(dialer resolver.Dialer, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverUDP(dialer, address))
+}
+
+func newResolverTCP(dial resolver.DialContextFunc, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverTCP(dial, address))
+}
+
+func newResolverTLS(dial resolver.DialContextFunc, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverTLS(dial, address))
+}
+
+func newResolverHTTPS(client *http.Client, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverHTTPS(client, address))
 }
