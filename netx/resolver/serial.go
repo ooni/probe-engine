@@ -24,19 +24,18 @@ type RoundTripper interface {
 	Address() string
 }
 
-// OONI is OONI's DNS resolver. It is a simplistic resolver where we
-// manually create and sequentially submit queries. It can use all the
-// transports for DNS supported by this library, however.
-type OONI struct {
+// Serial is a resolver that first issues an A query and then
+// issues an AAAA query for the requested domain.
+type Serial struct {
 	Encoder     Encoder
 	Decoder     Decoder
 	NumTimeouts *atomicx.Int64
 	Txp         RoundTripper
 }
 
-// NewOONI creates a new OONI Resolver instance.
-func NewOONI(t RoundTripper) OONI {
-	return OONI{
+// NewSerial creates a new OONI Resolver instance.
+func NewSerial(t RoundTripper) Serial {
+	return Serial{
 		Encoder:     MiekgEncoder{},
 		Decoder:     MiekgDecoder{},
 		NumTimeouts: atomicx.NewInt64(),
@@ -45,12 +44,12 @@ func NewOONI(t RoundTripper) OONI {
 }
 
 // Transport returns the transport being used.
-func (r OONI) Transport() RoundTripper {
+func (r Serial) Transport() RoundTripper {
 	return r.Txp
 }
 
 // LookupHost implements Resolver.LookupHost.
-func (r OONI) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r Serial) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string
 	addrsA, errA := r.roundTripWithRetry(ctx, hostname, dns.TypeA)
 	addrsAAAA, errAAAA := r.roundTripWithRetry(ctx, hostname, dns.TypeAAAA)
@@ -62,7 +61,7 @@ func (r OONI) LookupHost(ctx context.Context, hostname string) ([]string, error)
 	return addrs, nil
 }
 
-func (r OONI) roundTripWithRetry(
+func (r Serial) roundTripWithRetry(
 	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
 	var errorslist []error
 	for i := 0; i < 3; i++ {
@@ -88,7 +87,7 @@ func (r OONI) roundTripWithRetry(
 	return nil, errorslist[0]
 }
 
-func (r OONI) roundTrip(
+func (r Serial) roundTrip(
 	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
 	querydata, err := r.Encoder.Encode(hostname, qtype, r.Txp.RequiresPadding())
 	if err != nil {
