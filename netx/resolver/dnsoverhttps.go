@@ -8,21 +8,20 @@ import (
 	"net/http"
 )
 
-// DNSOverHTTPS is a DNS over HTTPS RoundTripper.
-//
-// As a known bug, this implementation does not cache the domain
-// name in the URL for reuse, but this should be easy to fix.
+// DNSOverHTTPS is a DNS over HTTPS RoundTripper. Requests are submitted over
+// an HTTP/HTTPS channel provided by URL using the Do function.
 type DNSOverHTTPS struct {
 	Do  func(req *http.Request) (*http.Response, error)
 	URL string
 }
 
-// NewDNSOverHTTPS creates a new Transport
+// NewDNSOverHTTPS creates a new DNSOverHTTP instance from the
+// specified http.Client and URL, as a convenience.
 func NewDNSOverHTTPS(client *http.Client, URL string) DNSOverHTTPS {
 	return DNSOverHTTPS{Do: client.Do, URL: URL}
 }
 
-// RoundTrip sends a request and receives a response.
+// RoundTrip implements RoundTripper.RoundTrip.
 func (t DNSOverHTTPS) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	req, err := http.NewRequest("POST", t.URL, bytes.NewReader(query))
 	if err != nil {

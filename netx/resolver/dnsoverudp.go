@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Dialer is the network dialer as assumed by this package.
+// Dialer is the network dialer interface assumed by this package.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
@@ -17,12 +17,12 @@ type DNSOverUDP struct {
 	address string
 }
 
-// NewDNSOverUDP creates a new Transport
+// NewDNSOverUDP creates a DNSOverUDP instance.
 func NewDNSOverUDP(dialer Dialer, address string) DNSOverUDP {
 	return DNSOverUDP{dialer: dialer, address: address}
 }
 
-// RoundTrip sends a request and receives a response.
+// RoundTrip implements RoundTripper.RoundTrip.
 func (t DNSOverUDP) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	conn, err := t.dialer.DialContext(ctx, "udp", t.address)
 	if err != nil {

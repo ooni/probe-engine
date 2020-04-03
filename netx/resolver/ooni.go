@@ -34,8 +34,8 @@ type OONI struct {
 	Txp         RoundTripper
 }
 
-// NewOONIResolver creates a new OONI Resolver instance.
-func NewOONIResolver(t RoundTripper) OONI {
+// NewOONI creates a new OONI Resolver instance.
+func NewOONI(t RoundTripper) OONI {
 	return OONI{
 		Encoder:     MiekgEncoder{},
 		Decoder:     MiekgDecoder{},
@@ -49,7 +49,7 @@ func (r OONI) Transport() RoundTripper {
 	return r.Txp
 }
 
-// LookupHost returns the IP addresses of a host
+// LookupHost implements Resolver.LookupHost.
 func (r OONI) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string
 	addrsA, errA := r.roundTripWithRetry(ctx, hostname, dns.TypeA)

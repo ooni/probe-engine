@@ -6,7 +6,6 @@ import (
 	"net"
 )
 
-// DialTLSContext is used in tests to dial TLS connections.
 func DialTLSContext(ctx context.Context, network, address string) (net.Conn, error) {
 	connch := make(chan net.Conn)
 	errch := make(chan error, 1)
