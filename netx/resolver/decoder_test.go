@@ -1,7 +1,6 @@
 package resolver_test
 
 import (
-	"net"
 	"strings"
 	"testing"
 
@@ -22,7 +21,7 @@ func TestUnitDecoderUnpackError(t *testing.T) {
 
 func TestUnitDecoderNXDOMAIN(t *testing.T) {
 	d := resolver.MiekgDecoder{}
-	data, err := d.Decode(newErrorReply(t, dns.RcodeNameError))
+	data, err := d.Decode(resolver.GenReplyError(t, dns.RcodeNameError))
 	if err == nil || !strings.HasSuffix(err.Error(), "no such host") {
 		t.Fatal("not the error we expected")
 	}
@@ -33,7 +32,7 @@ func TestUnitDecoderNXDOMAIN(t *testing.T) {
 
 func TestUnitDecoderOtherError(t *testing.T) {
 	d := resolver.MiekgDecoder{}
-	data, err := d.Decode(newErrorReply(t, dns.RcodeRefused))
+	data, err := d.Decode(resolver.GenReplyError(t, dns.RcodeRefused))
 	if err == nil || !strings.HasSuffix(err.Error(), "query failed") {
 		t.Fatal("not the error we expected")
 	}
@@ -42,31 +41,9 @@ func TestUnitDecoderOtherError(t *testing.T) {
 	}
 }
 
-func newErrorReply(t *testing.T, code int) []byte {
-	question := dns.Question{
-		Name:   dns.Fqdn("x.org"),
-		Qtype:  dns.TypeA,
-		Qclass: dns.ClassINET,
-	}
-	query := new(dns.Msg)
-	query.Id = dns.Id()
-	query.RecursionDesired = true
-	query.Question = make([]dns.Question, 1)
-	query.Question[0] = question
-	reply := new(dns.Msg)
-	reply.Compress = true
-	reply.MsgHdr.RecursionAvailable = true
-	reply.SetRcode(query, code)
-	data, err := reply.Pack()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return data
-}
-
 func TestUnitDecoderNoAddress(t *testing.T) {
 	d := resolver.MiekgDecoder{}
-	data, err := d.Decode(newSuccessReply(t, dns.TypeA))
+	data, err := d.Decode(resolver.GenReplySuccess(t, dns.TypeA))
 	if err == nil || !strings.HasSuffix(err.Error(), "no response returned") {
 		t.Fatal("not the error we expected")
 	}
@@ -77,7 +54,7 @@ func TestUnitDecoderNoAddress(t *testing.T) {
 
 func TestUnitDecoderDecodeA(t *testing.T) {
 	d := resolver.MiekgDecoder{}
-	data, err := d.Decode(newSuccessReply(t, dns.TypeA, "1.1.1.1", "8.8.8.8"))
+	data, err := d.Decode(resolver.GenReplySuccess(t, dns.TypeA, "1.1.1.1", "8.8.8.8"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +71,7 @@ func TestUnitDecoderDecodeA(t *testing.T) {
 
 func TestUnitDecoderDecodeAAAA(t *testing.T) {
 	d := resolver.MiekgDecoder{}
-	data, err := d.Decode(newSuccessReply(t, dns.TypeAAAA, "::1", "fe80::1"))
+	data, err := d.Decode(resolver.GenReplySuccess(t, dns.TypeAAAA, "::1", "fe80::1"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,50 +84,4 @@ func TestUnitDecoderDecodeAAAA(t *testing.T) {
 	if data[1] != "fe80::1" {
 		t.Fatal("invalid second IPv6 entry")
 	}
-}
-
-func newSuccessReply(t *testing.T, qtype uint16, ips ...string) []byte {
-	question := dns.Question{
-		Name:   dns.Fqdn("x.org"),
-		Qtype:  qtype,
-		Qclass: dns.ClassINET,
-	}
-	query := new(dns.Msg)
-	query.Id = dns.Id()
-	query.RecursionDesired = true
-	query.Question = make([]dns.Question, 1)
-	query.Question[0] = question
-	reply := new(dns.Msg)
-	reply.Compress = true
-	reply.MsgHdr.RecursionAvailable = true
-	reply.SetReply(query)
-	for _, ip := range ips {
-		switch qtype {
-		case dns.TypeA:
-			reply.Answer = append(reply.Answer, &dns.A{
-				Hdr: dns.RR_Header{
-					Name:   dns.Fqdn("x.org"),
-					Rrtype: qtype,
-					Class:  dns.ClassINET,
-					Ttl:    0,
-				},
-				A: net.ParseIP(ip),
-			})
-		case dns.TypeAAAA:
-			reply.Answer = append(reply.Answer, &dns.AAAA{
-				Hdr: dns.RR_Header{
-					Name:   dns.Fqdn("x.org"),
-					Rrtype: qtype,
-					Class:  dns.ClassINET,
-					Ttl:    0,
-				},
-				AAAA: net.ParseIP(ip),
-			})
-		}
-	}
-	data, err := reply.Pack()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return data
 }
