@@ -15,7 +15,8 @@ import (
 func TestUnitOONIGettingTransport(t *testing.T) {
 	txp := resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853")
 	r := resolver.NewOONIResolver(txp)
-	if txp != r.Transport() {
+	rtx := r.Transport()
+	if rtx.Network() != "dot" || rtx.Address() != "8.8.8.8:853" {
 		t.Fatal("not the transport we expected")
 	}
 }

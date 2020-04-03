@@ -25,8 +25,8 @@ type DNSOverTCP struct {
 }
 
 // NewDNSOverTCP creates a new TCP Transport
-func NewDNSOverTCP(dial DialContextFunc, address string) *DNSOverTCP {
-	return &DNSOverTCP{
+func NewDNSOverTCP(dial DialContextFunc, address string) DNSOverTCP {
+	return DNSOverTCP{
 		dial:            dial,
 		address:         address,
 		network:         "tcp",
@@ -35,8 +35,8 @@ func NewDNSOverTCP(dial DialContextFunc, address string) *DNSOverTCP {
 }
 
 // NewDNSOverTLS creates a new TLS Transport
-func NewDNSOverTLS(dial DialContextFunc, address string) *DNSOverTCP {
-	return &DNSOverTCP{
+func NewDNSOverTLS(dial DialContextFunc, address string) DNSOverTCP {
+	return DNSOverTCP{
 		dial:            dial,
 		address:         address,
 		network:         "dot",
@@ -45,7 +45,7 @@ func NewDNSOverTLS(dial DialContextFunc, address string) *DNSOverTCP {
 }
 
 // RoundTrip sends a request and receives a response.
-func (t *DNSOverTCP) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
+func (t DNSOverTCP) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	if len(query) > math.MaxUint16 {
 		return nil, errors.New("query too long")
 	}
@@ -79,16 +79,16 @@ func (t *DNSOverTCP) RoundTrip(ctx context.Context, query []byte) ([]byte, error
 
 // RequiresPadding returns true for DoT and false for TCP
 // according to RFC8467.
-func (t *DNSOverTCP) RequiresPadding() bool {
+func (t DNSOverTCP) RequiresPadding() bool {
 	return t.requiresPadding
 }
 
 // Network returns the transport network (e.g., doh, dot)
-func (t *DNSOverTCP) Network() string {
+func (t DNSOverTCP) Network() string {
 	return t.network
 }
 
 // Address returns the upstream server address.
-func (t *DNSOverTCP) Address() string {
+func (t DNSOverTCP) Address() string {
 	return t.address
 }
