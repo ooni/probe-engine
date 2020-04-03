@@ -33,8 +33,8 @@ type SerialResolver struct {
 	Txp         RoundTripper
 }
 
-// NewSerial creates a new OONI Resolver instance.
-func NewSerial(t RoundTripper) SerialResolver {
+// NewSerialResolver creates a new OONI Resolver instance.
+func NewSerialResolver(t RoundTripper) SerialResolver {
 	return SerialResolver{
 		Encoder:     MiekgEncoder{},
 		Decoder:     MiekgDecoder{},
