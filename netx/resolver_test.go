@@ -109,7 +109,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	primary := resolver.NewMockableResolverThatFails()
+	primary := resolver.NewFakeResolverThatFails()
 	dialer := netx.NewDialer()
 	resolver := netx.ChainResolvers(primary, fallback)
 	dialer.SetResolver(resolver)

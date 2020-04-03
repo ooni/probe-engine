@@ -10,7 +10,7 @@ import (
 
 func TestChainLookupHost(t *testing.T) {
 	client := resolver.ChainResolver{
-		Primary:   resolver.NewMockableResolverThatFails(),
+		Primary:   resolver.NewFakeResolverThatFails(),
 		Secondary: new(net.Resolver),
 	}
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")

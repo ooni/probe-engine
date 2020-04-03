@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net"
+	"testing"
 	"time"
 )
 
@@ -97,4 +98,27 @@ type FakeEncoder struct {
 
 func (fe FakeEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte, error) {
 	return fe.Data, fe.Err
+}
+
+func TestUnitFakeResolverThatFails(t *testing.T) {
+	client := NewFakeResolverThatFails()
+	addrs, err := client.LookupHost(context.Background(), "www.google.com")
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if addrs != nil {
+		t.Fatal("expected nil here")
+	}
+}
+
+func TestUnitFakeResolverWithResult(t *testing.T) {
+	orig := []string{"10.0.0.1"}
+	client := NewFakeResolverWithResult(orig)
+	addrs, err := client.LookupHost(context.Background(), "www.google.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(orig) != len(addrs) || orig[0] != addrs[0] {
+		t.Fatal("not the result we expected")
+	}
 }
