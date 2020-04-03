@@ -4,12 +4,9 @@ import (
 	"context"
 	"errors"
 	"net"
-	"time"
 
 	"github.com/miekg/dns"
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // RoundTripper represents an abstract DNS transport.
@@ -27,101 +24,51 @@ type RoundTripper interface {
 	Address() string
 }
 
-// OONIResolver is OONI's DNS client. It is a simplistic client where we
-// manually create and submit queries. It can use all the transports
-// for DNS supported by this library, however.
-type OONIResolver struct {
-	ntimeouts *atomicx.Int64
-	transport RoundTripper
+// OONI is OONI's DNS resolver. It is a simplistic resolver where we
+// manually create and sequentially submit queries. It can use all the
+// transports for DNS supported by this library, however.
+type OONI struct {
+	Encoder     Encoder
+	Decoder     Decoder
+	NumTimeouts *atomicx.Int64
+	Txp         RoundTripper
 }
 
 // NewOONIResolver creates a new OONI Resolver instance.
-func NewOONIResolver(t RoundTripper) *OONIResolver {
-	return &OONIResolver{
-		ntimeouts: atomicx.NewInt64(),
-		transport: t,
+func NewOONIResolver(t RoundTripper) OONI {
+	return OONI{
+		Encoder:     MiekgEncoder{},
+		Decoder:     MiekgDecoder{},
+		NumTimeouts: atomicx.NewInt64(),
+		Txp:         t,
 	}
 }
 
 // Transport returns the transport being used.
-func (c *OONIResolver) Transport() RoundTripper {
-	return c.transport
+func (r OONI) Transport() RoundTripper {
+	return r.Txp
 }
-
-var errNotImpl = errors.New("Not implemented")
 
 // LookupHost returns the IP addresses of a host
-func (c *OONIResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r OONI) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string
-	var reply *dns.Msg
-	reply, errA := c.roundTripWithRetry(ctx, hostname, dns.TypeA)
-	if errA == nil {
-		for _, answer := range reply.Answer {
-			if rra, ok := answer.(*dns.A); ok {
-				ip := rra.A
-				addrs = append(addrs, ip.String())
-			}
-		}
-	}
-	reply, errAAAA := c.roundTripWithRetry(ctx, hostname, dns.TypeAAAA)
-	if errAAAA == nil {
-		for _, answer := range reply.Answer {
-			if rra, ok := answer.(*dns.AAAA); ok {
-				ip := rra.AAAA
-				addrs = append(addrs, ip.String())
-			}
-		}
-	}
-	return lookupHostResult(addrs, errA, errAAAA)
-}
-
-func lookupHostResult(addrs []string, errA, errAAAA error) ([]string, error) {
-	if len(addrs) > 0 {
-		return addrs, nil
-	}
-	if errA != nil {
+	addrsA, errA := r.roundTripWithRetry(ctx, hostname, dns.TypeA)
+	addrsAAAA, errAAAA := r.roundTripWithRetry(ctx, hostname, dns.TypeAAAA)
+	if errA != nil && errAAAA != nil {
 		return nil, errA
 	}
-	if errAAAA != nil {
-		return nil, errAAAA
-	}
-	return nil, errors.New("ooniresolver: no response returned")
+	addrs = append(addrs, addrsA...)
+	addrs = append(addrs, addrsAAAA...)
+	return addrs, nil
 }
 
-func (c *OONIResolver) newQueryWithQuestion(q dns.Question, needspadding bool) (query *dns.Msg) {
-	query = new(dns.Msg)
-	query.Id = dns.Id()
-	query.RecursionDesired = true
-	query.Question = make([]dns.Question, 1)
-	query.Question[0] = q
-	if needspadding {
-		query.SetEdns0(EDNS0MaxResponseSize, DNSSECEnabled)
-		// Clients SHOULD pad queries to the closest multiple of
-		// 128 octets RFC8467#section-4.1. We inflate the query
-		// length by the size of the option (i.e. 4 octets). The
-		// cast to uint is necessary to make the modulus operation
-		// work as intended when the desiredBlockSize is smaller
-		// than (query.Len()+4) ¯\_(ツ)_/¯.
-		remainder := (PaddingDesiredBlockSize - uint(query.Len()+4)) % PaddingDesiredBlockSize
-		opt := new(dns.EDNS0_PADDING)
-		opt.Padding = make([]byte, remainder)
-		query.IsEdns0().Option = append(query.IsEdns0().Option, opt)
-	}
-	return
-}
-
-func (c *OONIResolver) roundTripWithRetry(
-	ctx context.Context, hostname string, qtype uint16,
-) (*dns.Msg, error) {
+func (r OONI) roundTripWithRetry(
+	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
 	var errorslist []error
 	for i := 0; i < 3; i++ {
-		reply, err := c.roundTrip(ctx, c.newQueryWithQuestion(dns.Question{
-			Name:   dns.Fqdn(hostname),
-			Qtype:  qtype,
-			Qclass: dns.ClassINET,
-		}, c.Transport().RequiresPadding()))
+		replies, err := r.roundTrip(ctx, hostname, qtype)
 		if err == nil {
-			return reply, nil
+			return replies, nil
 		}
 		errorslist = append(errorslist, err)
 		var operr *net.OpError
@@ -133,7 +80,7 @@ func (c *OONIResolver) roundTripWithRetry(
 			// so, the resulting failing operation is not correct.
 			break
 		}
-		c.ntimeouts.Add(1)
+		r.NumTimeouts.Add(1)
 	}
 	// bugfix: we MUST return one of the errors otherwise we confuse the
 	// mechanism in errwrap that classifies the root cause operation, since
@@ -141,75 +88,15 @@ func (c *OONIResolver) roundTripWithRetry(
 	return nil, errorslist[0]
 }
 
-func (c *OONIResolver) roundTrip(ctx context.Context, query *dns.Msg) (reply *dns.Msg, err error) {
-	return c.mockableRoundTrip(
-		ctx, query, func(msg *dns.Msg) ([]byte, error) {
-			return msg.Pack()
-		},
-		func(t RoundTripper, query []byte) (reply []byte, err error) {
-			// Pass ctx to round tripper for cancellation as well
-			// as to propagate context information
-			return t.RoundTrip(ctx, query)
-		},
-		func(msg *dns.Msg, data []byte) (err error) {
-			return msg.Unpack(data)
-		},
-	)
-}
-
-func (c *OONIResolver) mockableRoundTrip(
-	ctx context.Context,
-	query *dns.Msg,
-	pack func(msg *dns.Msg) ([]byte, error),
-	roundTrip func(t RoundTripper, query []byte) (reply []byte, err error),
-	unpack func(msg *dns.Msg, data []byte) (err error),
-) (reply *dns.Msg, err error) {
-	var (
-		querydata []byte
-		replydata []byte
-	)
-	querydata, err = pack(query)
+func (r OONI) roundTrip(
+	ctx context.Context, hostname string, qtype uint16) ([]string, error) {
+	querydata, err := r.Encoder.Encode(hostname, qtype, r.Txp.RequiresPadding())
 	if err != nil {
-		return
+		return nil, err
 	}
-	root := modelx.ContextMeasurementRootOrDefault(ctx)
-	root.Handler.OnMeasurement(modelx.Measurement{
-		DNSQuery: &modelx.DNSQueryEvent{
-			Data:                   querydata,
-			DialID:                 dialid.ContextDialID(ctx),
-			DurationSinceBeginning: time.Now().Sub(root.Beginning),
-			Msg:                    query,
-		},
-	})
-	replydata, err = roundTrip(c.transport, querydata)
+	replydata, err := r.Txp.RoundTrip(ctx, querydata)
 	if err != nil {
-		return
+		return nil, err
 	}
-	reply = new(dns.Msg)
-	err = unpack(reply, replydata)
-	if err != nil {
-		return
-	}
-	root.Handler.OnMeasurement(modelx.Measurement{
-		DNSReply: &modelx.DNSReplyEvent{
-			Data:                   replydata,
-			DialID:                 dialid.ContextDialID(ctx),
-			DurationSinceBeginning: time.Now().Sub(root.Beginning),
-			Msg:                    reply,
-		},
-	})
-	err = mapError(reply.Rcode)
-	return
-}
-
-func mapError(rcode int) error {
-	// TODO(bassosimone): map more errors to net.DNSError names
-	switch rcode {
-	case dns.RcodeSuccess:
-		return nil
-	case dns.RcodeNameError:
-		return errors.New("ooniresolver: no such host")
-	default:
-		return errors.New("ooniresolver: query failed")
-	}
+	return r.Decoder.Decode(qtype, replydata)
 }

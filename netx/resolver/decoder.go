@@ -8,14 +8,14 @@ import (
 
 // The Decoder decodes a DNS reply into A or AAAA entries
 type Decoder interface {
-	Decode(data []byte) ([]string, error)
+	Decode(qtype uint16, data []byte) ([]string, error)
 }
 
 // MiekgDecoder uses github.com/miekg/dns to implement the Decoder.
 type MiekgDecoder struct{}
 
 // Decode implements Decoder.Decode.
-func (d MiekgDecoder) Decode(data []byte) ([]string, error) {
+func (d MiekgDecoder) Decode(qtype uint16, data []byte) ([]string, error) {
 	reply := new(dns.Msg)
 	if err := reply.Unpack(data); err != nil {
 		return nil, err
@@ -30,13 +30,17 @@ func (d MiekgDecoder) Decode(data []byte) ([]string, error) {
 	}
 	var addrs []string
 	for _, answer := range reply.Answer {
-		if rra, ok := answer.(*dns.A); ok {
-			ip := rra.A
-			addrs = append(addrs, ip.String())
-		}
-		if rra, ok := answer.(*dns.AAAA); ok {
-			ip := rra.AAAA
-			addrs = append(addrs, ip.String())
+		switch qtype {
+		case dns.TypeA:
+			if rra, ok := answer.(*dns.A); ok {
+				ip := rra.A
+				addrs = append(addrs, ip.String())
+			}
+		case dns.TypeAAAA:
+			if rra, ok := answer.(*dns.AAAA); ok {
+				ip := rra.AAAA
+				addrs = append(addrs, ip.String())
+			}
 		}
 	}
 	if len(addrs) <= 0 {
