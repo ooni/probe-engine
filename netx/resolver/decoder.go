@@ -50,3 +50,5 @@ func (d MiekgDecoder) Decode(qtype uint16, data []byte) ([]string, error) {
 	}
 	return addrs, nil
 }
+
+var _ Decoder = MiekgDecoder{}

@@ -13,7 +13,7 @@ import (
 
 func TestUnitErrorWrapperSuccess(t *testing.T) {
 	orig := []string{"8.8.8.8"}
-	r := resolver.ErrorWrapper{
+	r := resolver.ErrorWrapperResolver{
 		Resolver: resolver.NewMockableResolverWithResult(orig),
 	}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
@@ -26,7 +26,7 @@ func TestUnitErrorWrapperSuccess(t *testing.T) {
 }
 
 func TestUnitErrorWrapperFailure(t *testing.T) {
-	r := resolver.ErrorWrapper{
+	r := resolver.ErrorWrapperResolver{
 		Resolver: resolver.NewMockableResolverThatFails(),
 	}
 	ctx := context.Background()

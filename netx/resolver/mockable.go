@@ -7,9 +7,9 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 )
 
-// Mockable is a mockable resolver that other packages can
+// MockableResolver is a mockable resolver that other packages can
 // import to simulate a resolver's behaviour.
-type Mockable struct {
+type MockableResolver struct {
 	NumFailures *atomicx.Int64
 	err         error
 	result      []string
@@ -17,14 +17,14 @@ type Mockable struct {
 
 // NewMockableResolverThatFails creates a new MockableResolver instance
 // that always returns an error indicating NXDOMAIN.
-func NewMockableResolverThatFails() Mockable {
-	return Mockable{NumFailures: atomicx.NewInt64(), err: errNotFound}
+func NewMockableResolverThatFails() MockableResolver {
+	return MockableResolver{NumFailures: atomicx.NewInt64(), err: errNotFound}
 }
 
 // NewMockableResolverWithResult creates a new MockableResolver
 // instance that always returns the specified result.
-func NewMockableResolverWithResult(r []string) Mockable {
-	return Mockable{NumFailures: atomicx.NewInt64(), result: r}
+func NewMockableResolverWithResult(r []string) MockableResolver {
+	return MockableResolver{NumFailures: atomicx.NewInt64(), result: r}
 }
 
 var errNotFound = &net.DNSError{
@@ -32,10 +32,12 @@ var errNotFound = &net.DNSError{
 }
 
 // LookupHost returns the IP addresses of a host
-func (c Mockable) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (c MockableResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if c.err != nil {
 		c.NumFailures.Add(1)
 		return nil, c.err
 	}
 	return c.result, nil
 }
+
+var _ Resolver = MockableResolver{}

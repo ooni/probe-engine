@@ -60,3 +60,5 @@ func (t DNSOverUDP) Network() string {
 func (t DNSOverUDP) Address() string {
 	return t.address
 }
+
+var _ RoundTripper = DNSOverUDP{}

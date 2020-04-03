@@ -49,14 +49,14 @@ func IsBogon(address string) bool {
 	return ip == nil || isPrivate(ip)
 }
 
-// Bogon is a bogon aware resolver. When a bogon is encountered in
+// BogonResolver is a bogon aware resolver. When a bogon is encountered in
 // a reply, this resolver will return an error.
-type Bogon struct {
+type BogonResolver struct {
 	Resolver
 }
 
 // LookupHost implements Resolver.LookupHost
-func (r Bogon) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (r BogonResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	addrs, err := r.Resolver.LookupHost(ctx, hostname)
 	for _, addr := range addrs {
 		if IsBogon(addr) == true {
@@ -65,3 +65,5 @@ func (r Bogon) LookupHost(ctx context.Context, hostname string) ([]string, error
 	}
 	return addrs, err
 }
+
+var _ Resolver = BogonResolver{}

@@ -48,3 +48,5 @@ func (e MiekgEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte,
 	}
 	return query.Pack()
 }
+
+var _ Encoder = MiekgEncoder{}
