@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Psiphon-Labs/dns"
+	"github.com/miekg/dns"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/resolver"
