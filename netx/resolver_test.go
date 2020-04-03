@@ -2,12 +2,12 @@ package netx_test
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/resolver"
 )
 
 func testresolverquick(t *testing.T, network, address string) {
@@ -104,21 +104,23 @@ func TestIntegrationNewResolverInvalid(t *testing.T) {
 	}
 }
 
+type failingResolver struct{}
+
+func (failingResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+	return nil, io.EOF
+}
+
 func TestIntegrationChainResolvers(t *testing.T) {
 	fallback, err := netx.NewResolver("udp", "1.1.1.1:53")
 	if err != nil {
 		t.Fatal(err)
 	}
-	primary := resolver.NewMockableResolverThatFails()
 	dialer := netx.NewDialer()
-	resolver := netx.ChainResolvers(primary, fallback)
+	resolver := netx.ChainResolvers(failingResolver{}, fallback)
 	dialer.SetResolver(resolver)
 	conn, err := dialer.Dial("tcp", "www.google.com:80")
 	if err != nil {
 		t.Fatal(err) // we don't expect error because good resolver is first
-	}
-	if primary.NumFailures.Load() < 1 {
-		t.Fatal("primary has not been used")
 	}
 	defer conn.Close()
 }

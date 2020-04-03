@@ -26,7 +26,7 @@ func TestUnitResolverIsBogon(t *testing.T) {
 
 func TestUnitBogonAwareResolverWithBogon(t *testing.T) {
 	r := resolver.BogonResolver{
-		Resolver: resolver.NewMockableResolverWithResult([]string{"127.0.0.1"}),
+		Resolver: resolver.NewFakeResolverWithResult([]string{"127.0.0.1"}),
 	}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if !errors.Is(err, modelx.ErrDNSBogon) {
@@ -40,7 +40,7 @@ func TestUnitBogonAwareResolverWithBogon(t *testing.T) {
 func TestUnitBogonAwareResolverWithoutBogon(t *testing.T) {
 	orig := []string{"8.8.8.8"}
 	r := resolver.BogonResolver{
-		Resolver: resolver.NewMockableResolverWithResult(orig),
+		Resolver: resolver.NewFakeResolverWithResult(orig),
 	}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {

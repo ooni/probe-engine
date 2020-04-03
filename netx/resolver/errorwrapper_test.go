@@ -14,7 +14,7 @@ import (
 func TestUnitErrorWrapperSuccess(t *testing.T) {
 	orig := []string{"8.8.8.8"}
 	r := resolver.ErrorWrapperResolver{
-		Resolver: resolver.NewMockableResolverWithResult(orig),
+		Resolver: resolver.NewFakeResolverWithResult(orig),
 	}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
@@ -27,7 +27,7 @@ func TestUnitErrorWrapperSuccess(t *testing.T) {
 
 func TestUnitErrorWrapperFailure(t *testing.T) {
 	r := resolver.ErrorWrapperResolver{
-		Resolver: resolver.NewMockableResolverThatFails(),
+		Resolver: resolver.NewFakeResolverThatFails(),
 	}
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)

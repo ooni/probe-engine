@@ -196,7 +196,7 @@ func TestEmitterResolverSuccess(t *testing.T) {
 		Handler:   handler,
 	}
 	ctx = modelx.WithMeasurementRoot(ctx, root)
-	r := resolver.EmitterResolver{Resolver: resolver.NewMockableResolverWithResult(
+	r := resolver.EmitterResolver{Resolver: resolver.NewFakeResolverWithResult(
 		[]string{"8.8.8.8"},
 	)}
 	replies, err := r.LookupHost(ctx, "dns.google.com")

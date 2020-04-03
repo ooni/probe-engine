@@ -5,6 +5,8 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"github.com/ooni/probe-engine/atomicx"
 )
 
 type FakeDialer struct {
@@ -98,3 +100,33 @@ type FakeEncoder struct {
 func (fe FakeEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte, error) {
 	return fe.Data, fe.Err
 }
+
+type FakeResolver struct {
+	NumFailures *atomicx.Int64
+	Err         error
+	Result      []string
+}
+
+func NewFakeResolverThatFails() FakeResolver {
+	return FakeResolver{NumFailures: atomicx.NewInt64(), Err: errNotFound}
+}
+
+func NewFakeResolverWithResult(r []string) FakeResolver {
+	return FakeResolver{NumFailures: atomicx.NewInt64(), Result: r}
+}
+
+var errNotFound = &net.DNSError{
+	Err: "no such host",
+}
+
+func (c FakeResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+	if c.Err != nil {
+		if c.NumFailures != nil {
+			c.NumFailures.Add(1)
+		}
+		return nil, c.Err
+	}
+	return c.Result, nil
+}
+
+var _ Resolver = FakeResolver{}
