@@ -1,6 +1,7 @@
 package dialer_test
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"testing"
@@ -14,7 +15,12 @@ func TestIntegrationTLSDialerSuccess(t *testing.T) {
 	}
 	dialer := dialer.TLSDialer{Dialer: new(net.Dialer),
 		TLSHandshaker: dialer.SystemTLSHandshaker{}}
-	txp := &http.Transport{DialTLSContext: dialer.DialTLSContext}
+	txp := &http.Transport{DialTLS: func(network, address string) (net.Conn, error) {
+		// AlpineLinux edge is still using Go 1.13. We cannot switch to
+		// using DialTLSContext here as we'd like to until either Alpine
+		// switches to Go 1.14 or we drop the MK dependency.
+		return dialer.DialTLSContext(context.Background(), network, address)
+	}}
 	client := &http.Client{Transport: txp}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
