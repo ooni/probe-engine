@@ -4,11 +4,13 @@ import (
 	"context"
 	"io"
 	"net"
+	"time"
 )
 
 type EOFDialer struct{}
 
 func (EOFDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	time.Sleep(10 * time.Microsecond)
 	return nil, io.EOF
 }
 
@@ -23,14 +25,17 @@ type EOFConn struct {
 }
 
 func (EOFConn) Read(p []byte) (int, error) {
+	time.Sleep(10 * time.Microsecond)
 	return 0, io.EOF
 }
 
 func (EOFConn) Write(p []byte) (int, error) {
+	time.Sleep(10 * time.Microsecond)
 	return 0, io.EOF
 }
 
 func (EOFConn) Close() error {
+	time.Sleep(10 * time.Microsecond)
 	return io.EOF
 }
 
