@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -106,27 +105,4 @@ func TestUnitReduceErrors(t *testing.T) {
 			t.Fatal("wrong result")
 		}
 	})
-}
-
-func TestIntegrationDNSDialerDivertLookupHost(t *testing.T) {
-	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	failure := errors.New("mocked error")
-	root := &modelx.MeasurementRoot{
-		Beginning: time.Now(),
-		Handler:   handlers.NoHandler,
-		LookupHost: func(ctx context.Context, hostname string) ([]string, error) {
-			return nil, failure
-		},
-	}
-	ctx := modelx.WithMeasurementRoot(context.Background(), root)
-	conn, err := dialer.DialContext(ctx, "tcp", "google.com:443")
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if !errors.Is(err, failure) {
-		t.Fatal("not the error we expected")
-	}
-	if conn != nil {
-		t.Fatal("expected a nil conn here")
-	}
 }

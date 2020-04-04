@@ -748,10 +748,6 @@ type MeasurementRoot struct {
 	// we use math.MaxInt64. If the value is zero, we use a
 	// reasonable large value. Otherwise, we'll use this value.
 	MaxBodySnapSize int64
-
-	// LookupHost allows to override the host lookup for all the request
-	// and dials that use this measurement root.
-	LookupHost func(ctx context.Context, hostname string) ([]string, error)
 }
 
 type measurementRootContextKey struct{}

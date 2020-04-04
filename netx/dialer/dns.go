@@ -19,9 +19,7 @@ type DNSDialer struct {
 
 // DialContext is like Dial but the context allows to interrupt a
 // pending connection attempt at any time.
-func (d DNSDialer) DialContext(
-	ctx context.Context, network, address string,
-) (conn net.Conn, err error) {
+func (d DNSDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(address)
 	if err != nil {
 		return nil, err
@@ -30,19 +28,18 @@ func (d DNSDialer) DialContext(
 	var addrs []string
 	addrs, err = d.lookupHost(ctx, onlyhost)
 	if err != nil {
-		return
+		return nil, err
 	}
 	var errorslist []error
 	for _, addr := range addrs {
 		target := net.JoinHostPort(addr, onlyport)
-		conn, err = d.Dialer.DialContext(ctx, network, target)
+		conn, err := d.Dialer.DialContext(ctx, network, target)
 		if err == nil {
-			return
+			return conn, nil
 		}
 		errorslist = append(errorslist, err)
 	}
-	err = reduceErrors(errorslist)
-	return
+	return nil, reduceErrors(errorslist)
 }
 
 func reduceErrors(errorslist []error) error {
@@ -67,19 +64,11 @@ func reduceErrors(errorslist []error) error {
 	return errorslist[0]
 }
 
-func (d DNSDialer) lookupHost(
-	ctx context.Context, hostname string,
-) ([]string, error) {
+func (d DNSDialer) lookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}
-	root := modelx.ContextMeasurementRootOrDefault(ctx)
-	lookupHost := root.LookupHost
-	if root.LookupHost == nil {
-		lookupHost = d.Resolver.LookupHost
-	}
-	addrs, err := lookupHost(ctx, hostname)
-	return addrs, err
+	return d.Resolver.LookupHost(ctx, hostname)
 }
 
 // NewDNSDialer creates a new DNS dialer using the following chain:
