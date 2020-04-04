@@ -26,7 +26,7 @@ func (d DNSDialer) DialContext(ctx context.Context, network, address string) (ne
 	}
 	ctx = dialid.WithDialID(ctx) // important to create before lookupHost
 	var addrs []string
-	addrs, err = d.lookupHost(ctx, onlyhost)
+	addrs, err = d.LookupHost(ctx, onlyhost)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,8 @@ func reduceErrors(errorslist []error) error {
 	return errorslist[0]
 }
 
-func (d DNSDialer) lookupHost(ctx context.Context, hostname string) ([]string, error) {
+// LookupHost implements Resolver.LookupHost
+func (d DNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}
