@@ -7,28 +7,28 @@ import (
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 )
 
-// Transport performs single HTTP transactions.
-type Transport struct {
+// Transactioner performs single HTTP transactions.
+type Transactioner struct {
 	roundTripper http.RoundTripper
 }
 
-// New creates a new Transport.
-func New(roundTripper http.RoundTripper) *Transport {
-	return &Transport{
+// NewTransactioner creates a new Transport.
+func NewTransactioner(roundTripper http.RoundTripper) *Transactioner {
+	return &Transactioner{
 		roundTripper: roundTripper,
 	}
 }
 
 // RoundTrip executes a single HTTP transaction, returning
 // a Response for the provided Request.
-func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *Transactioner) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.roundTripper.RoundTrip(req.WithContext(
 		transactionid.WithTransactionID(req.Context()),
 	))
 }
 
 // CloseIdleConnections closes the idle connections.
-func (t *Transport) CloseIdleConnections() {
+func (t *Transactioner) CloseIdleConnections() {
 	// Adapted from net/http code
 	type closeIdler interface {
 		CloseIdleConnections()

@@ -19,16 +19,16 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Transport performs single HTTP transactions.
-type Transport struct {
+// TraceTripper performs single HTTP transactions.
+type TraceTripper struct {
 	readAllErrs  *atomicx.Int64
 	readAll      func(r io.Reader) ([]byte, error)
 	roundTripper http.RoundTripper
 }
 
-// New creates a new Transport.
-func New(roundTripper http.RoundTripper) *Transport {
-	return &Transport{
+// NewTraceTripper creates a new Transport.
+func NewTraceTripper(roundTripper http.RoundTripper) *TraceTripper {
+	return &TraceTripper{
 		readAllErrs:  atomicx.NewInt64(),
 		readAll:      ioutil.ReadAll,
 		roundTripper: roundTripper,
@@ -73,7 +73,7 @@ func readSnap(
 
 // RoundTrip executes a single HTTP transaction, returning
 // a Response for the provided Request.
-func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	root := modelx.ContextMeasurementRootOrDefault(req.Context())
 
 	tid := transactionid.ContextTransactionID(req.Context())
@@ -264,7 +264,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // CloseIdleConnections closes the idle connections.
-func (t *Transport) CloseIdleConnections() {
+func (t *TraceTripper) CloseIdleConnections() {
 	// Adapted from net/http code
 	type closeIdler interface {
 		CloseIdleConnections()

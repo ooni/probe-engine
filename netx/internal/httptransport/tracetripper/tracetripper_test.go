@@ -16,9 +16,9 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIntegrationTraceTripperSuccess(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewTraceTripper(http.DefaultTransport),
 	}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
@@ -45,8 +45,8 @@ func (h *roundTripHandler) OnMeasurement(m modelx.Measurement) {
 	}
 }
 
-func TestIntegrationReadAllFailure(t *testing.T) {
-	transport := New(http.DefaultTransport)
+func TestIntegrationTraceTripperReadAllFailure(t *testing.T) {
+	transport := NewTraceTripper(http.DefaultTransport)
 	transport.readAll = func(r io.Reader) ([]byte, error) {
 		return nil, io.EOF
 	}
@@ -67,9 +67,9 @@ func TestIntegrationReadAllFailure(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestIntegrationTraceTripperFailure(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewTraceTripper(http.DefaultTransport),
 	}
 	// This fails the request because we attempt to speak cleartext HTTP with
 	// a server that instead is expecting TLS.
@@ -83,9 +83,9 @@ func TestIntegrationFailure(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationWithClientTrace(t *testing.T) {
+func TestIntegrationTraceTripperWithClientTrace(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewTraceTripper(http.DefaultTransport),
 	}
 	req, err := http.NewRequest("GET", "https://www.kernel.org/", nil)
 	if err != nil {
@@ -105,7 +105,7 @@ func TestIntegrationWithClientTrace(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationWithCorrectSnaps(t *testing.T) {
+func TestIntegrationTraceTripperWithCorrectSnaps(t *testing.T) {
 	// Prepare a DNS query for dns.google.com A, for which we
 	// know the answer in terms of well know IP addresses
 	query := new(dns.Msg)
@@ -124,7 +124,7 @@ func TestIntegrationWithCorrectSnaps(t *testing.T) {
 
 	// Prepare a new transport with limited snapshot size and
 	// use such transport to configure an ordinary client
-	transport := New(http.DefaultTransport)
+	transport := NewTraceTripper(http.DefaultTransport)
 	const snapSize = 15
 	client := &http.Client{Transport: transport}
 
@@ -209,7 +209,7 @@ func TestIntegrationWithCorrectSnaps(t *testing.T) {
 	}
 }
 
-func TestIntegrationWithReadAllFailingForBody(t *testing.T) {
+func TestIntegrationTraceTripperWithReadAllFailingForBody(t *testing.T) {
 	// Prepare a DNS query for dns.google.com A, for which we
 	// know the answer in terms of well know IP addresses
 	query := new(dns.Msg)
@@ -228,7 +228,7 @@ func TestIntegrationWithReadAllFailingForBody(t *testing.T) {
 
 	// Prepare a new transport with limited snapshot size and
 	// use such transport to configure an ordinary client
-	transport := New(http.DefaultTransport)
+	transport := NewTraceTripper(http.DefaultTransport)
 	errorMocked := errors.New("mocked error")
 	transport.readAll = func(r io.Reader) ([]byte, error) {
 		return nil, errorMocked

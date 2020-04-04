@@ -8,12 +8,12 @@ import (
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 )
 
-type transport struct {
+type transactionerCheckTransactionID struct {
 	roundTripper http.RoundTripper
 	t            *testing.T
 }
 
-func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *transactionerCheckTransactionID) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
 	if id := transactionid.ContextTransactionID(ctx); id == 0 {
 		t.t.Fatal("transaction ID not set")
@@ -21,9 +21,9 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.roundTripper.RoundTrip(req)
 }
 
-func TestIntegration(t *testing.T) {
+func TestIntegrationTransactionerSuccess(t *testing.T) {
 	client := &http.Client{
-		Transport: New(&transport{
+		Transport: NewTransactioner(&transactionerCheckTransactionID{
 			roundTripper: http.DefaultTransport,
 			t:            t,
 		}),
@@ -40,9 +40,9 @@ func TestIntegration(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestIntegrationTransactionerFailure(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewTransactioner(http.DefaultTransport),
 	}
 	// This fails the request because we attempt to speak cleartext HTTP with
 	// a server that instead is expecting TLS.

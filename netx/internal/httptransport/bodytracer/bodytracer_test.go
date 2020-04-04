@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIntegrationBodyTracerSuccess(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewBodyTracer(http.DefaultTransport),
 	}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
@@ -22,9 +22,9 @@ func TestIntegration(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestIntegrationBodyTracerFailure(t *testing.T) {
 	client := &http.Client{
-		Transport: New(http.DefaultTransport),
+		Transport: NewBodyTracer(http.DefaultTransport),
 	}
 	// This fails the request because we attempt to speak cleartext HTTP with
 	// a server that instead is expecting TLS.
