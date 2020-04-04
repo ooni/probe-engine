@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -19,7 +20,7 @@ import (
 func TestEmitterTransportSuccess(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
-	handler := &resolver.SavingHandler{}
+	handler := &handlers.SavingHandler{}
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),
 		Handler:   handler,
@@ -70,7 +71,7 @@ func TestEmitterTransportSuccess(t *testing.T) {
 func TestEmitterTransportFailure(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
-	handler := &resolver.SavingHandler{}
+	handler := &handlers.SavingHandler{}
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),
 		Handler:   handler,
@@ -114,7 +115,7 @@ func TestEmitterResolverFailure(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
 	ctx = transactionid.WithTransactionID(ctx)
-	handler := &resolver.SavingHandler{}
+	handler := &handlers.SavingHandler{}
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),
 		Handler:   handler,
@@ -190,7 +191,7 @@ func TestEmitterResolverSuccess(t *testing.T) {
 	ctx := context.Background()
 	ctx = dialid.WithDialID(ctx)
 	ctx = transactionid.WithTransactionID(ctx)
-	handler := &resolver.SavingHandler{}
+	handler := &handlers.SavingHandler{}
 	root := &modelx.MeasurementRoot{
 		Beginning: time.Now(),
 		Handler:   handler,
