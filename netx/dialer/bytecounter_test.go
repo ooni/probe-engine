@@ -47,6 +47,8 @@ func TestIntegrationByteCounterNormalUsage(t *testing.T) {
 	if err := dorequest(ctx, "http://facebook.com"); err != nil {
 		t.Fatal(err)
 	}
+	t.Log(sess) // keep: this causes String to be called
+	t.Log(exp)  // ditto
 	if sess.Received.Load() <= exp.Received.Load() {
 		t.Fatal("session should have received more than experiment")
 	}
