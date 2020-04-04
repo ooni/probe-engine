@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// EmitterDialer is a dialer that emits events
+// EmitterDialer is a Dialer that emits events
 type EmitterDialer struct {
 	Dialer
 }
@@ -44,7 +44,7 @@ func (d EmitterDialer) DialContext(ctx context.Context, network, address string)
 	}, nil
 }
 
-// EmitterConn is a net.Conn used to emit measurements
+// EmitterConn is a net.Conn used to emit events
 type EmitterConn struct {
 	net.Conn
 	Beginning time.Time
@@ -52,7 +52,7 @@ type EmitterConn struct {
 	ID        int64
 }
 
-// Read reads data from the connection.
+// Read implements net.Conn.Read
 func (c EmitterConn) Read(b []byte) (n int, err error) {
 	start := time.Now()
 	n, err = c.Conn.Read(b)
@@ -69,7 +69,7 @@ func (c EmitterConn) Read(b []byte) (n int, err error) {
 	return
 }
 
-// Write writes data to the connection
+// Write implements net.Conn.Write
 func (c EmitterConn) Write(b []byte) (n int, err error) {
 	start := time.Now()
 	n, err = c.Conn.Write(b)
@@ -86,7 +86,7 @@ func (c EmitterConn) Write(b []byte) (n int, err error) {
 	return
 }
 
-// Close closes the connection
+// Close implements net.Conn.Close
 func (c EmitterConn) Close() (err error) {
 	start := time.Now()
 	err = c.Conn.Close()
