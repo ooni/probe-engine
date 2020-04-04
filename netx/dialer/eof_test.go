@@ -2,6 +2,7 @@ package dialer
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net"
 	"time"
@@ -43,6 +44,10 @@ func (EOFConn) LocalAddr() net.Addr {
 	return EOFAddr{}
 }
 
+func (EOFConn) RemoteAddr() net.Addr {
+	return EOFAddr{}
+}
+
 type EOFAddr struct{}
 
 func (EOFAddr) Network() string {
@@ -51,4 +56,13 @@ func (EOFAddr) Network() string {
 
 func (EOFAddr) String() string {
 	return "127.0.0.1:1234"
+}
+
+type EOFTLSHandshaker struct{}
+
+func (EOFTLSHandshaker) Handshake(
+	ctx context.Context, conn net.Conn, config *tls.Config,
+) (net.Conn, tls.ConnectionState, error) {
+	time.Sleep(10 * time.Microsecond)
+	return nil, tls.ConnectionState{}, io.EOF
 }

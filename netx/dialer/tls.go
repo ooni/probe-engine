@@ -50,9 +50,9 @@ type TimeoutTLSHandshaker struct {
 func (h TimeoutTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
-	timeout := h.HandshakeTimeout
-	if timeout == 0 {
-		timeout = 10 * time.Second
+	timeout := 10 * time.Second
+	if h.HandshakeTimeout != 0 {
+		timeout = h.HandshakeTimeout
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()

@@ -2,6 +2,7 @@ package dialer_test
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
 	"testing"
@@ -10,6 +11,18 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/handlers"
 )
+
+func TestIntegrationTLSDialerSuccess(t *testing.T) {
+	dialer := dialer.NewTLSDialer(new(net.Dialer), new(tls.Config))
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conn == nil {
+		t.Fatal("connection is nil")
+	}
+	conn.Close()
+}
 
 func TestIntegrationBaseDialerSuccess(t *testing.T) {
 	dialer := newBaseDialer()
