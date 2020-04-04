@@ -1,4 +1,4 @@
-package tracetripper
+package httptransport
 
 import (
 	"bytes"

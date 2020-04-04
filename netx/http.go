@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/handlers"
+	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
-	"github.com/ooni/probe-engine/netx/internal/httptransport"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"golang.org/x/net/http2"
 )

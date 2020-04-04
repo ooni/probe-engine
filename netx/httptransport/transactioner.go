@@ -1,5 +1,4 @@
-// Package transactioner contains the transaction assigning round tripper
-package transactioner
+package httptransport
 
 import (
 	"net/http"

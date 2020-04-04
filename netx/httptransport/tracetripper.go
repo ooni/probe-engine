@@ -1,5 +1,4 @@
-// Package tracetripper contains the tracing round tripper
-package tracetripper
+package httptransport
 
 import (
 	"bytes"

@@ -1,6 +1,4 @@
-// Package bodytracer contains the HTTP body tracer. The purpose
-// of tracing is to emit events while we read response bodies.
-package bodytracer
+package httptransport
 
 import (
 	"io"

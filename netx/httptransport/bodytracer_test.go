@@ -1,4 +1,4 @@
-package bodytracer
+package httptransport
 
 import (
 	"io/ioutil"
