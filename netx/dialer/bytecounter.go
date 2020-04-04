@@ -27,6 +27,16 @@ func NewByteCounter() *ByteCounter {
 
 // ByteCounterDialer is a byte-counting-aware dialer. To perform byte counting, you
 // should make sure that you insert this dialer in the dialing chain.
+//
+// Bug
+//
+// This implementation cannot properly account for the bytes that are sent by
+// persistent connections, because they strick to the counters set when the
+// connection was established. This typically means we miss the bytes sent and
+// received when submitting a measurement. Such bytes are specifically not
+// see by the experiment specific byte counter.
+//
+// For this reason, this implementation may be heavily changed/removed.
 type ByteCounterDialer struct {
 	Dialer
 }

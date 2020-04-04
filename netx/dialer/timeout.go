@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// TimeoutDialer is a wrapper for the system dialer
+// TimeoutDialer is a Dialer that enforces a timeout
 type TimeoutDialer struct {
 	Dialer
 	ConnectTimeout time.Duration // default: 30 seconds

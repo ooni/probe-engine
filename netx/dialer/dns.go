@@ -10,15 +10,14 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// DNSDialer defines the dialer API. We implement the most basic form
-// of DNS, but more advanced resolutions are possible.
+// DNSDialer is a dialer that uses the configured Resolver to resolver a
+// domain name to IP addresses, and the configured Dialer to connect.
 type DNSDialer struct {
 	Dialer
 	Resolver Resolver
 }
 
-// DialContext is like Dial but the context allows to interrupt a
-// pending connection attempt at any time.
+// DialContext implements Dialer.DialContext.
 func (d DNSDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(address)
 	if err != nil {
@@ -70,29 +69,4 @@ func (d DNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, e
 		return []string{hostname}, nil
 	}
 	return d.Resolver.LookupHost(ctx, hostname)
-}
-
-// NewDNSDialer creates a new DNS dialer using the following chain:
-//
-// - DNSDialer (topmost)
-// - EmitterDialer
-// - ErrorWrapperDialer
-// - TimeoutDialer
-// - ByteCountingDialer
-// - net.Dialer
-//
-// If you have others needs, manually build the chain you need.
-func NewDNSDialer(resolver Resolver) DNSDialer {
-	return DNSDialer{
-		Dialer: EmitterDialer{
-			Dialer: ErrorWrapperDialer{
-				Dialer: TimeoutDialer{
-					Dialer: ByteCounterDialer{
-						Dialer: new(net.Dialer),
-					},
-				},
-			},
-		},
-		Resolver: resolver,
-	}
 }

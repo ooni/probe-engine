@@ -115,29 +115,7 @@ type TLSDialer struct {
 	TLSHandshaker TLSHandshaker
 }
 
-// NewTLSDialer creates a new TLSDialer using:
-//
-// - EmitterTLSHandshaker (topmost)
-// - ErrorWrapperTLSHandshaker
-// - TimeoutTLSHandshaker
-// - SystemTLSHandshaker
-//
-// If you have others needs, manually build the chain you need.
-func NewTLSDialer(dialer Dialer, config *tls.Config) TLSDialer {
-	return TLSDialer{
-		Config: config,
-		Dialer: dialer,
-		TLSHandshaker: EmitterTLSHandshaker{
-			TLSHandshaker: ErrorWrapperTLSHandshaker{
-				TLSHandshaker: TimeoutTLSHandshaker{
-					TLSHandshaker: SystemTLSHandshaker{},
-				},
-			},
-		},
-	}
-}
-
-// DialTLSContext is like DialTLS, but with context
+// DialTLSContext is like tls.DialTLS but with the signature of net.Dialer.DialContext
 func (d TLSDialer) DialTLSContext(ctx context.Context, network, address string) (net.Conn, error) {
 	// Implementation note: when DialTLS is not set, the code in
 	// net/http will perform the handshake. Otherwise, if DialTLS

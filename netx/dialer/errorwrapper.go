@@ -38,7 +38,7 @@ type ErrorWrapperConn struct {
 	DialID int64
 }
 
-// Read reads data from the connection.
+// Read implements net.Conn.Read
 func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 	n, err = c.Conn.Read(b)
 	err = errwrapper.SafeErrWrapperBuilder{
@@ -50,7 +50,7 @@ func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 	return
 }
 
-// Write writes data to the connection
+// Write implements net.Conn.Write
 func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 	n, err = c.Conn.Write(b)
 	err = errwrapper.SafeErrWrapperBuilder{
@@ -62,7 +62,7 @@ func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 	return
 }
 
-// Close closes the connection
+// Close implements net.Conn.Close
 func (c ErrorWrapperConn) Close() (err error) {
 	err = c.Conn.Close()
 	err = errwrapper.SafeErrWrapperBuilder{

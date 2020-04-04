@@ -33,6 +33,9 @@ func dorequest(ctx context.Context, url string) error {
 }
 
 func TestIntegrationByteCounterNormalUsage(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	sess := dialer.NewByteCounter()
 	ctx := context.Background()
 	ctx = dialer.WithSessionByteCounter(ctx, sess)
@@ -44,8 +47,6 @@ func TestIntegrationByteCounterNormalUsage(t *testing.T) {
 	if err := dorequest(ctx, "http://facebook.com"); err != nil {
 		t.Fatal(err)
 	}
-	t.Log(sess)
-	t.Log(exp)
 	if sess.Received.Load() <= exp.Received.Load() {
 		t.Fatal("session should have received more than experiment")
 	}
@@ -55,6 +56,9 @@ func TestIntegrationByteCounterNormalUsage(t *testing.T) {
 }
 
 func TestIntegrationByteCounterNoHandlers(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	ctx := context.Background()
 	if err := dorequest(ctx, "http://www.google.com"); err != nil {
 		t.Fatal(err)
@@ -65,9 +69,7 @@ func TestIntegrationByteCounterNoHandlers(t *testing.T) {
 }
 
 func TestUnitByteCounterConnectFailure(t *testing.T) {
-	dialer := dialer.ByteCounterDialer{
-		Dialer: failingDialer{},
-	}
+	dialer := dialer.ByteCounterDialer{Dialer: dialer.EOFDialer{}}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "www.google.com:80")
 	if !errors.Is(err, io.EOF) {
 		t.Fatal("not the error we expected")
@@ -75,10 +77,4 @@ func TestUnitByteCounterConnectFailure(t *testing.T) {
 	if conn != nil {
 		t.Fatal("expected nil conn here")
 	}
-}
-
-type failingDialer struct{}
-
-func (failingDialer) DialContext(context.Context, string, string) (net.Conn, error) {
-	return nil, io.EOF
 }

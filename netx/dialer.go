@@ -54,13 +54,38 @@ func maybeWithMeasurementRoot(
 	})
 }
 
+// newDNSDialer creates a new DNS dialer using the following chain:
+//
+// - DNSDialer (topmost)
+// - EmitterDialer
+// - ErrorWrapperDialer
+// - TimeoutDialer
+// - ByteCountingDialer
+// - net.Dialer
+//
+// If you have others needs, manually build the chain you need.
+func newDNSDialer(resolver dialer.Resolver) dialer.DNSDialer {
+	return dialer.DNSDialer{
+		Dialer: dialer.EmitterDialer{
+			Dialer: dialer.ErrorWrapperDialer{
+				Dialer: dialer.TimeoutDialer{
+					Dialer: dialer.ByteCounterDialer{
+						Dialer: new(net.Dialer),
+					},
+				},
+			},
+		},
+		Resolver: resolver,
+	}
+}
+
 // DialContext is like Dial but the context allows to interrupt a
 // pending connection attempt at any time.
 func (d *Dialer) DialContext(
 	ctx context.Context, network, address string,
 ) (conn net.Conn, err error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
-	return dialer.NewDNSDialer(d.Resolver).DialContext(ctx, network, address)
+	return newDNSDialer(d.Resolver).DialContext(ctx, network, address)
 }
 
 // DialTLS is like Dial, but creates TLS connections.
@@ -68,13 +93,35 @@ func (d *Dialer) DialTLS(network, address string) (net.Conn, error) {
 	return d.DialTLSContext(context.Background(), network, address)
 }
 
+// newTLSDialer creates a new TLSDialer using:
+//
+// - EmitterTLSHandshaker (topmost)
+// - ErrorWrapperTLSHandshaker
+// - TimeoutTLSHandshaker
+// - SystemTLSHandshaker
+//
+// If you have others needs, manually build the chain you need.
+func newTLSDialer(d dialer.Dialer, config *tls.Config) dialer.TLSDialer {
+	return dialer.TLSDialer{
+		Config: config,
+		Dialer: d,
+		TLSHandshaker: dialer.EmitterTLSHandshaker{
+			TLSHandshaker: dialer.ErrorWrapperTLSHandshaker{
+				TLSHandshaker: dialer.TimeoutTLSHandshaker{
+					TLSHandshaker: dialer.SystemTLSHandshaker{},
+				},
+			},
+		},
+	}
+}
+
 // DialTLSContext is like DialTLS, but with context
 func (d *Dialer) DialTLSContext(
 	ctx context.Context, network, address string,
 ) (net.Conn, error) {
 	ctx = maybeWithMeasurementRoot(ctx, d.Beginning, d.Handler)
-	return dialer.NewTLSDialer(
-		dialer.NewDNSDialer(d.Resolver),
+	return newTLSDialer(
+		newDNSDialer(d.Resolver),
 		d.TLSConfig,
 	).DialTLSContext(ctx, network, address)
 }
