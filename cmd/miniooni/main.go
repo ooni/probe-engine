@@ -213,8 +213,8 @@ func main() {
 	defer func() {
 		sess.Close()
 		log.Infof("whole session: recv %s, sent %s",
-			humanize.SI(sess.KiBsReceived()*1024, "byte"),
-			humanize.SI(sess.KiBsSent()*1024, "byte"),
+			humanize.SI(sess.KibiBytesReceived()*1024, "byte"),
+			humanize.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 
@@ -286,8 +286,8 @@ func main() {
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
-			humanize.SI(experiment.KiBsReceived()*1024, "byte"),
-			humanize.SI(experiment.KiBsSent()*1024, "byte"),
+			humanize.SI(experiment.KibiBytesReceived()*1024, "byte"),
+			humanize.SI(experiment.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 

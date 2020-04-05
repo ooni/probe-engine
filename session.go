@@ -155,14 +155,14 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 	})
 }
 
-// KiBsReceived accounts for the KiBs received by the HTTP clients
+// KibiBytesReceived accounts for the KibiBytes received by the HTTP clients
 // managed by this session so far, including experiments.
-func (s *Session) KiBsReceived() float64 {
+func (s *Session) KibiBytesReceived() float64 {
 	return s.byteCounter.KibiBytesReceived()
 }
 
-// KiBsSent is like KiBsReceived but for the bytes sent.
-func (s *Session) KiBsSent() float64 {
+// KibiBytesSent is like KibiBytesReceived but for the bytes sent.
+func (s *Session) KibiBytesSent() float64 {
 	return s.byteCounter.KibiBytesSent()
 }
 

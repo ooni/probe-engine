@@ -145,7 +145,7 @@ func NewSettings(
 
 // EventValue are all the possible value keys
 type EventValue struct {
-	// DownloadedKB is the amount of downloaded KiBs
+	// DownloadedKB is the amount of downloaded KibiBytes
 	DownloadedKB float64 `json:"downloaded_kb,omitempty"`
 
 	// Failure is the failure that occurred
@@ -184,7 +184,7 @@ type EventValue struct {
 	// ReportID is the report ID
 	ReportID string `json:"report_id,omitempty"`
 
-	// UploadedKB is the amount of uploaded KiBs
+	// UploadedKB is the amount of uploaded KibiBytes
 	UploadedKB float64 `json:"uploaded_kb,omitempty"`
 }
 

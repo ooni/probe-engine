@@ -202,14 +202,14 @@ func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment
 	}
 }
 
-// KiBsReceived accounts for the KiBs received by the HTTP clients
+// KibiBytesReceived accounts for the KibiBytes received by the HTTP clients
 // managed by this session so far, including experiments.
-func (e *Experiment) KiBsReceived() float64 {
+func (e *Experiment) KibiBytesReceived() float64 {
 	return e.byteCounter.KibiBytesReceived()
 }
 
-// KiBsSent is like KiBsReceived but for the bytes sent.
-func (e *Experiment) KiBsSent() float64 {
+// KibiBytesSent is like KibiBytesReceived but for the bytes sent.
+func (e *Experiment) KibiBytesSent() float64 {
 	return e.byteCounter.KibiBytesSent()
 }
 

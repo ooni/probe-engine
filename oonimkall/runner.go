@@ -208,8 +208,8 @@ func (r *runner) Run(ctx context.Context) {
 	defer func() {
 		sess.Close()
 		r.emitter.Emit(statusEnd, &eventStatusEnd{
-			DownloadedKB: sess.KiBsReceived(),
-			UploadedKB:   sess.KiBsSent(),
+			DownloadedKB: sess.KibiBytesReceived(),
+			UploadedKB:   sess.KibiBytesSent(),
 		})
 	}()
 
