@@ -356,6 +356,9 @@ type ExperimentSession interface {
 // ExperimentCallbacks contains experiment event-handling callbacks
 type ExperimentCallbacks interface {
 	// OnDataUsage provides information about data usage.
+	//
+	// This callback is deprecated and will be removed once we have
+	// removed the dependency on Measurement Kit.
 	OnDataUsage(dloadKiB, uploadKiB float64)
 
 	// OnProgress provides information about an experiment progress.
