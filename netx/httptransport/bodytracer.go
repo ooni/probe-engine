@@ -1,6 +1,4 @@
-// Package bodytracer contains the HTTP body tracer. The purpose
-// of tracing is to emit events while we read response bodies.
-package bodytracer
+package httptransport
 
 import (
 	"io"
@@ -11,21 +9,21 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-// Transport performs single HTTP transactions and emits
+// BodyTracer performs single HTTP transactions and emits
 // measurement events as they happen.
-type Transport struct {
-	roundTripper http.RoundTripper
+type BodyTracer struct {
+	Transport http.RoundTripper
 }
 
-// New creates a new Transport.
-func New(roundTripper http.RoundTripper) *Transport {
-	return &Transport{roundTripper: roundTripper}
+// NewBodyTracer creates a new Transport.
+func NewBodyTracer(roundTripper http.RoundTripper) *BodyTracer {
+	return &BodyTracer{Transport: roundTripper}
 }
 
 // RoundTrip executes a single HTTP transaction, returning
 // a Response for the provided Request.
-func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-	resp, err = t.roundTripper.RoundTrip(req)
+func (t *BodyTracer) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	resp, err = t.Transport.RoundTrip(req)
 	if err != nil {
 		return
 	}
@@ -41,12 +39,12 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 }
 
 // CloseIdleConnections closes the idle connections.
-func (t *Transport) CloseIdleConnections() {
+func (t *BodyTracer) CloseIdleConnections() {
 	// Adapted from net/http code
 	type closeIdler interface {
 		CloseIdleConnections()
 	}
-	if tr, ok := t.roundTripper.(closeIdler); ok {
+	if tr, ok := t.Transport.(closeIdler); ok {
 		tr.CloseIdleConnections()
 	}
 }

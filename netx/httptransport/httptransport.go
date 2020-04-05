@@ -4,10 +4,6 @@ package httptransport
 
 import (
 	"net/http"
-
-	"github.com/ooni/probe-engine/netx/internal/httptransport/bodytracer"
-	"github.com/ooni/probe-engine/netx/internal/httptransport/tracetripper"
-	"github.com/ooni/probe-engine/netx/internal/httptransport/transactioner"
 )
 
 // Transport performs single HTTP transactions and emits
@@ -19,8 +15,8 @@ type Transport struct {
 // New creates a new Transport.
 func New(roundTripper http.RoundTripper) *Transport {
 	return &Transport{
-		roundTripper: transactioner.New(bodytracer.New(
-			tracetripper.New(roundTripper))),
+		roundTripper: NewTransactioner(NewBodyTracer(
+			NewTraceTripper(roundTripper))),
 	}
 }
 
