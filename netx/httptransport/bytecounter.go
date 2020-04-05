@@ -64,11 +64,10 @@ type byteCountingBody struct {
 
 func (r byteCountingBody) Read(p []byte) (int, error) {
 	count, err := r.ReadCloser.Read(p)
-	if err != nil {
-		return 0, err
+	if count > 0 {
+		r.Account(count)
 	}
-	r.Account(count)
-	return count, nil
+	return count, err
 }
 
 var _ RoundTripper = ByteCountingTransport{}
