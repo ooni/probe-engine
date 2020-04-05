@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/bouncer"
@@ -15,7 +14,6 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
@@ -23,10 +21,8 @@ import (
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
-	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 // SessionConfig contains the Session config
@@ -47,8 +43,8 @@ type Session struct {
 	availableCollectors  []model.Service
 	availableTestHelpers map[string][]model.Service
 	byteCounter          *bytecounter.Counter
-	httpDefaultClient    *http.Client
-	httpNoProxyClient    *http.Client
+	httpDefaultTransport httptransport.RoundTripper
+	httpNoProxyTransport httptransport.RoundTripper
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
 	explicitProxy        bool
@@ -58,37 +54,6 @@ type Session struct {
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
-}
-
-func newHTTPClient(sess *Session, proxy *url.URL, logger model.Logger) *http.Client {
-	txp := netx.NewHTTPTransportWithProxyFunc(func(req *http.Request) (*url.URL, error) {
-		if proxy != nil {
-			return proxy, nil
-		}
-		return http.ProxyFromEnvironment(req)
-	})
-	return &http.Client{Transport: &sessHTTPTransport{
-		beginning: time.Now(),
-		logger:    logger,
-		sess:      sess,
-		transport: txp,
-	}}
-}
-
-type sessHTTPTransport struct {
-	beginning time.Time
-	logger    model.Logger
-	sess      *Session
-	transport *netx.HTTPTransport
-}
-
-func (t *sessHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	ctx := modelx.WithMeasurementRoot(req.Context(), &modelx.MeasurementRoot{
-		Beginning: t.beginning,
-		Handler:   netxlogger.NewHandler(t.logger),
-	})
-	req = req.WithContext(dialer.WithSessionByteCounter(ctx, t.sess.byteCounter))
-	return t.transport.RoundTrip(req)
 }
 
 // NewSession creates a new session or returns an error
@@ -126,8 +91,20 @@ func NewSession(config SessionConfig) (*Session, error) {
 		softwareVersion:   config.SoftwareVersion,
 		tempDir:           config.TempDir,
 	}
-	sess.httpDefaultClient = newHTTPClient(sess, config.ProxyURL, config.Logger)
-	sess.httpNoProxyClient = newHTTPClient(sess, nil, config.Logger)
+	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
+		ByteCounter: sess.byteCounter,
+		Logger:      sess.logger,
+		Proxy: func(req *http.Request) (*url.URL, error) {
+			if config.ProxyURL != nil {
+				return config.ProxyURL, nil
+			}
+			return http.ProxyFromEnvironment(req)
+		},
+	})
+	sess.httpNoProxyTransport = httptransport.New(httptransport.Config{
+		ByteCounter: sess.byteCounter,
+		Logger:      sess.logger,
+	})
 	return sess, nil
 }
 
@@ -175,8 +152,8 @@ func (s *Session) CABundlePath() string {
 // we are currently using may have created. Not calling this function may likely
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
-	s.httpDefaultClient.CloseIdleConnections()
-	s.httpNoProxyClient.CloseIdleConnections()
+	s.httpDefaultTransport.CloseIdleConnections()
+	s.httpNoProxyTransport.CloseIdleConnections()
 	return nil
 }
 
@@ -200,7 +177,7 @@ func (s *Session) GetTestHelpersByName(name string) ([]model.Service, bool) {
 
 // DefaultHTTPClient returns the session's default HTTP client.
 func (s *Session) DefaultHTTPClient() *http.Client {
-	return s.httpDefaultClient
+	return &http.Client{Transport: s.httpDefaultTransport}
 }
 
 // Logger returns the logger used by the session.
@@ -229,7 +206,7 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
 	clnt := orchestra.NewClient(
-		s.httpDefaultClient,
+		s.DefaultHTTPClient(),
 		s.logger,
 		s.UserAgent(),
 		statefile.New(s.kvStore),
@@ -365,7 +342,7 @@ func (s *Session) UserAgent() string {
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
-		HTTPClient: s.httpDefaultClient, // proxy is OK
+		HTTPClient: s.DefaultHTTPClient(), // proxy is OK
 		Logger:     s.logger,
 		UserAgent:  s.UserAgent(),
 		WorkDir:    s.assetsDir,
@@ -415,9 +392,11 @@ func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
-		HTTPClient: s.httpNoProxyClient, // No proxy to have the correct IP
-		Logger:     s.logger,
-		UserAgent:  s.UserAgent(),
+		HTTPClient: &http.Client{
+			Transport: s.httpNoProxyTransport, // No proxy to have the correct IP
+		},
+		Logger:    s.logger,
+		UserAgent: s.UserAgent(),
 	}).Do(ctx)
 }
 
@@ -510,7 +489,7 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) 
 		}
 		err := query(&bouncer.Client{
 			BaseURL:    e.Address,
-			HTTPClient: s.httpDefaultClient, // proxy is OK
+			HTTPClient: s.DefaultHTTPClient(), // proxy is OK
 			Logger:     s.logger,
 			UserAgent:  s.UserAgent(),
 		})
