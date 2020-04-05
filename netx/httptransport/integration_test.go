@@ -11,6 +11,9 @@ import (
 )
 
 func TestIntegrationSuccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	log.SetLevel(log.DebugLevel)
 	counter := bytecounter.New()
 	txp := httptransport.New(httptransport.Config{
