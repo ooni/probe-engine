@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"reflect"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const dateFormat = "2006-01-02 15:04:05"
@@ -357,6 +359,13 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 	if e.report != nil {
 		return // already open
 	}
+	// use custom client to have proper byte accounting
+	httpClient := &http.Client{
+		Transport: &httptransport.ByteCountingTransport{
+			RoundTripper: e.session.httpDefaultTransport, // proxy is OK
+			Counter:      e.byteCounter,
+		},
+	}
 	for _, c := range e.session.availableCollectors {
 		if c.Type != "https" {
 			e.session.logger.Debugf(
@@ -366,7 +375,7 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 		}
 		client := &collector.Client{
 			BaseURL:    c.Address,
-			HTTPClient: e.session.httpDefaultClient, // proxy is OK
+			HTTPClient: httpClient,
 			Logger:     e.session.logger,
 			UserAgent:  e.session.UserAgent(),
 		}

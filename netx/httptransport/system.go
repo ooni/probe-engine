@@ -10,6 +10,7 @@ import (
 // using the Go standard library with custom dialer and TLS dialer.
 func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer, proxy ProxyFunc) *http.Transport {
 	txp := http.DefaultTransport.(*http.Transport).Clone()
+	txp.Proxy = proxy
 	txp.DialContext = dialer.DialContext
 	txp.DialTLS = func(network, address string) (net.Conn, error) {
 		// Go < 1.14 does not have http.Transport.DialTLSContext

@@ -56,7 +56,7 @@ func (s *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsR
 		BaseURL:           baseURL,
 		CountryCode:       s.ProbeCC(),
 		EnabledCategories: conf.Categories,
-		HTTPClient:        s.httpDefaultClient,
+		HTTPClient:        s.DefaultHTTPClient(),
 		Limit:             conf.Limit,
 		Logger:            s.logger,
 		UserAgent:         s.UserAgent(),
