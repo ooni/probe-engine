@@ -544,7 +544,6 @@ func TestIntegrationCountBytesForExample(t *testing.T) {
 		}
 		switch event.Key {
 		case "status.end":
-			t.Log(eventstr)
 			downloadKB = event.Value["downloaded_kb"].(float64)
 			uploadKB = event.Value["uploaded_kb"].(float64)
 		}
