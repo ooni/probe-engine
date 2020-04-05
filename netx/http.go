@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/oldhttptransport"
 	"golang.org/x/net/http2"
 )
 
@@ -39,7 +39,7 @@ func newHTTPTransport(
 		TLSHandshakeTimeout:   10 * time.Second,
 		DisableKeepAlives:     disableKeepAlives,
 	}
-	ooniTransport := httptransport.New(baseTransport)
+	ooniTransport := oldhttptransport.New(baseTransport)
 	// Configure h2 and make sure that the custom TLSConfig we use for dialing
 	// is actually compatible with upgrading to h2. (This mainly means we
 	// need to make sure we include "h2" in the NextProtos array.) Because

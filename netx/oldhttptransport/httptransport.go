@@ -1,6 +1,6 @@
-// Package httptransport contains HTTP transport extensions. Here we
+// Package oldhttptransport contains HTTP transport extensions. Here we
 // define a http.Transport that emits events.
-package httptransport
+package oldhttptransport
 
 import (
 	"net/http"
