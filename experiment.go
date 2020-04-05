@@ -27,6 +27,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
@@ -176,7 +177,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 
 // Experiment is an experiment instance.
 type Experiment struct {
-	byteCounter   *dialer.ByteCounter
+	byteCounter   *bytecounter.Counter
 	callbacks     model.ExperimentCallbacks
 	measurer      model.ExperimentMeasurer
 	report        *collector.Report
@@ -191,7 +192,7 @@ type Experiment struct {
 // allows the programmer to create a custom, external experiment.
 func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment {
 	return &Experiment{
-		byteCounter:   dialer.NewByteCounter(),
+		byteCounter:   bytecounter.New(),
 		callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
 		measurer:      measurer,
 		session:       sess,
@@ -201,15 +202,15 @@ func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment
 	}
 }
 
-// KiBsReceived accounts for the KiBs received by the HTTP clients
+// KibiBytesReceived accounts for the KibiBytes received by the HTTP clients
 // managed by this session so far, including experiments.
-func (e *Experiment) KiBsReceived() float64 {
-	return e.byteCounter.Received.Load()
+func (e *Experiment) KibiBytesReceived() float64 {
+	return e.byteCounter.KibiBytesReceived()
 }
 
-// KiBsSent is like KiBsReceived but for the bytes sent.
-func (e *Experiment) KiBsSent() float64 {
-	return e.byteCounter.Sent.Load()
+// KibiBytesSent is like KibiBytesReceived but for the bytes sent.
+func (e *Experiment) KibiBytesSent() float64 {
+	return e.byteCounter.KibiBytesSent()
 }
 
 // Name returns the experiment name.
@@ -288,10 +289,10 @@ type sessionExperimentCallbacks struct {
 }
 
 func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	cb.sess.byteCounter.Received.Add(dloadKiB)
-	cb.exp.byteCounter.Received.Add(dloadKiB)
-	cb.sess.byteCounter.Sent.Add(uploadKiB)
-	cb.exp.byteCounter.Sent.Add(uploadKiB)
+	cb.sess.byteCounter.CountKibiBytesReceived(dloadKiB)
+	cb.exp.byteCounter.CountKibiBytesReceived(dloadKiB)
+	cb.sess.byteCounter.CountKibiBytesSent(uploadKiB)
+	cb.exp.byteCounter.CountKibiBytesSent(uploadKiB)
 	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
 }
 
