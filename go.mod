@@ -12,11 +12,11 @@ require (
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.11-0.20200225001008-1602125eff13+incompatible
-	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200128193928-738e15bfe6c3 // indirect
-	github.com/Psiphon-Labs/tls-tris v0.0.0-20191206190901-78f52e6d6243 // indirect
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.11-0.20200403181014-fcdf8913c6d5+incompatible
+	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200306193310-474e74c89fab // indirect
+	github.com/Psiphon-Labs/tls-tris v0.0.0-20200326183334-7ff412878bba // indirect
 	github.com/apex/log v1.1.2
-	github.com/aristanetworks/goarista v0.0.0-20200306225906-e0480e715858 // indirect
+	github.com/aristanetworks/goarista v0.0.0-20200331225509-2cc472e8fbd6 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
@@ -29,16 +29,15 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
-	github.com/golang/mock v1.3.1 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
-	github.com/gorilla/websocket v1.4.1
+	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 	github.com/juju/ratelimit v1.0.2-0.20191002062651-f60b32039441 // indirect
-	github.com/m-lab/ndt7-client-go v0.2.0
+	github.com/m-lab/ndt7-client-go v0.3.0
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
-	github.com/miekg/dns v1.1.27
+	github.com/miekg/dns v1.1.29
 	github.com/montanaflynn/stats v0.6.3
 	github.com/neubot/dash v0.4.1
 	github.com/oschwald/geoip2-golang v1.4.0
@@ -57,5 +56,5 @@ require (
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 )
