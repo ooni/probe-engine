@@ -24,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -45,7 +46,7 @@ type Session struct {
 	availableBouncers    []model.Service
 	availableCollectors  []model.Service
 	availableTestHelpers map[string][]model.Service
-	byteCounter          *dialer.ByteCounter
+	byteCounter          *bytecounter.Counter
 	httpDefaultClient    *http.Client
 	httpNoProxyClient    *http.Client
 	kvStore              model.KeyValueStore
@@ -112,7 +113,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	}
 	sess := &Session{
 		assetsDir:   config.AssetsDir,
-		byteCounter: dialer.NewByteCounter(),
+		byteCounter: bytecounter.New(),
 		kvStore:     config.KVStore,
 		privacySettings: model.PrivacySettings{
 			IncludeCountry: true,
@@ -157,12 +158,12 @@ func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
 // KiBsReceived accounts for the KiBs received by the HTTP clients
 // managed by this session so far, including experiments.
 func (s *Session) KiBsReceived() float64 {
-	return s.byteCounter.Received.Load()
+	return s.byteCounter.KibiBytesReceived()
 }
 
 // KiBsSent is like KiBsReceived but for the bytes sent.
 func (s *Session) KiBsSent() float64 {
-	return s.byteCounter.Sent.Load()
+	return s.byteCounter.KibiBytesSent()
 }
 
 // CABundlePath is like ASNDatabasePath but for the CA bundle path.

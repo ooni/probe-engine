@@ -18,6 +18,11 @@ func (c *Counter) CountBytesSent(count int) {
 	c.Sent.Add(int64(count))
 }
 
+// CountKibiBytesSent adds 1024*count to the bytes sent counter.
+func (c *Counter) CountKibiBytesSent(count float64) {
+	c.Sent.Add(int64(1024 * count))
+}
+
 // BytesSent returns the bytes sent so far.
 func (c *Counter) BytesSent() int64 {
 	return c.Sent.Load()
@@ -31,6 +36,11 @@ func (c *Counter) KibiBytesSent() float64 {
 // CountBytesReceived adds count to the bytes received counter.
 func (c *Counter) CountBytesReceived(count int) {
 	c.Received.Add(int64(count))
+}
+
+// CountKibiBytesReceived adds 1024*count to the bytes received counter.
+func (c *Counter) CountKibiBytesReceived(count float64) {
+	c.Received.Add(int64(1024 * count))
 }
 
 // BytesReceived returns the bytes received so far.
