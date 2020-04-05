@@ -11,8 +11,8 @@ import (
 )
 
 type eventlike struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value"`
+	Key   string                 `json:"key"`
+	Value map[string]interface{} `json:"value"`
 }
 
 func TestIntegrationGood(t *testing.T) {
@@ -518,5 +518,40 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 	}
 	if !reflect.DeepEqual(keys, expect) {
 		t.Fatal("seen different keys than expected")
+	}
+}
+
+func TestIntegrationCountBytesForExample(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../../testdata/oonimkall/assets",
+		"name": "Example",
+		"options": {
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../../testdata/oonimkall/state",
+		"temp_dir": "../../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var downloadKB, uploadKB float64
+	for !task.IsDone() {
+		eventstr := task.WaitForNextEvent()
+		var event eventlike
+		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+			t.Fatal(err)
+		}
+		switch event.Key {
+		case "status.end":
+			downloadKB = event.Value["downloaded_kb"].(float64)
+			uploadKB = event.Value["uploaded_kb"].(float64)
+		}
+	}
+	if downloadKB == 0 {
+		t.Fatal("downloadKB is zero")
+	}
+	if uploadKB == 0 {
+		t.Fatal("uploadKB is zero")
 	}
 }
