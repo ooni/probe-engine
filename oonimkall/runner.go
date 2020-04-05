@@ -205,12 +205,10 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
+	endEvent := new(eventStatusEnd)
 	defer func() {
 		sess.Close()
-		r.emitter.Emit(statusEnd, &eventStatusEnd{
-			DownloadedKB: sess.KibiBytesReceived(),
-			UploadedKB:   sess.KibiBytesSent(),
-		})
+		r.emitter.Emit(statusEnd, endEvent)
 	}()
 
 	builder, err := sess.NewExperimentBuilder(r.settings.Name)
@@ -278,6 +276,10 @@ func (r *runner) Run(ctx context.Context) {
 		r.settings.Inputs = append(r.settings.Inputs, "")
 	}
 	experiment := builder.NewExperiment()
+	defer func() {
+		endEvent.DownloadedKB = experiment.KibiBytesReceived()
+		endEvent.UploadedKB = experiment.KibiBytesSent()
+	}()
 	if !r.settings.Options.NoCollector {
 		if err := experiment.OpenReport(); err != nil {
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
