@@ -1,4 +1,4 @@
-package httptransport
+package oldhttptransport
 
 import (
 	"io/ioutil"
@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestIntegrationBodyTracerSuccess(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	client := &http.Client{
-		Transport: NewBodyTracer(http.DefaultTransport),
+		Transport: New(http.DefaultTransport),
 	}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
@@ -22,9 +22,9 @@ func TestIntegrationBodyTracerSuccess(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationBodyTracerFailure(t *testing.T) {
+func TestIntegrationFailure(t *testing.T) {
 	client := &http.Client{
-		Transport: NewBodyTracer(http.DefaultTransport),
+		Transport: New(http.DefaultTransport),
 	}
 	// This fails the request because we attempt to speak cleartext HTTP with
 	// a server that instead is expecting TLS.
