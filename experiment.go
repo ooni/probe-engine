@@ -357,7 +357,6 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	m.AddAnnotation("engine_name", "miniooni")
 	m.AddAnnotation("engine_version", version.Version)
 	m.AddAnnotation("platform", platform.Name())
-	m.Extensions = make(map[string]int64)
 	return &m
 }
 

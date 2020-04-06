@@ -33,9 +33,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil {
@@ -53,9 +51,7 @@ func TestIntegrationMeasure(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {

@@ -28,6 +28,9 @@ type ExtSpec struct {
 
 // AddTo adds the current ExtSpec to the specified measurement
 func (spec ExtSpec) AddTo(m *model.Measurement) {
+	if m.Extensions == nil {
+		m.Extensions = make(map[string]int64)
+	}
 	m.Extensions[spec.Name] = spec.V
 }
 

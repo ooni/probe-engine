@@ -36,9 +36,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
@@ -60,9 +58,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
@@ -78,9 +74,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
-	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-	}
+	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
 		&mockable.ExperimentSession{
@@ -111,9 +105,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
@@ -127,9 +119,7 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 	err := measurer.Run(
 		context.Background(),
 		sess,
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
@@ -163,16 +153,14 @@ var staticTestingTargets = []model.TorTarget{
 }
 
 func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
-	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-	}
+	var measurement model.Measurement
 	measurer := new(measurer)
 	measurer.measureTargets(
 		context.Background(),
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		measurement,
+		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
 		nil,
 	)
@@ -184,16 +172,14 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we don't actually do anything
-	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-	}
+	var measurement model.Measurement
 	measurer := new(measurer)
 	measurer.measureTargets(
 		ctx,
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		measurement,
+		&measurement,
 		handler.NewPrinterCallbacks(log.Log),
 		map[string]model.TorTarget{
 			"xx": staticTestingTargets[0],
@@ -217,9 +203,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, model.TorTarget) (oonitemplates.Results, error) {
@@ -256,9 +240,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, model.TorTarget) (oonitemplates.Results, error) {
@@ -295,9 +277,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -319,9 +299,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -346,9 +324,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -373,9 +349,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
-		&model.Measurement{
-			Extensions: make(map[string]int64),
-		},
+		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())

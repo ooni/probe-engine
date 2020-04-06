@@ -146,8 +146,7 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 		ControlSNI: "example.com",
 	})
 	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-		Input:      "\t",
+		Input: "\t",
 	}
 	err := measurer.Run(
 		ctx,
@@ -167,8 +166,7 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 		ControlSNI: "example.com",
 	})
 	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-		Input:      "kernel.org",
+		Input: "kernel.org",
 	}
 	err := measurer.Run(
 		ctx,
@@ -254,8 +252,7 @@ func TestUnitProcessallPanicsIfInvalidSNI(t *testing.T) {
 	}()
 	outputs := make(chan Subresult, 1)
 	measurement := &model.Measurement{
-		Extensions: make(map[string]int64),
-		Input:      "kernel.org",
+		Input: "kernel.org",
 	}
 	go func() {
 		outputs <- Subresult{
