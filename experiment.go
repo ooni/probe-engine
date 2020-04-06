@@ -336,7 +336,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	utctimenow := time.Now().UTC()
 	m := model.Measurement{
 		DataFormatVersion:         collector.DefaultDataFormatVersion,
-		Input:                     input,
+		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
 		ProbeIP:                   e.session.ProbeIP(),

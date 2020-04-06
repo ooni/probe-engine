@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+// MeasurementTarget is the target of a OONI measurement.
+type MeasurementTarget string
+
+// MarshalJSON serializes the MeasurementTarget.
+func (t MeasurementTarget) MarshalJSON() ([]byte, error) {
+	if t == "" {
+		return json.Marshal(nil)
+	}
+	return json.Marshal(string(t))
+}
+
 // Measurement is a OONI measurement.
 //
 // This structure is compatible with the definition of the base data format in
@@ -27,7 +38,7 @@ type Measurement struct {
 	ID string `json:"id,omitempty"`
 
 	// Input is the measurement input
-	Input string `json:"input,omitempty"`
+	Input MeasurementTarget `json:"input"`
 
 	// InputHashes contains input hashes
 	InputHashes []string `json:"input_hashes,omitempty"`
