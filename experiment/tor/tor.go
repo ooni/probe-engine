@@ -52,6 +52,14 @@ type TargetResults struct {
 	TLSHandshakes  oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
+func registerExtensions(m *model.Measurement) {
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtNetevents.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTCPConnect.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
+}
+
 // fillSummary fills the Summary field used by the UI.
 func (tr *TargetResults) fillSummary() {
 	tr.Summary = make(map[string]Summary)
@@ -161,6 +169,7 @@ func (m *measurer) Run(
 		ctx, 15*time.Second*time.Duration(len(targets)),
 	)
 	defer cancel()
+	registerExtensions(measurement)
 	m.measureTargets(ctx, sess, measurement, callbacks, targets)
 	return nil
 }

@@ -42,6 +42,13 @@ type TestKeys struct {
 	TLSHandshakes        oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
+func registerExtensions(m *model.Measurement) {
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTCPConnect.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
+}
+
 type urlMeasurements struct {
 	method  string
 	results *oonitemplates.HTTPDoResults
@@ -150,6 +157,7 @@ func (m *measurer) Run(
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+	registerExtensions(measurement)
 	// setup data container
 	var urlmeasurements = map[string]*urlMeasurements{
 		"http://149.154.175.50/":  &urlMeasurements{method: "POST"},

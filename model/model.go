@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+// MeasurementTarget is the target of a OONI measurement.
+type MeasurementTarget string
+
+// MarshalJSON serializes the MeasurementTarget.
+func (t MeasurementTarget) MarshalJSON() ([]byte, error) {
+	if t == "" {
+		return json.Marshal(nil)
+	}
+	return json.Marshal(string(t))
+}
+
 // Measurement is a OONI measurement.
 //
 // This structure is compatible with the definition of the base data format in
@@ -23,11 +34,15 @@ type Measurement struct {
 	// DataFormatVersion is the version of the data format
 	DataFormatVersion string `json:"data_format_version"`
 
+	// Extensions contains information about the extensions included
+	// into the test_keys of this measurement.
+	Extensions map[string]int64 `json:"extensions,omitempty"`
+
 	// ID is the locally generated measurement ID
 	ID string `json:"id,omitempty"`
 
 	// Input is the measurement input
-	Input string `json:"input,omitempty"`
+	Input MeasurementTarget `json:"input"`
 
 	// InputHashes contains input hashes
 	InputHashes []string `json:"input_hashes,omitempty"`
@@ -39,11 +54,6 @@ type Measurement struct {
 	// started the measurement. This is not included into the JSON
 	// and is only used within probe-engine as a "zero" time.
 	MeasurementStartTimeSaved time.Time `json:"-"`
-
-	// MeasurementRuntime contains the measurement runtime. The JSON name
-	// is test_runtime because this is the name expected by the OONI backend
-	// even though that name is clearly a misleading one.
-	MeasurementRuntime float64 `json:"test_runtime"`
 
 	// OOID is the measurement ID stamped by the OONI collector.
 	OOID string `json:"ooid,omitempty"`
@@ -94,6 +104,11 @@ type Measurement struct {
 
 	// TestName contains the test name
 	TestName string `json:"test_name"`
+
+	// MeasurementRuntime contains the measurement runtime. The JSON name
+	// is test_runtime because this is the name expected by the OONI backend
+	// even though that name is clearly a misleading one.
+	MeasurementRuntime float64 `json:"test_runtime"`
 
 	// TestStartTime contains the test start time
 	TestStartTime string `json:"test_start_time"`
