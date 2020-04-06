@@ -27,10 +27,12 @@ import (
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
+	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/version"
 )
 
 const dateFormat = "2006-01-02 15:04:05"
@@ -352,6 +354,9 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		TestStartTime:             e.testStartTime,
 		TestVersion:               e.testVersion,
 	}
+	m.AddAnnotation("engine_name", "miniooni")
+	m.AddAnnotation("engine_version", version.Version)
+	m.AddAnnotation("platform", platform.Name())
 	return &m
 }
 
