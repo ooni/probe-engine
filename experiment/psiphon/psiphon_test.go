@@ -150,7 +150,9 @@ func TestIntegration(t *testing.T) {
 	if err := m.Run(
 		context.Background(),
 		newsession(),
-		new(model.Measurement),
+		&model.Measurement{
+			Extensions: make(map[string]int64),
+		},
 		handler.NewPrinterCallbacks(log.Log),
 	); err != nil {
 		t.Fatal(err)
