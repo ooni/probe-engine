@@ -51,11 +51,6 @@ type Measurement struct {
 	// and is only used within probe-engine as a "zero" time.
 	MeasurementStartTimeSaved time.Time `json:"-"`
 
-	// MeasurementRuntime contains the measurement runtime. The JSON name
-	// is test_runtime because this is the name expected by the OONI backend
-	// even though that name is clearly a misleading one.
-	MeasurementRuntime float64 `json:"test_runtime"`
-
 	// OOID is the measurement ID stamped by the OONI collector.
 	OOID string `json:"ooid,omitempty"`
 
@@ -105,6 +100,11 @@ type Measurement struct {
 
 	// TestName contains the test name
 	TestName string `json:"test_name"`
+
+	// MeasurementRuntime contains the measurement runtime. The JSON name
+	// is test_runtime because this is the name expected by the OONI backend
+	// even though that name is clearly a misleading one.
+	MeasurementRuntime float64 `json:"test_runtime"`
 
 	// TestStartTime contains the test start time
 	TestStartTime string `json:"test_start_time"`
