@@ -47,7 +47,7 @@ func (m *measurer) Run(
 	if measurement.Input == "" {
 		return errors.New("web_connectivity: passed an empty input")
 	}
-	settings.Inputs = []string{measurement.Input}
+	settings.Inputs = []string{string(measurement.Input)}
 	err := mkhelper.Set(sess, "web-connectivity", "https", &settings)
 	if err != nil {
 		return err

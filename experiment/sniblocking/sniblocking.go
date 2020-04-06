@@ -37,6 +37,7 @@ type Config struct {
 // Subresult contains the keys of a single measurement
 // that targets either the target or the control.
 type Subresult struct {
+	Agent         string                          `json:"agent"`
 	Cached        bool                            `json:"-"`
 	Failure       *string                         `json:"failure"`
 	NetworkEvents oonidatamodel.NetworkEventsList `json:"network_events"`
@@ -46,6 +47,14 @@ type Subresult struct {
 	TCPConnect    oonidatamodel.TCPConnectList    `json:"tcp_connect"`
 	THAddress     string                          `json:"th_address"`
 	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
+}
+
+func registerExtensions(m *model.Measurement) {
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtNetevents.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTCPConnect.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
 }
 
 // TestKeys contains sniblocking test keys.
@@ -136,6 +145,7 @@ func (m *measurer) measureone(
 	})
 	// assemble and publish the results
 	smk := Subresult{
+		Agent:         "redirect",
 		NetworkEvents: oonidatamodel.NewNetworkEventsList(result.TestKeys),
 		Queries:       oonidatamodel.NewDNSQueriesList(result.TestKeys),
 		Requests:      oonidatamodel.NewRequestList(result.TestKeys),
@@ -205,7 +215,7 @@ func processall(
 	for smk := range outputs {
 		if smk.SNI == controlSNI {
 			testkeys.Control = smk
-		} else if smk.SNI == measurement.Input {
+		} else if smk.SNI == string(measurement.Input) {
 			testkeys.Target = smk
 		} else {
 			panic("unexpected smk.SNI")
@@ -225,15 +235,15 @@ func processall(
 
 // maybeURLToSNI handles the case where the input is from the test-lists
 // and hence every input is a URL rather than a domain.
-func maybeURLToSNI(input string) (string, error) {
-	parsed, err := url.Parse(input)
+func maybeURLToSNI(input model.MeasurementTarget) (model.MeasurementTarget, error) {
+	parsed, err := url.Parse(string(input))
 	if err != nil {
 		return "", err
 	}
-	if parsed.Path == input {
+	if parsed.Path == string(input) {
 		return input, nil
 	}
-	return parsed.Hostname(), nil
+	return model.MeasurementTarget(parsed.Hostname()), nil
 }
 
 func (m *measurer) Run(
@@ -258,6 +268,7 @@ func (m *measurer) Run(
 			m.config.ControlSNI, "443",
 		)
 	}
+	registerExtensions(measurement)
 	// TODO(bassosimone): if the user has configured DoT or DoH, here we
 	// probably want to perform the name resolution before the measurements
 	// or to make sure that the classify logic is robust to that.
@@ -269,8 +280,8 @@ func (m *measurer) Run(
 	}
 	measurement.Input = maybeParsed
 	inputs := []string{m.config.ControlSNI}
-	if measurement.Input != m.config.ControlSNI {
-		inputs = append(inputs, measurement.Input)
+	if string(measurement.Input) != m.config.ControlSNI {
+		inputs = append(inputs, string(measurement.Input))
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second*time.Duration(len(inputs)))
 	defer cancel()
