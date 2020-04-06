@@ -16,7 +16,36 @@ import (
 
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/tlsx"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
+)
+
+// ExtSpec describes a data format extension
+type ExtSpec struct {
+	Name string // extension name
+	V    int64  // extension version
+}
+
+// AddTo adds the current ExtSpec to the specified measurement
+func (spec ExtSpec) AddTo(m *model.Measurement) {
+	m.Extensions[spec.Name] = spec.V
+}
+
+var (
+	// ExtDNS is the version of df-002-dnst.md
+	ExtDNS = ExtSpec{Name: "dnst", V: 0}
+
+	// ExtNetevents is the version of df-008-netevents.md
+	ExtNetevents = ExtSpec{Name: "netevents", V: 0}
+
+	// ExtHTTP is the version of df-001-httpt.md
+	ExtHTTP = ExtSpec{Name: "httpt", V: 0}
+
+	// ExtTCPConnect is the version of df-005-tcpconnect.md
+	ExtTCPConnect = ExtSpec{Name: "tcpconnect", V: 0}
+
+	// ExtTLSHandshake is the version of df-006-tlshandshake.md
+	ExtTLSHandshake = ExtSpec{Name: "tlshandshake", V: 0}
 )
 
 // TCPConnectStatus contains the TCP connect status.

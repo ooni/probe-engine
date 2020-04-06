@@ -37,6 +37,7 @@ type Config struct {
 // Subresult contains the keys of a single measurement
 // that targets either the target or the control.
 type Subresult struct {
+	Agent         string                          `json:"agent"`
 	Cached        bool                            `json:"-"`
 	Failure       *string                         `json:"failure"`
 	NetworkEvents oonidatamodel.NetworkEventsList `json:"network_events"`
@@ -46,6 +47,14 @@ type Subresult struct {
 	TCPConnect    oonidatamodel.TCPConnectList    `json:"tcp_connect"`
 	THAddress     string                          `json:"th_address"`
 	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
+}
+
+func registerExtensions(m *model.Measurement) {
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtNetevents.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTCPConnect.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
 }
 
 // TestKeys contains sniblocking test keys.
@@ -136,6 +145,7 @@ func (m *measurer) measureone(
 	})
 	// assemble and publish the results
 	smk := Subresult{
+		Agent:         "redirect",
 		NetworkEvents: oonidatamodel.NewNetworkEventsList(result.TestKeys),
 		Queries:       oonidatamodel.NewDNSQueriesList(result.TestKeys),
 		Requests:      oonidatamodel.NewRequestList(result.TestKeys),
@@ -258,6 +268,7 @@ func (m *measurer) Run(
 			m.config.ControlSNI, "443",
 		)
 	}
+	registerExtensions(measurement)
 	// TODO(bassosimone): if the user has configured DoT or DoH, here we
 	// probably want to perform the name resolution before the measurements
 	// or to make sure that the classify logic is robust to that.

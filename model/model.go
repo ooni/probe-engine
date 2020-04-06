@@ -34,6 +34,10 @@ type Measurement struct {
 	// DataFormatVersion is the version of the data format
 	DataFormatVersion string `json:"data_format_version"`
 
+	// Extensions contains information about the extensions included
+	// into the test_keys of this measurement.
+	Extensions map[string]int64 `json:"extensions,omitempty"`
+
 	// ID is the locally generated measurement ID
 	ID string `json:"id,omitempty"`
 

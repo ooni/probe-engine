@@ -51,6 +51,12 @@ type TestKeys struct {
 	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
+func registerExtensions(m *model.Measurement) {
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
+}
+
 type runner struct {
 	beginning      time.Time
 	callbacks      model.ExperimentCallbacks
@@ -215,6 +221,7 @@ func (m *measurer) Run(
 	wg.Add(1)
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
 	r := newRunner(m.config, callbacks, measurement.MeasurementStartTimeSaved)
+	registerExtensions(measurement)
 	measurement.TestKeys = r.testkeys
 	r.testkeys.MaxRuntime = maxruntime
 	err = r.run(ctx, sess.Logger(), clnt.FetchPsiphonConfig)
