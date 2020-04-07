@@ -23,5 +23,6 @@ case $1 in
     exit 1
 esac
 go build -x -buildmode c-shared -tags nomk -ldflags="-s -w" -o libminiooni.$dll ./lib/libminiooni/...
+rm libminiooni.h
 install -d ./DLL/$1/
 mv libminiooni.$dll ./DLL/$1/
