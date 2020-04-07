@@ -1,0 +1,11 @@
+{
+    "assets_dir": "./x/assets",
+    "log_level": "DEBUG",
+    "name": "Ndt",
+    "options": {
+        "software_name": "pyminiooni",
+        "software_version": "0.1.0-dev"
+    },
+    "state_dir": "./x/state",
+    "temp_dir": "./x/tmp"
+}

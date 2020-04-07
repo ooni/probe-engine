@@ -31,8 +31,8 @@ func gostring(s *C.char) string {
 
 const maxIdx = C.INTPTR_MAX - 1
 
-//export miniooni_cgo_task_start
-func miniooni_cgo_task_start(settings *C.char) C.intptr_t {
+//export ooniffi_cgo_task_start
+func ooniffi_cgo_task_start(settings *C.char) C.intptr_t {
 	if settings == nil {
 		return 0
 	}
@@ -65,8 +65,8 @@ func restoreidx(v C.intptr_t) {
 	idx = v
 }
 
-//export miniooni_cgo_task_wait_for_next_event
-func miniooni_cgo_task_wait_for_next_event(handle C.intptr_t) (event *C.char) {
+//export ooniffi_cgo_task_wait_for_next_event
+func ooniffi_cgo_task_wait_for_next_event(handle C.intptr_t) (event *C.char) {
 	mu.Lock()
 	tp := m[handle]
 	mu.Unlock()
@@ -76,8 +76,8 @@ func miniooni_cgo_task_wait_for_next_event(handle C.intptr_t) (event *C.char) {
 	return
 }
 
-//export miniooni_cgo_task_is_done
-func miniooni_cgo_task_is_done(handle C.intptr_t) C.int {
+//export ooniffi_cgo_task_is_done
+func ooniffi_cgo_task_is_done(handle C.intptr_t) C.int {
 	var isdone C.int = 1
 	mu.Lock()
 	if tp := m[handle]; tp != nil && !tp.IsDone() {
@@ -87,8 +87,8 @@ func miniooni_cgo_task_is_done(handle C.intptr_t) C.int {
 	return isdone
 }
 
-//export miniooni_cgo_task_interrupt
-func miniooni_cgo_task_interrupt(handle C.intptr_t) {
+//export ooniffi_cgo_task_interrupt
+func ooniffi_cgo_task_interrupt(handle C.intptr_t) {
 	mu.Lock()
 	if tp := m[handle]; tp != nil {
 		tp.Interrupt()
@@ -96,13 +96,13 @@ func miniooni_cgo_task_interrupt(handle C.intptr_t) {
 	mu.Unlock()
 }
 
-//export miniooni_cgo_event_destroy
-func miniooni_cgo_event_destroy(event *C.char) {
+//export ooniffi_cgo_event_destroy
+func ooniffi_cgo_event_destroy(event *C.char) {
 	C.free(unsafe.Pointer(event))
 }
 
-//export miniooni_cgo_task_destroy
-func miniooni_cgo_task_destroy(handle C.intptr_t) {
+//export ooniffi_cgo_task_destroy
+func ooniffi_cgo_task_destroy(handle C.intptr_t) {
 	mu.Lock()
 	tp := m[handle]
 	delete(m, handle)
