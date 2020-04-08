@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+/*
+ * ooniffi.h - drop in replacement for Measurement Kit API/ABI. Just replace the
+ * `mk_` prefix with `ooniffi_`. Measurement Kit API/ABI specified at:
+ *
+ * https://github.com/measurement-kit/measurement-kit/tree/v0.10.11/include/measurement_kit
+ */
+
 typedef struct ooniffi_task_ ooniffi_task_t;
 typedef struct ooniffi_event_ ooniffi_event_t;
 
