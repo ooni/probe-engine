@@ -12,7 +12,7 @@ case $1 in
 esac
 export CGO_ENABLED=1 GOOS=$1 GOARCH=amd64
 out=./FFI/$GOOS/$GOARCH
-go build -x -buildmode c-shared -tags nomk -ldflags='-s -w' \
+go build -buildmode c-shared -tags nomk -ldflags='-s -w' \
     -o $out/$dll ./libooniffi/...
 rm -f $out/libooniffi.h
 cp ./libooniffi/ooniffi.h $out/

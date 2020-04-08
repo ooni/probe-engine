@@ -4,12 +4,12 @@
 
 #include "_cgo_export.h"
 
-struct mk_events_{
-    intptr_t handle;
+struct ooniffi_event_ {
+    char *string;
 };
 
-struct mk_task_{
-    char *string;
+struct ooniffi_task_ {
+    intptr_t handle;
 };
 
 ooniffi_task_t *ooniffi_task_start(const char *settings) {
