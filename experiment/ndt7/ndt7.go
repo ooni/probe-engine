@@ -41,6 +41,9 @@ type TestKeys struct {
 	// Failure is the failure string
 	Failure *string `json:"failure"`
 
+	// Protocol contains the version of the ndt protocol
+	Protocol int64 `json:"protocol"`
+
 	// Summary contains the measurement summary
 	Summary Summary `json:"summary"`
 
@@ -177,6 +180,7 @@ func (m *measurer) Run(
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	tk := new(TestKeys)
+	tk.Protocol = 7
 	measurement.TestKeys = tk
 	hostname, err := m.discover(ctx, sess)
 	if err != nil {
