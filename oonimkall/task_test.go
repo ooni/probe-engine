@@ -17,15 +17,15 @@ type eventlike struct {
 
 func TestIntegrationGood(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -59,7 +59,7 @@ func TestIntegrationGood(t *testing.T) {
 
 func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
@@ -68,8 +68,8 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +86,7 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 
 func TestIntegrationWithMeasurementFailure(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "ExampleWithFailure",
 		"options": {
@@ -95,8 +95,8 @@ func TestIntegrationWithMeasurementFailure(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestIntegrationInvalidJSON(t *testing.T) {
 
 func TestIntegrationUnsupportedSetting(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"input_filepaths": ["/nonexistent"],
 		"log_level": "DEBUG",
 		"name": "Example",
@@ -132,8 +132,8 @@ func TestIntegrationUnsupportedSetting(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -157,14 +157,14 @@ func TestIntegrationUnsupportedSetting(t *testing.T) {
 
 func TestIntegrationEmptyStateDir(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -194,8 +194,8 @@ func TestIntegrationEmptyAssetsDir(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -219,15 +219,15 @@ func TestIntegrationEmptyAssetsDir(t *testing.T) {
 
 func TestIntegrationUnknownExperiment(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Antani",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -251,7 +251,7 @@ func TestIntegrationUnknownExperiment(t *testing.T) {
 
 func TestIntegrationInvalidBouncerBaseURL(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
@@ -259,8 +259,8 @@ func TestIntegrationInvalidBouncerBaseURL(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -284,7 +284,7 @@ func TestIntegrationInvalidBouncerBaseURL(t *testing.T) {
 
 func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
@@ -293,8 +293,8 @@ func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -318,15 +318,15 @@ func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 
 func TestIntegrationInputIsRequired(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "ExampleWithInput",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -350,7 +350,7 @@ func TestIntegrationInputIsRequired(t *testing.T) {
 
 func TestIntegrationBadCollectorURL(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
@@ -358,8 +358,8 @@ func TestIntegrationBadCollectorURL(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -384,7 +384,7 @@ func TestIntegrationBadCollectorURL(t *testing.T) {
 func TestIntegrationMaxRuntime(t *testing.T) {
 	begin := time.Now()
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"inputs": ["a", "b", "c"],
 		"name": "ExampleWithInput",
 		"options": {
@@ -392,8 +392,8 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -410,7 +410,7 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 	// We cannot use WebConnectivity until it's written in Go since
 	// measurement-kit may not always be available
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"inputs": [
 			"http://www.kernel.org/",
 			"http://www.x.org/",
@@ -425,8 +425,8 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -472,14 +472,14 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 
 func TestIntegrationInterruptNdt7(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"name": "Ndt7",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -523,14 +523,14 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 
 func TestIntegrationCountBytesForExample(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	if err != nil {
 		t.Fatal(err)

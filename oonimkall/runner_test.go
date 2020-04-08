@@ -107,14 +107,14 @@ func TestUnitMeasurementSubmissionFailure(t *testing.T) {
 func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
 	out := make(chan *eventRecord)
 	settings := &settingsRecord{
-		AssetsDir: "../../testdata/oonimkall/assets",
+		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
 		Options: settingsOptions{
 			SoftwareName:    "oonimkall-test",
 			SoftwareVersion: "0.1.0",
 		},
-		StateDir: "../../testdata/oonimkall/state",
-		TempDir:  "../../testdata/oonimkall/tmp",
+		StateDir: "../testdata/oonimkall/state",
+		TempDir:  "../testdata/oonimkall/tmp",
 	}
 	seench := make(chan int64)
 	go func() {
