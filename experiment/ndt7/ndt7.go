@@ -33,6 +33,11 @@ type Summary struct {
 	Upload         float64 `json:"upload"`          // upload speed [kbit/s]
 }
 
+// ServerInfo contains information on the selected server
+type ServerInfo struct {
+	Hostname string `json:"hostname"`
+}
+
 // TestKeys contains the test keys
 type TestKeys struct {
 	// Download contains download results
@@ -40,6 +45,12 @@ type TestKeys struct {
 
 	// Failure is the failure string
 	Failure *string `json:"failure"`
+
+	// Protocol contains the version of the ndt protocol
+	Protocol int64 `json:"protocol"`
+
+	// Server contains information on the selected server
+	Server ServerInfo `json:"server"`
 
 	// Summary contains the measurement summary
 	Summary Summary `json:"summary"`
@@ -129,7 +140,7 @@ func (m *measurer) doDownload(
 			return nil
 		},
 	)
-	if err := mgr.run(ctx); err != nil {
+	if err := mgr.run(ctx); err != nil && err.Error() != "generic_timeout_error" {
 		sess.Logger().Warnf("download: %s", err)
 	}
 	return nil // failure is only when we cannot connect
@@ -166,7 +177,7 @@ func (m *measurer) doUpload(
 			})
 		},
 	)
-	if err := mgr.run(ctx); err != nil {
+	if err := mgr.run(ctx); err != nil && err.Error() != "generic_timeout_error" {
 		sess.Logger().Warnf("upload: %s", err)
 	}
 	return nil // failure is only when we cannot connect
@@ -177,12 +188,14 @@ func (m *measurer) Run(
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	tk := new(TestKeys)
+	tk.Protocol = 7
 	measurement.TestKeys = tk
 	hostname, err := m.discover(ctx, sess)
 	if err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
+	tk.Server = ServerInfo{Hostname: hostname}
 	callbacks.OnProgress(0, fmt.Sprintf("downloading: %s", hostname))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
