@@ -33,6 +33,11 @@ type Summary struct {
 	Upload         float64 `json:"upload"`          // upload speed [kbit/s]
 }
 
+// ServerInfo contains information on the selected server
+type ServerInfo struct {
+	Hostname string `json:"hostname"`
+}
+
 // TestKeys contains the test keys
 type TestKeys struct {
 	// Download contains download results
@@ -43,6 +48,9 @@ type TestKeys struct {
 
 	// Protocol contains the version of the ndt protocol
 	Protocol int64 `json:"protocol"`
+
+	// Server contains information on the selected server
+	Server ServerInfo `json:"server"`
 
 	// Summary contains the measurement summary
 	Summary Summary `json:"summary"`
@@ -187,6 +195,7 @@ func (m *measurer) Run(
 		tk.Failure = failureFromError(err)
 		return err
 	}
+	tk.Server = ServerInfo{Hostname: hostname}
 	callbacks.OnProgress(0, fmt.Sprintf("downloading: %s", hostname))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
