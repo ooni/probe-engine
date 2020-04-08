@@ -132,7 +132,7 @@ func (m *measurer) doDownload(
 			return nil
 		},
 	)
-	if err := mgr.run(ctx); err != nil {
+	if err := mgr.run(ctx); err != nil && err.Error() != "generic_timeout_error" {
 		sess.Logger().Warnf("download: %s", err)
 	}
 	return nil // failure is only when we cannot connect
@@ -169,7 +169,7 @@ func (m *measurer) doUpload(
 			})
 		},
 	)
-	if err := mgr.run(ctx); err != nil {
+	if err := mgr.run(ctx); err != nil && err.Error() != "generic_timeout_error" {
 		sess.Logger().Warnf("upload: %s", err)
 	}
 	return nil // failure is only when we cannot connect
