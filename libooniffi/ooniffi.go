@@ -21,7 +21,8 @@ func cstring(s string) *C.char {
 	return C.CString(s)
 }
 
-func freestring(s *C.char) {
+//export ooniffi_string_free
+func ooniffi_string_free(s *C.char) {
 	C.free(unsafe.Pointer(s))
 }
 
@@ -31,12 +32,12 @@ func gostring(s *C.char) string {
 
 const maxIdx = C.INTPTR_MAX - 1
 
-//export ooniffi_cgo_task_start
-func ooniffi_cgo_task_start(settings *C.char) C.intptr_t {
+//export ooniffi_task_start_
+func ooniffi_task_start_(settings *C.char) C.intptr_t {
 	if settings == nil {
 		return 0
 	}
-	tp, err := oonimkall.StartTask(C.GoString(settings))
+	tp, err := oonimkall.StartTask(gostring(settings))
 	if err != nil {
 		return 0
 	}
@@ -65,19 +66,19 @@ func restoreidx(v C.intptr_t) {
 	idx = v
 }
 
-//export ooniffi_cgo_task_wait_for_next_event
-func ooniffi_cgo_task_wait_for_next_event(handle C.intptr_t) (event *C.char) {
+//export ooniffi_task_yield_from
+func ooniffi_task_yield_from(handle C.intptr_t) (event *C.char) {
 	mu.Lock()
 	tp := m[handle]
 	mu.Unlock()
 	if tp != nil {
-		event = C.CString(tp.WaitForNextEvent())
+		event = cstring(tp.WaitForNextEvent())
 	}
 	return
 }
 
-//export ooniffi_cgo_task_is_done
-func ooniffi_cgo_task_is_done(handle C.intptr_t) C.int {
+//export ooniffi_task_done
+func ooniffi_task_done(handle C.intptr_t) C.int {
 	var isdone C.int = 1
 	mu.Lock()
 	if tp := m[handle]; tp != nil && !tp.IsDone() {
@@ -87,8 +88,8 @@ func ooniffi_cgo_task_is_done(handle C.intptr_t) C.int {
 	return isdone
 }
 
-//export ooniffi_cgo_task_interrupt
-func ooniffi_cgo_task_interrupt(handle C.intptr_t) {
+//export ooniffi_task_interrupt
+func ooniffi_task_interrupt(handle C.intptr_t) {
 	mu.Lock()
 	if tp := m[handle]; tp != nil {
 		tp.Interrupt()
@@ -96,13 +97,8 @@ func ooniffi_cgo_task_interrupt(handle C.intptr_t) {
 	mu.Unlock()
 }
 
-//export ooniffi_cgo_event_destroy
-func ooniffi_cgo_event_destroy(event *C.char) {
-	C.free(unsafe.Pointer(event))
-}
-
-//export ooniffi_cgo_task_destroy
-func ooniffi_cgo_task_destroy(handle C.intptr_t) {
+//export ooniffi_task_destroy
+func ooniffi_task_destroy(handle C.intptr_t) {
 	mu.Lock()
 	tp := m[handle]
 	delete(m, handle)
