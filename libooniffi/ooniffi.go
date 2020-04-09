@@ -1,9 +1,17 @@
 package main
 
 import (
-	//#cgo CFLAGS: -I${SRCDIR}/../..
+	//#include "ooniffi.h"
 	//#include <stdint.h>
 	//#include <stdlib.h>
+	//
+	//struct ooniffi_task_ {
+	//    intptr_t Handle;
+	//};
+	//
+	// struct ooniffi_event_ {
+	//    char *String;
+	//};
 	"C"
 	"sync"
 	"unsafe"
@@ -21,8 +29,7 @@ func cstring(s string) *C.char {
 	return C.CString(s)
 }
 
-//export ooniffi_string_free
-func ooniffi_string_free(s *C.char) {
+func freestring(s *C.char) {
 	C.free(unsafe.Pointer(s))
 }
 
@@ -33,13 +40,13 @@ func gostring(s *C.char) string {
 const maxIdx = C.INTPTR_MAX - 1
 
 //export ooniffi_task_start_
-func ooniffi_task_start_(settings *C.char) C.intptr_t {
+func ooniffi_task_start_(settings *C.char) *C.ooniffi_task_t {
 	if settings == nil {
-		return 0
+		return nil
 	}
 	tp, err := oonimkall.StartTask(gostring(settings))
 	if err != nil {
-		return 0
+		return nil
 	}
 	mu.Lock()
 	defer mu.Unlock()
@@ -48,12 +55,14 @@ func ooniffi_task_start_(settings *C.char) C.intptr_t {
 	// better strategy would probably be to restart from 1. However it's
 	// also unclear if any device could run that many tests, so...
 	if idx >= maxIdx {
-		return 0
+		return nil
 	}
 	handle := idx
 	idx++
 	m[handle] = tp
-	return handle
+	task := (*C.ooniffi_task_t)(C.malloc(C.sizeof_ooniffi_task_t))
+	task.Handle = handle
+	return task
 }
 
 func setmaxidx() C.intptr_t {
@@ -66,50 +75,76 @@ func restoreidx(v C.intptr_t) {
 	idx = v
 }
 
-//export ooniffi_task_yield_from
-func ooniffi_task_yield_from(handle C.intptr_t) (event *C.char) {
-	mu.Lock()
-	tp := m[handle]
-	mu.Unlock()
-	if tp != nil {
-		event = cstring(tp.WaitForNextEvent())
+//export ooniffi_task_wait_for_next_event
+func ooniffi_task_wait_for_next_event(task *C.ooniffi_task_t) (event *C.ooniffi_event_t) {
+	if task != nil {
+		mu.Lock()
+		tp := m[task.Handle]
+		mu.Unlock()
+		if tp != nil {
+			event = (*C.ooniffi_event_t)(C.malloc(C.sizeof_ooniffi_event_t))
+			event.String = cstring(tp.WaitForNextEvent())
+		}
 	}
 	return
 }
 
-//export ooniffi_task_done
-func ooniffi_task_done(handle C.intptr_t) C.int {
+//export ooniffi_task_is_done
+func ooniffi_task_is_done(task *C.ooniffi_task_t) C.int {
 	var isdone C.int = 1
-	mu.Lock()
-	if tp := m[handle]; tp != nil && !tp.IsDone() {
-		isdone = 0
+	if task != nil {
+		mu.Lock()
+		if tp := m[task.Handle]; tp != nil && !tp.IsDone() {
+			isdone = 0
+		}
+		mu.Unlock()
 	}
-	mu.Unlock()
 	return isdone
 }
 
 //export ooniffi_task_interrupt
-func ooniffi_task_interrupt(handle C.intptr_t) {
-	mu.Lock()
-	if tp := m[handle]; tp != nil {
-		tp.Interrupt()
+func ooniffi_task_interrupt(task *C.ooniffi_task_t) {
+	if task != nil {
+		mu.Lock()
+		if tp := m[task.Handle]; tp != nil {
+			tp.Interrupt()
+		}
+		mu.Unlock()
 	}
-	mu.Unlock()
+}
+
+//export ooniffi_event_serialization_
+func ooniffi_event_serialization_(event *C.ooniffi_event_t) (s *C.char) {
+	if event != nil {
+		s = event.String
+	}
+	return
+}
+
+//export ooniffi_event_destroy
+func ooniffi_event_destroy(event *C.ooniffi_event_t) {
+	if event != nil {
+		C.free(unsafe.Pointer(event.String))
+		C.free(unsafe.Pointer(event))
+	}
 }
 
 //export ooniffi_task_destroy
-func ooniffi_task_destroy(handle C.intptr_t) {
-	mu.Lock()
-	tp := m[handle]
-	delete(m, handle)
-	mu.Unlock()
-	if tp != nil { // drain task if needed
-		tp.Interrupt()
-		go func() {
-			for !tp.IsDone() {
-				tp.WaitForNextEvent()
-			}
-		}()
+func ooniffi_task_destroy(task *C.ooniffi_task_t) {
+	if task != nil {
+		mu.Lock()
+		tp := m[task.Handle]
+		delete(m, task.Handle)
+		mu.Unlock()
+		C.free(unsafe.Pointer(task))
+		if tp != nil { // drain task if needed
+			tp.Interrupt()
+			go func() {
+				for !tp.IsDone() {
+					tp.WaitForNextEvent()
+				}
+			}()
+		}
 	}
 }
 
