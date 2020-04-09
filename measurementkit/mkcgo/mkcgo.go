@@ -1,4 +1,4 @@
-// +build cgo
+// +build !nomk
 
 // Package mkcgo contains CGO bindings to Measurement Kit.
 package mkcgo
