@@ -2,6 +2,7 @@ package main
 
 import (
 	//#include "ooniffi.h"
+	//
 	//#include <stdint.h>
 	//#include <stdlib.h>
 	//
