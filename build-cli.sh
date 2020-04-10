@@ -10,8 +10,8 @@ case $1 in
   linux)
     docker run -v`pwd`:/ooni -w/ooni golang:alpine ./build-cli.sh _linux;;
   windows)
-    export CC=x86_64-w64-mingw32-gcc
-    go build -tags -nomk -o ./CLI/windows/amd64 ./cmd/miniooni;;
+    export CC=x86_64-w64-mingw32-gcc CGO_ENABLED=1 GOOS=windows GOARCH=amd64
+    go build -tags nomk -o ./CLI/windows/amd64 ./cmd/miniooni;;
   *)
     echo "usage: $0 darwin|linux|windows" 1>&2
     exit 1
