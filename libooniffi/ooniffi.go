@@ -2,11 +2,12 @@ package main
 
 import (
 	//#include "ooniffi.h"
+	//
 	//#include <stdint.h>
 	//#include <stdlib.h>
 	//
 	//struct ooniffi_task_ {
-	//    intptr_t Handle;
+	//    int64_t Handle;
 	//};
 	//
 	// struct ooniffi_event_ {
@@ -20,8 +21,8 @@ import (
 )
 
 var (
-	idx C.intptr_t = 1
-	m              = make(map[C.intptr_t]*oonimkall.Task)
+	idx C.int64_t
+	m              = make(map[C.int64_t]*oonimkall.Task)
 	mu  sync.Mutex
 )
 
@@ -37,7 +38,7 @@ func gostring(s *C.char) string {
 	return C.GoString(s)
 }
 
-const maxIdx = C.INTPTR_MAX - 1
+const maxIdx = C.INT64_MAX
 
 //export ooniffi_task_start_
 func ooniffi_task_start_(settings *C.char) *C.ooniffi_task_t {
@@ -52,7 +53,7 @@ func ooniffi_task_start_(settings *C.char) *C.ooniffi_task_t {
 	defer mu.Unlock()
 	// TODO(bassosimone): the following if is basic protection against
 	// undefined behaviour, i.e., the counter wrapping around. A much
-	// better strategy would probably be to restart from 1. However it's
+	// better strategy would probably be to restart from 0. However it's
 	// also unclear if any device could run that many tests, so...
 	if idx >= maxIdx {
 		return nil
@@ -65,13 +66,13 @@ func ooniffi_task_start_(settings *C.char) *C.ooniffi_task_t {
 	return task
 }
 
-func setmaxidx() C.intptr_t {
+func setmaxidx() C.int64_t {
 	o := idx
 	idx = maxIdx
 	return o
 }
 
-func restoreidx(v C.intptr_t) {
+func restoreidx(v C.int64_t) {
 	idx = v
 }
 

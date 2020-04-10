@@ -34,10 +34,10 @@ func TestUnitTaskStartIdxWrapping(t *testing.T) {
 	o := setmaxidx()
 	// do twice and see if it's idempotent
 	if task := ooniffi_task_start_(settings); task != nil {
-		t.Fatal("expected zero task here")
+		t.Fatal("expected nil task here")
 	}
 	if task := ooniffi_task_start_(settings); task != nil {
-		t.Fatal("expected zero task here")
+		t.Fatal("expected nil task here")
 	}
 	restoreidx(o)
 }
