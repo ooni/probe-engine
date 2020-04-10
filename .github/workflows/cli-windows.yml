@@ -1,0 +1,21 @@
+name: cli-windows
+on: [push]
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        go: ["1.14"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: apt install --yes mingw-w64
+      - run: ./build-cli.sh windows
+      - uses: actions/upload-artifact@v1
+        with:
+          name: miniooni-windows-amd64.exe
+          path: ./CLI/windows/amd64/miniooni.exe
