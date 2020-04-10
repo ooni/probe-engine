@@ -8,7 +8,7 @@ case $1 in
   darwin)
     go build -tags nomk -o ./CLI/darwin/amd64 ./cmd/miniooni;;
   linux)
-    docker run -it -v`pwd`:/ooni -w/ooni golang:alpine ./build-cli.sh _linux;;
+    docker run -v`pwd`:/ooni -w/ooni golang:alpine ./build-cli.sh _linux;;
   windows)
     export CC=x86_64-w64-mingw32-gcc
     go build -tags -nomk -o ./CLI/windows/amd64 ./cmd/miniooni;;
