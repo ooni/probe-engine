@@ -1,0 +1,16 @@
+name: ios
+on: [push]
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        go: ["1.14"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: ./build-ios.bash
