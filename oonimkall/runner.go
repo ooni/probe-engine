@@ -225,7 +225,7 @@ func (r *runner) Run(ctx context.Context) {
 	}
 
 	if !r.settings.Options.NoBouncer {
-		logger.Info("Looking up OONI backends")
+		logger.Info("Looking up OONI backends... please, be patient")
 		if err := sess.MaybeLookupBackends(); err != nil {
 			r.emitter.EmitFailureStartup(err.Error())
 			return
@@ -233,7 +233,7 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitStatusProgress(0.1, "contacted bouncer")
 	}
 	if !r.settings.Options.NoGeoIP && !r.settings.Options.NoResolverLookup {
-		logger.Info("Looking up your location")
+		logger.Info("Looking up your location... please, be patient")
 		maybeLookupLocation := r.maybeLookupLocation
 		if maybeLookupLocation == nil {
 			maybeLookupLocation = func(sess *engine.Session) error {
@@ -281,11 +281,15 @@ func (r *runner) Run(ctx context.Context) {
 		endEvent.UploadedKB = experiment.KibiBytesSent()
 	}()
 	if !r.settings.Options.NoCollector {
+		logger.Info("Opening report... please, be patient")
 		if err := experiment.OpenReport(); err != nil {
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
 			return
 		}
-		defer experiment.CloseReport()
+		defer func() {
+			logger.Info("Closing report... please, be patient")
+			experiment.CloseReport()
+		}()
 		r.emitter.EmitStatusProgress(0.4, "open report")
 		r.emitter.Emit(statusReportCreate, eventStatusReportGeneric{
 			ReportID: experiment.ReportID(),
@@ -307,6 +311,7 @@ func (r *runner) Run(ctx context.Context) {
 		if ctx.Err() != nil {
 			break
 		}
+		logger.Infof("Starting measurement with index %d", idx)
 		r.emitter.Emit(statusMeasurementStart, eventMeasurementGeneric{
 			Idx:   int64(idx),
 			Input: input,
@@ -337,6 +342,7 @@ func (r *runner) Run(ctx context.Context) {
 			JSONStr: string(data),
 		})
 		if !r.settings.Options.NoCollector {
+			logger.Info("Submitting measurement... please, be patient")
 			err := experiment.SubmitAndUpdateMeasurement(m)
 			r.emitter.Emit(measurementSubmissionEventName(err), eventMeasurementGeneric{
 				Idx:     int64(idx),
