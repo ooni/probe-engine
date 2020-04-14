@@ -320,8 +320,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	ctx := dialer.WithExperimentByteCounter(context.Background(), e.byteCounter)
-	return e.report.SubmitMeasurement(ctx, measurement)
+	return e.report.SubmitMeasurement(context.Background(), measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
