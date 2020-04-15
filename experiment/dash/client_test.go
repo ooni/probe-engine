@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/apex/log"
 )
 
 const (
@@ -19,7 +21,7 @@ const (
 
 func TestClientNegotiate(t *testing.T) {
 	t.Run("json.Marshal failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.JSONMarshal = func(v interface{}) ([]byte, error) {
 			return nil, errors.New("Mocked error")
 		}
@@ -30,7 +32,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("http.NewRequest failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPNewRequest = func(
 			method string, url string, body io.Reader,
 		) (*http.Request, error) {
@@ -43,7 +45,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("http.Client.Do failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return nil, errors.New("Mocked error")
 		}
@@ -54,7 +56,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("Non successful response", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 404,
@@ -67,7 +69,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("ioutil.ReadAll failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -84,7 +86,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("json.Unmarshal failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -98,7 +100,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("Invalid JSON or not authorized", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -112,7 +114,7 @@ func TestClientNegotiate(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -131,7 +133,7 @@ func TestClientNegotiate(t *testing.T) {
 
 func TestClientDownload(t *testing.T) {
 	t.Run("http.NewRequest failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPNewRequest = func(
 			method string, url string, body io.Reader,
 		) (*http.Request, error) {
@@ -145,7 +147,7 @@ func TestClientDownload(t *testing.T) {
 	})
 
 	t.Run("http.Client.Do failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return nil, errors.New("Mocked error")
 		}
@@ -157,7 +159,7 @@ func TestClientDownload(t *testing.T) {
 	})
 
 	t.Run("Non successful response", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 404,
@@ -171,7 +173,7 @@ func TestClientDownload(t *testing.T) {
 	})
 
 	t.Run("ioutil.ReadAll failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -189,7 +191,7 @@ func TestClientDownload(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -206,7 +208,7 @@ func TestClientDownload(t *testing.T) {
 
 func TestClientCollect(t *testing.T) {
 	t.Run("json.Marshal failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.JSONMarshal = func(v interface{}) ([]byte, error) {
 			return nil, errors.New("Mocked error")
 		}
@@ -217,7 +219,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("http.NewRequest failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPNewRequest = func(
 			method string, url string, body io.Reader,
 		) (*http.Request, error) {
@@ -230,7 +232,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("http.Client.Do failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return nil, errors.New("Mocked error")
 		}
@@ -241,7 +243,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("Non successful response", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 404,
@@ -254,7 +256,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("ioutil.ReadAll failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -271,7 +273,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("json.Unmarshal failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -285,7 +287,7 @@ func TestClientCollect(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.HTTPClientDo = func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
@@ -302,7 +304,7 @@ func TestClientCollect(t *testing.T) {
 func TestClientLoop(t *testing.T) {
 	t.Run("negotiate failure", func(t *testing.T) {
 		ch := make(chan clientResults)
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.Negotiate = func(ctx context.Context) (negotiateResponse, error) {
 			return negotiateResponse{}, errors.New("Mocked error")
 		}
@@ -314,7 +316,7 @@ func TestClientLoop(t *testing.T) {
 
 	t.Run("download failure", func(t *testing.T) {
 		ch := make(chan clientResults)
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.Negotiate = func(ctx context.Context) (negotiateResponse, error) {
 			return negotiateResponse{}, nil
 		}
@@ -331,7 +333,7 @@ func TestClientLoop(t *testing.T) {
 
 	t.Run("collect failure", func(t *testing.T) {
 		ch := make(chan clientResults)
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.Negotiate = func(ctx context.Context) (negotiateResponse, error) {
 			return negotiateResponse{}, nil
 		}
@@ -361,7 +363,7 @@ func TestClientLoop(t *testing.T) {
 
 func TestClientStartDownload(t *testing.T) {
 	t.Run("mlabns failure", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.Locate = func(ctx context.Context) (string, error) {
 			return "", errors.New("Mocked error")
 		}
@@ -375,7 +377,7 @@ func TestClientStartDownload(t *testing.T) {
 	})
 
 	t.Run("common case", func(t *testing.T) {
-		clnt := newClient(softwareName, softwareVersion)
+		clnt := newClient(http.DefaultClient, log.Log, softwareName, softwareVersion)
 		clnt.deps.Loop = func(ctx context.Context, ch chan<- clientResults) {
 			close(ch)
 		}

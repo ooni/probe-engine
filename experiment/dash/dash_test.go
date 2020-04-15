@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/apex/log"
@@ -30,7 +31,8 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	err := m.Run(
 		ctx,
 		&mockable.ExperimentSession{
-			MockableLogger: log.Log,
+			MockableHTTPClient: http.DefaultClient,
+			MockableLogger:     log.Log,
 		},
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(log.Log),
