@@ -184,13 +184,12 @@ func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	clnt := newClient(sess.DefaultHTTPClient(), sess.Logger(),
+	clnt := newClient(sess.DefaultHTTPClient(), sess.Logger(), callbacks,
 		sess.SoftwareName(), sess.SoftwareVersion())
 	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
-	callbacks.OnProgress(0, fmt.Sprintf("server: %s", clnt.FQDN))
 	return r.do(ctx)
 }
 

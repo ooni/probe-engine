@@ -83,6 +83,7 @@ type client struct {
 	Scheme string
 
 	begin         time.Time
+	callbacks     model.ExperimentCallbacks
 	clientResults []clientResults
 	deps          dependencies
 	err           error
@@ -105,7 +106,9 @@ func (c *client) locate(ctx context.Context) (string, error) {
 
 // newClient creates a new Client instance using the specified
 // client application name and version.
-func newClient(httpClient *http.Client, logger model.Logger, clientName, clientVersion string) (clnt *client) {
+func newClient(
+	httpClient *http.Client, logger model.Logger, callbacks model.ExperimentCallbacks,
+	clientName, clientVersion string) (clnt *client) {
 	ua := makeUserAgent(clientName, clientVersion)
 	clnt = &client{
 		ClientName:    clientName,
@@ -114,6 +117,7 @@ func newClient(httpClient *http.Client, logger model.Logger, clientName, clientV
 		Logger:        noLogger{},
 		MLabNSClient:  mlablocate.NewClient(httpClient, logger, ua),
 		begin:         time.Now(),
+		callbacks:     callbacks,
 		numIterations: 15,
 		Scheme:        "https",
 		userAgent:     ua,
@@ -332,7 +336,7 @@ func (c *client) StartDownload(ctx context.Context) (<-chan clientResults, error
 		}
 		c.FQDN = fqdn
 	}
-	c.Logger.Debugf("dash: using server: %s", c.FQDN)
+	c.callbacks.OnProgress(0, fmt.Sprintf("server: %s", c.FQDN))
 	ch := make(chan clientResults)
 	go c.deps.Loop(ctx, ch)
 	return ch, nil
