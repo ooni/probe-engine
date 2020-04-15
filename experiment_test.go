@@ -558,7 +558,7 @@ func TestOpenReportFailure(t *testing.T) {
 	}
 	exp := builder.NewExperiment()
 	exp.session.availableCollectors = []model.Service{
-		model.Service{
+		{
 			Address: server.URL,
 			Type:    "https",
 		},
@@ -599,7 +599,7 @@ func TestOpenReportNonHTTPS(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	sess.availableCollectors = []model.Service{
-		model.Service{
+		{
 			Address: "antani",
 			Type:    "mascetti",
 		},

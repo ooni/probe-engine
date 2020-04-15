@@ -160,8 +160,7 @@ func (c *client) negotiate(ctx context.Context) (negotiateResponse, error) {
 	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "")
-	req = req.WithContext(ctx)
-	resp, err := c.deps.HTTPClientDo(req)
+	resp, err := c.deps.HTTPClientDo(req.WithContext(ctx))
 	if err != nil {
 		return negotiateResp, err
 	}
@@ -210,9 +209,8 @@ func (c *client) download(
 	current.ServerURL = URL.String()
 	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("Authorization", authorization)
-	req = req.WithContext(ctx)
 	savedTicks := time.Now()
-	resp, err := c.deps.HTTPClientDo(req)
+	resp, err := c.deps.HTTPClientDo(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -258,8 +256,7 @@ func (c *client) collect(ctx context.Context, authorization string) error {
 	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", authorization)
-	req = req.WithContext(ctx)
-	resp, err := c.deps.HTTPClientDo(req)
+	resp, err := c.deps.HTTPClientDo(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
