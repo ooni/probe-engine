@@ -39,7 +39,6 @@ require (
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
 	github.com/miekg/dns v1.1.29
 	github.com/montanaflynn/stats v0.6.3
-	github.com/neubot/dash v0.4.1
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
