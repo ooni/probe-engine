@@ -184,7 +184,8 @@ func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	clnt := newClient(sess.SoftwareName(), sess.SoftwareVersion())
+	clnt := newClient(sess.DefaultHTTPClient(), sess.Logger(),
+		sess.SoftwareName(), sess.SoftwareVersion())
 	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)

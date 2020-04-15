@@ -13,7 +13,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/m-lab/ndt7-client-go/mlabns"
+	"github.com/ooni/probe-engine/internal/mlablocate"
+	"github.com/ooni/probe-engine/model"
 )
 
 const (
@@ -75,7 +76,7 @@ type client struct {
 
 	// MLabNSClient is the mlabns client. We'll configure it with
 	// defaults in NewClient and you may override it.
-	MLabNSClient *mlabns.Client
+	MLabNSClient *mlablocate.Client
 
 	// Scheme is the Scheme to use. By default we configure
 	// it to "https", but you can override it to "http".
@@ -99,19 +100,19 @@ func (c *client) httpClientDo(req *http.Request) (*http.Response, error) {
 }
 
 func (c *client) locate(ctx context.Context) (string, error) {
-	return c.MLabNSClient.Query(ctx)
+	return c.MLabNSClient.Query(ctx, "neubot")
 }
 
 // newClient creates a new Client instance using the specified
 // client application name and version.
-func newClient(clientName, clientVersion string) (clnt *client) {
+func newClient(httpClient *http.Client, logger model.Logger, clientName, clientVersion string) (clnt *client) {
 	ua := makeUserAgent(clientName, clientVersion)
 	clnt = &client{
 		ClientName:    clientName,
 		ClientVersion: clientVersion,
-		HTTPClient:    http.DefaultClient,
+		HTTPClient:    httpClient,
 		Logger:        noLogger{},
-		MLabNSClient:  mlabns.NewClient("neubot", ua),
+		MLabNSClient:  mlablocate.NewClient(httpClient, logger, ua),
 		begin:         time.Now(),
 		numIterations: 15,
 		Scheme:        "https",
