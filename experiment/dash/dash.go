@@ -8,11 +8,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/montanaflynn/stats"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
@@ -184,7 +188,42 @@ func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	clnt := newClient(sess.DefaultHTTPClient(), sess.Logger(), callbacks,
+	dlr := dialer.DNSDialer{
+		Dialer: dialer.LoggingDialer{
+			Dialer: dialer.ErrorWrapperDialer{
+				Dialer: dialer.TimeoutDialer{
+					Dialer: dialer.ByteCounterDialer{
+						Dialer: new(net.Dialer),
+					},
+				},
+			},
+			Logger: sess.Logger(),
+		},
+		Resolver: new(net.Resolver),
+	}
+	tlsdlr := dialer.TLSDialer{
+		Dialer: dlr,
+		TLSHandshaker: dialer.LoggingTLSHandshaker{
+			TLSHandshaker: dialer.ErrorWrapperTLSHandshaker{
+				TLSHandshaker: dialer.TimeoutTLSHandshaker{
+					TLSHandshaker: dialer.SystemTLSHandshaker{},
+				},
+			},
+			Logger: sess.Logger(),
+		},
+	}
+	httpClient := &http.Client{
+		Transport: httptransport.LoggingTransport{
+			RoundTripper: httptransport.UserAgentTransport{
+				RoundTripper: httptransport.NewSystemTransport(
+					dlr, tlsdlr, nil,
+				),
+			},
+			Logger: sess.Logger(),
+		},
+	}
+	defer httpClient.CloseIdleConnections()
+	clnt := newClient(httpClient, sess.Logger(), callbacks,
 		sess.SoftwareName(), sess.SoftwareVersion())
 	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
