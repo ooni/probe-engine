@@ -1,5 +1,3 @@
-// +build nomk
-
 // Package dash contains the dash network experiment. This file
 // in particular is a pure-Go implementation of this test.
 //

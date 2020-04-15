@@ -1,5 +1,3 @@
-// +build nomk
-
 package dash
 
 import (
