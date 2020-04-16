@@ -16,7 +16,7 @@ func TestUnitByteCounterFailure(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Err: io.EOF,
 		},
 	}
@@ -46,7 +46,7 @@ func TestUnitByteCounterSuccess(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{
 				Body: ioutil.NopCloser(strings.NewReader("1234567")),
 				Header: http.Header{
@@ -88,7 +88,7 @@ func TestUnitByteCounterSuccessWithEOF(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{
 				Body: bodyReaderWithEOF{},
 				Header: http.Header{

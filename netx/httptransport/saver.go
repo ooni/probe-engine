@@ -29,14 +29,19 @@ func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, erro
 		},
 	}))
 	start := time.Now()
+	txp.Saver.Write(trace.Event{
+		HTTPRequest: req,
+		Name:        "http_round_trip_start",
+		Time:        start,
+	})
 	resp, err := txp.RoundTripper.RoundTrip(req)
 	stop := time.Now()
 	txp.Saver.Write(trace.Event{
 		Duration:     stop.Sub(start),
 		Err:          err,
-		Name:         "http_round_trip",
 		HTTPRequest:  req,
 		HTTPResponse: resp,
+		Name:         "http_round_trip_done",
 		Time:         stop,
 	})
 	return resp, err

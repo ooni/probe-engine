@@ -3,6 +3,8 @@ package dialer
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"net"
 	"time"
 
@@ -54,16 +56,16 @@ func (h SaverTLSHandshaker) Handshake(
 	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, proxyconn, config)
 	stop := time.Now()
 	h.Saver.Write(trace.Event{
-		Duration:       stop.Sub(start),
-		TLSCipherSuite: tlsx.CipherSuiteString(state.CipherSuite),
-		Err:            err,
-		Name:           "tls_handshake_done",
-		TLSNextProtos:  config.NextProtos,
-		TLSPeerCerts:   state.PeerCertificates,
-		Proto:          state.NegotiatedProtocol,
-		TLSServerName:  config.ServerName,
-		Time:           stop,
-		TLSVersion:     tlsx.VersionString(state.Version),
+		Duration:           stop.Sub(start),
+		Err:                err,
+		Name:               "tls_handshake_done",
+		TLSCipherSuite:     tlsx.CipherSuiteString(state.CipherSuite),
+		TLSNegotiatedProto: state.NegotiatedProtocol,
+		TLSNextProtos:      config.NextProtos,
+		TLSPeerCerts:       peerCerts(state, err),
+		TLSServerName:      config.ServerName,
+		TLSVersion:         tlsx.VersionString(state.Version),
+		Time:               stop,
 	})
 	proxyconn.Conn = conn // stop measuring
 	return tlsconn, state, err
@@ -106,6 +108,28 @@ func (c tlsMeasuringConn) Write(p []byte) (int, error) {
 		Time:     stop,
 	})
 	return count, err
+}
+
+// peerCerts returns the certificates presented by the peer regardless
+// of whether the TLS handshake was successful
+func peerCerts(state tls.ConnectionState, err error) []*x509.Certificate {
+	var x509HostnameError x509.HostnameError
+	if errors.As(err, &x509HostnameError) {
+		// Test case: https://wrong.host.badssl.com/
+		return []*x509.Certificate{x509HostnameError.Certificate}
+	}
+	var x509UnknownAuthorityError x509.UnknownAuthorityError
+	if errors.As(err, &x509UnknownAuthorityError) {
+		// Test case: https://self-signed.badssl.com/. This error has
+		// never been among the ones returned by MK.
+		return []*x509.Certificate{x509UnknownAuthorityError.Cert}
+	}
+	var x509CertificateInvalidError x509.CertificateInvalidError
+	if errors.As(err, &x509CertificateInvalidError) {
+		// Test case: https://expired.badssl.com/
+		return []*x509.Certificate{x509CertificateInvalidError.Cert}
+	}
+	return state.PeerCertificates
 }
 
 var _ Dialer = SaverDialer{}

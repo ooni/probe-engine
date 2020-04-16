@@ -44,18 +44,18 @@ type SaverDNSTransport struct {
 func (txp SaverDNSTransport) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
 	start := time.Now()
 	txp.Saver.Write(trace.Event{
-		Name:     "dns_round_trip_start",
 		DNSQuery: query,
+		Name:     "dns_round_trip_start",
 		Time:     start,
 	})
 	reply, err := txp.RoundTripper.RoundTrip(ctx, query)
 	stop := time.Now()
 	txp.Saver.Write(trace.Event{
+		DNSQuery: query,
+		DNSReply: reply,
 		Duration: stop.Sub(start),
 		Err:      err,
 		Name:     "dns_round_trip_done",
-		DNSReply: reply,
-		DNSQuery: query,
 		Time:     stop,
 	})
 	return reply, err

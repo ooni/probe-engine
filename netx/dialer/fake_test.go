@@ -1,12 +1,10 @@
-package resolver
+package dialer
 
 import (
 	"context"
 	"io"
 	"net"
 	"time"
-
-	"github.com/ooni/probe-engine/atomicx"
 )
 
 type FakeDialer struct {
@@ -71,64 +69,3 @@ func (c *FakeConn) SetReadDeadline(t time.Time) (err error) {
 func (c *FakeConn) SetWriteDeadline(t time.Time) (err error) {
 	return c.SetWriteDeadlineError
 }
-
-type FakeTransport struct {
-	Data []byte
-	Err  error
-}
-
-func (ft FakeTransport) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
-	return ft.Data, ft.Err
-}
-
-func (ft FakeTransport) RequiresPadding() bool {
-	return false
-}
-
-func (ft FakeTransport) Address() string {
-	return ""
-}
-
-func (ft FakeTransport) Network() string {
-	return "fake"
-}
-
-type FakeEncoder struct {
-	Data []byte
-	Err  error
-}
-
-func (fe FakeEncoder) Encode(domain string, qtype uint16, padding bool) ([]byte, error) {
-	return fe.Data, fe.Err
-}
-
-type FakeResolver struct {
-	NumFailures *atomicx.Int64
-	Err         error
-	Result      []string
-}
-
-func NewFakeResolverThatFails() FakeResolver {
-	return FakeResolver{NumFailures: atomicx.NewInt64(), Err: errNotFound}
-}
-
-func NewFakeResolverWithResult(r []string) FakeResolver {
-	return FakeResolver{NumFailures: atomicx.NewInt64(), Result: r}
-}
-
-var errNotFound = &net.DNSError{
-	Err: "no such host",
-}
-
-func (c FakeResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	time.Sleep(10 * time.Microsecond)
-	if c.Err != nil {
-		if c.NumFailures != nil {
-			c.NumFailures.Add(1)
-		}
-		return nil, c.Err
-	}
-	return c.Result, nil
-}
-
-var _ Resolver = FakeResolver{}

@@ -16,7 +16,7 @@ import (
 func TestUnitLoggingFailure(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Err: io.EOF,
 		},
 	}
@@ -33,7 +33,7 @@ func TestUnitLoggingFailure(t *testing.T) {
 func TestUnitLoggingFailureWithNoHostHeader(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Err: io.EOF,
 		},
 	}
@@ -57,7 +57,7 @@ func TestUnitLoggingFailureWithNoHostHeader(t *testing.T) {
 func TestUnitLoggingSuccess(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{
 				Body: ioutil.NopCloser(strings.NewReader("")),
 				Header: http.Header{
