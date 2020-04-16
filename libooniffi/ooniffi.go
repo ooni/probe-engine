@@ -22,7 +22,7 @@ import (
 
 var (
 	idx C.int64_t
-	m              = make(map[C.int64_t]*oonimkall.Task)
+	m   = make(map[C.int64_t]*oonimkall.Task)
 	mu  sync.Mutex
 )
 
