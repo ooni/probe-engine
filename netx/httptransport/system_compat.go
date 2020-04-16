@@ -1,8 +1,10 @@
-// +build go1.14
+// +build !go1.14
 
 package httptransport
 
 import (
+	"context"
+	"net"
 	"net/http"
 )
 
@@ -12,7 +14,10 @@ func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer, proxy ProxyFunc) *ht
 	txp := http.DefaultTransport.(*http.Transport).Clone()
 	txp.Proxy = proxy
 	txp.DialContext = dialer.DialContext
-	txp.DialTLSContext = tlsDialer.DialTLSContext
+	txp.DialTLS = func(network, address string) (net.Conn, error) {
+		// Go < 1.14 does not have http.Transport.DialTLSContext
+		return tlsDialer.DialTLSContext(context.Background(), network, address)
+	}
 	// Better for Cloudflare DNS and also better because we have less
 	// noisy events and we can better understand what happened.
 	txp.MaxConnsPerHost = 1

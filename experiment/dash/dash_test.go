@@ -1,16 +1,14 @@
-// +build nomk
-
 package dash
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/montanaflynn/stats"
-	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
@@ -33,7 +31,8 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	err := m.Run(
 		ctx,
 		&mockable.ExperimentSession{
-			MockableLogger: log.Log,
+			MockableHTTPClient: http.DefaultClient,
+			MockableLogger:     log.Log,
 		},
 		&model.Measurement{},
 		handler.NewPrinterCallbacks(log.Log),
@@ -58,7 +57,7 @@ func TestUnitRunnerLoopClientStartDownloadError(t *testing.T) {
 func TestUnitRunnerLoopClientJSONMarshalErrorInLoop(t *testing.T) {
 	expect := errors.New("mocked error")
 	c := &mockableClient{
-		ClientResults: make([]neubotModel.ClientResults, 10),
+		ClientResults: make([]clientResults, 10),
 	}
 	runner := newRunner(
 		log.Log, c, handler.NewPrinterCallbacks(log.Log),
@@ -101,7 +100,7 @@ func TestUnitRunnerLoopJSONMarshalErrorAfterLoop(t *testing.T) {
 
 func TestUnitRunnerLoopGood(t *testing.T) {
 	c := &mockableClient{
-		ClientResults: make([]neubotModel.ClientResults, 10),
+		ClientResults: make([]clientResults, 10),
 	}
 	runner := newRunner(
 		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
@@ -115,13 +114,13 @@ func TestUnitRunnerLoopGood(t *testing.T) {
 type mockableClient struct {
 	StartDownloadError error
 	ErrorResult        error
-	ClientResults      []neubotModel.ClientResults
+	ClientResults      []clientResults
 }
 
 func (c *mockableClient) StartDownload(
 	ctx context.Context,
-) (<-chan neubotModel.ClientResults, error) {
-	ch := make(chan neubotModel.ClientResults)
+) (<-chan clientResults, error) {
+	ch := make(chan clientResults)
 	go func() {
 		defer close(ch)
 		for _, cr := range c.ClientResults {
@@ -135,7 +134,7 @@ func (c *mockableClient) Error() error {
 	return c.ErrorResult
 }
 
-func (c *mockableClient) ServerResults() []neubotModel.ServerResults {
+func (c *mockableClient) ServerResults() []serverResults {
 	return nil
 }
 
@@ -149,14 +148,14 @@ func TestUnitTestKeysAnalyzeWithNoData(t *testing.T) {
 
 func TestUnitTestKeysAnalyzeMedian(t *testing.T) {
 	tk := &TestKeys{
-		ReceiverData: []neubotModel.ClientResults{
-			neubotModel.ClientResults{
+		ReceiverData: []clientResults{
+			{
 				Rate: 1,
 			},
-			neubotModel.ClientResults{
+			{
 				Rate: 2,
 			},
-			neubotModel.ClientResults{
+			{
 				Rate: 3,
 			},
 		},
@@ -172,16 +171,16 @@ func TestUnitTestKeysAnalyzeMedian(t *testing.T) {
 
 func TestUnitTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
 	tk := &TestKeys{
-		ReceiverData: []neubotModel.ClientResults{
-			neubotModel.ClientResults{
+		ReceiverData: []clientResults{
+			{
 				ElapsedTarget: 2,
 				Elapsed:       1.4,
 			},
-			neubotModel.ClientResults{
+			{
 				ElapsedTarget: 2,
 				Elapsed:       3.0,
 			},
-			neubotModel.ClientResults{
+			{
 				ElapsedTarget: 2,
 				Elapsed:       1.8,
 			},
@@ -205,7 +204,7 @@ func TestUnitTestKeysPrintSummaryWithNoData(t *testing.T) {
 
 func TestUnitRunnerDoWithLoopSuccess(t *testing.T) {
 	c := &mockableClient{
-		ClientResults: make([]neubotModel.ClientResults, 10),
+		ClientResults: make([]clientResults, 10),
 	}
 	runner := newRunner(
 		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,

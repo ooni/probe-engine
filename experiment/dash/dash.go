@@ -1,5 +1,3 @@
-// +build nomk
-
 // Package dash contains the dash network experiment. This file
 // in particular is a pure-Go implementation of this test.
 //
@@ -10,13 +8,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/montanaflynn/stats"
-	"github.com/neubot/dash/client"
-	neubotModel "github.com/neubot/dash/model"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
@@ -38,33 +38,33 @@ type Simple struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	Simple       Simple                      `json:"simple"`
-	Failure      *string                     `json:"failure"`
-	ReceiverData []neubotModel.ClientResults `json:"receiver_data"`
+	Simple       Simple          `json:"simple"`
+	Failure      *string         `json:"failure"`
+	ReceiverData []clientResults `json:"receiver_data"`
 }
 
 type dashClient interface {
-	StartDownload(ctx context.Context) (<-chan neubotModel.ClientResults, error)
+	StartDownload(ctx context.Context) (<-chan clientResults, error)
 	Error() error
-	ServerResults() []neubotModel.ServerResults
+	ServerResults() []serverResults
 }
 
 type runner struct {
 	callbacks   model.ExperimentCallbacks
-	client      dashClient
+	clnt        dashClient
 	jsonMarshal func(v interface{}) ([]byte, error)
 	logger      model.Logger
 	tk          *TestKeys
 }
 
 func newRunner(
-	logger model.Logger, client dashClient,
+	logger model.Logger, clnt dashClient,
 	callbacks model.ExperimentCallbacks,
 	jsonMarshal func(v interface{}) ([]byte, error),
 ) *runner {
 	return &runner{
 		callbacks:   callbacks,
-		client:      client,
+		clnt:        clnt,
 		jsonMarshal: jsonMarshal,
 		logger:      logger,
 		tk:          new(TestKeys),
@@ -76,7 +76,7 @@ func newRunner(
 // function's concern to set tk.Failure. The caller must do it
 // when this function returns a non-nil error.
 func (r *runner) loop(ctx context.Context) error {
-	ch, err := r.client.StartDownload(ctx)
+	ch, err := r.clnt.StartDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -85,9 +85,9 @@ func (r *runner) loop(ctx context.Context) error {
 	for results := range ch {
 		percentage += step
 		message := fmt.Sprintf(
-			"rate: %s/s speed: %s/s elapsed: %.2f s",
-			humanize.Bytes(uint64(results.Rate*1000/8)), // Rate is kbit in SI size
-			humanize.Bytes(uint64(float64(results.Received)/results.Elapsed)),
+			"rate: %s speed: %s elapsed: %.2f s",
+			humanize.SI(float64(results.Rate)*1000, "bit/s"),
+			humanize.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
 			results.Elapsed,
 		)
 		r.callbacks.OnProgress(percentage, message)
@@ -98,10 +98,10 @@ func (r *runner) loop(ctx context.Context) error {
 		r.logger.Debugf("%s", string(data))
 		r.tk.ReceiverData = append(r.tk.ReceiverData, results)
 	}
-	if r.client.Error() != nil {
-		return r.client.Error()
+	if r.clnt.Error() != nil {
+		return r.clnt.Error()
 	}
-	data, err := r.jsonMarshal(r.client.ServerResults())
+	data, err := r.jsonMarshal(r.clnt.ServerResults())
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (tk *TestKeys) printSummary(logger model.Logger) {
 	)
 	logger.Debugf("Median bitrate: %s/s",
 		// MedianBitrate is kbit in SI size
-		humanize.Bytes(uint64(tk.Simple.MedianBitrate*1000/8)),
+		humanize.SI(float64(tk.Simple.MedianBitrate)*1000, "bit/s"),
 	)
 	logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
 }
@@ -188,12 +188,47 @@ func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	client := client.New(sess.SoftwareName(), sess.SoftwareVersion())
-	r := newRunner(sess.Logger(), client, callbacks, json.Marshal)
+	dlr := dialer.DNSDialer{
+		Dialer: dialer.LoggingDialer{
+			Dialer: dialer.ErrorWrapperDialer{
+				Dialer: dialer.TimeoutDialer{
+					Dialer: dialer.ByteCounterDialer{
+						Dialer: new(net.Dialer),
+					},
+				},
+			},
+			Logger: sess.Logger(),
+		},
+		Resolver: new(net.Resolver),
+	}
+	tlsdlr := dialer.TLSDialer{
+		Dialer: dlr,
+		TLSHandshaker: dialer.LoggingTLSHandshaker{
+			TLSHandshaker: dialer.ErrorWrapperTLSHandshaker{
+				TLSHandshaker: dialer.TimeoutTLSHandshaker{
+					TLSHandshaker: dialer.SystemTLSHandshaker{},
+				},
+			},
+			Logger: sess.Logger(),
+		},
+	}
+	httpClient := &http.Client{
+		Transport: httptransport.LoggingTransport{
+			RoundTripper: httptransport.UserAgentTransport{
+				RoundTripper: httptransport.NewSystemTransport(
+					dlr, tlsdlr, nil,
+				),
+			},
+			Logger: sess.Logger(),
+		},
+	}
+	defer httpClient.CloseIdleConnections()
+	clnt := newClient(httpClient, sess.Logger(), callbacks,
+		sess.SoftwareName(), sess.SoftwareVersion())
+	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
-	callbacks.OnProgress(0, fmt.Sprintf("server: %s", client.FQDN))
 	return r.do(ctx)
 }
 
