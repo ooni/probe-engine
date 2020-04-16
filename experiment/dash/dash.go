@@ -85,9 +85,9 @@ func (r *runner) loop(ctx context.Context) error {
 	for results := range ch {
 		percentage += step
 		message := fmt.Sprintf(
-			"rate: %s/s speed: %s/s elapsed: %.2f s",
-			humanize.Bytes(uint64(results.Rate*1000/8)), // Rate is kbit in SI size
-			humanize.Bytes(uint64(float64(results.Received)/results.Elapsed)),
+			"rate: %s speed: %s elapsed: %.2f s",
+			humanize.SI(float64(results.Rate)*1000, "bit/s"),
+			humanize.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
 			results.Elapsed,
 		)
 		r.callbacks.OnProgress(percentage, message)
@@ -148,7 +148,7 @@ func (tk *TestKeys) printSummary(logger model.Logger) {
 	)
 	logger.Debugf("Median bitrate: %s/s",
 		// MedianBitrate is kbit in SI size
-		humanize.Bytes(uint64(tk.Simple.MedianBitrate*1000/8)),
+		humanize.SI(float64(tk.Simple.MedianBitrate)*1000, "bit/s"),
 	)
 	logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
 }
