@@ -87,7 +87,7 @@ func (r runner) Scheme() string {
 }
 
 func (r runner) UserAgent() string {
-	return r.sess.SoftwareName() + "/" + r.sess.SoftwareVersion()
+	return r.sess.UserAgent()
 }
 
 func (r runner) loop(ctx context.Context, numIterations int64) error {
