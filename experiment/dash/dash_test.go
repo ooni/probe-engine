@@ -3,85 +3,200 @@ package dash
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/montanaflynn/stats"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
-	if measurer.ExperimentName() != "dash" {
-		t.Fatal("unexpected name")
-	}
-	if measurer.ExperimentVersion() != "0.8.0" {
-		t.Fatal("unexpected version")
-	}
-}
-
-func TestUnitMeasureWithCancelledContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cause failure
-	m := &measurer{}
-	err := m.Run(
-		ctx,
-		&mockable.ExperimentSession{
-			MockableHTTPClient: http.DefaultClient,
-			MockableLogger:     log.Log,
+func TestUnitRunnerLoopLocateFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	r := runner{
+		callbacks: handler.NewPrinterCallbacks(log.Log),
+		httpClient: &http.Client{
+			Transport: FakeHTTPTransport{
+				err: expected,
+			},
 		},
-		&model.Measurement{},
-		handler.NewPrinterCallbacks(log.Log),
-	)
-	if !errors.Is(err, context.Canceled) {
-		t.Fatal("unexpected error value")
+		saver: new(trace.Saver),
+		sess: &mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		tk: new(TestKeys),
+	}
+	err := r.loop(context.Background(), 1)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
 
-func TestUnitRunnerLoopClientStartDownloadError(t *testing.T) {
-	expect := errors.New("mocked error")
-	c := &mockableClient{StartDownloadError: expect}
-	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-	)
-	err := runner.loop(context.Background())
-	if !errors.Is(err, expect) {
-		t.Fatal("not the expected error")
+func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	r := runner{
+		callbacks: handler.NewPrinterCallbacks(log.Log),
+		httpClient: &http.Client{
+			Transport: &FakeHTTPTransportStack{
+				all: []FakeHTTPTransport{
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"fqdn": "ams01.measurementlab.net"}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{err: expected},
+				},
+			},
+		},
+		saver: new(trace.Saver),
+		sess: &mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		tk: new(TestKeys),
+	}
+	err := r.loop(context.Background(), 1)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
 
-func TestUnitRunnerLoopGood(t *testing.T) {
-	c := &mockableClient{
-		ClientResults: make([]clientResults, 10),
+func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	r := runner{
+		callbacks: handler.NewPrinterCallbacks(log.Log),
+		httpClient: &http.Client{
+			Transport: &FakeHTTPTransportStack{
+				all: []FakeHTTPTransport{
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"fqdn": "ams01.measurementlab.net"}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"authorization": "xx", "unchoked": 1}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{err: expected},
+				},
+			},
+		},
+		saver: new(trace.Saver),
+		sess: &mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		tk: new(TestKeys),
 	}
-	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-	)
-	err := runner.loop(context.Background())
+	err := r.loop(context.Background(), 1)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitRunnerLoopCollectFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	saver := new(trace.Saver)
+	saver.Write(trace.Event{Name: "connect", Duration: 150 * time.Millisecond})
+	r := runner{
+		callbacks: handler.NewPrinterCallbacks(log.Log),
+		httpClient: &http.Client{
+			Transport: &FakeHTTPTransportStack{
+				all: []FakeHTTPTransport{
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"fqdn": "ams01.measurementlab.net"}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"authorization": "xx", "unchoked": 1}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{err: expected},
+				},
+			},
+		},
+		saver: saver,
+		sess: &mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		tk: new(TestKeys),
+	}
+	err := r.loop(context.Background(), 1)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitRunnerLoopSuccess(t *testing.T) {
+	saver := new(trace.Saver)
+	saver.Write(trace.Event{Name: "connect", Duration: 150 * time.Millisecond})
+	r := runner{
+		callbacks: handler.NewPrinterCallbacks(log.Log),
+		httpClient: &http.Client{
+			Transport: &FakeHTTPTransportStack{
+				all: []FakeHTTPTransport{
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"fqdn": "ams01.measurementlab.net"}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body: ioutil.NopCloser(strings.NewReader(
+								`{"authorization": "xx", "unchoked": 1}`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
+							StatusCode: 200,
+						},
+					},
+					FakeHTTPTransport{
+						resp: &http.Response{
+							Body:       ioutil.NopCloser(strings.NewReader(`[]`)),
+							StatusCode: 200,
+						},
+					},
+				},
+			},
+		},
+		saver: saver,
+		sess: &mockable.ExperimentSession{
+			MockableLogger: log.Log,
+		},
+		tk: new(TestKeys),
+	}
+	err := r.loop(context.Background(), 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-type mockableClient struct {
-	StartDownloadError error
-	ClientResults      []clientResults
-}
-
-func (c *mockableClient) StartDownload(
-	ctx context.Context,
-) (<-chan clientResults, error) {
-	ch := make(chan clientResults)
-	go func() {
-		defer close(ch)
-		for _, cr := range c.ClientResults {
-			ch <- cr
-		}
-	}()
-	return ch, c.StartDownloadError
 }
 
 func TestUnitTestKeysAnalyzeWithNoData(t *testing.T) {
@@ -141,26 +256,30 @@ func TestUnitTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerDoWithLoopSuccess(t *testing.T) {
-	c := &mockableClient{
-		ClientResults: make([]clientResults, 10),
+func TestUnitNewExperimentMeasurer(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	if measurer.ExperimentName() != "dash" {
+		t.Fatal("unexpected name")
 	}
-	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-	)
-	err := runner.do(context.Background())
-	if err != nil {
-		t.Fatal(err)
+	if measurer.ExperimentVersion() != "0.8.0" {
+		t.Fatal("unexpected version")
 	}
 }
 
-func TestUnitRunnerDoWithNoData(t *testing.T) {
-	c := &mockableClient{}
-	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log),
+func TestUnitMeasureWithCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cause failure
+	m := &measurer{}
+	err := m.Run(
+		ctx,
+		&mockable.ExperimentSession{
+			MockableHTTPClient: http.DefaultClient,
+			MockableLogger:     log.Log,
+		},
+		&model.Measurement{},
+		handler.NewPrinterCallbacks(log.Log),
 	)
-	err := runner.do(context.Background())
-	if !errors.Is(err, stats.EmptyInputErr) {
-		t.Fatal(err)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("unexpected error value")
 	}
 }
