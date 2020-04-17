@@ -140,6 +140,13 @@ func (r runner) measure(
 			fqdn:          fqdn,
 		})
 		if err != nil {
+			// Implementation note: ndt7 controls the connection much
+			// more than us and it can tell whether an error occurs when
+			// connecting or later. We cannot say that very precisely
+			// because, in principle, we may reconnect. So we always
+			// return error here. This comment is being introduced so
+			// that we don't do https://github.com/ooni/probe-engine/pull/526
+			// again, because that isn't accurate.
 			return err
 		}
 		current.Elapsed = result.elapsed
