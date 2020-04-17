@@ -15,6 +15,7 @@ import (
 
 	"github.com/ooni/probe-engine/internal/mlablocate"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/trace"
 )
 
 const (
@@ -88,6 +89,7 @@ type client struct {
 	deps          dependencies
 	err           error
 	numIterations int64
+	saver         *trace.Saver
 	serverResults []serverResults
 	userAgent     string
 }
@@ -107,7 +109,8 @@ func (c *client) locate(ctx context.Context) (string, error) {
 // newClient creates a new Client instance using the specified
 // client application name and version.
 func newClient(
-	httpClient *http.Client, logger model.Logger, callbacks model.ExperimentCallbacks,
+	httpClient *http.Client, saver *trace.Saver, logger model.Logger,
+	callbacks model.ExperimentCallbacks,
 	clientName, clientVersion string) (clnt *client) {
 	ua := makeUserAgent(clientName, clientVersion)
 	clnt = &client{
@@ -116,10 +119,11 @@ func newClient(
 		HTTPClient:    httpClient,
 		Logger:        noLogger{},
 		MLabNSClient:  mlablocate.NewClient(httpClient, logger, ua),
+		Scheme:        "https",
 		begin:         time.Now(),
 		callbacks:     callbacks,
 		numIterations: 15,
-		Scheme:        "https",
+		saver:         saver,
 		userAgent:     ua,
 	}
 	clnt.deps = dependencies{
@@ -302,11 +306,21 @@ func (c *client) loop(ctx context.Context, ch chan<- clientResults) {
 		RealAddress:   negotiateResp.RealAddress,
 		Version:       magicVersion,
 	}
+	var connectTime float64
 	for current.Iteration < c.numIterations {
 		c.err = c.deps.Download(ctx, negotiateResp.Authorization, &current)
 		if c.err != nil {
 			return
 		}
+		// Read the events so far and possibly update our measurement
+		// of the latest connect time. We should have one sample in most
+		// cases, because the connection should be persistent.
+		for _, ev := range c.saver.Read() {
+			if ev.Name == "connect" {
+				connectTime = ev.Duration.Seconds()
+			}
+		}
+		current.ConnectTime = connectTime
 		c.clientResults = append(c.clientResults, current)
 		ch <- current
 		current.Iteration++

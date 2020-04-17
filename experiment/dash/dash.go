@@ -17,6 +17,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/trace"
 )
 
 const (
@@ -112,12 +113,15 @@ func (r *runner) loop(ctx context.Context) error {
 
 // analyze analyzes the results of DASH and fills stats inside of tk.
 func (tk *TestKeys) analyze() error {
-	var rates []float64
-	var frameReadyTime float64
-	var playTime float64
+	var (
+		rates          []float64
+		frameReadyTime float64
+		playTime       float64
+	)
 	for _, results := range tk.ReceiverData {
 		rates = append(rates, float64(results.Rate))
-		tk.Simple.ConnectLatency = results.ConnectTime // same in all samples
+		// Same in all samples if we're using a single connection
+		tk.Simple.ConnectLatency = results.ConnectTime
 		// Rationale: first segment plays when it arrives. Subsequent segments
 		// would play in ElapsedTarget seconds. However, will play when they
 		// arrive. Stall is the time we need to wait for a frame to arrive with
@@ -188,12 +192,16 @@ func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
+	saver := &trace.Saver{}
 	dlr := dialer.DNSDialer{
 		Dialer: dialer.LoggingDialer{
 			Dialer: dialer.ErrorWrapperDialer{
 				Dialer: dialer.TimeoutDialer{
 					Dialer: dialer.ByteCounterDialer{
-						Dialer: new(net.Dialer),
+						Dialer: dialer.SaverDialer{
+							Dialer: new(net.Dialer),
+							Saver:  saver,
+						},
 					},
 				},
 			},
@@ -223,7 +231,7 @@ func (m *measurer) Run(
 		},
 	}
 	defer httpClient.CloseIdleConnections()
-	clnt := newClient(httpClient, sess.Logger(), callbacks,
+	clnt := newClient(httpClient, saver, sess.Logger(), callbacks,
 		sess.SoftwareName(), sess.SoftwareVersion())
 	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
 	measurement.TestKeys = r.tk
