@@ -28,7 +28,7 @@ const (
 	defaultTimeout = 55 * time.Second
 	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.8.0"
+	testVersion    = "0.9.0"
 	totalStep      = 15.0
 )
 
