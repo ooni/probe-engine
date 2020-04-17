@@ -45,9 +45,3 @@ type negotiateResponse struct {
 	RealAddress   string `json:"real_address"`
 	Unchoked      int    `json:"unchoked"`
 }
-
-// dashLogger is the interface we expect from a logger
-type dashLogger interface {
-	Debug(msg string)
-	Debugf(format string, v ...interface{})
-}
