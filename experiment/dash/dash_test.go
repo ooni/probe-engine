@@ -53,18 +53,6 @@ func TestUnitRunnerLoopClientStartDownloadError(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerLoopClientError(t *testing.T) {
-	expect := errors.New("mocked error")
-	c := &mockableClient{ErrorResult: expect}
-	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-	)
-	err := runner.loop(context.Background())
-	if !errors.Is(err, expect) {
-		t.Fatal("not the expected error")
-	}
-}
-
 func TestUnitRunnerLoopGood(t *testing.T) {
 	c := &mockableClient{
 		ClientResults: make([]clientResults, 10),
@@ -80,7 +68,6 @@ func TestUnitRunnerLoopGood(t *testing.T) {
 
 type mockableClient struct {
 	StartDownloadError error
-	ErrorResult        error
 	ClientResults      []clientResults
 }
 
@@ -95,14 +82,6 @@ func (c *mockableClient) StartDownload(
 		}
 	}()
 	return ch, c.StartDownloadError
-}
-
-func (c *mockableClient) Error() error {
-	return c.ErrorResult
-}
-
-func (c *mockableClient) ServerResults() []serverResults {
-	return nil
 }
 
 func TestUnitTestKeysAnalyzeWithNoData(t *testing.T) {

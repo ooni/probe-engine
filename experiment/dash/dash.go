@@ -45,8 +45,6 @@ type TestKeys struct {
 
 type dashClient interface {
 	StartDownload(ctx context.Context) (<-chan clientResults, error)
-	Error() error
-	ServerResults() []serverResults
 }
 
 type runner struct {
@@ -89,9 +87,6 @@ func (r *runner) loop(ctx context.Context) error {
 		)
 		r.callbacks.OnProgress(percentage, message)
 		r.tk.ReceiverData = append(r.tk.ReceiverData, results)
-	}
-	if r.clnt.Error() != nil {
-		return r.clnt.Error()
 	}
 	// TODO(bassosimone): it seems we're not saving the server data?
 	return nil
