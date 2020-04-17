@@ -6,7 +6,6 @@ package dash
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -51,24 +50,21 @@ type dashClient interface {
 }
 
 type runner struct {
-	callbacks   model.ExperimentCallbacks
-	clnt        dashClient
-	jsonMarshal func(v interface{}) ([]byte, error)
-	logger      model.Logger
-	tk          *TestKeys
+	callbacks model.ExperimentCallbacks
+	clnt      dashClient
+	logger    model.Logger
+	tk        *TestKeys
 }
 
 func newRunner(
 	logger model.Logger, clnt dashClient,
 	callbacks model.ExperimentCallbacks,
-	jsonMarshal func(v interface{}) ([]byte, error),
 ) *runner {
 	return &runner{
-		callbacks:   callbacks,
-		clnt:        clnt,
-		jsonMarshal: jsonMarshal,
-		logger:      logger,
-		tk:          new(TestKeys),
+		callbacks: callbacks,
+		clnt:      clnt,
+		logger:    logger,
+		tk:        new(TestKeys),
 	}
 }
 
@@ -92,21 +88,11 @@ func (r *runner) loop(ctx context.Context) error {
 			results.Elapsed,
 		)
 		r.callbacks.OnProgress(percentage, message)
-		data, err := r.jsonMarshal(results)
-		if err != nil {
-			return err
-		}
-		r.logger.Debugf("%s", string(data))
 		r.tk.ReceiverData = append(r.tk.ReceiverData, results)
 	}
 	if r.clnt.Error() != nil {
 		return r.clnt.Error()
 	}
-	data, err := r.jsonMarshal(r.clnt.ServerResults())
-	if err != nil {
-		return err
-	}
-	r.logger.Debugf("Server result: %s", string(data))
 	// TODO(bassosimone): it seems we're not saving the server data?
 	return nil
 }
@@ -142,21 +128,6 @@ func (tk *TestKeys) analyze() error {
 	return err
 }
 
-// printSummary just prints a debug-level summary. We cannot use the info
-// level because that is reserved for the OONI Probe CLI.
-func (tk *TestKeys) printSummary(logger model.Logger) {
-	logger.Debugf("Test Summary: ")
-	logger.Debugf("Connect latency: %s",
-		// convert to nanoseconds
-		time.Duration(tk.Simple.ConnectLatency*1000000000),
-	)
-	logger.Debugf("Median bitrate: %s/s",
-		// MedianBitrate is kbit in SI size
-		humanize.SI(float64(tk.Simple.MedianBitrate)*1000, "bit/s"),
-	)
-	logger.Debugf("Min. playout delay: %.3f s", tk.Simple.MinPlayoutDelay)
-}
-
 // do is the main function of the runner
 func (r *runner) do(ctx context.Context) error {
 	err := r.loop(ctx)
@@ -172,7 +143,6 @@ func (r *runner) do(ctx context.Context) error {
 		return err
 	}
 	r.callbacks.OnProgress(1, "done")
-	r.tk.printSummary(r.logger)
 	return nil
 }
 
@@ -233,7 +203,7 @@ func (m *measurer) Run(
 	defer httpClient.CloseIdleConnections()
 	clnt := newClient(httpClient, saver, sess.Logger(), callbacks,
 		sess.SoftwareName(), sess.SoftwareVersion())
-	r := newRunner(sess.Logger(), clnt, callbacks, json.Marshal)
+	r := newRunner(sess.Logger(), clnt, callbacks)
 	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()

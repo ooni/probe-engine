@@ -33,15 +33,6 @@ type serverResults struct {
 	Timestamp int64   `json:"timestamp"`
 }
 
-// serverSchema is the data format traditionally used by the
-// original Neubot server for DASH experiments.
-type serverSchema struct {
-	Client              []clientResults `json:"client"`
-	ServerSchemaVersion int             `json:"srvr_schema_version"`
-	ServerTimestamp     int64           `json:"srvr_timestamp"`
-	Server              []serverResults `json:"server"`
-}
-
 // negotiateRequest contains the request of negotiation
 type negotiateRequest struct {
 	DASHRates []int64 `json:"dash_rates"`
@@ -55,12 +46,8 @@ type negotiateResponse struct {
 	Unchoked      int    `json:"unchoked"`
 }
 
-// dashLogger defines the common interface that a logger should have. It is
-// out of the box compatible with `log.Log` in `apex/log`.
+// dashLogger is the interface we expect from a logger
 type dashLogger interface {
-	// Debug emits a debug message.
 	Debug(msg string)
-
-	// Debugf formats and emits a debug message.
 	Debugf(format string, v ...interface{})
 }

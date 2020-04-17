@@ -2,7 +2,6 @@ package dash
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -46,24 +45,7 @@ func TestUnitRunnerLoopClientStartDownloadError(t *testing.T) {
 	expect := errors.New("mocked error")
 	c := &mockableClient{StartDownloadError: expect}
 	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
-	)
-	err := runner.loop(context.Background())
-	if !errors.Is(err, expect) {
-		t.Fatal("not the expected error")
-	}
-}
-
-func TestUnitRunnerLoopClientJSONMarshalErrorInLoop(t *testing.T) {
-	expect := errors.New("mocked error")
-	c := &mockableClient{
-		ClientResults: make([]clientResults, 10),
-	}
-	runner := newRunner(
 		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-		func(v interface{}) ([]byte, error) {
-			return nil, expect
-		},
 	)
 	err := runner.loop(context.Background())
 	if !errors.Is(err, expect) {
@@ -75,22 +57,7 @@ func TestUnitRunnerLoopClientError(t *testing.T) {
 	expect := errors.New("mocked error")
 	c := &mockableClient{ErrorResult: expect}
 	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
-	)
-	err := runner.loop(context.Background())
-	if !errors.Is(err, expect) {
-		t.Fatal("not the expected error")
-	}
-}
-
-func TestUnitRunnerLoopJSONMarshalErrorAfterLoop(t *testing.T) {
-	expect := errors.New("mocked error")
-	c := &mockableClient{}
-	runner := newRunner(
 		log.Log, c, handler.NewPrinterCallbacks(log.Log),
-		func(v interface{}) ([]byte, error) {
-			return nil, expect
-		},
 	)
 	err := runner.loop(context.Background())
 	if !errors.Is(err, expect) {
@@ -103,7 +70,7 @@ func TestUnitRunnerLoopGood(t *testing.T) {
 		ClientResults: make([]clientResults, 10),
 	}
 	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
+		log.Log, c, handler.NewPrinterCallbacks(log.Log),
 	)
 	err := runner.loop(context.Background())
 	if err != nil {
@@ -195,19 +162,12 @@ func TestUnitTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
 	}
 }
 
-func TestUnitTestKeysPrintSummaryWithNoData(t *testing.T) {
-	// The main concern here is that we don't crash when we're
-	// provided empty input from the caller
-	tk := &TestKeys{}
-	tk.printSummary(log.Log)
-}
-
 func TestUnitRunnerDoWithLoopSuccess(t *testing.T) {
 	c := &mockableClient{
 		ClientResults: make([]clientResults, 10),
 	}
 	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
+		log.Log, c, handler.NewPrinterCallbacks(log.Log),
 	)
 	err := runner.do(context.Background())
 	if err != nil {
@@ -218,7 +178,7 @@ func TestUnitRunnerDoWithLoopSuccess(t *testing.T) {
 func TestUnitRunnerDoWithNoData(t *testing.T) {
 	c := &mockableClient{}
 	runner := newRunner(
-		log.Log, c, handler.NewPrinterCallbacks(log.Log), json.Marshal,
+		log.Log, c, handler.NewPrinterCallbacks(log.Log),
 	)
 	err := runner.do(context.Background())
 	if !errors.Is(err, stats.EmptyInputErr) {
