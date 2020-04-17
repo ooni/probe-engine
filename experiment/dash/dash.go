@@ -179,26 +179,11 @@ func (m *measurer) Run(
 		},
 		Resolver: new(net.Resolver),
 	}
-	tlsdlr := dialer.TLSDialer{
-		Dialer: dlr,
-		TLSHandshaker: dialer.LoggingTLSHandshaker{
-			TLSHandshaker: dialer.ErrorWrapperTLSHandshaker{
-				TLSHandshaker: dialer.TimeoutTLSHandshaker{
-					TLSHandshaker: dialer.SystemTLSHandshaker{},
-				},
-			},
-			Logger: sess.Logger(),
-		},
-	}
 	httpClient := &http.Client{
-		Transport: httptransport.LoggingTransport{
-			RoundTripper: httptransport.UserAgentTransport{
-				RoundTripper: httptransport.NewSystemTransport(
-					dlr, tlsdlr, nil,
-				),
-			},
+		Transport: httptransport.New(httptransport.Config{
+			Dialer: dlr,
 			Logger: sess.Logger(),
-		},
+		}),
 	}
 	defer httpClient.CloseIdleConnections()
 	clnt := newClient(httpClient, saver, sess.Logger(), callbacks,
