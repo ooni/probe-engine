@@ -352,17 +352,3 @@ func (c *client) StartDownload(ctx context.Context) (<-chan clientResults, error
 	go c.deps.Loop(ctx, ch)
 	return ch, nil
 }
-
-// Error returns the error that occurred during the test, if any. A nil
-// return value means that all was good. A returned error does not however
-// necessarily mean that all was bad; you may have _some_ data.
-func (c *client) Error() error {
-	return c.err
-}
-
-// ServerResults returns the results of the experiment collected by the
-// server. In case Error() returns non nil, this function will typically
-// return an empty slice to the caller.
-func (c *client) ServerResults() []serverResults {
-	return c.serverResults
-}
