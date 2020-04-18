@@ -16,8 +16,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/montanaflynn/stats"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -95,7 +95,7 @@ func (r runner) loop(ctx context.Context, numIterations int64) error {
 	if err != nil {
 		return err
 	}
-	r.callbacks.OnProgress(0.0, fmt.Sprintf("server: %s", fqdn))
+	r.callbacks.OnProgress(0.0, fmt.Sprintf("streaming: server: %s", fqdn))
 	negotiateResp, err := negotiate(ctx, fqdn, r)
 	if err != nil {
 		return err
@@ -177,9 +177,9 @@ func (r runner) measure(
 func (r runner) emit(results clientResults, numIterations int64) {
 	percentage := float64(results.Iteration) / float64(numIterations)
 	message := fmt.Sprintf(
-		"rate: %s speed: %s elapsed: %.2f s",
-		humanize.SI(float64(results.Rate)*1000, "bit/s"),
-		humanize.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
+		"streaming: rate: %s speed: %s elapsed: %.2f s",
+		humanizex.SI(float64(results.Rate)*1000, "bit/s"),
+		humanizex.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
 		results.Elapsed,
 	)
 	r.callbacks.OnProgress(percentage, message)
@@ -216,7 +216,6 @@ func (tk *TestKeys) analyze() error {
 }
 
 func (r runner) do(ctx context.Context) error {
-	defer r.callbacks.OnProgress(1, "done")
 	const numIterations = 15
 	err := r.loop(ctx, numIterations)
 	if err != nil {

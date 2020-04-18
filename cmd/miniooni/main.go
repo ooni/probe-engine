@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/dustin/go-humanize"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/pborman/getopt/v2"
 )
 
@@ -213,8 +213,8 @@ func main() {
 	defer func() {
 		sess.Close()
 		log.Infof("whole session: recv %s, sent %s",
-			humanize.SI(sess.KibiBytesReceived()*1024, "byte"),
-			humanize.SI(sess.KibiBytesSent()*1024, "byte"),
+			humanizex.SI(sess.KibiBytesReceived()*1024, "byte"),
+			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 
@@ -286,8 +286,8 @@ func main() {
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
-			humanize.SI(experiment.KibiBytesReceived()*1024, "byte"),
-			humanize.SI(experiment.KibiBytesSent()*1024, "byte"),
+			humanizex.SI(experiment.KibiBytesReceived()*1024, "byte"),
+			humanizex.SI(experiment.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 

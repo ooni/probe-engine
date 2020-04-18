@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/m-lab/ndt7-client-go/spec"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocate"
 	"github.com/ooni/probe-engine/model"
 )
@@ -100,7 +100,8 @@ func (m *measurer) doDownload(
 			// 50% of the whole experiment, hence the `/2.0`.
 			percentage := elapsed / paramMaxRuntimeUpperBound / 2.0
 			speed := float64(count) * 8.0 / elapsed
-			message := fmt.Sprintf("download-speed %s", humanize.SI(float64(speed), "bit/s"))
+			message := fmt.Sprintf(" download: speed %s", humanizex.SI(
+				float64(speed), "bit/s"))
 			tk.Summary.Download = speed / 1e03 /* bit/s => kbit/s */
 			callbacks.OnProgress(percentage, message)
 			tk.Download = append(tk.Download, spec.Measurement{
@@ -164,7 +165,8 @@ func (m *measurer) doUpload(
 			// the whole experiment, hence `0.5 +` and `/2.0`.
 			percentage := 0.5 + elapsed/paramMaxRuntimeUpperBound/2.0
 			speed := float64(count) * 8.0 / elapsed
-			message := fmt.Sprintf("upload-speed %s", humanize.SI(float64(speed), "bit/s"))
+			message := fmt.Sprintf("   upload: speed %s", humanizex.SI(
+				float64(speed), "bit/s"))
 			tk.Summary.Upload = speed / 1e03 /* bit/s => kbit/s */
 			callbacks.OnProgress(percentage, message)
 			tk.Upload = append(tk.Upload, spec.Measurement{
@@ -196,7 +198,7 @@ func (m *measurer) Run(
 		return err
 	}
 	tk.Server = ServerInfo{Hostname: hostname}
-	callbacks.OnProgress(0, fmt.Sprintf("downloading: %s", hostname))
+	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", hostname))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
 	}
@@ -204,7 +206,7 @@ func (m *measurer) Run(
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(0.5, fmt.Sprintf("uploading: %s", hostname))
+	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", hostname))
 	if m.preUploadHook != nil {
 		m.preUploadHook()
 	}
@@ -212,7 +214,6 @@ func (m *measurer) Run(
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(1, "done")
 	return nil
 }
 
