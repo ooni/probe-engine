@@ -48,6 +48,16 @@ func (r SerialResolver) Transport() RoundTripper {
 	return r.Txp
 }
 
+// Network implements Resolver.Network
+func (r SerialResolver) Network() string {
+	return r.Txp.Network()
+}
+
+// Address implements Resolver.Address
+func (r SerialResolver) Address() string {
+	return r.Txp.Address()
+}
+
 // LookupHost implements Resolver.LookupHost.
 func (r SerialResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	var addrs []string

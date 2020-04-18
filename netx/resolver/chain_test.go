@@ -2,7 +2,6 @@ package resolver_test
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	"github.com/ooni/probe-engine/netx/resolver"
@@ -11,7 +10,7 @@ import (
 func TestChainLookupHost(t *testing.T) {
 	client := resolver.ChainResolver{
 		Primary:   resolver.NewFakeResolverThatFails(),
-		Secondary: new(net.Resolver),
+		Secondary: resolver.SystemResolver{},
 	}
 	addrs, err := client.LookupHost(context.Background(), "www.google.com")
 	if err != nil {

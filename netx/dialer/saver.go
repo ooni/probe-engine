@@ -31,7 +31,10 @@ func (d SaverDialer) DialContext(ctx context.Context, network, address string) (
 		Proto:    network,
 		Time:     stop,
 	})
-	return conn, err
+	if err != nil {
+		return nil, err
+	}
+	return saverConn{Conn: conn, saver: d.Saver}, nil
 }
 
 // SaverTLSHandshaker saves events occurring during the handshake
@@ -44,8 +47,6 @@ type SaverTLSHandshaker struct {
 func (h SaverTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
-	measuringconn := tlsMeasuringConn{Conn: conn, saver: h.Saver}
-	proxyconn := tlsProxyConn{Conn: measuringconn}
 	start := time.Now()
 	h.Saver.Write(trace.Event{
 		Name:          "tls_handshake_start",
@@ -53,7 +54,7 @@ func (h SaverTLSHandshaker) Handshake(
 		TLSServerName: config.ServerName,
 		Time:          start,
 	})
-	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, proxyconn, config)
+	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
 	stop := time.Now()
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
@@ -67,20 +68,15 @@ func (h SaverTLSHandshaker) Handshake(
 		TLSVersion:         tlsx.VersionString(state.Version),
 		Time:               stop,
 	})
-	proxyconn.Conn = conn // stop measuring
 	return tlsconn, state, err
 }
 
-type tlsProxyConn struct {
-	net.Conn
-}
-
-type tlsMeasuringConn struct {
+type saverConn struct {
 	net.Conn
 	saver *trace.Saver
 }
 
-func (c tlsMeasuringConn) Read(p []byte) (int, error) {
+func (c saverConn) Read(p []byte) (int, error) {
 	start := time.Now()
 	count, err := c.Conn.Read(p)
 	stop := time.Now()
@@ -95,7 +91,7 @@ func (c tlsMeasuringConn) Read(p []byte) (int, error) {
 	return count, err
 }
 
-func (c tlsMeasuringConn) Write(p []byte) (int, error) {
+func (c saverConn) Write(p []byte) (int, error) {
 	start := time.Now()
 	count, err := c.Conn.Write(p)
 	stop := time.Now()
@@ -134,5 +130,4 @@ func peerCerts(state tls.ConnectionState, err error) []*x509.Certificate {
 
 var _ Dialer = SaverDialer{}
 var _ TLSHandshaker = SaverTLSHandshaker{}
-var _ net.Conn = tlsMeasuringConn{}
-var _ net.Conn = tlsProxyConn{}
+var _ net.Conn = saverConn{}
