@@ -129,6 +129,7 @@ func (r runner) measure(
 	var (
 		begin       = time.Now()
 		connectTime float64
+		total       int64
 	)
 	for current.Iteration < numIterations {
 		result, err := download(ctx, downloadConfig{
@@ -164,7 +165,11 @@ func (r runner) measure(
 		}
 		current.ConnectTime = connectTime
 		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		r.emit(current, numIterations)
+		total += current.Received
+		avgspeed := 8 * float64(total) / time.Now().Sub(begin).Seconds()
+		percentage := float64(current.Iteration) / float64(numIterations)
+		message := fmt.Sprintf("streaming: speed: %s", humanizex.SI(avgspeed, "bit/s"))
+		r.callbacks.OnProgress(percentage, message)
 		current.Iteration++
 		speed := float64(current.Received) / float64(current.Elapsed)
 		speed *= 8.0    // to bits per second
@@ -172,13 +177,6 @@ func (r runner) measure(
 		current.Rate = int64(speed)
 	}
 	return nil
-}
-
-func (r runner) emit(results clientResults, numIterations int64) {
-	percentage := float64(results.Iteration) / float64(numIterations)
-	message := fmt.Sprintf("streaming: speed: %s",
-		humanizex.SI(8*float64(results.Received)/results.Elapsed, "bit/s"))
-	r.callbacks.OnProgress(percentage, message)
 }
 
 func (tk *TestKeys) analyze() error {
