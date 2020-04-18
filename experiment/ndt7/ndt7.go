@@ -91,6 +91,7 @@ func (m *measurer) doDownload(
 	if err != nil {
 		return err
 	}
+	defer callbacks.OnProgress(0.5, " download: done")
 	defer conn.Close()
 	mgr := newDownloadManager(
 		conn,
@@ -156,6 +157,7 @@ func (m *measurer) doUpload(
 	if err != nil {
 		return err
 	}
+	defer callbacks.OnProgress(1, "   upload: done")
 	defer conn.Close()
 	mgr := newUploadManager(
 		conn,

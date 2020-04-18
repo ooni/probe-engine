@@ -216,6 +216,7 @@ func (tk *TestKeys) analyze() error {
 }
 
 func (r runner) do(ctx context.Context) error {
+	defer r.callbacks.OnProgress(1, "streaming: done")
 	const numIterations = 15
 	err := r.loop(ctx, numIterations)
 	if err != nil {
