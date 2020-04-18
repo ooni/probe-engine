@@ -2,7 +2,7 @@
 package handler
 
 import (
-	"github.com/dustin/go-humanize"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -19,8 +19,8 @@ func NewPrinterCallbacks(logger model.Logger) PrinterCallbacks {
 // OnDataUsage provides information about data usage.
 func (d PrinterCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
 	d.Logger.Infof("experiment: recv %s, sent %s",
-		humanize.SI(dloadKiB*1024, "byte"),
-		humanize.SI(uploadKiB*1024, "byte"),
+		humanizex.SI(dloadKiB*1024, "byte"),
+		humanizex.SI(uploadKiB*1024, "byte"),
 	)
 }
 

@@ -16,8 +16,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/montanaflynn/stats"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -95,7 +95,7 @@ func (r runner) loop(ctx context.Context, numIterations int64) error {
 	if err != nil {
 		return err
 	}
-	r.callbacks.OnProgress(0.0, fmt.Sprintf("server: %s", fqdn))
+	r.callbacks.OnProgress(0.0, fmt.Sprintf("streaming: server: %s", fqdn))
 	negotiateResp, err := negotiate(ctx, fqdn, r)
 	if err != nil {
 		return err
@@ -129,6 +129,7 @@ func (r runner) measure(
 	var (
 		begin       = time.Now()
 		connectTime float64
+		total       int64
 	)
 	for current.Iteration < numIterations {
 		result, err := download(ctx, downloadConfig{
@@ -164,7 +165,11 @@ func (r runner) measure(
 		}
 		current.ConnectTime = connectTime
 		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		r.emit(current, numIterations)
+		total += current.Received
+		avgspeed := 8 * float64(total) / time.Now().Sub(begin).Seconds()
+		percentage := float64(current.Iteration) / float64(numIterations)
+		message := fmt.Sprintf("streaming: speed: %s", humanizex.SI(avgspeed, "bit/s"))
+		r.callbacks.OnProgress(percentage, message)
 		current.Iteration++
 		speed := float64(current.Received) / float64(current.Elapsed)
 		speed *= 8.0    // to bits per second
@@ -172,17 +177,6 @@ func (r runner) measure(
 		current.Rate = int64(speed)
 	}
 	return nil
-}
-
-func (r runner) emit(results clientResults, numIterations int64) {
-	percentage := float64(results.Iteration) / float64(numIterations)
-	message := fmt.Sprintf(
-		"rate: %s speed: %s elapsed: %.2f s",
-		humanize.SI(float64(results.Rate)*1000, "bit/s"),
-		humanize.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
-		results.Elapsed,
-	)
-	r.callbacks.OnProgress(percentage, message)
 }
 
 func (tk *TestKeys) analyze() error {
@@ -216,7 +210,7 @@ func (tk *TestKeys) analyze() error {
 }
 
 func (r runner) do(ctx context.Context) error {
-	defer r.callbacks.OnProgress(1, "done")
+	defer r.callbacks.OnProgress(1, "streaming: done")
 	const numIterations = 15
 	err := r.loop(ctx, numIterations)
 	if err != nil {
