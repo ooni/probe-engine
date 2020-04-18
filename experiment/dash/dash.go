@@ -176,12 +176,8 @@ func (r runner) measure(
 
 func (r runner) emit(results clientResults, numIterations int64) {
 	percentage := float64(results.Iteration) / float64(numIterations)
-	message := fmt.Sprintf(
-		"streaming: rate: %s speed: %s elapsed: %.2f s",
-		humanizex.SI(float64(results.Rate)*1000, "bit/s"),
-		humanizex.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
-		results.Elapsed,
-	)
+	message := fmt.Sprintf("streaming: speed: %s",
+		humanizex.SI(8*float64(results.Received)/results.Elapsed, "bit/s"))
 	r.callbacks.OnProgress(percentage, message)
 }
 
