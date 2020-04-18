@@ -238,15 +238,13 @@ func (m measurer) Run(
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	saver := &trace.Saver{}
-	dlr := dialer.DNSDialer{
+	var dlr dialer.Dialer = dialer.DNSDialer{
 		Dialer: dialer.LoggingDialer{
 			Dialer: dialer.ErrorWrapperDialer{
 				Dialer: dialer.TimeoutDialer{
-					Dialer: dialer.ByteCounterDialer{
-						Dialer: dialer.SaverDialer{
-							Dialer: new(net.Dialer),
-							Saver:  saver,
-						},
+					Dialer: dialer.SaverDialer{
+						Dialer: new(net.Dialer),
+						Saver:  saver,
 					},
 				},
 			},
@@ -254,6 +252,8 @@ func (m measurer) Run(
 		},
 		Resolver: new(net.Resolver),
 	}
+	dlr = dialer.ProxyDialer{Dialer: dlr, ProxyURL: sess.ProxyURL()}
+	dlr = dialer.ByteCounterDialer{Dialer: dlr}
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			Dialer: dlr,

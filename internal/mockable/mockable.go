@@ -4,6 +4,7 @@ package mockable
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
@@ -17,7 +18,6 @@ import (
 type ExperimentSession struct {
 	MockableASNDatabasePath      string
 	MockableCABundlePath         string
-	MockableExplicitProxy        bool
 	MockableTestHelpers          map[string][]model.Service
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
@@ -27,6 +27,7 @@ type ExperimentSession struct {
 	MockableProbeCC              string
 	MockableProbeIP              string
 	MockableProbeNetworkName     string
+	MockableProxyURL             *url.URL
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
 	MockableTempDir              string
@@ -41,11 +42,6 @@ func (sess *ExperimentSession) ASNDatabasePath() string {
 // CABundlePath implements ExperimentSession.CABundlePath
 func (sess *ExperimentSession) CABundlePath() string {
 	return sess.MockableCABundlePath
-}
-
-// ExplicitProxy implements ExperimentSession.ExplicitProxy
-func (sess *ExperimentSession) ExplicitProxy() bool {
-	return sess.MockableExplicitProxy
 }
 
 // GetTestHelpersByName implements ExperimentSession.GetTestHelpersByName
@@ -108,6 +104,11 @@ func (sess *ExperimentSession) ProbeIP() string {
 // ProbeNetworkName implements ExperimentSession.ProbeNetworkName
 func (sess *ExperimentSession) ProbeNetworkName() string {
 	return sess.MockableProbeNetworkName
+}
+
+// ProxyURL implements ExperimentSession.ProxyURL
+func (sess *ExperimentSession) ProxyURL() *url.URL {
+	return sess.MockableProxyURL
 }
 
 // SoftwareName implements ExperimentSession.SoftwareName

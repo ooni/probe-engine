@@ -185,7 +185,7 @@ func TestBouncerError(t *testing.T) {
 	}
 	sess := newSessionForTestingNoLookupsWithProxyURL(t, URL)
 	defer sess.Close()
-	if sess.ExplicitProxy() == false {
+	if sess.ProxyURL() == nil {
 		t.Fatal("expected to see explicit proxy here")
 	}
 	if err := sess.MaybeLookupBackends(); err == nil {

@@ -35,16 +35,13 @@ type Resolver interface {
 	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
 }
 
-// ProxyFunc is the function used to set a proxy.
-type ProxyFunc func(*http.Request) (*url.URL, error)
-
 // Config contains configuration for creating a new transport. When any
 // field of Config is nil/empty, we will use a suitable default.
 type Config struct {
 	ByteCounter *bytecounter.Counter // default: no byte counting
 	Dialer      Dialer               // default: dialer.DNSDialer
 	Logger      Logger               // default: no logging
-	Proxy       ProxyFunc            // default: no proxy
+	ProxyURL    *url.URL             // default: no proxy
 	Resolver    Resolver             // default: system resolver
 	TLSConfig   *tls.Config          // default: attempt using h2
 	TLSDialer   TLSDialer            // default: dialer.TLSDialer
@@ -78,8 +75,12 @@ func New(config Config) RoundTripper {
 		if config.Logger != nil {
 			d = dialer.LoggingDialer{Dialer: d, Logger: config.Logger}
 		}
-		config.Dialer = dialer.DNSDialer{
+		d = dialer.DNSDialer{
 			Resolver: config.Resolver,
+			Dialer:   d,
+		}
+		config.Dialer = dialer.ProxyDialer{
+			ProxyURL: config.ProxyURL,
 			Dialer:   d,
 		}
 	}
@@ -100,7 +101,7 @@ func New(config Config) RoundTripper {
 		}
 	}
 	var txp RoundTripper
-	txp = NewSystemTransport(config.Dialer, config.TLSDialer, config.Proxy)
+	txp = NewSystemTransport(config.Dialer, config.TLSDialer)
 	if config.ByteCounter != nil {
 		txp = ByteCountingTransport{Counter: config.ByteCounter, RoundTripper: txp}
 	}

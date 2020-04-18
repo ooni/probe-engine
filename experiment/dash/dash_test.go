@@ -45,14 +45,14 @@ func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -75,21 +75,21 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -114,27 +114,27 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -158,27 +158,27 @@ func TestUnitRunnerLoopSuccess(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`[]`)),
 							StatusCode: 200,

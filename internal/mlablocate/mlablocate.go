@@ -13,15 +13,11 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// NewRequestFunc is the function to create a new request.
-type NewRequestFunc func(ctx context.Context, URL *url.URL) (*http.Request, error)
-
 // Client is a locate.measurementlab.net client.
 type Client struct {
 	HTTPClient *http.Client
 	Hostname   string
 	Logger     model.Logger
-	NewRequest NewRequestFunc
 	Scheme     string
 	UserAgent  string
 }
@@ -32,29 +28,8 @@ func NewClient(httpClient *http.Client, logger model.Logger, userAgent string) *
 		HTTPClient: httpClient,
 		Hostname:   "locate.measurementlab.net",
 		Logger:     logger,
-		NewRequest: NewRequestDefault(),
 		Scheme:     "https",
 		UserAgent:  userAgent,
-	}
-}
-
-// NewRequestDefault return the default implementation of the c.NewRequest
-// for creating a new HTTP request for locate.measurementlab.net.
-func NewRequestDefault() NewRequestFunc {
-	return func(ctx context.Context, URL *url.URL) (*http.Request, error) {
-		return http.NewRequestWithContext(ctx, "GET", URL.String(), nil)
-	}
-}
-
-// NewRequestWithProxy returns a new request factory that tells to the
-// locate.measurementlab.net service that we're using a proxy such that
-// the returned host is good for us, not for the proxy.
-func NewRequestWithProxy(probeIP string) NewRequestFunc {
-	return func(ctx context.Context, URL *url.URL) (*http.Request, error) {
-		values := URL.Query()
-		values.Set("ip", probeIP)
-		URL.RawQuery = values.Encode()
-		return http.NewRequestWithContext(ctx, "GET", URL.String(), nil)
 	}
 }
 
@@ -69,7 +44,7 @@ func (c *Client) Query(ctx context.Context, tool string) (string, error) {
 		Host:   c.Hostname,
 		Path:   tool,
 	}
-	req, err := c.NewRequest(ctx, URL)
+	req, err := http.NewRequestWithContext(ctx, "GET", URL.String(), nil)
 	if err != nil {
 		return "", err
 	}
