@@ -11,7 +11,7 @@ func SI(value float64, unit string) string {
 
 func reduce(value float64) (float64, string) {
 	if value < 1e03 {
-		return value, ""
+		return value, " "
 	}
 	value /= 1e03
 	if value < 1e03 {
