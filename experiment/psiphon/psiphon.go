@@ -4,6 +4,8 @@
 // See https://github.com/ooni/spec/blob/master/nettests/ts-015-psiphon.md
 package psiphon
 
+// TODO(bassosimone): rewrite in terms of internal/psiphonx.
+
 import (
 	"context"
 	"errors"

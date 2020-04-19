@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/bouncer"
@@ -18,6 +19,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
+	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
@@ -53,6 +55,7 @@ type Session struct {
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
+	tunnel               *psiphonx.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -91,9 +94,10 @@ func NewSession(config SessionConfig) (*Session, error) {
 		tempDir:           config.TempDir,
 	}
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
-		ByteCounter: sess.byteCounter,
-		Logger:      sess.logger,
-		ProxyURL:    config.ProxyURL,
+		ByteCounter:  sess.byteCounter,
+		BogonIsError: true,
+		Logger:       sess.logger,
+		ProxyURL:     config.ProxyURL,
 	})
 	return sess, nil
 }
@@ -143,6 +147,7 @@ func (s *Session) CABundlePath() string {
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
+	s.tunnel.Stop() // safe if s.tunnel is nil
 	return nil
 }
 
@@ -176,6 +181,36 @@ func (s *Session) MaybeLookupLocation() error {
 // MaybeLookupBackends is a caching OONI backends lookup call.
 func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
+}
+
+// MaybeStartTunnel starts the requested tunnel. This function silently
+// succeeds if we're already using a tunnel (or proxy) or if the provided
+// tunnel name is the empty string (i.e. no tunnel). This function fails
+// if we don't know the requested tunnel, or if starting the tunnel actually
+// fails. We currently only know the "psiphon" tunnel. A side effect of
+// starting the tunnel is that we will correctly set the proxy URL. Note
+// that the tunnel will be active until session.Close is called.
+func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
+	switch name {
+	case "psiphon":
+	case "":
+		s.logger.Debugf("no tunnel has been requested")
+		return nil
+	default:
+		return errors.New("unsupported tunnel")
+	}
+	if s.proxyURL != nil {
+		s.logger.Debugf("not starting tunnel because we already have a proxy")
+		return nil
+	}
+	s.logger.Infof("starting %s tunnel; please be patient...", name)
+	tunnel, err := psiphonx.Start(ctx, s, psiphonx.Config{})
+	if err != nil {
+		return err
+	}
+	s.tunnel = tunnel
+	s.proxyURL = tunnel.SOCKS5ProxyURL()
+	return nil
 }
 
 // NewExperimentBuilder returns a new experiment builder
@@ -321,6 +356,12 @@ func (s *Session) SoftwareVersion() string {
 // TempDir returns the temporary directory.
 func (s *Session) TempDir() string {
 	return s.tempDir
+}
+
+// TunnelBootstrapTime returns the time required to bootstrap the tunnel
+// we're using, or zero if we're using no tunnel.
+func (s *Session) TunnelBootstrapTime() time.Duration {
+	return s.tunnel.BootstrapTime() // safe if s.tunnel is nil
 }
 
 // UserAgent constructs the user agent to be used in this session.
@@ -488,3 +529,5 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) 
 	}
 	return errors.New("All available bouncers failed")
 }
+
+var _ model.ExperimentSession = &Session{}

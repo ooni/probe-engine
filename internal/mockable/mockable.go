@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
@@ -21,6 +22,7 @@ type ExperimentSession struct {
 	MockableTestHelpers          map[string][]model.Service
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
+	MockableMaybeStartTunnelErr  error
 	MockableOrchestraClient      model.ExperimentOrchestraClient
 	MockableOrchestraClientError error
 	MockableProbeASNString       string
@@ -31,6 +33,7 @@ type ExperimentSession struct {
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
 	MockableTempDir              string
+	MockableTunnelBootstrapTime  time.Duration
 	MockableUserAgent            string
 }
 
@@ -58,6 +61,11 @@ func (sess *ExperimentSession) DefaultHTTPClient() *http.Client {
 // Logger implements ExperimentSession.Logger
 func (sess *ExperimentSession) Logger() model.Logger {
 	return sess.MockableLogger
+}
+
+// MaybeStartTunnel implements ExperimentSession.MaybeStartTunnel
+func (sess *ExperimentSession) MaybeStartTunnel(ctx context.Context, name string) error {
+	return sess.MockableMaybeStartTunnelErr
 }
 
 // NewOrchestraClient implements ExperimentSession.NewOrchestraClient
@@ -126,7 +134,37 @@ func (sess *ExperimentSession) TempDir() string {
 	return sess.MockableTempDir
 }
 
+// TunnelBootstrapTime implements ExperimentSession.TunnelBootstrapTime
+func (sess *ExperimentSession) TunnelBootstrapTime() time.Duration {
+	return sess.MockableTunnelBootstrapTime
+}
+
 // UserAgent implements ExperimentSession.UserAgent
 func (sess *ExperimentSession) UserAgent() string {
 	return sess.MockableUserAgent
 }
+
+var _ model.ExperimentSession = &ExperimentSession{}
+
+// ExperimentOrchestraClient is the experiment's view of
+// a client for querying the OONI orchestra.
+type ExperimentOrchestraClient struct {
+	MockableFetchPsiphonConfigResult []byte
+	MockableFetchPsiphonConfigErr    error
+	MockableFetchTorTargetsResult    map[string]model.TorTarget
+	MockableFetchTorTargetsErr       error
+}
+
+// FetchPsiphonConfig implements ExperimentOrchestraClient.FetchPsiphonConfig
+func (c ExperimentOrchestraClient) FetchPsiphonConfig(
+	ctx context.Context) ([]byte, error) {
+	return c.MockableFetchPsiphonConfigResult, c.MockableFetchPsiphonConfigErr
+}
+
+// FetchTorTargets implements ExperimentOrchestraClient.TorTargets
+func (c ExperimentOrchestraClient) FetchTorTargets(
+	ctx context.Context) (map[string]model.TorTarget, error) {
+	return c.MockableFetchTorTargetsResult, c.MockableFetchTorTargetsErr
+}
+
+var _ model.ExperimentOrchestraClient = ExperimentOrchestraClient{}

@@ -8,11 +8,14 @@ import (
 	"net/url"
 
 	"github.com/gorilla/websocket"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/resolver"
 )
 
 type dialManager struct {
 	hostname        string
+	logger          model.Logger
 	port            string
 	proxyURL        *url.URL
 	readBufferSize  int
@@ -21,9 +24,10 @@ type dialManager struct {
 	writeBufferSize int
 }
 
-func newDialManager(hostname string, proxyURL *url.URL) dialManager {
+func newDialManager(hostname string, proxyURL *url.URL, logger model.Logger) dialManager {
 	return dialManager{
 		hostname:        hostname,
+		logger:          logger,
 		port:            "443",
 		proxyURL:        proxyURL,
 		readBufferSize:  paramMaxMessageSize,
@@ -33,14 +37,13 @@ func newDialManager(hostname string, proxyURL *url.URL) dialManager {
 }
 
 func (mgr dialManager) dialWithTestName(ctx context.Context, testName string) (*websocket.Conn, error) {
-	var dlr dialer.Dialer = dialer.DNSDialer{
-		Dialer: dialer.ErrorWrapperDialer{
-			Dialer: dialer.TimeoutDialer{
-				Dialer: new(net.Dialer),
-			},
-		},
-		Resolver: new(net.Resolver),
-	}
+	var reso resolver.Resolver = new(net.Resolver)
+	reso = resolver.LoggingResolver{Resolver: reso, Logger: mgr.logger}
+	var dlr dialer.Dialer = new(net.Dialer)
+	dlr = dialer.TimeoutDialer{Dialer: dlr}
+	dlr = dialer.ErrorWrapperDialer{Dialer: dlr}
+	dlr = dialer.LoggingDialer{Dialer: dlr, Logger: mgr.logger}
+	dlr = dialer.DNSDialer{Dialer: dlr, Resolver: reso}
 	dlr = dialer.ProxyDialer{Dialer: dlr, ProxyURL: mgr.proxyURL}
 	dlr = dialer.ByteCounterDialer{Dialer: dlr}
 	dialer := websocket.Dialer{
