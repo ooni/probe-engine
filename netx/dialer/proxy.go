@@ -9,7 +9,9 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-// ProxyDialer is a dialer that uses a proxy
+// ProxyDialer is a dialer that uses a proxy. If the ProxyURL is not configured, this
+// dialer is a passthrough for the next Dialer in chain. Otherwise, it will internally
+// create a SOCKS5 dialer that will connect to the proxy using the underlying Dialer.
 type ProxyDialer struct {
 	Dialer
 	ProxyURL *url.URL
