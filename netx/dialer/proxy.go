@@ -25,7 +25,7 @@ func (d ProxyDialer) DialContext(ctx context.Context, network, address string) (
 	if d.ProxyURL.Scheme != "socks5" {
 		return nil, errors.New("Scheme is not socks5")
 	}
-	// the code at proxy/socks5.go never fails
+	// the code at proxy/socks5.go never fails; see https://git.io/JfJ4g
 	child, _ := proxy.SOCKS5(
 		network, d.ProxyURL.Host, nil, proxyDialerWrapper{Dialer: d.Dialer})
 	return d.dial(ctx, child, network, address)
@@ -57,6 +57,11 @@ func (d ProxyDialer) dial(
 	}
 }
 
+// proxyDialerWrapper is required because SOCKS5 expects a Dialer.Dial type but internally
+// it checks whether DialContext is available and prefers that. So, we need to use this
+// structure to cast our inner Dialer the way in which SOCKS5 likes it.
+//
+// See https://git.io/JfJ4g.
 type proxyDialerWrapper struct {
 	Dialer
 }
