@@ -14,16 +14,18 @@ import (
 type dialManager struct {
 	hostname        string
 	port            string
+	proxyURL        *url.URL
 	readBufferSize  int
 	scheme          string
 	tlsConfig       *tls.Config
 	writeBufferSize int
 }
 
-func newDialManager(hostname string) dialManager {
+func newDialManager(hostname string, proxyURL *url.URL) dialManager {
 	return dialManager{
 		hostname:        hostname,
 		port:            "443",
+		proxyURL:        proxyURL,
 		readBufferSize:  paramMaxMessageSize,
 		scheme:          "wss",
 		writeBufferSize: paramMaxMessageSize,
@@ -31,17 +33,18 @@ func newDialManager(hostname string) dialManager {
 }
 
 func (mgr dialManager) dialWithTestName(ctx context.Context, testName string) (*websocket.Conn, error) {
-	dialer := websocket.Dialer{
-		NetDialContext: dialer.DNSDialer{
-			Dialer: dialer.ErrorWrapperDialer{
-				Dialer: dialer.TimeoutDialer{
-					Dialer: dialer.ByteCounterDialer{
-						Dialer: new(net.Dialer),
-					},
-				},
+	var dlr dialer.Dialer = dialer.DNSDialer{
+		Dialer: dialer.ErrorWrapperDialer{
+			Dialer: dialer.TimeoutDialer{
+				Dialer: new(net.Dialer),
 			},
-			Resolver: new(net.Resolver),
-		}.DialContext,
+		},
+		Resolver: new(net.Resolver),
+	}
+	dlr = dialer.ProxyDialer{Dialer: dlr, ProxyURL: mgr.proxyURL}
+	dlr = dialer.ByteCounterDialer{Dialer: dlr}
+	dialer := websocket.Dialer{
+		NetDialContext:  dlr.DialContext,
 		ReadBufferSize:  mgr.readBufferSize,
 		TLSClientConfig: mgr.tlsConfig,
 		WriteBufferSize: mgr.writeBufferSize,

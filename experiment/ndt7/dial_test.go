@@ -9,7 +9,7 @@ import (
 func TestDialDownloadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately halt
-	mgr := newDialManager("hostname.fake")
+	mgr := newDialManager("hostname.fake", nil)
 	conn, err := mgr.dialDownload(ctx)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
@@ -22,7 +22,7 @@ func TestDialDownloadWithCancelledContext(t *testing.T) {
 func TestDialUploadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately halt
-	mgr := newDialManager("hostname.fake")
+	mgr := newDialManager("hostname.fake", nil)
 	conn, err := mgr.dialUpload(ctx)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")

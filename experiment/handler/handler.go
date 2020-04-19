@@ -26,5 +26,5 @@ func (d PrinterCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
 
 // OnProgress provides information about an experiment progress.
 func (d PrinterCallbacks) OnProgress(percentage float64, message string) {
-	d.Logger.Infof("[%4.1f%%] %s", percentage*100, message)
+	d.Logger.Infof("[%5.1f%%] %s", percentage*100, message)
 }

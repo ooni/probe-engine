@@ -68,9 +68,6 @@ type measurer struct {
 
 func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
 	client := mlablocate.NewClient(sess.DefaultHTTPClient(), sess.Logger(), sess.UserAgent())
-	if sess.ExplicitProxy() {
-		client.NewRequest = mlablocate.NewRequestWithProxy(sess.ProbeIP())
-	}
 	return client.Query(ctx, "ndt7")
 }
 
@@ -87,7 +84,7 @@ func (m *measurer) doDownload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname).dialDownload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL()).dialDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -153,7 +150,7 @@ func (m *measurer) doUpload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname).dialUpload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL()).dialUpload(ctx)
 	if err != nil {
 		return err
 	}

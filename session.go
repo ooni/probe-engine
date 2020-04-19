@@ -44,12 +44,11 @@ type Session struct {
 	availableTestHelpers map[string][]model.Service
 	byteCounter          *bytecounter.Counter
 	httpDefaultTransport httptransport.RoundTripper
-	httpNoProxyTransport httptransport.RoundTripper
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
-	explicitProxy        bool
 	location             *model.LocationInfo
 	logger               model.Logger
+	proxyURL             *url.URL
 	queryBouncerCount    *atomicx.Int64
 	softwareName         string
 	softwareVersion      string
@@ -84,8 +83,8 @@ func NewSession(config SessionConfig) (*Session, error) {
 			IncludeCountry: true,
 			IncludeASN:     true,
 		},
-		explicitProxy:     config.ProxyURL != nil,
 		logger:            config.Logger,
+		proxyURL:          config.ProxyURL,
 		queryBouncerCount: atomicx.NewInt64(),
 		softwareName:      config.SoftwareName,
 		softwareVersion:   config.SoftwareVersion,
@@ -94,16 +93,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
 		ByteCounter: sess.byteCounter,
 		Logger:      sess.logger,
-		Proxy: func(req *http.Request) (*url.URL, error) {
-			if config.ProxyURL != nil {
-				return config.ProxyURL, nil
-			}
-			return http.ProxyFromEnvironment(req)
-		},
-	})
-	sess.httpNoProxyTransport = httptransport.New(httptransport.Config{
-		ByteCounter: sess.byteCounter,
-		Logger:      sess.logger,
+		ProxyURL:    config.ProxyURL,
 	})
 	return sess, nil
 }
@@ -153,19 +143,12 @@ func (s *Session) CABundlePath() string {
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
-	s.httpNoProxyTransport.CloseIdleConnections()
 	return nil
 }
 
 // CountryDatabasePath is like ASNDatabasePath but for the country DB path.
 func (s *Session) CountryDatabasePath() string {
 	return filepath.Join(s.assetsDir, resources.CountryDatabaseName)
-}
-
-// ExplicitProxy returns true if the user has explicitly set
-// a proxy (as opposed to using the HTTP_PROXY envvar).
-func (s *Session) ExplicitProxy() bool {
-	return s.explicitProxy
 }
 
 // GetTestHelpersByName returns the available test helpers that
@@ -273,6 +256,11 @@ func (s *Session) ProbeIP() string {
 	return ip
 }
 
+// ProxyURL returns the Proxy URL, or nil if not set
+func (s *Session) ProxyURL() *url.URL {
+	return s.proxyURL
+}
+
 // ResolverASNString returns the resolver ASN as a string
 func (s *Session) ResolverASNString() string {
 	return fmt.Sprintf("AS%d", s.ResolverASN())
@@ -342,7 +330,7 @@ func (s *Session) UserAgent() string {
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
-		HTTPClient: s.DefaultHTTPClient(), // proxy is OK
+		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
 		UserAgent:  s.UserAgent(),
 		WorkDir:    s.assetsDir,
@@ -392,11 +380,9 @@ func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
-		HTTPClient: &http.Client{
-			Transport: s.httpNoProxyTransport, // No proxy to have the correct IP
-		},
-		Logger:    s.logger,
-		UserAgent: s.UserAgent(),
+		HTTPClient: s.DefaultHTTPClient(),
+		Logger:     s.logger,
+		UserAgent:  s.UserAgent(),
 	}).Do(ctx)
 }
 
@@ -439,8 +425,8 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 			asn         uint
 			org         string
 			cc          string
-			resolverASN uint
-			resolverIP  string
+			resolverASN uint   = model.DefaultResolverASN
+			resolverIP  string = model.DefaultResolverIP
 			resolverOrg string
 		)
 		err = s.fetchResourcesIdempotent(ctx)
@@ -451,12 +437,14 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 		runtimex.PanicOnError(err, "s.lookupASN #1 failed")
 		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
 		runtimex.PanicOnError(err, "s.lookupProbeCC failed")
-		resolverIP, err = s.lookupResolverIP(ctx)
-		runtimex.PanicOnError(err, "s.lookupResolverIP failed")
-		resolverASN, resolverOrg, err = s.lookupASN(
-			s.ASNDatabasePath(), resolverIP,
-		)
-		runtimex.PanicOnError(err, "s.lookupASN #2 failed")
+		if s.proxyURL == nil {
+			resolverIP, err = s.lookupResolverIP(ctx)
+			runtimex.PanicOnError(err, "s.lookupResolverIP failed")
+			resolverASN, resolverOrg, err = s.lookupASN(
+				s.ASNDatabasePath(), resolverIP,
+			)
+			runtimex.PanicOnError(err, "s.lookupASN #2 failed")
+		}
 		s.location = &model.LocationInfo{
 			ASN:                 asn,
 			CountryCode:         cc,
@@ -489,7 +477,7 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) 
 		}
 		err := query(&bouncer.Client{
 			BaseURL:    e.Address,
-			HTTPClient: s.DefaultHTTPClient(), // proxy is OK
+			HTTPClient: s.DefaultHTTPClient(),
 			Logger:     s.logger,
 			UserAgent:  s.UserAgent(),
 		})

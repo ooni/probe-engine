@@ -41,31 +41,6 @@ func TestUnitDiscoverCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitDiscoverWithExplicitProxy(t *testing.T) {
-	m := new(measurer)
-	expected := errors.New("expected error")
-	sess := &mockable.ExperimentSession{
-		MockableExplicitProxy: true,
-		MockableHTTPClient: &http.Client{
-			Transport: &verifyRequestTransport{
-				ExpectedError: expected,
-			},
-		},
-		MockableLogger:    log.Log,
-		MockableProbeIP:   "1.2.3.4",
-		MockableUserAgent: "miniooni/0.1.0-dev",
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // immediately cancel
-	fqdn, err := m.discover(ctx, sess)
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-	if fqdn != "" {
-		t.Fatal("not the fqdn we expected")
-	}
-}
-
 type verifyRequestTransport struct {
 	ExpectedError error
 }
