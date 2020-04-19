@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"runtime"
 	"time"
@@ -19,16 +18,15 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 const (
-	defaultTimeout = 55 * time.Second
+	defaultTimeout = 120 * time.Second
 	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.9.0"
+	testVersion    = "0.10.0"
 	totalStep      = 15.0
 )
 
@@ -38,7 +36,9 @@ var (
 )
 
 // Config contains the experiment config.
-type Config struct{}
+type Config struct {
+	Tunnel string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+}
 
 // Simple contains the experiment total summary
 type Simple struct {
@@ -49,9 +49,12 @@ type Simple struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	Simple       Simple          `json:"simple"`
-	Failure      *string         `json:"failure"`
-	ReceiverData []clientResults `json:"receiver_data"`
+	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
+	Simple        Simple          `json:"simple"`
+	Failure       *string         `json:"failure"`
+	ReceiverData  []clientResults `json:"receiver_data"`
+	SOCKSProxy    string          `json:"socksproxy,omitempty"`
+	Tunnel        string          `json:"tunnel,omitempty"`
 }
 
 type runner struct {
@@ -237,27 +240,25 @@ func (m measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	saver := &trace.Saver{}
-	var dlr dialer.Dialer = dialer.DNSDialer{
-		Dialer: dialer.LoggingDialer{
-			Dialer: dialer.ErrorWrapperDialer{
-				Dialer: dialer.TimeoutDialer{
-					Dialer: dialer.SaverDialer{
-						Dialer: new(net.Dialer),
-						Saver:  saver,
-					},
-				},
-			},
-			Logger: sess.Logger(),
-		},
-		Resolver: new(net.Resolver),
+	tk := new(TestKeys)
+	measurement.TestKeys = tk
+	tk.Tunnel = m.config.Tunnel
+	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
+		s := err.Error()
+		tk.Failure = &s
+		return err
 	}
-	dlr = dialer.ProxyDialer{Dialer: dlr, ProxyURL: sess.ProxyURL()}
-	dlr = dialer.ByteCounterDialer{Dialer: dlr}
+	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
+	if url := sess.ProxyURL(); url != nil {
+		tk.SOCKSProxy = url.Host
+	}
+	saver := &trace.Saver{}
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
-			Dialer: dlr,
-			Logger: sess.Logger(),
+			ContextByteCounting: true,
+			Logger:              sess.Logger(),
+			ProxyURL:            sess.ProxyURL(),
+			Saver:               saver,
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
@@ -266,9 +267,8 @@ func (m measurer) Run(
 		httpClient: httpClient,
 		saver:      saver,
 		sess:       sess,
-		tk:         new(TestKeys),
+		tk:         tk,
 	}
-	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	return r.do(ctx)

@@ -357,6 +357,7 @@ type ExperimentSession interface {
 	GetTestHelpersByName(name string) ([]Service, bool)
 	DefaultHTTPClient() *http.Client
 	Logger() Logger
+	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
 	ProbeASNString() string
 	ProbeCC() string
@@ -366,6 +367,7 @@ type ExperimentSession interface {
 	SoftwareName() string
 	SoftwareVersion() string
 	TempDir() string
+	TunnelBootstrapTime() time.Duration
 	UserAgent() string
 }
 

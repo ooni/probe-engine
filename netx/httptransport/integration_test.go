@@ -8,6 +8,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/trace"
 )
 
 func TestIntegrationSuccess(t *testing.T) {
@@ -16,9 +17,13 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 	log.SetLevel(log.DebugLevel)
 	counter := bytecounter.New()
+	saver := new(trace.Saver)
 	txp := httptransport.New(httptransport.Config{
-		ByteCounter: counter,
-		Logger:      log.Log,
+		BogonIsError:        true,
+		ByteCounter:         counter,
+		ContextByteCounting: true,
+		Logger:              log.Log,
+		Saver:               saver,
 	})
 	client := &http.Client{Transport: txp}
 	resp, err := client.Get("https://www.google.com")

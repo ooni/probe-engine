@@ -5,21 +5,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/m-lab/ndt7-client-go/spec"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocate"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
 	testName    = "ndt"
-	testVersion = "0.4.0"
+	testVersion = "0.5.0"
 )
 
 // Config contains the experiment settings
-type Config struct{}
+type Config struct {
+	Tunnel string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+}
 
 // Summary is the measurement summary
 type Summary struct {
@@ -40,6 +44,9 @@ type ServerInfo struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
+	// BootstrapTime is the bootstrap time of the tunnel we're using (if any)
+	BootstrapTime float64 `json:"bootstrap_time,omitempty"`
+
 	// Download contains download results
 	Download []spec.Measurement `json:"download"`
 
@@ -49,11 +56,17 @@ type TestKeys struct {
 	// Protocol contains the version of the ndt protocol
 	Protocol int64 `json:"protocol"`
 
+	// SOCKSProxy is the proxy we're using (if any)
+	SOCKSProxy string `json:"socksproxy,omitempty"`
+
 	// Server contains information on the selected server
 	Server ServerInfo `json:"server"`
 
 	// Summary contains the measurement summary
 	Summary Summary `json:"summary"`
+
+	// Tunnel is the name of the tunnel we're using (if any)
+	Tunnel string `json:"tunnel,omitempty"`
 
 	// Upload contains upload results
 	Upload []spec.Measurement `json:"upload"`
@@ -67,7 +80,14 @@ type measurer struct {
 }
 
 func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
-	client := mlablocate.NewClient(sess.DefaultHTTPClient(), sess.Logger(), sess.UserAgent())
+	httpClient := &http.Client{
+		Transport: httptransport.New(httptransport.Config{
+			Logger:   sess.Logger(),
+			ProxyURL: sess.ProxyURL(),
+		}),
+	}
+	defer httpClient.CloseIdleConnections()
+	client := mlablocate.NewClient(httpClient, sess.Logger(), sess.UserAgent())
 	return client.Query(ctx, "ndt7")
 }
 
@@ -84,7 +104,7 @@ func (m *measurer) doDownload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL()).dialDownload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -150,7 +170,7 @@ func (m *measurer) doUpload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL()).dialUpload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialUpload(ctx)
 	if err != nil {
 		return err
 	}
@@ -191,6 +211,16 @@ func (m *measurer) Run(
 	tk := new(TestKeys)
 	tk.Protocol = 7
 	measurement.TestKeys = tk
+	tk.Tunnel = m.config.Tunnel
+	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
+		s := err.Error()
+		tk.Failure = &s
+		return err
+	}
+	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
+	if url := sess.ProxyURL(); url != nil {
+		tk.SOCKSProxy = url.Host
+	}
 	hostname, err := m.discover(ctx, sess)
 	if err != nil {
 		tk.Failure = failureFromError(err)

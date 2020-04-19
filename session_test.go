@@ -226,6 +226,12 @@ func TestIntegrationSessionLocationLookup(t *testing.T) {
 	if sess.ResolverNetworkName() == model.DefaultResolverNetworkName {
 		t.Fatal("unexpected ResolverNetworkName")
 	}
+	if sess.KibiBytesSent() <= 0 {
+		t.Fatal("unexpected KibiBytesSent")
+	}
+	if sess.KibiBytesReceived() <= 0 {
+		t.Fatal("unexpected KibiBytesReceived")
+	}
 }
 
 func TestIntegrationSessionDownloadResources(t *testing.T) {
@@ -343,5 +349,34 @@ func TestUnitAllBouncersUnsupported(t *testing.T) {
 	err = sess.MaybeLookupBackends()
 	if !strings.HasSuffix(err.Error(), "All available bouncers failed") {
 		t.Fatal("unexpected error")
+	}
+}
+
+func TestIntegrationStartTunnel(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "") != nil {
+		t.Fatal("expected no error here")
+	}
+	if err := sess.MaybeStartTunnel(ctx, "antani"); err.Error() != "unsupported tunnel" {
+		t.Fatal("not the error we expected")
+	}
+	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
+		t.Fatal(err)
+	}
+	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
+		t.Fatal(err) // check twice, must be idempotent
+	}
+}
+
+func TestIntegrationStartTunnelFailure(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // immediately cancel
+	err := sess.MaybeStartTunnel(ctx, "psiphon")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
 	}
 }
