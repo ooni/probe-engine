@@ -15,6 +15,7 @@ type FakeDialer struct {
 }
 
 func (d FakeDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	time.Sleep(10 * time.Microsecond)
 	return d.Conn, d.Err
 }
 
@@ -120,6 +121,7 @@ var errNotFound = &net.DNSError{
 }
 
 func (c FakeResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+	time.Sleep(10 * time.Microsecond)
 	if c.Err != nil {
 		if c.NumFailures != nil {
 			c.NumFailures.Add(1)

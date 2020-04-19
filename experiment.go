@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
-	"github.com/ooni/probe-engine/experiment/ndt5"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
@@ -162,8 +161,6 @@ func canonicalizeExperimentName(name string) string {
 	switch name = strcase.ToSnake(name); name {
 	case "ndt_7":
 		name = "ndt" // since 2020-03-18, we use ndt7 to implement ndt by default
-	case "ndt_5":
-		name = "ndt5"
 	default:
 	}
 	return name
@@ -320,8 +317,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	ctx := dialer.WithExperimentByteCounter(context.Background(), e.byteCounter)
-	return e.report.SubmitMeasurement(ctx, measurement)
+	return e.report.SubmitMeasurement(context.Background(), measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
@@ -541,19 +537,6 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:     &hirl.Config{},
 			needsInput: false,
-		}
-	},
-
-	"ndt5": func(session *Session) *ExperimentBuilder {
-		return &ExperimentBuilder{
-			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, ndt5.NewExperimentMeasurer(
-					*config.(*ndt5.Config),
-				))
-			},
-			config:        &ndt5.Config{},
-			interruptible: true,
-			needsInput:    false,
 		}
 	},
 

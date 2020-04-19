@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/dustin/go-humanize"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/pborman/getopt/v2"
 )
 
@@ -213,8 +213,8 @@ func main() {
 	defer func() {
 		sess.Close()
 		log.Infof("whole session: recv %s, sent %s",
-			humanize.SI(sess.KibiBytesReceived()*1024, "byte"),
-			humanize.SI(sess.KibiBytesSent()*1024, "byte"),
+			humanizex.SI(sess.KibiBytesReceived()*1024, "byte"),
+			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 
@@ -229,13 +229,13 @@ func main() {
 	}
 
 	if !globalOptions.noBouncer {
-		log.Info("Looking up OONI backends")
+		log.Info("Looking up OONI backends; please be patient...")
 		if err := sess.MaybeLookupBackends(); err != nil {
 			log.WithError(err).Fatal("cannot lookup OONI backends")
 		}
 	}
 	if !globalOptions.noGeoIP {
-		log.Info("Looking up your location")
+		log.Info("Looking up your location; please be patient...")
 		if err := sess.MaybeLookupLocation(); err != nil {
 			log.WithError(err).Warn("cannot lookup your location")
 		} else {
@@ -286,16 +286,18 @@ func main() {
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
-			humanize.SI(experiment.KibiBytesReceived()*1024, "byte"),
-			humanize.SI(experiment.KibiBytesSent()*1024, "byte"),
+			humanizex.SI(experiment.KibiBytesReceived()*1024, "byte"),
+			humanizex.SI(experiment.KibiBytesSent()*1024, "byte"),
 		)
 	}()
 
 	if !globalOptions.noCollector {
+		log.Info("Opening report; please be patient...")
 		if err := experiment.OpenReport(); err != nil {
 			log.WithError(err).Fatal("cannot open report")
 		}
 		defer experiment.CloseReport()
+		log.Infof("Report ID: %s", experiment.ReportID())
 	}
 
 	inputCount := len(globalOptions.inputs)
@@ -313,7 +315,7 @@ func main() {
 		}
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
-			log.Infof("submitting measurement to OONI collector")
+			log.Infof("submitting measurement to OONI collector; please be patient...")
 			if err := experiment.SubmitAndUpdateMeasurement(measurement); err != nil {
 				log.WithError(err).Warn("submitting measurement failed")
 				// fallthrough and save to disk what we have. Not saving is

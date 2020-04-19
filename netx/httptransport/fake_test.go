@@ -3,14 +3,16 @@ package httptransport
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
-type MockableTransport struct {
+type FakeTransport struct {
 	Err  error
 	Resp *http.Response
 }
 
-func (txp MockableTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (txp FakeTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	time.Sleep(10 * time.Microsecond)
 	if req.Body != nil {
 		ioutil.ReadAll(req.Body)
 		req.Body.Close()
@@ -22,4 +24,4 @@ func (txp MockableTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return txp.Resp, nil
 }
 
-func (txp MockableTransport) CloseIdleConnections() {}
+func (txp FakeTransport) CloseIdleConnections() {}

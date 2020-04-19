@@ -14,8 +14,6 @@ jobs:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
       - run: go test -tags nomk -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
-        env:
-          CGO_ENABLED: 0
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: probe-engine.cov

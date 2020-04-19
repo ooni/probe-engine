@@ -26,13 +26,7 @@ func TestCreateAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		exp := builder.NewExperiment()
-		var good bool
-		switch name {
-		case "ndt5":
-			good = (name == "ndt5" && exp.Name() == "ndt")
-		default:
-			good = (exp.Name() == name)
-		}
+		good := (exp.Name() == name)
 		if !good {
 			t.Fatal("unexpected experiment name")
 		}
@@ -564,7 +558,7 @@ func TestOpenReportFailure(t *testing.T) {
 	}
 	exp := builder.NewExperiment()
 	exp.session.availableCollectors = []model.Service{
-		model.Service{
+		{
 			Address: server.URL,
 			Type:    "https",
 		},
@@ -605,7 +599,7 @@ func TestOpenReportNonHTTPS(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	sess.availableCollectors = []model.Service{
-		model.Service{
+		{
 			Address: "antani",
 			Type:    "mascetti",
 		},
