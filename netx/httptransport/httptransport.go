@@ -120,9 +120,6 @@ func New(config Config) RoundTripper {
 	if config.ByteCounter != nil {
 		txp = ByteCountingTransport{Counter: config.ByteCounter, RoundTripper: txp}
 	}
-	if config.Saver != nil {
-		txp = SaverHTTPTransport{RoundTripper: txp, Saver: config.Saver}
-	}
 	if config.Logger != nil {
 		txp = LoggingTransport{Logger: config.Logger, RoundTripper: txp}
 	}

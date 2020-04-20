@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
@@ -118,8 +119,11 @@ func (r *runner) usetunnel(
 	clnt := &http.Client{Transport: httptransport.New(httptransport.Config{
 		ContextByteCounting: true,
 		Logger:              logger,
-		SOCKS5Proxy:         r.testkeys.SOCKSProxy,
-		Saver:               saver,
+		ProxyURL: &url.URL{
+			Scheme: "socks5",
+			Host:   r.testkeys.SOCKSProxy,
+		},
+		Saver: saver,
 	})}
 	defer clnt.CloseIdleConnections()
 	req, err := http.NewRequest("GET", "https://www.google.com/humans.txt", nil)

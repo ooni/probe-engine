@@ -28,15 +28,19 @@ const (
 type Config struct {
 	ResolverURL   string `ooni:"URL describing a resolver"`
 	TLSServerName string `ooni:"Force using a specific server name"`
+	Tunnel        string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 }
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
 	Agent         string                     `json:"agent"`
+	BootstrapTime float64                    `json:"bootstrap_time,omitempty"`
 	NetworkEvents archival.NetworkEventsList `json:"network_events"`
 	Queries       archival.DNSQueriesList    `json:"queries"`
 	Requests      archival.RequestList       `json:"requests"`
+	SOCKSProxy    string                     `json:"socksproxy,omitempty"`
 	TLSHandshakes archival.TLSHandshakesList `json:"tls_handshakes"`
+	Tunnel        string                     `json:"tunnel,omitempty"`
 }
 
 func (tk *TestKeys) doget(
@@ -172,6 +176,15 @@ func (m measurer) Run(
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
 	tk.Agent = "redirect"
+	tk.Tunnel = m.config.Tunnel
+	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
+		return err
+	}
+	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
+	if url := sess.ProxyURL(); url != nil {
+		tk.SOCKSProxy = url.Host
+	}
+	config.ProxyURL = sess.ProxyURL()
 	return tk.get(ctx, measurement, config, saver)
 }
 
