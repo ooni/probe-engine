@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -45,14 +46,14 @@ func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -75,21 +76,21 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -114,27 +115,27 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{err: expected},
+					{err: expected},
 				},
 			},
 		},
@@ -158,27 +159,27 @@ func TestUnitRunnerLoopSuccess(t *testing.T) {
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"fqdn": "ams01.measurementlab.net"}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body: ioutil.NopCloser(strings.NewReader(
 								`{"authorization": "xx", "unchoked": 1}`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`1234567`)),
 							StatusCode: 200,
 						},
 					},
-					FakeHTTPTransport{
+					{
 						resp: &http.Response{
 							Body:       ioutil.NopCloser(strings.NewReader(`[]`)),
 							StatusCode: 200,
@@ -261,7 +262,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "dash" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.9.0" {
+	if measurer.ExperimentVersion() != "0.10.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -281,5 +282,48 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("unexpected error value")
+	}
+}
+
+func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
+	m := &measurer{config: Config{
+		Tunnel: "psiphon",
+	}}
+	expected := errors.New("mocked error")
+	err := m.Run(
+		context.Background(),
+		&mockable.ExperimentSession{
+			MockableHTTPClient:          http.DefaultClient,
+			MockableMaybeStartTunnelErr: expected,
+			MockableLogger:              log.Log,
+		},
+		&model.Measurement{},
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if !errors.Is(err, expected) {
+		t.Fatal("unexpected error value")
+	}
+}
+
+func TestUnitMeasureWithProxyURL(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cause failure
+	m := &measurer{}
+	measurement := &model.Measurement{}
+	err := m.Run(
+		ctx,
+		&mockable.ExperimentSession{
+			MockableHTTPClient: http.DefaultClient,
+			MockableLogger:     log.Log,
+			MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
+		},
+		measurement,
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("unexpected error value")
+	}
+	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
+		t.Fatal("unexpected SOCKSProxy")
 	}
 }

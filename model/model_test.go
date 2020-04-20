@@ -10,6 +10,25 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+func TestUnitMeasurementTargetMarshalJSON(t *testing.T) {
+	var mt model.MeasurementTarget
+	data, err := json.Marshal(mt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "null" {
+		t.Fatal("unexpected serialization")
+	}
+	mt = "xx"
+	data, err = json.Marshal(mt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != `"xx"` {
+		t.Fatal("unexpected serialization")
+	}
+}
+
 type fakeTestKeys struct {
 	ClientResolver string `json:"client_resolver"`
 	Body           string `json:"body"`

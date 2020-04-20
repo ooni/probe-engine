@@ -11,24 +11,22 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"runtime"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/montanaflynn/stats"
+	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 const (
-	defaultTimeout = 55 * time.Second
+	defaultTimeout = 120 * time.Second
 	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.9.0"
+	testVersion    = "0.10.0"
 	totalStep      = 15.0
 )
 
@@ -38,7 +36,9 @@ var (
 )
 
 // Config contains the experiment config.
-type Config struct{}
+type Config struct {
+	Tunnel string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+}
 
 // Simple contains the experiment total summary
 type Simple struct {
@@ -49,9 +49,12 @@ type Simple struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	Simple       Simple          `json:"simple"`
-	Failure      *string         `json:"failure"`
-	ReceiverData []clientResults `json:"receiver_data"`
+	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
+	Simple        Simple          `json:"simple"`
+	Failure       *string         `json:"failure"`
+	ReceiverData  []clientResults `json:"receiver_data"`
+	SOCKSProxy    string          `json:"socksproxy,omitempty"`
+	Tunnel        string          `json:"tunnel,omitempty"`
 }
 
 type runner struct {
@@ -95,7 +98,7 @@ func (r runner) loop(ctx context.Context, numIterations int64) error {
 	if err != nil {
 		return err
 	}
-	r.callbacks.OnProgress(0.0, fmt.Sprintf("server: %s", fqdn))
+	r.callbacks.OnProgress(0.0, fmt.Sprintf("streaming: server: %s", fqdn))
 	negotiateResp, err := negotiate(ctx, fqdn, r)
 	if err != nil {
 		return err
@@ -129,6 +132,7 @@ func (r runner) measure(
 	var (
 		begin       = time.Now()
 		connectTime float64
+		total       int64
 	)
 	for current.Iteration < numIterations {
 		result, err := download(ctx, downloadConfig{
@@ -164,7 +168,11 @@ func (r runner) measure(
 		}
 		current.ConnectTime = connectTime
 		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		r.emit(current, numIterations)
+		total += current.Received
+		avgspeed := 8 * float64(total) / time.Now().Sub(begin).Seconds()
+		percentage := float64(current.Iteration) / float64(numIterations)
+		message := fmt.Sprintf("streaming: speed: %s", humanizex.SI(avgspeed, "bit/s"))
+		r.callbacks.OnProgress(percentage, message)
 		current.Iteration++
 		speed := float64(current.Received) / float64(current.Elapsed)
 		speed *= 8.0    // to bits per second
@@ -172,17 +180,6 @@ func (r runner) measure(
 		current.Rate = int64(speed)
 	}
 	return nil
-}
-
-func (r runner) emit(results clientResults, numIterations int64) {
-	percentage := float64(results.Iteration) / float64(numIterations)
-	message := fmt.Sprintf(
-		"rate: %s speed: %s elapsed: %.2f s",
-		humanize.SI(float64(results.Rate)*1000, "bit/s"),
-		humanize.SI(8*float64(results.Received)/results.Elapsed, "bit/s"),
-		results.Elapsed,
-	)
-	r.callbacks.OnProgress(percentage, message)
 }
 
 func (tk *TestKeys) analyze() error {
@@ -216,7 +213,7 @@ func (tk *TestKeys) analyze() error {
 }
 
 func (r runner) do(ctx context.Context) error {
-	defer r.callbacks.OnProgress(1, "done")
+	defer r.callbacks.OnProgress(1, "streaming: done")
 	const numIterations = 15
 	err := r.loop(ctx, numIterations)
 	if err != nil {
@@ -243,27 +240,25 @@ func (m measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	saver := &trace.Saver{}
-	dlr := dialer.DNSDialer{
-		Dialer: dialer.LoggingDialer{
-			Dialer: dialer.ErrorWrapperDialer{
-				Dialer: dialer.TimeoutDialer{
-					Dialer: dialer.ByteCounterDialer{
-						Dialer: dialer.SaverDialer{
-							Dialer: new(net.Dialer),
-							Saver:  saver,
-						},
-					},
-				},
-			},
-			Logger: sess.Logger(),
-		},
-		Resolver: new(net.Resolver),
+	tk := new(TestKeys)
+	measurement.TestKeys = tk
+	tk.Tunnel = m.config.Tunnel
+	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
+		s := err.Error()
+		tk.Failure = &s
+		return err
 	}
+	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
+	if url := sess.ProxyURL(); url != nil {
+		tk.SOCKSProxy = url.Host
+	}
+	saver := &trace.Saver{}
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
-			Dialer: dlr,
-			Logger: sess.Logger(),
+			ContextByteCounting: true,
+			Logger:              sess.Logger(),
+			ProxyURL:            sess.ProxyURL(),
+			Saver:               saver,
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
@@ -272,9 +267,8 @@ func (m measurer) Run(
 		httpClient: httpClient,
 		saver:      saver,
 		sess:       sess,
-		tk:         new(TestKeys),
+		tk:         tk,
 	}
-	measurement.TestKeys = r.tk
 	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
 	defer cancel()
 	return r.do(ctx)

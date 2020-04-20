@@ -38,20 +38,17 @@ type Resolver interface {
 	Address() string
 }
 
-// ProxyFunc is the function used to set a proxy.
-type ProxyFunc func(*http.Request) (*url.URL, error)
-
 // Config contains configuration for creating a new transport. When any
 // field of Config is nil/empty, we will use a suitable default.
 type Config struct {
+	BogonIsError        bool                 // default: bogon is not error
 	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
 	CacheResolutions    bool                 // default: no caching
 	ContextByteCounting bool                 // default: no implicit byte counting
 	Dialer              Dialer               // default: dialer.DNSDialer
 	Logger              Logger               // default: no logging
-	Proxy               ProxyFunc            // DEPRECATED - DO NOT USE
+	ProxyURL            *url.URL             // default: no proxy
 	Resolver            Resolver             // default: system resolver
-	SOCKS5Proxy         string               // default: no SOCKS5 proxy
 	Saver               *trace.Saver         // default: no saver
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
@@ -66,15 +63,16 @@ type tlsHandshaker interface {
 // RoundTripper before wrapping it into an http.Client.
 func New(config Config) RoundTripper {
 	if config.Resolver == nil {
-		var r Resolver
-		r = resolver.SystemResolver{}
-		r = resolver.ErrorWrapperResolver{Resolver: r}
-		if config.Saver != nil {
-			r = resolver.SaverResolver{Resolver: r, Saver: config.Saver}
+		var r Resolver = resolver.SystemResolver{}
+		if config.BogonIsError {
+			r = resolver.BogonResolver{Resolver: r}
 		}
-		r = resolver.BogonResolver{Resolver: r}
+		r = resolver.ErrorWrapperResolver{Resolver: r}
 		if config.Logger != nil {
 			r = resolver.LoggingResolver{Logger: config.Logger, Resolver: r}
+		}
+		if config.Saver != nil {
+			r = resolver.SaverResolver{Resolver: r, Saver: config.Saver}
 		}
 		if config.CacheResolutions {
 			r = &resolver.CacheResolver{Resolver: r}
@@ -82,46 +80,31 @@ func New(config Config) RoundTripper {
 		config.Resolver = r
 	}
 	if config.Dialer == nil {
-		var d Dialer = dialer.ErrorWrapperDialer{
-			Dialer: dialer.TimeoutDialer{
-				Dialer: new(net.Dialer),
-			},
-		}
-		// The followind kind of byte counting is implicit and
-		// rather bad indeed but currently we're using it for
-		// counting the bytes when we're performing measurements
-		if config.ContextByteCounting {
-			d = dialer.ByteCounterDialer{Dialer: d}
+		var d Dialer = new(net.Dialer)
+		d = dialer.TimeoutDialer{Dialer: d}
+		d = dialer.ErrorWrapperDialer{Dialer: d}
+		if config.Logger != nil {
+			d = dialer.LoggingDialer{Dialer: d, Logger: config.Logger}
 		}
 		if config.Saver != nil {
 			d = dialer.SaverDialer{Dialer: d, Saver: config.Saver}
 		}
-		if config.Logger != nil {
-			d = dialer.LoggingDialer{Dialer: d, Logger: config.Logger}
+		d = dialer.DNSDialer{Resolver: config.Resolver, Dialer: d}
+		d = dialer.ProxyDialer{ProxyURL: config.ProxyURL, Dialer: d}
+		if config.ContextByteCounting {
+			d = dialer.ByteCounterDialer{Dialer: d}
 		}
-		config.Dialer = dialer.DNSDialer{
-			Resolver: config.Resolver,
-			Dialer:   d,
-		}
-		if config.SOCKS5Proxy != "" {
-			config.Dialer = dialer.SOCKS5Dialer{
-				Address: config.SOCKS5Proxy,
-				Dialer:  config.Dialer,
-			}
-		}
+		config.Dialer = d
 	}
 	if config.TLSDialer == nil {
-		var h tlsHandshaker
-		h = dialer.ErrorWrapperTLSHandshaker{
-			TLSHandshaker: dialer.TimeoutTLSHandshaker{
-				TLSHandshaker: dialer.SystemTLSHandshaker{},
-			},
-		}
-		if config.Saver != nil {
-			h = dialer.SaverTLSHandshaker{Saver: config.Saver, TLSHandshaker: h}
-		}
+		var h tlsHandshaker = dialer.SystemTLSHandshaker{}
+		h = dialer.TimeoutTLSHandshaker{TLSHandshaker: h}
+		h = dialer.ErrorWrapperTLSHandshaker{TLSHandshaker: h}
 		if config.Logger != nil {
 			h = dialer.LoggingTLSHandshaker{Logger: config.Logger, TLSHandshaker: h}
+		}
+		if config.Saver != nil {
+			h = dialer.SaverTLSHandshaker{TLSHandshaker: h, Saver: config.Saver}
 		}
 		if config.TLSConfig == nil {
 			config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
@@ -133,7 +116,7 @@ func New(config Config) RoundTripper {
 		}
 	}
 	var txp RoundTripper
-	txp = NewSystemTransport(config.Dialer, config.TLSDialer, config.Proxy)
+	txp = NewSystemTransport(config.Dialer, config.TLSDialer)
 	if config.ByteCounter != nil {
 		txp = ByteCountingTransport{Counter: config.ByteCounter, RoundTripper: txp}
 	}
@@ -142,6 +125,9 @@ func New(config Config) RoundTripper {
 	}
 	if config.Logger != nil {
 		txp = LoggingTransport{Logger: config.Logger, RoundTripper: txp}
+	}
+	if config.Saver != nil {
+		txp = SaverHTTPTransport{RoundTripper: txp, Saver: config.Saver}
 	}
 	txp = UserAgentTransport{RoundTripper: txp}
 	return txp

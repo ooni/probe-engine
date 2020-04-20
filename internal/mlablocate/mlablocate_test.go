@@ -28,23 +28,6 @@ func TestIntegrationWithoutProxy(t *testing.T) {
 	t.Log(fqdn)
 }
 
-func TestIntegrationWithProxy(t *testing.T) {
-	client := mlablocate.NewClient(
-		http.DefaultClient,
-		log.Log,
-		"miniooni/0.1.0-dev",
-	)
-	client.NewRequest = mlablocate.NewRequestWithProxy("8.8.8.8")
-	fqdn, err := client.Query(context.Background(), "ndt7")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if fqdn == "" {
-		t.Fatal("unexpected empty fqdn")
-	}
-	t.Log(fqdn)
-}
-
 func TestIntegration404Response(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,

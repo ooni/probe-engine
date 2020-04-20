@@ -1,0 +1,165 @@
+package psiphonx_test
+
+import (
+	"context"
+	"errors"
+	"os"
+	"testing"
+
+	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
+	"github.com/apex/log"
+	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/mockable"
+	"github.com/ooni/probe-engine/internal/psiphonx"
+)
+
+func TestIntegrationStartStop(t *testing.T) {
+	sess, err := engine.NewSession(engine.SessionConfig{
+		AssetsDir:       "../../testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "../../testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tunnel.SOCKS5ProxyURL() == nil {
+		t.Fatal("expected non nil URL here")
+	}
+	if tunnel.BootstrapTime() <= 0 {
+		t.Fatal("expected positive bootstrap time here")
+	}
+	tunnel.Stop()
+}
+
+func TestUnitNewOrchestraClientFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	sess := &mockable.ExperimentSession{
+		MockableOrchestraClientError: expected,
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
+func TestUnitFetchPsiphonConfigFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	clnt := mockable.ExperimentOrchestraClient{
+		MockableFetchPsiphonConfigErr: expected,
+	}
+	sess := &mockable.ExperimentSession{
+		MockableOrchestraClient: clnt,
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
+func TestUnitMakeMkdirAllFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	dependencies := FakeDependencies{
+		MkdirAllErr: expected,
+	}
+	clnt := mockable.ExperimentOrchestraClient{
+		MockableFetchPsiphonConfigResult: []byte(`{}`),
+	}
+	sess := &mockable.ExperimentSession{
+		MockableOrchestraClient: clnt,
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{
+		Dependencies: dependencies,
+	})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
+func TestUnitMakeRemoveAllFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	dependencies := FakeDependencies{
+		RemoveAllErr: expected,
+	}
+	clnt := mockable.ExperimentOrchestraClient{
+		MockableFetchPsiphonConfigResult: []byte(`{}`),
+	}
+	sess := &mockable.ExperimentSession{
+		MockableOrchestraClient: clnt,
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{
+		Dependencies: dependencies,
+	})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
+func TestUnitMakeStartFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	dependencies := FakeDependencies{
+		StartErr: expected,
+	}
+	clnt := mockable.ExperimentOrchestraClient{
+		MockableFetchPsiphonConfigResult: []byte(`{}`),
+	}
+	sess := &mockable.ExperimentSession{
+		MockableOrchestraClient: clnt,
+	}
+	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{
+		Dependencies: dependencies,
+	})
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
+func TestUnitNilTunnel(t *testing.T) {
+	var tunnel *psiphonx.Tunnel
+	if tunnel.BootstrapTime() != 0 {
+		t.Fatal("expected zero bootstrap time")
+	}
+	if tunnel.SOCKS5ProxyURL() != nil {
+		t.Fatal("expected nil SOCKS Proxy URL")
+	}
+	tunnel.Stop() // must not crash
+}
+
+type FakeDependencies struct {
+	MkdirAllErr  error
+	RemoveAllErr error
+	StartErr     error
+}
+
+func (fd FakeDependencies) MkdirAll(path string, perm os.FileMode) error {
+	return fd.MkdirAllErr
+}
+
+func (fd FakeDependencies) RemoveAll(path string) error {
+	return fd.RemoveAllErr
+}
+
+func (fd FakeDependencies) Start(
+	ctx context.Context, config []byte, workdir string) (*clientlib.PsiphonTunnel, error) {
+	return nil, fd.StartErr
+}

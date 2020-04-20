@@ -8,9 +8,8 @@ import (
 
 // NewSystemTransport creates a new "system" HTTP transport. That is a transport
 // using the Go standard library with custom dialer and TLS dialer.
-func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer, proxy ProxyFunc) *http.Transport {
+func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer) *http.Transport {
 	txp := http.DefaultTransport.(*http.Transport).Clone()
-	txp.Proxy = proxy
 	txp.DialContext = dialer.DialContext
 	txp.DialTLSContext = tlsDialer.DialTLSContext
 	// Better for Cloudflare DNS and also better because we have less
