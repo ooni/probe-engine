@@ -24,15 +24,16 @@ import (
 
 const (
 	defaultTimeout = 120 * time.Second
-	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.10.0"
 	totalStep      = 15.0
+	version        = 11
 )
 
 var (
 	errServerBusy        = errors.New("Server busy; try again later")
 	errHTTPRequestFailed = errors.New("HTTP request failed")
+	magicVersion         = fmt.Sprintf("0.%03d000000", version)
+	testVersion          = fmt.Sprintf("0.%d.0", version)
 )
 
 // Config contains the experiment config.
@@ -132,8 +133,9 @@ func (r runner) measure(
 	var (
 		begin       = time.Now()
 		connectTime float64
-		total       int64
+		ch          = make(chan clientResults)
 	)
+	go r.player(ctx, ch, numIterations)
 	for current.Iteration < numIterations {
 		result, err := download(ctx, downloadConfig{
 			authorization: negotiateResp.Authorization,
@@ -168,11 +170,7 @@ func (r runner) measure(
 		}
 		current.ConnectTime = connectTime
 		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		total += current.Received
-		avgspeed := 8 * float64(total) / time.Now().Sub(begin).Seconds()
-		percentage := float64(current.Iteration) / float64(numIterations)
-		message := fmt.Sprintf("streaming: speed: %s", humanizex.SI(avgspeed, "bit/s"))
-		r.callbacks.OnProgress(percentage, message)
+		ch <- current
 		current.Iteration++
 		speed := float64(current.Received) / float64(current.Elapsed)
 		speed *= 8.0    // to bits per second
@@ -180,6 +178,43 @@ func (r runner) measure(
 		current.Rate = int64(speed)
 	}
 	return nil
+}
+
+func (r runner) player(ctx context.Context, frames <-chan clientResults, numIterations int64) {
+	var frame clientResults
+	// receive the first frame
+	select {
+	case <-ctx.Done():
+		return
+	case frame = <-frames:
+	}
+	for {
+		// play the current frame - note that the play rate is the speed at which
+		// we extract bytes from the queue, while current.Rate is the rate at which
+		// at which we are downloading and filling the queue.
+		percentage := float64(frame.Iteration) / float64(numIterations)
+		rate := 8 * float64(frame.Received) / float64(frame.ElapsedTarget)
+		message := fmt.Sprintf("streaming: play at rate %s", humanizex.SI(rate, "bit/s"))
+		r.callbacks.OnProgress(percentage, message)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Duration(frame.ElapsedTarget) * time.Second):
+		}
+		// receive the next frame
+		select {
+		case <-ctx.Done():
+			return
+		case frame = <-frames:
+		default:
+			r.Logger().Info("streaming: player is stalled")
+			select {
+			case <-ctx.Done():
+				return
+			case frame = <-frames:
+			}
+		}
+	}
 }
 
 func (tk *TestKeys) analyze() error {
