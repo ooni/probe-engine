@@ -15,21 +15,30 @@ type CacheResolver struct {
 // LookupHost implements Resolver.LookupHost
 func (r *CacheResolver) LookupHost(
 	ctx context.Context, hostname string) ([]string, error) {
-	r.mu.Lock()
-	if r.cache == nil {
-		r.cache = make(map[string][]string)
-	}
-	entry := r.cache[hostname]
-	r.mu.Unlock()
-	if entry != nil {
+	if entry := r.Get(hostname); entry != nil {
 		return entry, nil
 	}
 	entry, err := r.Resolver.LookupHost(ctx, hostname)
 	if err != nil {
 		return nil, err
 	}
-	r.mu.Lock()
-	r.cache[hostname] = entry
-	r.mu.Unlock()
+	r.Set(hostname, entry)
 	return entry, nil
+}
+
+// Get gets the currently configured entry for domain, or nil
+func (r *CacheResolver) Get(domain string) []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.cache[domain]
+}
+
+// Set allows to pre-populate the cache
+func (r *CacheResolver) Set(domain string, addresses []string) {
+	r.mu.Lock()
+	if r.cache == nil {
+		r.cache = make(map[string][]string)
+	}
+	r.cache[domain] = addresses
+	r.mu.Unlock()
 }
