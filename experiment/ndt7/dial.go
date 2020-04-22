@@ -37,7 +37,7 @@ func newDialManager(hostname string, proxyURL *url.URL, logger model.Logger) dia
 }
 
 func (mgr dialManager) dialWithTestName(ctx context.Context, testName string) (*websocket.Conn, error) {
-	var reso resolver.Resolver = new(net.Resolver)
+	var reso resolver.Resolver = resolver.SystemResolver{}
 	reso = resolver.LoggingResolver{Resolver: reso, Logger: mgr.logger}
 	var dlr dialer.Dialer = new(net.Dialer)
 	dlr = dialer.TimeoutDialer{Dialer: dlr}

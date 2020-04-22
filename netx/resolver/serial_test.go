@@ -19,6 +19,12 @@ func TestUnitOONIGettingTransport(t *testing.T) {
 	if rtx.Network() != "dot" || rtx.Address() != "8.8.8.8:853" {
 		t.Fatal("not the transport we expected")
 	}
+	if r.Network() != rtx.Network() {
+		t.Fatal("invalid network seen from the resolver")
+	}
+	if r.Address() != rtx.Address() {
+		t.Fatal("invalid address seen from the resolver")
+	}
 }
 
 func TestUnitOONIEncodeError(t *testing.T) {
