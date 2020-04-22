@@ -21,6 +21,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	txp := httptransport.New(httptransport.Config{
 		BogonIsError:        true,
 		ByteCounter:         counter,
+		CacheResolutions:    true,
 		ContextByteCounting: true,
 		Logger:              log.Log,
 		Saver:               saver,
