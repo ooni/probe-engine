@@ -150,3 +150,53 @@ func TestIntegrationSaverHTTPTransportSuccess(t *testing.T) {
 		t.Fatal("unexpected Time")
 	}
 }
+
+func TestIntegrationSaverNoMultipleEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	saver := &trace.Saver{}
+	// register twice - do we see events twice?
+	txp := httptransport.SaverHTTPTransport{
+		RoundTripper: http.DefaultTransport.(*http.Transport),
+		Saver:        saver,
+	}
+	txp = httptransport.SaverHTTPTransport{
+		RoundTripper: txp,
+		Saver:        saver,
+	}
+	req, err := http.NewRequest("GET", "https://www.google.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := txp.RoundTrip(req)
+	if err != nil {
+		t.Fatal("not the error we expected")
+	}
+	if resp == nil {
+		t.Fatal("expected non nil response here")
+	}
+	ev := saver.Read()
+	// we should specifically see the events not attached to any
+	// context being submitted twice. This is fine because they are
+	// explicit, while the context is implicit and hence leads to
+	// more subtle bugs. For example, this happens when you measure
+	// every event and combine HTTP with DoH.
+	if len(ev) != 7 {
+		t.Fatal("expected seven events")
+	}
+	expected := []string{
+		"http_round_trip_start",
+		"http_round_trip_start",
+		"http_wrote_headers",       // measured with context
+		"http_wrote_request",       // measured with context
+		"http_first_response_byte", // measured with context
+		"http_round_trip_done",
+		"http_round_trip_done",
+	}
+	for i := 0; i < len(expected); i++ {
+		if ev[i].Name != expected[i] {
+			t.Fatal("unexpected event name")
+		}
+	}
+}
