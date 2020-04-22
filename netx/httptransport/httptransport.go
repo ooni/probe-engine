@@ -34,6 +34,8 @@ type RoundTripper interface {
 // Resolver is the interface we expect from a resolver
 type Resolver interface {
 	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
+	Network() string
+	Address() string
 }
 
 // Config contains configuration for creating a new transport. When any

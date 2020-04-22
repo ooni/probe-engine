@@ -20,4 +20,14 @@ func (c ChainResolver) LookupHost(ctx context.Context, hostname string) ([]strin
 	return addrs, err
 }
 
+// Network implements Resolver.Network
+func (c ChainResolver) Network() string {
+	return "chain"
+}
+
+// Address implements Resolver.Address
+func (c ChainResolver) Address() string {
+	return ""
+}
+
 var _ Resolver = ChainResolver{}
