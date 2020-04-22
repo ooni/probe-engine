@@ -34,14 +34,17 @@ type RoundTripper interface {
 // Resolver is the interface we expect from a resolver
 type Resolver interface {
 	LookupHost(ctx context.Context, hostname string) (addrs []string, err error)
+	Network() string
+	Address() string
 }
 
 // Config contains configuration for creating a new transport. When any
 // field of Config is nil/empty, we will use a suitable default.
 type Config struct {
 	BogonIsError        bool                 // default: bogon is not error
-	ByteCounter         *bytecounter.Counter // default: no byte counting
-	ContextByteCounting bool                 // default: no context byte counting
+	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
+	CacheResolutions    bool                 // default: no caching
+	ContextByteCounting bool                 // default: no implicit byte counting
 	Dialer              Dialer               // default: dialer.DNSDialer
 	Logger              Logger               // default: no logging
 	ProxyURL            *url.URL             // default: no proxy
@@ -70,6 +73,9 @@ func New(config Config) RoundTripper {
 		}
 		if config.Saver != nil {
 			r = resolver.SaverResolver{Resolver: r, Saver: config.Saver}
+		}
+		if config.CacheResolutions {
+			r = &resolver.CacheResolver{Resolver: r}
 		}
 		config.Resolver = r
 	}

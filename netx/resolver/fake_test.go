@@ -131,4 +131,12 @@ func (c FakeResolver) LookupHost(ctx context.Context, hostname string) ([]string
 	return c.Result, nil
 }
 
+func (c FakeResolver) Network() string {
+	return "fake"
+}
+
+func (c FakeResolver) Address() string {
+	return ""
+}
+
 var _ Resolver = FakeResolver{}

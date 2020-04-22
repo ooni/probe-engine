@@ -9,6 +9,12 @@ import (
 
 func TestIntegrationSystemResolverLookupHost(t *testing.T) {
 	r := resolver.SystemResolver{}
+	if r.Network() != "system" {
+		t.Fatal("invalid Network")
+	}
+	if r.Address() != "" {
+		t.Fatal("invalid Address")
+	}
 	addrs, err := r.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
 		t.Fatal(err)

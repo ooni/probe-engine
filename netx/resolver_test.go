@@ -142,3 +142,13 @@ func TestUnitNewHTTPClientForDoH(t *testing.T) {
 		t.Fatal("expected to see different client here")
 	}
 }
+
+func TestUnitChainWrapperResolver(t *testing.T) {
+	r := netx.ChainWrapperResolver{}
+	if r.Address() != "" {
+		t.Fatal("invalid Address")
+	}
+	if r.Network() != "chain" {
+		t.Fatal("invalid Network")
+	}
+}
