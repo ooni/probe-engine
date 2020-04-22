@@ -10,13 +10,14 @@ require (
 	github.com/Psiphon-Labs/chacha20 v0.2.1-0.20200128191310-899a4be52863 // indirect
 	github.com/Psiphon-Labs/dns v0.0.0-20170814182607-d23cdaf67bbc // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
-	github.com/Psiphon-Labs/goptlib v0.0.0-20180426172440-18963be5f9c5 // indirect
+	github.com/Psiphon-Labs/goptlib v0.0.0-20200406165125-c0e32a7a3464 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.11-0.20200403181014-fcdf8913c6d5+incompatible
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.11+incompatible
 	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200306193310-474e74c89fab // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20200326183334-7ff412878bba // indirect
-	github.com/apex/log v1.1.2
-	github.com/aristanetworks/goarista v0.0.0-20200331225509-2cc472e8fbd6 // indirect
+	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
+	github.com/apex/log v1.1.4
+	github.com/aristanetworks/goarista v0.0.0-20200410125653-0a3087568c00 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
@@ -49,10 +50,11 @@ require (
 	github.com/sergeyfrolov/bsbuffer v0.0.0-20180903213811-94e85abb8507 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8 // indirect
+	github.com/wader/filtertransport v0.0.0-20200316221534-bdd9e61eee78 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
-	gitlab.com/yawning/obfs4.git v0.0.0-20190621002404-c357dd56dfa6
+	gitlab.com/yawning/obfs4.git v0.0.0-20200410113629-2d8f3c8bbfd7
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+	golang.org/x/net v0.0.0-20200421231249-e086a090c8fd
 )
