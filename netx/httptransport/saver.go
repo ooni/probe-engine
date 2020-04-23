@@ -35,6 +35,8 @@ func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, erro
 		}
 		req = req.WithContext(httptrace.WithClientTrace(req.Context(), tracep))
 	}
+	const snapsize = 1 << 17
+	reqbody := saverReadSnap(&req.Body, snapsize)
 	start := time.Now()
 	txp.Saver.Write(trace.Event{
 		HTTPRequestBody: reqbody,
