@@ -18,14 +18,13 @@ func TestIntegrationWithoutProxy(t *testing.T) {
 		log.Log,
 		"miniooni/0.1.0-dev",
 	)
-	fqdn, err := client.Query(context.Background(), "ndt7")
+	result, err := client.Query(context.Background(), "ndt7")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fqdn == "" {
+	if result.FQDN == "" {
 		t.Fatal("unexpected empty fqdn")
 	}
-	t.Log(fqdn)
 }
 
 func TestIntegration404Response(t *testing.T) {
@@ -34,11 +33,11 @@ func TestIntegration404Response(t *testing.T) {
 		log.Log,
 		"miniooni/0.1.0-dev",
 	)
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if err == nil || !strings.Contains(err.Error(), "mlablocate: non-200 status code") {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }
@@ -50,11 +49,11 @@ func TestUnitNewRequestFailure(t *testing.T) {
 		"miniooni/0.1.0-dev",
 	)
 	client.Hostname = "\t"
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if err == nil || !strings.Contains(err.Error(), "invalid URL escape") {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }
@@ -69,11 +68,11 @@ func TestUnitHTTPClientDoFailure(t *testing.T) {
 	client.HTTPClient = &http.Client{
 		Transport: &roundTripFails{Error: expected},
 	}
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }
@@ -96,11 +95,11 @@ func TestUnitCannotReadBody(t *testing.T) {
 	client.HTTPClient = &http.Client{
 		Transport: &readingBodyFails{Error: expected},
 	}
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }
@@ -137,11 +136,11 @@ func TestUnitInvalidJSON(t *testing.T) {
 	client.HTTPClient = &http.Client{
 		Transport: &invalidJSON{},
 	}
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }
@@ -178,11 +177,11 @@ func TestUnitEmptyFQDN(t *testing.T) {
 	client.HTTPClient = &http.Client{
 		Transport: &emptyFQDN{},
 	}
-	fqdn, err := client.Query(context.Background(), "nonexistent")
+	result, err := client.Query(context.Background(), "nonexistent")
 	if err == nil || !strings.HasSuffix(err.Error(), "returned empty FQDN") {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if result.FQDN != "" {
 		t.Fatal("expected empty fqdn")
 	}
 }

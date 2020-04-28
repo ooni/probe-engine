@@ -19,7 +19,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.5.0" {
+	if measurer.ExperimentVersion() != "0.6.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -33,11 +33,11 @@ func TestUnitDiscoverCancelledContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
-	fqdn, err := m.discover(ctx, sess)
+	locateResult, err := m.discover(ctx, sess)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
+	if locateResult.FQDN != "" {
 		t.Fatal("not the fqdn we expected")
 	}
 }
