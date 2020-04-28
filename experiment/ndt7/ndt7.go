@@ -108,7 +108,8 @@ func (m *measurer) doDownload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialDownload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -174,7 +175,8 @@ func (m *measurer) doUpload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialUpload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
 		return err
 	}
