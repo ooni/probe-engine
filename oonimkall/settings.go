@@ -205,7 +205,7 @@ type settingsOptions struct {
 	// to set it to true will cause a startup error.
 	RandomizeInput bool `json:"randomize_input,omitempty"`
 
-	// SaveRealProbeIP indicates whether to save the real probe ASN
+	// SaveRealProbeASN indicates whether to save the real probe ASN
 	SaveRealProbeASN bool `json:"save_real_probe_asn,omitempty"`
 
 	// SaveRealProbeCC indicates whether to save the real probe CC
