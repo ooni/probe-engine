@@ -205,6 +205,9 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
+	sess.SetIncludeProbeASN(r.settings.Options.SaveRealProbeASN)
+	sess.SetIncludeProbeCC(r.settings.Options.SaveRealProbeCC)
+	sess.SetIncludeProbeIP(r.settings.Options.SaveRealProbeIP)
 	endEvent := new(eventStatusEnd)
 	defer func() {
 		sess.Close()
