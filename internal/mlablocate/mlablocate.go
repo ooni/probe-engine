@@ -33,12 +33,17 @@ func NewClient(httpClient *http.Client, logger model.Logger, userAgent string) *
 	}
 }
 
-type locateResult struct {
-	FQDN string `json:"fqdn"`
+// Result is a result of a query to locate.measurementlab.net.
+type Result struct {
+	City    string   `json:"city"`
+	Country string   `json:"country"`
+	IP      []string `json:"ip"`
+	FQDN    string   `json:"fqdn"`
+	Site    string   `json:"site"`
 }
 
 // Query performs a locate.measurementlab.net query.
-func (c *Client) Query(ctx context.Context, tool string) (string, error) {
+func (c *Client) Query(ctx context.Context, tool string) (Result, error) {
 	URL := &url.URL{
 		Scheme: c.Scheme,
 		Host:   c.Hostname,
@@ -46,29 +51,29 @@ func (c *Client) Query(ctx context.Context, tool string) (string, error) {
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", URL.String(), nil)
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	req.Header.Add("User-Agent", c.UserAgent)
 	c.Logger.Debugf("mlablocate: GET %s", URL.String())
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("mlablocate: non-200 status code: %d", resp.StatusCode)
+		return Result{}, fmt.Errorf("mlablocate: non-200 status code: %d", resp.StatusCode)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return Result{}, err
 	}
 	c.Logger.Debugf("mlablocate: %s", string(data))
-	var result locateResult
+	var result Result
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
+		return Result{}, err
 	}
 	if result.FQDN == "" {
-		return "", errors.New("mlablocate: returned empty FQDN")
+		return Result{}, errors.New("mlablocate: returned empty FQDN")
 	}
-	return result.FQDN, nil
+	return result, nil
 }

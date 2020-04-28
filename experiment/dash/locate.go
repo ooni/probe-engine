@@ -14,7 +14,7 @@ type locateDeps interface {
 	UserAgent() string
 }
 
-func locate(ctx context.Context, deps locateDeps) (string, error) {
+func locate(ctx context.Context, deps locateDeps) (mlablocate.Result, error) {
 	return mlablocate.NewClient(
 		deps.HTTPClient(), deps.Logger(), deps.UserAgent()).Query(ctx, "neubot")
 }
