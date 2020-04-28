@@ -1,7 +1,6 @@
 package oonimkall
 
 import (
-	"sync"
 	"testing"
 )
 
@@ -62,20 +61,5 @@ func TestUnitEmitStatusProgress(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("did not see expected event")
-	}
-}
-
-func TestUnitEmitNonblocking(t *testing.T) {
-	out := make(chan *eventRecord)
-	emitter := newEventEmitter([]string{}, out)
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
-	go func() {
-		emitter.Emit("log", eventLog{Message: "foo"})
-		wg.Done()
-	}()
-	wg.Wait()
-	if emitter.timeouts.Load() != 1 {
-		t.Fatal("did not see any timeout")
 	}
 }

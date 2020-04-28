@@ -626,3 +626,31 @@ func TestIntegrationPrivacySettings(t *testing.T) {
 		t.Fatal("unexpected result")
 	}
 }
+
+func TestIntegrationNonblock(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../testdata/oonimkall/assets",
+		"name": "Example",
+		"options": {
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !task.IsRunning() {
+		t.Fatal("The runner should be running at this point")
+	}
+	// Assumption: the example experiment emits less than bufsiz = 128
+	// events and runs for less than 10 seconds (should be five).
+	time.Sleep(10 * time.Second)
+	if task.IsRunning() {
+		t.Fatal("The runner should be stopped by now")
+	}
+	for !task.IsDone() {
+		task.WaitForNextEvent()
+	}
+}
