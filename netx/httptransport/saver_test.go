@@ -10,10 +10,10 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestUnitSaverHTTPTransportFailure(t *testing.T) {
+func TestUnitSaverRoundTripFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
-	txp := httptransport.SaverHTTPTransport{
+	txp := httptransport.SaverRoundTripHTTPTransport{
 		RoundTripper: httptransport.FakeTransport{
 			Err: expected,
 		},
@@ -69,12 +69,12 @@ func TestUnitSaverHTTPTransportFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverHTTPTransportSuccess(t *testing.T) {
+func TestIntegrationSaverRoundTripSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
 	saver := &trace.Saver{}
-	txp := httptransport.SaverHTTPTransport{
+	txp := httptransport.SaverRoundTripHTTPTransport{
 		RoundTripper: http.DefaultTransport.(*http.Transport),
 		Saver:        saver,
 	}

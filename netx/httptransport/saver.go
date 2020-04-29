@@ -9,7 +9,7 @@ import (
 )
 
 // SaverPerformanceHTTPTransport is a RoundTripper that saves
-// performance events during the round trip
+// performance events occurring during the round trip
 type SaverPerformanceHTTPTransport struct {
 	RoundTripper
 	Saver *trace.Saver
@@ -36,14 +36,15 @@ func (txp SaverPerformanceHTTPTransport) RoundTrip(req *http.Request) (*http.Res
 	return txp.RoundTripper.RoundTrip(req)
 }
 
-// SaverHTTPTransport is a RoundTripper that saves events
-type SaverHTTPTransport struct {
+// SaverRoundTripHTTPTransport is a RoundTripper that saves base
+// events pertaining to the HTTP round trip
+type SaverRoundTripHTTPTransport struct {
 	RoundTripper
 	Saver *trace.Saver
 }
 
 // RoundTrip implements RoundTripper.RoundTrip
-func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (txp SaverRoundTripHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	start := time.Now()
 	txp.Saver.Write(trace.Event{
 		HTTPRequest: req,
@@ -64,4 +65,4 @@ func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, erro
 }
 
 var _ RoundTripper = SaverPerformanceHTTPTransport{}
-var _ RoundTripper = SaverHTTPTransport{}
+var _ RoundTripper = SaverRoundTripHTTPTransport{}
