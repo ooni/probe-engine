@@ -271,9 +271,9 @@ func (m measurer) Run(
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			ContextByteCounting: true,
+			DialSaver:           saver,
 			Logger:              sess.Logger(),
 			ProxyURL:            sess.ProxyURL(),
-			Saver:               saver,
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
