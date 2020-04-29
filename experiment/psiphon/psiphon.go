@@ -118,12 +118,16 @@ func (r *runner) usetunnel(
 	saver := new(trace.Saver)
 	clnt := &http.Client{Transport: httptransport.New(httptransport.Config{
 		ContextByteCounting: true,
+		DialSaver:           saver,
+		HTTPSaver:           saver,
 		Logger:              logger,
 		ProxyURL: &url.URL{
 			Scheme: "socks5",
 			Host:   r.testkeys.SOCKSProxy,
 		},
-		Saver: saver,
+		ReadWriteSaver: saver,
+		ResolveSaver:   saver,
+		TLSSaver:       saver,
 	})}
 	defer clnt.CloseIdleConnections()
 	req, err := http.NewRequest("GET", "https://www.google.com/humans.txt", nil)

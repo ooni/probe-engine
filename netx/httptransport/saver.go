@@ -2,19 +2,17 @@ package httptransport
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 // SaverPerformanceHTTPTransport is a RoundTripper that saves
-// performance events during the round trip
+// performance events occurring during the round trip
 type SaverPerformanceHTTPTransport struct {
 	RoundTripper
 	Saver *trace.Saver
@@ -41,44 +39,61 @@ func (txp SaverPerformanceHTTPTransport) RoundTrip(req *http.Request) (*http.Res
 	return txp.RoundTripper.RoundTrip(req)
 }
 
-// SaverHTTPTransport is a RoundTripper that saves events
-type SaverHTTPTransport struct {
+// SaverRoundTripHTTPTransport is a RoundTripper that saves base
+// events pertaining to the HTTP round trip
+type SaverRoundTripHTTPTransport struct {
 	RoundTripper
 	Saver *trace.Saver
 }
 
 // RoundTrip implements RoundTripper.RoundTrip
-func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	const snapsize = 1 << 17
-	reqbody := saverReadSnap(&req.Body, snapsize)
-	start := time.Now() // exclude time to read body snapshot
+func (txp SaverRoundTripHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	start := time.Now()
 	txp.Saver.Write(trace.Event{
-		HTTPRequestBody: reqbody,
-		HTTPRequest:     req,
-		Name:            "http_round_trip_start",
-		Time:            start,
+		HTTPRequest: req,
+		Name:        "http_round_trip_start",
+		Time:        start,
 	})
 	resp, err := txp.RoundTripper.RoundTrip(req)
-	respbody := saverReadResponseSnap(resp, snapsize)
-	stop := time.Now() // include time to read body snapshot
+	stop := time.Now()
 	txp.Saver.Write(trace.Event{
-		Duration:         stop.Sub(start),
-		Err:              err,
-		HTTPRequestBody:  reqbody,
-		HTTPRequest:      req,
-		HTTPResponseBody: respbody,
-		HTTPResponse:     resp,
-		Name:             "http_round_trip_done",
-		Time:             stop,
+		Duration:     stop.Sub(start),
+		Err:          err,
+		HTTPRequest:  req,
+		HTTPResponse: resp,
+		Name:         "http_round_trip_done",
+		Time:         stop,
 	})
 	return resp, err
 }
 
-func saverReadResponseSnap(resp *http.Response, snapsize int64) *trace.Snapshot {
-	if resp == nil {
-		return nil
+// SaverBodyHTTPTransport is a RoundTripper that saves
+// body events occurring during the round trip
+type SaverBodyHTTPTransport struct {
+	RoundTripper
+	Saver *trace.Saver
+}
+
+// RoundTrip implements RoundTripper.RoundTrip
+func (txp SaverBodyHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	const snapsize = 1 << 17
+	if req.Body != nil {
+		txp.Saver.Write(trace.Event{
+			HTTPRequestBody: saverReadSnap(&req.Body, snapsize),
+			Name:            "http_request_body_snapshot",
+			Time:            time.Now(),
+		})
 	}
-	return saverReadSnap(&resp.Body, snapsize)
+	resp, err := txp.RoundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	txp.Saver.Write(trace.Event{
+		HTTPResponseBody: saverReadSnap(&resp.Body, snapsize),
+		Name:             "http_response_body_snapshot",
+		Time:             time.Now(),
+	})
+	return resp, nil
 }
 
 func saverReadSnap(r *io.ReadCloser, snapsize int64) *trace.Snapshot {
@@ -114,4 +129,5 @@ func (r saverErrReader) Read(p []byte) (int, error) {
 }
 
 var _ RoundTripper = SaverPerformanceHTTPTransport{}
-var _ RoundTripper = SaverHTTPTransport{}
+var _ RoundTripper = SaverRoundTripHTTPTransport{}
+var _ RoundTripper = SaverBodyHTTPTransport{}

@@ -124,8 +124,12 @@ func (m measurer) maybeNewResolver(
 		// TODO(bassosimone): we are leaking connections on this client.
 		httpClient := &http.Client{Transport: httptransport.New(httptransport.Config{
 			ContextByteCounting: true,
+			DialSaver:           saver,
+			HTTPSaver:           saver,
 			Logger:              logger,
-			Saver:               saver,
+			ReadWriteSaver:      saver,
+			ResolveSaver:        saver,
+			TLSSaver:            saver,
 		})}
 		r = &resolver.CacheResolver{
 			Resolver: resolver.SaverResolver{
@@ -159,9 +163,12 @@ func (m measurer) Run(
 	saver := new(trace.Saver)
 	config := httptransport.Config{
 		ContextByteCounting: true,
+		DialSaver:           saver,
+		HTTPSaver:           saver,
 		Logger:              sess.Logger(),
-		SaveReadWrite:       true,
-		Saver:               saver,
+		ReadWriteSaver:      saver,
+		ResolveSaver:        saver,
+		TLSSaver:            saver,
 	}
 	reso, err := m.maybeNewResolver(saver, sess.Logger())
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 func TestUnitSaverHTTPTransportFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
-	txp := httptransport.SaverHTTPTransport{
+	txp := httptransport.SaverRoundTripHTTPTransport{
 		RoundTripper: httptransport.FakeTransport{
 			Err: expected,
 		},
@@ -74,7 +74,7 @@ func TestIntegrationSaverHTTPTransportSuccess(t *testing.T) {
 		t.Skip("skipping test in short mode")
 	}
 	saver := &trace.Saver{}
-	txp := httptransport.SaverHTTPTransport{
+	txp := httptransport.SaverRoundTripHTTPTransport{
 		RoundTripper: http.DefaultTransport.(*http.Transport),
 		Saver:        saver,
 	}
