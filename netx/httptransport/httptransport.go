@@ -131,9 +131,11 @@ func New(config Config) RoundTripper {
 		txp = LoggingTransport{Logger: config.Logger, RoundTripper: txp}
 	}
 	if config.HTTPSaver != nil {
+		txp = SaverMetadataHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
 		txp = SaverBodyHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
-		txp = SaverRoundTripHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
 		txp = SaverPerformanceHTTPTransport{
+			RoundTripper: txp, Saver: config.HTTPSaver}
+		txp = SaverTransactionHTTPTransport{
 			RoundTripper: txp, Saver: config.HTTPSaver}
 	}
 	txp = UserAgentTransport{RoundTripper: txp}
