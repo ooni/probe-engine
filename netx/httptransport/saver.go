@@ -71,15 +71,26 @@ func (txp SaverRoundTripHTTPTransport) RoundTrip(req *http.Request) (*http.Respo
 // body events occurring during the round trip
 type SaverBodyHTTPTransport struct {
 	RoundTripper
-	Saver *trace.Saver
+	Saver        *trace.Saver
+	SnapshotSize int
 }
 
 // RoundTrip implements RoundTripper.RoundTrip
 func (txp SaverBodyHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	const snapsize = 1 << 17
+	const defaultSnapSize = 1 << 17
+	snapsize := defaultSnapSize
+	if txp.SnapshotSize != 0 {
+		snapsize = txp.SnapshotSize
+	}
 	if req.Body != nil {
+		data, err := saverSnapRead(req.Body, snapsize)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = saverCompose(data, req.Body)
 		txp.Saver.Write(trace.Event{
-			HTTPRequestBody: saverReadSnap(&req.Body, snapsize),
+			DataIsTruncated: len(data) >= snapsize,
+			Data:            data,
 			Name:            "http_request_body_snapshot",
 			Time:            time.Now(),
 		})
@@ -88,41 +99,32 @@ func (txp SaverBodyHTTPTransport) RoundTrip(req *http.Request) (*http.Response, 
 	if err != nil {
 		return nil, err
 	}
+	data, err := saverSnapRead(resp.Body, snapsize)
+	if err != nil {
+		resp.Body.Close()
+		return nil, err
+	}
+	resp.Body = saverCompose(data, resp.Body)
 	txp.Saver.Write(trace.Event{
-		HTTPResponseBody: saverReadSnap(&resp.Body, snapsize),
-		Name:             "http_response_body_snapshot",
-		Time:             time.Now(),
+		DataIsTruncated: len(data) >= snapsize,
+		Data:            data,
+		Name:            "http_response_body_snapshot",
+		Time:            time.Now(),
 	})
 	return resp, nil
 }
 
-func saverReadSnap(r *io.ReadCloser, snapsize int64) *trace.Snapshot {
-	data, err := ioutil.ReadAll(io.LimitReader(*r, snapsize))
-	if err != nil {
-		*r = saverReadCloser{
-			Closer: *r,
-			Reader: io.MultiReader(bytes.NewReader(data), saverErrReader{err}),
-		}
-		return nil
-	}
-	*r = saverReadCloser{
-		Closer: *r,
-		Reader: io.MultiReader(bytes.NewReader(data), *r),
-	}
-	return &trace.Snapshot{Data: data, Limit: snapsize}
+func saverSnapRead(r io.ReadCloser, snapsize int) ([]byte, error) {
+	return ioutil.ReadAll(io.LimitReader(r, int64(snapsize)))
+}
+
+func saverCompose(data []byte, r io.ReadCloser) io.ReadCloser {
+	return saverReadCloser{Closer: r, Reader: io.MultiReader(bytes.NewReader(data), r)}
 }
 
 type saverReadCloser struct {
 	io.Closer
 	io.Reader
-}
-
-type saverErrReader struct {
-	Err error
-}
-
-func (r saverErrReader) Read(p []byte) (int, error) {
-	return 0, r.Err
 }
 
 var _ RoundTripper = SaverPerformanceHTTPTransport{}

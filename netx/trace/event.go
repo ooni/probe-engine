@@ -27,6 +27,7 @@ type Event struct {
 	Address            string              `json:",omitempty"`
 	DNSQuery           []byte              `json:",omitempty"`
 	DNSReply           []byte              `json:",omitempty"`
+	DataIsTruncated    bool                `json:",omitempty"`
 	Data               []byte              `json:",omitempty"`
 	Duration           time.Duration       `json:",omitempty"`
 	Err                error               `json:",omitempty"`
