@@ -153,3 +153,4 @@ type saverReadCloser struct {
 var _ RoundTripper = SaverPerformanceHTTPTransport{}
 var _ RoundTripper = SaverMetadataHTTPTransport{}
 var _ RoundTripper = SaverBodyHTTPTransport{}
+var _ RoundTripper = SaverTransactionHTTPTransport{}
