@@ -29,9 +29,12 @@ func (r runner) play(ctx context.Context, config playConfig) error {
 		saver:         r.saver,
 	})
 	// get the first frame
-	var frame clientResults
+	var (
+		err   error
+		frame clientResults
+	)
 	select {
-	case err := <-errch:
+	case err = <-errch:
 		return err
 	case frame = <-playoutbuf:
 	}
@@ -41,27 +44,44 @@ func (r runner) play(ctx context.Context, config playConfig) error {
 		// play the current frame
 		percentage := float64(frame.Iteration) / float64(config.numIterations)
 		rate := 8 * float64(frame.Received) / float64(frame.ElapsedTarget)
-		message := fmt.Sprintf("streaming: play at %s", humanizex.SI(rate, "bit/s"))
-		r.callbacks.OnProgress(percentage, message)
+		msg := fmt.Sprintf("streaming: play at %s", humanizex.SI(rate, "bit/s"))
+		r.callbacks.OnProgress(percentage, msg)
 		<-time.After(time.Duration(frame.ElapsedTarget) * time.Second)
 		// get the next frame nonblocking
 		select {
-		case err := <-errch:
+		case err = <-errch:
 			return err
 		case frame = <-playoutbuf:
 		default:
 			// get the next frame blocking
-			begin := time.Now()
-			r.Logger().Info("streaming: player is stalled")
-			select {
-			case err := <-errch:
+			frame, err = r.playStall(percentage, playoutbuf, errch)
+			if err != nil {
 				return err
-			case frame = <-playoutbuf:
-				stall := time.Now().Sub(begin).Seconds()
-				if stall > r.tk.Simple.MinPlayoutDelay {
-					r.tk.Simple.MinPlayoutDelay = stall
-				}
 			}
+		}
+	}
+}
+
+func (r runner) playStall(percentage float64,
+	playoutbuf chan clientResults, errch chan error) (clientResults, error) {
+	progress := func(stall float64) {
+		msg := fmt.Sprintf("streaming: stalled for %.1f s", stall)
+		r.callbacks.OnProgress(percentage, msg)
+	}
+	begin := time.Now()
+	for {
+		select {
+		case err := <-errch:
+			return clientResults{}, err
+		case frame := <-playoutbuf:
+			stall := time.Now().Sub(begin).Seconds()
+			if stall > r.tk.Simple.MinPlayoutDelay {
+				r.tk.Simple.MinPlayoutDelay = stall
+			}
+			progress(stall)
+			return frame, nil
+		case now := <-time.After(1 * time.Second):
+			progress(now.Sub(begin).Seconds())
 		}
 	}
 }
