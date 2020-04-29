@@ -1,6 +1,9 @@
 package httptransport
 
 import (
+	"bytes"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"time"
@@ -64,5 +67,66 @@ func (txp SaverRoundTripHTTPTransport) RoundTrip(req *http.Request) (*http.Respo
 	return resp, err
 }
 
+// SaverBodyHTTPTransport is a RoundTripper that saves
+// body events occurring during the round trip
+type SaverBodyHTTPTransport struct {
+	RoundTripper
+	Saver        *trace.Saver
+	SnapshotSize int
+}
+
+// RoundTrip implements RoundTripper.RoundTrip
+func (txp SaverBodyHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	const defaultSnapSize = 1 << 17
+	snapsize := defaultSnapSize
+	if txp.SnapshotSize != 0 {
+		snapsize = txp.SnapshotSize
+	}
+	if req.Body != nil {
+		data, err := saverSnapRead(req.Body, snapsize)
+		if err != nil {
+			return nil, err
+		}
+		req.Body = saverCompose(data, req.Body)
+		txp.Saver.Write(trace.Event{
+			DataIsTruncated: len(data) >= snapsize,
+			Data:            data,
+			Name:            "http_request_body_snapshot",
+			Time:            time.Now(),
+		})
+	}
+	resp, err := txp.RoundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	data, err := saverSnapRead(resp.Body, snapsize)
+	if err != nil {
+		resp.Body.Close()
+		return nil, err
+	}
+	resp.Body = saverCompose(data, resp.Body)
+	txp.Saver.Write(trace.Event{
+		DataIsTruncated: len(data) >= snapsize,
+		Data:            data,
+		Name:            "http_response_body_snapshot",
+		Time:            time.Now(),
+	})
+	return resp, nil
+}
+
+func saverSnapRead(r io.ReadCloser, snapsize int) ([]byte, error) {
+	return ioutil.ReadAll(io.LimitReader(r, int64(snapsize)))
+}
+
+func saverCompose(data []byte, r io.ReadCloser) io.ReadCloser {
+	return saverReadCloser{Closer: r, Reader: io.MultiReader(bytes.NewReader(data), r)}
+}
+
+type saverReadCloser struct {
+	io.Closer
+	io.Reader
+}
+
 var _ RoundTripper = SaverPerformanceHTTPTransport{}
 var _ RoundTripper = SaverRoundTripHTTPTransport{}
+var _ RoundTripper = SaverBodyHTTPTransport{}
