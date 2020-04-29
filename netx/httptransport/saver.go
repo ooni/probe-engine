@@ -97,9 +97,6 @@ func (txp SaverBodyHTTPTransport) RoundTrip(req *http.Request) (*http.Response, 
 }
 
 func saverReadSnap(r *io.ReadCloser, snapsize int64) *trace.Snapshot {
-	if r == nil || *r == nil {
-		return nil
-	}
 	data, err := ioutil.ReadAll(io.LimitReader(*r, snapsize))
 	if err != nil {
 		*r = saverReadCloser{
