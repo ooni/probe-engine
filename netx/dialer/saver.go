@@ -78,7 +78,7 @@ type SaverConnDialer struct {
 // DialContext implements Dialer.DialContext
 func (d SaverConnDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	conn, err := d.Dialer.DialContext(ctx, network, address)
-	if conn == nil {
+	if err != nil {
 		return nil, err
 	}
 	return saverConn{saver: d.Saver, Conn: conn}, nil
