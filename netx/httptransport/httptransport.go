@@ -94,7 +94,7 @@ func New(config Config) RoundTripper {
 			d = dialer.SaverDialer{Dialer: d, Saver: config.DialSaver}
 		}
 		if config.ReadWriteSaver != nil {
-			d = dialer.SaverDialer{Dialer: d, Saver: config.ReadWriteSaver}
+			d = dialer.SaverConnDialer{Dialer: d, Saver: config.ReadWriteSaver}
 		}
 		d = dialer.DNSDialer{Resolver: config.Resolver, Dialer: d}
 		d = dialer.ProxyDialer{ProxyURL: config.ProxyURL, Dialer: d}
@@ -131,7 +131,8 @@ func New(config Config) RoundTripper {
 		txp = LoggingTransport{Logger: config.Logger, RoundTripper: txp}
 	}
 	if config.HTTPSaver != nil {
-		txp = SaverHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
+		txp = SaverBodyHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
+		txp = SaverRoundTripHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
 		txp = SaverPerformanceHTTPTransport{
 			RoundTripper: txp, Saver: config.HTTPSaver}
 	}
