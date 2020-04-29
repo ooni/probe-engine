@@ -31,10 +31,7 @@ func (d SaverDialer) DialContext(ctx context.Context, network, address string) (
 		Proto:    network,
 		Time:     stop,
 	})
-	if err != nil {
-		return nil, err
-	}
-	return saverConn{Conn: conn, saver: d.Saver}, nil
+	return conn, err
 }
 
 // SaverTLSHandshaker saves events occurring during the handshake
