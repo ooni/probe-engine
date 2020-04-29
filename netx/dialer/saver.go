@@ -71,6 +71,22 @@ func (h SaverTLSHandshaker) Handshake(
 	return tlsconn, state, err
 }
 
+// SaverConnDialer wraps the returned connection such that we
+// collect all the read/write events that occur.
+type SaverConnDialer struct {
+	Dialer
+	Saver *trace.Saver
+}
+
+// DialContext implements Dialer.DialContext
+func (d SaverConnDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	conn, err := d.Dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	return saverConn{saver: d.Saver, Conn: conn}, nil
+}
+
 type saverConn struct {
 	net.Conn
 	saver *trace.Saver

@@ -160,6 +160,7 @@ func (m measurer) Run(
 	config := httptransport.Config{
 		ContextByteCounting: true,
 		Logger:              sess.Logger(),
+		SaveReadWrite:       true,
 		Saver:               saver,
 	}
 	reso, err := m.maybeNewResolver(saver, sess.Logger())
