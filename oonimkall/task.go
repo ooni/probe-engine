@@ -12,7 +12,6 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
-	"sync"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -20,10 +19,10 @@ import (
 
 // Task is an asynchronous task.
 type Task struct {
-	cancel context.CancelFunc
-	isdone *atomicx.Int64
-	out    chan *eventRecord
-	wg     *sync.WaitGroup
+	cancel    context.CancelFunc
+	isdone    *atomicx.Int64
+	isstopped *atomicx.Int64
+	out       chan *eventRecord
 }
 
 // StartTask starts an asynchronous task. The input argument is a
@@ -33,18 +32,17 @@ func StartTask(input string) (*Task, error) {
 	if err := json.Unmarshal([]byte(input), &settings); err != nil {
 		return nil, err
 	}
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	const bufsiz = 128 // common case: we don't want runner to block
 	ctx, cancel := context.WithCancel(context.Background())
 	task := &Task{
-		cancel: cancel,
-		isdone: atomicx.NewInt64(),
-		out:    make(chan *eventRecord),
-		wg:     wg,
+		cancel:    cancel,
+		isdone:    atomicx.NewInt64(),
+		isstopped: atomicx.NewInt64(),
+		out:       make(chan *eventRecord, bufsiz),
 	}
 	go func() {
 		defer close(task.out)
-		defer wg.Done()
+		defer task.isstopped.Add(1)
 		r := newRunner(&settings, task.out)
 		r.Run(ctx)
 	}()

@@ -17,7 +17,7 @@ import (
 
 const (
 	testName    = "ndt"
-	testVersion = "0.5.0"
+	testVersion = "0.6.0"
 )
 
 // Config contains the experiment settings
@@ -38,8 +38,12 @@ type Summary struct {
 }
 
 // ServerInfo contains information on the selected server
+//
+// Site is currently an extension to the NDT specification
+// until the data format of the new mlab locate is clear.
 type ServerInfo struct {
 	Hostname string `json:"hostname"`
+	Site     string `json:"site,omitempty"`
 }
 
 // TestKeys contains the test keys
@@ -79,7 +83,7 @@ type measurer struct {
 	preUploadHook   func()
 }
 
-func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
+func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (mlablocate.Result, error) {
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			Logger:   sess.Logger(),
@@ -104,7 +108,8 @@ func (m *measurer) doDownload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialDownload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -170,7 +175,8 @@ func (m *measurer) doUpload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	hostname string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialUpload(ctx)
+	conn, err := newDialManager(hostname, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
 		return err
 	}
@@ -221,25 +227,28 @@ func (m *measurer) Run(
 	if url := sess.ProxyURL(); url != nil {
 		tk.SOCKSProxy = url.Host
 	}
-	hostname, err := m.discover(ctx, sess)
+	locateResult, err := m.discover(ctx, sess)
 	if err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	tk.Server = ServerInfo{Hostname: hostname}
-	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", hostname))
+	tk.Server = ServerInfo{
+		Hostname: locateResult.FQDN,
+		Site:     locateResult.Site,
+	}
+	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", locateResult.FQDN))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
 	}
-	if err := m.doDownload(ctx, sess, callbacks, tk, hostname); err != nil {
+	if err := m.doDownload(ctx, sess, callbacks, tk, locateResult.FQDN); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", hostname))
+	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", locateResult.FQDN))
 	if m.preUploadHook != nil {
 		m.preUploadHook()
 	}
-	if err := m.doUpload(ctx, sess, callbacks, tk, hostname); err != nil {
+	if err := m.doUpload(ctx, sess, callbacks, tk, locateResult.FQDN); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}

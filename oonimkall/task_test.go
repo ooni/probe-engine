@@ -3,10 +3,12 @@ package oonimkall_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
 
@@ -553,5 +555,102 @@ func TestIntegrationCountBytesForExample(t *testing.T) {
 	}
 	if uploadKB == 0 {
 		t.Fatal("uploadKB is zero")
+	}
+}
+
+func TestIntegrationPrivacySettings(t *testing.T) {
+	do := func(saveASN, saveCC, saveIP bool) (string, string, string) {
+		task, err := oonimkall.StartTask(fmt.Sprintf(`{
+			"assets_dir": "../testdata/oonimkall/assets",
+			"name": "Example",
+			"options": {
+				"save_real_probe_asn": %+v,
+				"save_real_probe_cc": %+v,
+				"save_real_probe_ip": %+v,
+				"software_name": "oonimkall-test",
+				"software_version": "0.1.0"
+			},
+			"state_dir": "../testdata/oonimkall/state",
+			"temp_dir": "../testdata/oonimkall/tmp"
+		}`, saveASN, saveCC, saveIP))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var measurement *model.Measurement
+		for !task.IsDone() {
+			eventstr := task.WaitForNextEvent()
+			var event eventlike
+			if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+				t.Fatal(err)
+			}
+			switch event.Key {
+			case "measurement":
+				v := []byte(event.Value["json_str"].(string))
+				measurement = new(model.Measurement)
+				if err := json.Unmarshal(v, &measurement); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+		if measurement == nil {
+			t.Fatal("measurement is nil")
+		}
+		return measurement.ProbeASN, measurement.ProbeCC, measurement.ProbeIP
+	}
+	asn, cc, ip := do(false, false, false)
+	if asn != "AS0" || cc != "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(false, false, true)
+	if asn != "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(false, true, false)
+	if asn != "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(true, false, false)
+	if asn == "AS0" || cc != "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(true, false, true)
+	if asn == "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(true, true, false)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+	asn, cc, ip = do(true, true, true)
+	if asn == "AS0" || cc == "ZZ" || ip == "127.0.0.1" {
+		t.Fatal("unexpected result")
+	}
+}
+
+func TestIntegrationNonblock(t *testing.T) {
+	task, err := oonimkall.StartTask(`{
+		"assets_dir": "../testdata/oonimkall/assets",
+		"name": "Example",
+		"options": {
+			"software_name": "oonimkall-test",
+			"software_version": "0.1.0"
+		},
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !task.IsRunning() {
+		t.Fatal("The runner should be running at this point")
+	}
+	// Assumption: the example experiment emits less than bufsiz = 128
+	// events and runs for less than 10 seconds (should be five).
+	time.Sleep(10 * time.Second)
+	if task.IsRunning() {
+		t.Fatal("The runner should be stopped by now")
+	}
+	for !task.IsDone() {
+		task.WaitForNextEvent()
 	}
 }

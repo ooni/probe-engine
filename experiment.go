@@ -340,6 +340,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		ProbeIP:                   e.session.ProbeIP(),
 		ProbeASN:                  e.session.ProbeASNString(),
 		ProbeCC:                   e.session.ProbeCC(),
+		ProbeNetworkName:          e.session.ProbeNetworkName(),
 		ReportID:                  e.ReportID(),
 		ResolverASN:               e.session.ResolverASNString(),
 		ResolverIP:                e.session.ResolverIP(),
