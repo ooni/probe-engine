@@ -177,7 +177,7 @@ func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
 	tlsdlr := dialer.TLSDialer{
 		Config: &tls.Config{NextProtos: nextprotos},
 		Dialer: new(net.Dialer),
-		TLSHandshaker: &dialer.SaverTLSHandshaker{
+		TLSHandshaker: dialer.SaverTLSHandshaker{
 			TLSHandshaker: dialer.SystemTLSHandshaker{},
 			Saver:         saver,
 		},
@@ -242,7 +242,7 @@ func TestIntegrationSaverTLSHandshakerHostnameError(t *testing.T) {
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
 		Dialer: new(net.Dialer),
-		TLSHandshaker: &dialer.SaverTLSHandshaker{
+		TLSHandshaker: dialer.SaverTLSHandshaker{
 			TLSHandshaker: dialer.SystemTLSHandshaker{},
 			Saver:         saver,
 		},
@@ -272,7 +272,7 @@ func TestIntegrationSaverTLSHandshakerInvalidCertError(t *testing.T) {
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
 		Dialer: new(net.Dialer),
-		TLSHandshaker: &dialer.SaverTLSHandshaker{
+		TLSHandshaker: dialer.SaverTLSHandshaker{
 			TLSHandshaker: dialer.SystemTLSHandshaker{},
 			Saver:         saver,
 		},
@@ -302,7 +302,7 @@ func TestIntegrationSaverTLSHandshakerAuthorityError(t *testing.T) {
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
 		Dialer: new(net.Dialer),
-		TLSHandshaker: &dialer.SaverTLSHandshaker{
+		TLSHandshaker: dialer.SaverTLSHandshaker{
 			TLSHandshaker: dialer.SystemTLSHandshaker{},
 			Saver:         saver,
 		},
