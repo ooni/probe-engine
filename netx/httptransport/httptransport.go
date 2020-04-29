@@ -49,6 +49,7 @@ type Config struct {
 	Logger              Logger               // default: no logging
 	ProxyURL            *url.URL             // default: no proxy
 	Resolver            Resolver             // default: system resolver
+	SaveReadWrite       bool                 // default: don't save read/write
 	Saver               *trace.Saver         // default: no saver
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
@@ -88,6 +89,9 @@ func New(config Config) RoundTripper {
 		}
 		if config.Saver != nil {
 			d = dialer.SaverDialer{Dialer: d, Saver: config.Saver}
+			if config.SaveReadWrite {
+				d = dialer.SaverConnDialer{Dialer: d, Saver: config.Saver}
+			}
 		}
 		d = dialer.DNSDialer{Resolver: config.Resolver, Dialer: d}
 		d = dialer.ProxyDialer{ProxyURL: config.ProxyURL, Dialer: d}

@@ -53,7 +53,26 @@ func TestUnitSaverDialerFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
+func TestUnitSaverConnDialerFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	saver := &trace.Saver{}
+	dlr := dialer.SaverConnDialer{
+		Dialer: dialer.FakeDialer{
+			Err: expected,
+		},
+		Saver: saver,
+	}
+	conn, err := dlr.DialContext(context.Background(), "tcp", "www.google.com:443")
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+	if conn != nil {
+		t.Fatal("expected nil conn here")
+	}
+}
+
+func TestIntegrationSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
+	// This is the most common use case for collecting reads, writes
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
@@ -61,8 +80,11 @@ func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
 		Config: &tls.Config{NextProtos: nextprotos},
-		Dialer: new(net.Dialer),
-		TLSHandshaker: &dialer.SaverTLSHandshaker{
+		Dialer: dialer.SaverConnDialer{
+			Dialer: new(net.Dialer),
+			Saver:  saver,
+		},
+		TLSHandshaker: dialer.SaverTLSHandshaker{
 			TLSHandshaker: dialer.SystemTLSHandshaker{},
 			Saver:         saver,
 		},
@@ -142,6 +164,73 @@ func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
 		t.Fatal("unexpected TLSVersion")
 	}
 	if ev[last].Time.Before(ev[last-1].Time) {
+		t.Fatal("unexpected Time")
+	}
+}
+
+func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	nextprotos := []string{"h2"}
+	saver := &trace.Saver{}
+	tlsdlr := dialer.TLSDialer{
+		Config: &tls.Config{NextProtos: nextprotos},
+		Dialer: new(net.Dialer),
+		TLSHandshaker: &dialer.SaverTLSHandshaker{
+			TLSHandshaker: dialer.SystemTLSHandshaker{},
+			Saver:         saver,
+		},
+	}
+	conn, err := tlsdlr.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn.Close()
+	ev := saver.Read()
+	if len(ev) != 2 {
+		t.Fatal("unexpected number of events")
+	}
+	if ev[0].Name != "tls_handshake_start" {
+		t.Fatal("unexpected Name")
+	}
+	if ev[0].TLSServerName != "www.google.com" {
+		t.Fatal("unexpected TLSServerName")
+	}
+	if !reflect.DeepEqual(ev[0].TLSNextProtos, nextprotos) {
+		t.Fatal("unexpected TLSNextProtos")
+	}
+	if ev[0].Time.After(time.Now()) {
+		t.Fatal("unexpected Time")
+	}
+	if ev[1].Duration <= 0 {
+		t.Fatal("unexpected Duration")
+	}
+	if ev[1].Err != nil {
+		t.Fatal("unexpected Err")
+	}
+	if ev[1].Name != "tls_handshake_done" {
+		t.Fatal("unexpected Name")
+	}
+	if ev[1].TLSCipherSuite == "" {
+		t.Fatal("unexpected TLSCipherSuite")
+	}
+	if ev[1].TLSNegotiatedProto != "h2" {
+		t.Fatal("unexpected TLSNegotiatedProto")
+	}
+	if !reflect.DeepEqual(ev[1].TLSNextProtos, nextprotos) {
+		t.Fatal("unexpected TLSNextProtos")
+	}
+	if ev[1].TLSPeerCerts == nil {
+		t.Fatal("unexpected TLSPeerCerts")
+	}
+	if ev[1].TLSServerName != "www.google.com" {
+		t.Fatal("unexpected TLSServerName")
+	}
+	if ev[1].TLSVersion == "" {
+		t.Fatal("unexpected TLSVersion")
+	}
+	if ev[1].Time.Before(ev[0].Time) {
 		t.Fatal("unexpected Time")
 	}
 }
