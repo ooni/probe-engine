@@ -24,6 +24,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		CacheResolutions:    true,
 		ContextByteCounting: true,
 		Logger:              log.Log,
+		SaveReadWrite:       true,
 		Saver:               saver,
 	})
 	client := &http.Client{Transport: txp}
@@ -37,6 +38,13 @@ func TestIntegrationSuccess(t *testing.T) {
 	if err = resp.Body.Close(); err != nil {
 		t.Fatal(err)
 	}
-	t.Log(counter.Sent.Load())
-	t.Log(counter.Received.Load())
+	if counter.Sent.Load() <= 0 {
+		t.Fatal("no bytes sent?!")
+	}
+	if counter.Received.Load() <= 0 {
+		t.Fatal("no bytes received?!")
+	}
+	if ev := saver.Read(); len(ev) <= 0 {
+		t.Fatal("no low level events?!")
+	}
 }
