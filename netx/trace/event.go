@@ -16,8 +16,10 @@ type Event struct {
 	Data               []byte              `json:",omitempty"`
 	Duration           time.Duration       `json:",omitempty"`
 	Err                error               `json:",omitempty"`
-	HTTPRequest        *http.Request       `json:",omitempty"`
-	HTTPResponse       *http.Response      `json:",omitempty"`
+	HTTPHeaders        http.Header         `json:",omitempty"`
+	HTTPMethod         string              `json:",omitempty"`
+	HTTPStatusCode     int                 `json:",omitempty"`
+	HTTPURL            string              `json:",omitempty"`
 	Hostname           string              `json:",omitempty"`
 	Name               string              `json:",omitempty"`
 	NumBytes           int                 `json:",omitempty"`

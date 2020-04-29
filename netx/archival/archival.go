@@ -288,42 +288,42 @@ func addheaders(
 
 // NewRequestList returns the list for "requests"
 func NewRequestList(begin time.Time, events []trace.Event) RequestList {
+	var (
+		tmp   RequestList
+		entry RequestEntry
+	)
+	for _, ev := range events {
+		switch ev.Name {
+		case "http_transaction_start":
+			entry = RequestEntry{
+				Request:  HTTPRequest{Headers: make(HTTPHeaders)},
+				Response: HTTPResponse{Headers: make(HTTPHeaders)},
+			}
+			entry.T = ev.Time.Sub(begin).Seconds()
+		case "http_request_body_snapshot":
+			entry.Request.Body.Value = string(ev.Data)
+			entry.Request.BodyIsTruncated = ev.DataIsTruncated
+		case "http_request_metadata":
+			addheaders(
+				ev.HTTPHeaders, &entry.Request.HeadersList, &entry.Request.Headers)
+			entry.Request.Method = ev.HTTPMethod
+			entry.Request.URL = ev.HTTPURL
+		case "http_response_metadata":
+			addheaders(
+				ev.HTTPHeaders, &entry.Response.HeadersList, &entry.Response.Headers)
+			entry.Response.Code = int64(ev.HTTPStatusCode)
+		case "http_response_body_snapshot":
+			entry.Response.Body.Value = string(ev.Data)
+			entry.Response.BodyIsTruncated = ev.DataIsTruncated
+		case "http_transaction_done":
+			entry.Failure = makeFailure(ev.Err)
+			tmp = append(tmp, entry)
+		}
+	}
 	var out RequestList
 	// OONI's data format wants more recent request first
-	for idx := len(events) - 1; idx >= 0; idx-- {
-		ev := events[idx]
-		if ev.Name != "http_round_trip_done" {
-			continue
-		}
-		var entry RequestEntry
-		entry.T = ev.Time.Sub(begin).Seconds()
-		entry.Failure = makeFailure(ev.Err)
-		if ev.HTTPRequest != nil {
-			entry.Request.Headers = make(HTTPHeaders)
-			addheaders(
-				ev.HTTPRequest.Header, &entry.Request.HeadersList,
-				&entry.Request.Headers,
-			)
-			entry.Request.Method = ev.HTTPRequest.Method
-			entry.Request.URL = ev.HTTPRequest.URL.String()
-		}
-		if ev.HTTPRequestBody != nil {
-			entry.Request.Body.Value = ev.HTTPRequestBody.String()
-			entry.Request.BodyIsTruncated = ev.HTTPRequestBody.Truncated()
-		}
-		if ev.HTTPResponse != nil {
-			entry.Response.Headers = make(HTTPHeaders)
-			addheaders(
-				ev.HTTPResponse.Header, &entry.Response.HeadersList,
-				&entry.Response.Headers,
-			)
-			entry.Response.Code = int64(ev.HTTPResponse.StatusCode)
-		}
-		if ev.HTTPResponseBody != nil {
-			entry.Response.Body.Value = ev.HTTPResponseBody.String()
-			entry.Response.BodyIsTruncated = ev.HTTPResponseBody.Truncated()
-		}
-		out = append(out, entry)
+	for i := len(tmp) - 1; i >= 0; i-- {
+		out = append(out, tmp[i])
 	}
 	return out
 }

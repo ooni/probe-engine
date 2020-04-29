@@ -45,10 +45,6 @@ type TestKeys struct {
 
 func (tk *TestKeys) doget(
 	clnt *http.Client, req *http.Request, saver *trace.Saver) error {
-	saver.Write(trace.Event{Name: "http_transaction_start", Time: time.Now()})
-	defer func() {
-		saver.Write(trace.Event{Name: "http_transaction_done", Time: time.Now()})
-	}()
 	resp, err := clnt.Do(req)
 	if err != nil {
 		return err
