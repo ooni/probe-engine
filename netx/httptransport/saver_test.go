@@ -60,7 +60,7 @@ func TestIntegrationSaverPerformanceHTTPTransportSuccess(t *testing.T) {
 	}
 	resp, err := txp.RoundTrip(req)
 	if err != nil {
-		t.Fatal("not the error we expected")
+		t.Fatal(err)
 	}
 	if resp == nil {
 		t.Fatal("expected non nil response here")
@@ -114,7 +114,7 @@ func TestIntegrationSaverPerformanceHTTPTransportSuccessByteCounting(t *testing.
 	}
 	resp, err := txp.RoundTrip(req.WithContext(ctx))
 	if err != nil {
-		t.Fatal("not the error we expected")
+		t.Fatal(err)
 	}
 	if resp == nil {
 		t.Fatal("expected non nil response here")
