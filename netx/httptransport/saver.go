@@ -39,30 +39,53 @@ func (txp SaverPerformanceHTTPTransport) RoundTrip(req *http.Request) (*http.Res
 	return txp.RoundTripper.RoundTrip(req)
 }
 
-// SaverRoundTripHTTPTransport is a RoundTripper that saves base
-// events pertaining to the HTTP round trip
-type SaverRoundTripHTTPTransport struct {
+// SaverMetadataHTTPTransport is a RoundTripper that saves
+// events related to HTTP request and response metadata
+type SaverMetadataHTTPTransport struct {
 	RoundTripper
 	Saver *trace.Saver
 }
 
 // RoundTrip implements RoundTripper.RoundTrip
-func (txp SaverRoundTripHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	start := time.Now()
+func (txp SaverMetadataHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	txp.Saver.Write(trace.Event{
-		HTTPRequest: req,
-		Name:        "http_round_trip_start",
-		Time:        start,
+		HTTPHeaders: req.Header,
+		HTTPMethod:  req.Method,
+		HTTPURL:     req.URL.String(),
+		Name:        "http_request_metadata",
+		Time:        time.Now(),
 	})
 	resp, err := txp.RoundTripper.RoundTrip(req)
-	stop := time.Now()
+	if err != nil {
+		return nil, err
+	}
 	txp.Saver.Write(trace.Event{
-		Duration:     stop.Sub(start),
-		Err:          err,
-		HTTPRequest:  req,
-		HTTPResponse: resp,
-		Name:         "http_round_trip_done",
-		Time:         stop,
+		HTTPHeaders:    resp.Header,
+		HTTPStatusCode: resp.StatusCode,
+		Name:           "http_response_metadata",
+		Time:           time.Now(),
+	})
+	return resp, err
+}
+
+// SaverTransactionHTTPTransport is a RoundTripper that saves
+// events related to the HTTP transaction
+type SaverTransactionHTTPTransport struct {
+	RoundTripper
+	Saver *trace.Saver
+}
+
+// RoundTrip implements RoundTripper.RoundTrip
+func (txp SaverTransactionHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	txp.Saver.Write(trace.Event{
+		Name: "http_transaction_start",
+		Time: time.Now(),
+	})
+	resp, err := txp.RoundTripper.RoundTrip(req)
+	txp.Saver.Write(trace.Event{
+		Err:  err,
+		Name: "http_transaction_done",
+		Time: time.Now(),
 	})
 	return resp, err
 }
@@ -128,5 +151,6 @@ type saverReadCloser struct {
 }
 
 var _ RoundTripper = SaverPerformanceHTTPTransport{}
-var _ RoundTripper = SaverRoundTripHTTPTransport{}
+var _ RoundTripper = SaverMetadataHTTPTransport{}
 var _ RoundTripper = SaverBodyHTTPTransport{}
+var _ RoundTripper = SaverTransactionHTTPTransport{}
