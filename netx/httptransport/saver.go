@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptrace"
 	"time"
 
 	"github.com/ooni/probe-engine/netx/trace"
@@ -19,25 +18,9 @@ type SaverHTTPTransport struct {
 
 // RoundTrip implements RoundTripper.RoundTrip
 func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	tracep := httptrace.ContextClientTrace(req.Context())
-	if tracep == nil {
-		tracep = &httptrace.ClientTrace{
-			WroteHeaders: func() {
-				txp.Saver.Write(trace.Event{Name: "http_wrote_headers", Time: time.Now()})
-			},
-			WroteRequest: func(httptrace.WroteRequestInfo) {
-				txp.Saver.Write(trace.Event{Name: "http_wrote_request", Time: time.Now()})
-			},
-			GotFirstResponseByte: func() {
-				txp.Saver.Write(trace.Event{
-					Name: "http_first_response_byte", Time: time.Now()})
-			},
-		}
-		req = req.WithContext(httptrace.WithClientTrace(req.Context(), tracep))
-	}
 	const snapsize = 1 << 17
 	reqbody := saverReadSnap(&req.Body, snapsize)
-	start := time.Now()
+	start := time.Now() // exclude time to read body snapshot
 	txp.Saver.Write(trace.Event{
 		HTTPRequestBody: reqbody,
 		HTTPRequest:     req,
@@ -45,8 +28,8 @@ func (txp SaverHTTPTransport) RoundTrip(req *http.Request) (*http.Response, erro
 		Time:            start,
 	})
 	resp, err := txp.RoundTripper.RoundTrip(req)
-	stop := time.Now()
 	respbody := saverReadResponseSnap(resp, snapsize)
+	stop := time.Now() // include time to read body snapshot
 	txp.Saver.Write(trace.Event{
 		Duration:         stop.Sub(start),
 		Err:              err,
