@@ -18,8 +18,10 @@ type playConfig struct {
 func (r runner) play(ctx context.Context, config playConfig) error {
 	errch := make(chan error)
 	playoutbuf := make(chan clientResults, 1) // strive to keep one in buffer
+	begin := time.Now()
 	go fetch(ctx, fetchConfig{
 		authorization: config.authorization,
+		begin:         begin,
 		deps:          r,
 		errch:         errch,
 		fqdn:          config.fqdn,
@@ -28,25 +30,21 @@ func (r runner) play(ctx context.Context, config playConfig) error {
 		realAddress:   config.realAddress,
 		saver:         r.saver,
 	})
-	// get the first frame
+	defer func() {
+		// if there's a frame left in the playout buffer record the
+		// fact that we have downloaded this frame
+		select {
+		case frame := <-playoutbuf:
+			r.tk.ReceiverData = append(r.tk.ReceiverData, frame)
+		default:
+		}
+	}()
 	var (
-		err   error
-		frame clientResults
+		err        error
+		frame      clientResults
+		percentage float64
 	)
-	select {
-	case err = <-errch:
-		return err
-	case frame = <-playoutbuf:
-	}
 	for {
-		// record the current frame
-		r.tk.ReceiverData = append(r.tk.ReceiverData, frame)
-		// play the current frame
-		percentage := float64(frame.Iteration) / float64(config.numIterations)
-		rate := 8 * float64(frame.Received) / float64(frame.ElapsedTarget)
-		msg := fmt.Sprintf("streaming: play at %s", humanizex.SI(rate, "bit/s"))
-		r.callbacks.OnProgress(percentage, msg)
-		<-time.After(time.Duration(frame.ElapsedTarget) * time.Second)
 		// get the next frame nonblocking
 		select {
 		case err = <-errch:
@@ -59,6 +57,21 @@ func (r runner) play(ctx context.Context, config playConfig) error {
 				return err
 			}
 		}
+		// record the current frame
+		r.tk.ReceiverData = append(r.tk.ReceiverData, frame)
+		// play the current frame
+		percentage = float64(frame.Iteration) / float64(config.numIterations)
+		rate := 8 * frame.Received / frame.ElapsedTarget
+		now := time.Now()
+		r.tk.PlayerData = append(r.tk.PlayerData, playerInfo{
+			PlayTicks: now.Sub(begin).Seconds(),
+			Iteration: frame.Iteration,
+			Rate:      rate / 1000, // kbit/s
+			Timestamp: now.Unix(),
+		})
+		msg := fmt.Sprintf("streaming: play at %s", humanizex.SI(float64(rate), "bit/s"))
+		r.callbacks.OnProgress(percentage, msg)
+		<-time.After(time.Duration(frame.ElapsedTarget) * time.Second)
 	}
 }
 

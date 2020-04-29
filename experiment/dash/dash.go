@@ -41,9 +41,10 @@ type Config struct {
 
 // Simple contains the experiment total summary
 type Simple struct {
-	ConnectLatency  float64 `json:"connect_latency"`
-	MedianBitrate   int64   `json:"median_bitrate"`
-	MinPlayoutDelay float64 `json:"min_playout_delay"`
+	ConnectLatency      float64 `json:"connect_latency"`
+	MedianBitratePlayer int64   `json:"median_bitrate_player"`
+	MedianBitrate       int64   `json:"median_bitrate"`
+	MinPlayoutDelay     float64 `json:"min_playout_delay"`
 }
 
 // ServerInfo contains information on the selected server
@@ -58,11 +59,12 @@ type ServerInfo struct {
 // TestKeys contains the test keys
 type TestKeys struct {
 	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
-	Server        ServerInfo      `json:"server"`
-	Simple        Simple          `json:"simple"`
 	Failure       *string         `json:"failure"`
+	PlayerData    []playerInfo    `json:"player_data"`
 	ReceiverData  []clientResults `json:"receiver_data"`
 	SOCKSProxy    string          `json:"socksproxy,omitempty"`
+	Simple        Simple          `json:"simple"`
+	Server        ServerInfo      `json:"server"`
 	Tunnel        string          `json:"tunnel,omitempty"`
 }
 
@@ -146,9 +148,19 @@ func (tk *TestKeys) analyze() error {
 		// Same in all samples if we're using a single connection
 		tk.Simple.ConnectLatency = results.ConnectTime
 	}
-	median, err := stats.Median(rates)
+	median, _ := stats.Median(rates)
 	tk.Simple.MedianBitrate = int64(median)
-	return err
+	return tk.analyzePlayer()
+}
+
+func (tk *TestKeys) analyzePlayer() error {
+	var playRates []float64
+	for _, results := range tk.PlayerData {
+		playRates = append(playRates, float64(results.Rate))
+	}
+	median, _ := stats.Median(playRates)
+	tk.Simple.MedianBitratePlayer = int64(median)
+	return nil
 }
 
 func (r runner) do(ctx context.Context) error {

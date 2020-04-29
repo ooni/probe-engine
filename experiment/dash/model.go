@@ -25,6 +25,16 @@ type clientResults struct {
 	Version         string  `json:"version"`
 }
 
+// playerInfo contains stats collected by the player. We can always
+// deduce this information from the clientResults and a model of the
+// player, therefore we don't submit this info to the server.
+type playerInfo struct {
+	PlayTicks float64 `json:"play_ticks"`
+	Iteration int64   `json:"iteration"`
+	Rate      int64   `json:"rate"`
+	Timestamp int64   `json:"timestamp"`
+}
+
 // serverResults contains the server results. This data structure is sent
 // to the client during the collection phase of DASH.
 type serverResults struct {

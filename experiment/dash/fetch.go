@@ -10,6 +10,7 @@ import (
 
 type fetchConfig struct {
 	authorization string
+	begin         time.Time
 	deps          downloadDeps
 	errch         chan error
 	fqdn          string
@@ -32,14 +33,14 @@ func fetch(ctx context.Context, config fetchConfig) {
 		RealAddress:   config.realAddress,
 		Version:       magicVersion,
 	}
-	var (
-		begin       = time.Now()
-		connectTime float64
-	)
-	for current.Iteration < config.numIterations {
+	var connectTime float64
+	// Because the new implementation emulates a player and we always
+	// want to have a single frame in the playout buffer, we need to
+	// download `numIterations + 1` frames to play numIterations frames.
+	for current.Iteration <= config.numIterations {
 		result, err := download(ctx, downloadConfig{
 			authorization: config.authorization,
-			begin:         begin,
+			begin:         config.begin,
 			currentRate:   current.Rate,
 			deps:          config.deps,
 			elapsedTarget: current.ElapsedTarget,
