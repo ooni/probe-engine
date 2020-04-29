@@ -12,11 +12,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/montanaflynn/stats"
-	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
@@ -118,129 +116,20 @@ func (r runner) loop(ctx context.Context, numIterations int64) error {
 func (r runner) measure(
 	ctx context.Context, fqdn string, negotiateResp negotiateResponse,
 	numIterations int64) error {
-	// Note: according to a comment in MK sources 3000 kbit/s was the
-	// minimum speed recommended by Netflix for SD quality in 2017.
-	//
-	// See: <https://help.netflix.com/en/node/306>.
-	const initialBitrate = 3000
-	current := clientResults{
-		ElapsedTarget: 2,
-		Platform:      runtime.GOOS,
-		Rate:          initialBitrate,
-		RealAddress:   negotiateResp.RealAddress,
-		Version:       magicVersion,
-	}
-	var (
-		begin       = time.Now()
-		connectTime float64
-		ch          = make(chan clientResults)
-	)
-	go r.player(ctx, ch, numIterations)
-	for current.Iteration < numIterations {
-		result, err := download(ctx, downloadConfig{
-			authorization: negotiateResp.Authorization,
-			begin:         begin,
-			currentRate:   current.Rate,
-			deps:          r,
-			elapsedTarget: current.ElapsedTarget,
-			fqdn:          fqdn,
-		})
-		if err != nil {
-			// Implementation note: ndt7 controls the connection much
-			// more than us and it can tell whether an error occurs when
-			// connecting or later. We cannot say that very precisely
-			// because, in principle, we may reconnect. So we always
-			// return error here. This comment is being introduced so
-			// that we don't do https://github.com/ooni/probe-engine/pull/526
-			// again, because that isn't accurate.
-			return err
-		}
-		current.Elapsed = result.elapsed
-		current.Received = result.received
-		current.RequestTicks = result.requestTicks
-		current.Timestamp = result.timestamp
-		current.ServerURL = result.serverURL
-		// Read the events so far and possibly update our measurement
-		// of the latest connect time. We should have one sample in most
-		// cases, because the connection should be persistent.
-		for _, ev := range r.saver.Read() {
-			if ev.Name == "connect" {
-				connectTime = ev.Duration.Seconds()
-			}
-		}
-		current.ConnectTime = connectTime
-		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		ch <- current
-		current.Iteration++
-		speed := float64(current.Received) / float64(current.Elapsed)
-		speed *= 8.0    // to bits per second
-		speed /= 1000.0 // to kbit/s
-		current.Rate = int64(speed)
-	}
-	return nil
-}
-
-func (r runner) player(ctx context.Context, frames <-chan clientResults, numIterations int64) {
-	var frame clientResults
-	// receive the first frame
-	select {
-	case <-ctx.Done():
-		return
-	case frame = <-frames:
-	}
-	for {
-		// play the current frame - note that the play rate is the speed at which
-		// we extract bytes from the queue, while current.Rate is the rate at which
-		// at which we are downloading and filling the queue.
-		percentage := float64(frame.Iteration) / float64(numIterations)
-		rate := 8 * float64(frame.Received) / float64(frame.ElapsedTarget)
-		message := fmt.Sprintf("streaming: play at rate %s", humanizex.SI(rate, "bit/s"))
-		r.callbacks.OnProgress(percentage, message)
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(time.Duration(frame.ElapsedTarget) * time.Second):
-		}
-		// receive the next frame
-		select {
-		case <-ctx.Done():
-			return
-		case frame = <-frames:
-		default:
-			r.Logger().Info("streaming: player is stalled")
-			select {
-			case <-ctx.Done():
-				return
-			case frame = <-frames:
-			}
-		}
-	}
+	return r.play(ctx, playConfig{
+		authorization: negotiateResp.Authorization,
+		fqdn:          fqdn,
+		numIterations: numIterations,
+		realAddress:   negotiateResp.RealAddress,
+	})
 }
 
 func (tk *TestKeys) analyze() error {
-	var (
-		rates          []float64
-		frameReadyTime float64
-		playTime       float64
-	)
+	var rates []float64
 	for _, results := range tk.ReceiverData {
 		rates = append(rates, float64(results.Rate))
 		// Same in all samples if we're using a single connection
 		tk.Simple.ConnectLatency = results.ConnectTime
-		// Rationale: first segment plays when it arrives. Subsequent segments
-		// would play in ElapsedTarget seconds. However, will play when they
-		// arrive. Stall is the time we need to wait for a frame to arrive with
-		// the video stopped and the spinning icon.
-		frameReadyTime += results.Elapsed
-		if playTime == 0.0 {
-			playTime += frameReadyTime
-		} else {
-			playTime += float64(results.ElapsedTarget)
-		}
-		stall := frameReadyTime - playTime
-		if stall > tk.Simple.MinPlayoutDelay {
-			tk.Simple.MinPlayoutDelay = stall
-		}
 	}
 	median, err := stats.Median(rates)
 	tk.Simple.MedianBitrate = int64(median)
