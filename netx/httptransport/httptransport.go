@@ -45,14 +45,17 @@ type Config struct {
 	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
 	CacheResolutions    bool                 // default: no caching
 	ContextByteCounting bool                 // default: no implicit byte counting
+	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
+	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
 	ProxyURL            *url.URL             // default: no proxy
+	ReadWriteSaver      *trace.Saver         // default: not saving read/write
+	ResolveSaver        *trace.Saver         // default: not saving resolves
 	Resolver            Resolver             // default: system resolver
-	SaveReadWrite       bool                 // default: don't save read/write
-	Saver               *trace.Saver         // default: no saver
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
+	TLSSaver            *trace.Saver         // defaukt: not saving TLS
 }
 
 type tlsHandshaker interface {
@@ -72,8 +75,8 @@ func New(config Config) RoundTripper {
 		if config.Logger != nil {
 			r = resolver.LoggingResolver{Logger: config.Logger, Resolver: r}
 		}
-		if config.Saver != nil {
-			r = resolver.SaverResolver{Resolver: r, Saver: config.Saver}
+		if config.ResolveSaver != nil {
+			r = resolver.SaverResolver{Resolver: r, Saver: config.ResolveSaver}
 		}
 		if config.CacheResolutions {
 			r = &resolver.CacheResolver{Resolver: r}
@@ -87,11 +90,11 @@ func New(config Config) RoundTripper {
 		if config.Logger != nil {
 			d = dialer.LoggingDialer{Dialer: d, Logger: config.Logger}
 		}
-		if config.Saver != nil {
-			d = dialer.SaverDialer{Dialer: d, Saver: config.Saver}
-			if config.SaveReadWrite {
-				d = dialer.SaverConnDialer{Dialer: d, Saver: config.Saver}
-			}
+		if config.DialSaver != nil {
+			d = dialer.SaverDialer{Dialer: d, Saver: config.DialSaver}
+		}
+		if config.ReadWriteSaver != nil {
+			d = dialer.SaverDialer{Dialer: d, Saver: config.ReadWriteSaver}
 		}
 		d = dialer.DNSDialer{Resolver: config.Resolver, Dialer: d}
 		d = dialer.ProxyDialer{ProxyURL: config.ProxyURL, Dialer: d}
@@ -107,8 +110,8 @@ func New(config Config) RoundTripper {
 		if config.Logger != nil {
 			h = dialer.LoggingTLSHandshaker{Logger: config.Logger, TLSHandshaker: h}
 		}
-		if config.Saver != nil {
-			h = dialer.SaverTLSHandshaker{TLSHandshaker: h, Saver: config.Saver}
+		if config.TLSSaver != nil {
+			h = dialer.SaverTLSHandshaker{TLSHandshaker: h, Saver: config.TLSSaver}
 		}
 		if config.TLSConfig == nil {
 			config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
@@ -127,9 +130,10 @@ func New(config Config) RoundTripper {
 	if config.Logger != nil {
 		txp = LoggingTransport{Logger: config.Logger, RoundTripper: txp}
 	}
-	if config.Saver != nil {
-		txp = SaverHTTPTransport{RoundTripper: txp, Saver: config.Saver}
-		txp = SaverPerformanceHTTPTransport{RoundTripper: txp, Saver: config.Saver}
+	if config.HTTPSaver != nil {
+		txp = SaverHTTPTransport{RoundTripper: txp, Saver: config.HTTPSaver}
+		txp = SaverPerformanceHTTPTransport{
+			RoundTripper: txp, Saver: config.HTTPSaver}
 	}
 	txp = UserAgentTransport{RoundTripper: txp}
 	return txp

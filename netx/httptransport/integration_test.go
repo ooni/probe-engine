@@ -17,16 +17,19 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 	log.SetLevel(log.DebugLevel)
 	counter := bytecounter.New()
-	saver := new(trace.Saver)
-	txp := httptransport.New(httptransport.Config{
+	config := httptransport.Config{
 		BogonIsError:        true,
 		ByteCounter:         counter,
 		CacheResolutions:    true,
 		ContextByteCounting: true,
+		DialSaver:           &trace.Saver{},
+		HTTPSaver:           &trace.Saver{},
 		Logger:              log.Log,
-		SaveReadWrite:       true,
-		Saver:               saver,
-	})
+		ReadWriteSaver:      &trace.Saver{},
+		ResolveSaver:        &trace.Saver{},
+		TLSSaver:            &trace.Saver{},
+	}
+	txp := httptransport.New(config)
 	client := &http.Client{Transport: txp}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
@@ -44,7 +47,19 @@ func TestIntegrationSuccess(t *testing.T) {
 	if counter.Received.Load() <= 0 {
 		t.Fatal("no bytes received?!")
 	}
-	if ev := saver.Read(); len(ev) <= 0 {
-		t.Fatal("no low level events?!")
+	if ev := config.DialSaver.Read(); len(ev) <= 0 {
+		t.Fatal("no dial events?!")
+	}
+	if ev := config.HTTPSaver.Read(); len(ev) <= 0 {
+		t.Fatal("no HTTP events?!")
+	}
+	if ev := config.ReadWriteSaver.Read(); len(ev) <= 0 {
+		t.Fatal("no R/W events?!")
+	}
+	if ev := config.ResolveSaver.Read(); len(ev) <= 0 {
+		t.Fatal("no resolver events?!")
+	}
+	if ev := config.TLSSaver.Read(); len(ev) <= 0 {
+		t.Fatal("no TLS events?!")
 	}
 }
