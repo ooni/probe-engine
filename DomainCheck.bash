@@ -8,6 +8,11 @@
 # Inspired by great chats and great code. Main source of ispiration is
 # currently https://github.com/Jigsaw-Code/net-analysis/blob/master/netanalysis/blocktest/measure.sh
 
+if ! [ -x "$(command -v jq)" ]; then
+  echo 'Error: jq is not installed. Please run: sudo apt install jq' >&2
+  exit 1
+fi
+
 if [ $# -ne 1 ]; then
   echo "usage: $0 domain" 1>&2
   exit 1
