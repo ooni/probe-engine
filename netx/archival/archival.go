@@ -1,6 +1,6 @@
 // Package archival contains data formats used for archival.
 //
-// This superseded the oonidatamodel package.
+// See https://github.com/ooni/spec.
 package archival
 
 import (
@@ -68,12 +68,9 @@ type TCPConnectEntry struct {
 	TransactionID int64            `json:"transaction_id,omitempty"`
 }
 
-// TCPConnectList is a list of TCPConnectEntry
-type TCPConnectList []TCPConnectEntry
-
 // NewTCPConnectList creates a new TCPConnectList
-func NewTCPConnectList(begin time.Time, events []trace.Event) TCPConnectList {
-	var out TCPConnectList
+func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry {
+	var out []TCPConnectEntry
 	for _, event := range events {
 		if event.Name != "connect" {
 			continue
@@ -85,7 +82,7 @@ func NewTCPConnectList(begin time.Time, events []trace.Event) TCPConnectList {
 			IP:   ip,
 			Port: iport,
 			Status: TCPConnectStatus{
-				Failure: makeFailure(event.Err),
+				Failure: NewFailure(event.Err),
 				Success: event.Err == nil,
 			},
 			T: event.Time.Sub(begin).Seconds(),
@@ -94,7 +91,8 @@ func NewTCPConnectList(begin time.Time, events []trace.Event) TCPConnectList {
 	return out
 }
 
-func makeFailure(err error) (s *string) {
+// NewFailure creates a failure nullable string from the given error
+func NewFailure(err error) (s *string) {
 	if err != nil {
 		serio := err.Error()
 		s = &serio
@@ -157,10 +155,6 @@ func (hb *MaybeBinaryValue) UnmarshalJSON(d []byte) error {
 // mechanism implemented by MaybeBinaryValue is not working.
 type HTTPBody = MaybeBinaryValue
 
-// HTTPHeaders contains HTTP headers. This headers representation is
-// deprecated in favour of HTTPHeadersList since data format 0.3.0.
-type HTTPHeaders map[string]MaybeBinaryValue
-
 // HTTPHeader is a single HTTP header.
 type HTTPHeader struct {
 	Key   string
@@ -221,35 +215,30 @@ func (hh *HTTPHeader) UnmarshalJSON(d []byte) error {
 	return nil
 }
 
-// HTTPHeadersList is a list of headers.
-type HTTPHeadersList []HTTPHeader
-
 // HTTPRequest contains an HTTP request.
 //
 // Headers are a map in Web Connectivity data format but
-// we have added support for a list since data format version
-// equal to 0.2.1 (later renamed to 0.3.0).
+// we have added support for a list since January 2020.
 type HTTPRequest struct {
-	Body            HTTPBody        `json:"body"`
-	BodyIsTruncated bool            `json:"body_is_truncated"`
-	HeadersList     HTTPHeadersList `json:"headers_list"`
-	Headers         HTTPHeaders     `json:"headers"`
-	Method          string          `json:"method"`
-	Tor             HTTPTor         `json:"tor"`
-	URL             string          `json:"url"`
+	Body            HTTPBody                    `json:"body"`
+	BodyIsTruncated bool                        `json:"body_is_truncated"`
+	HeadersList     []HTTPHeader                `json:"headers_list"`
+	Headers         map[string]MaybeBinaryValue `json:"headers"`
+	Method          string                      `json:"method"`
+	Tor             HTTPTor                     `json:"tor"`
+	URL             string                      `json:"url"`
 }
 
 // HTTPResponse contains an HTTP response.
 //
 // Headers are a map in Web Connectivity data format but
-// we have added support for a list since data format version
-// equal to 0.2.1 (later renamed to 0.3.0).
+// we have added support for a list since January 2020.
 type HTTPResponse struct {
-	Body            HTTPBody        `json:"body"`
-	BodyIsTruncated bool            `json:"body_is_truncated"`
-	Code            int64           `json:"code"`
-	HeadersList     HTTPHeadersList `json:"headers_list"`
-	Headers         HTTPHeaders     `json:"headers"`
+	Body            HTTPBody                    `json:"body"`
+	BodyIsTruncated bool                        `json:"body_is_truncated"`
+	Code            int64                       `json:"code"`
+	HeadersList     []HTTPHeader                `json:"headers_list"`
+	Headers         map[string]MaybeBinaryValue `json:"headers"`
 }
 
 // RequestEntry is one of the entries that are part of
@@ -262,13 +251,10 @@ type RequestEntry struct {
 	TransactionID int64        `json:"transaction_id,omitempty"`
 }
 
-// RequestList is a list of RequestEntry
-type RequestList []RequestEntry
-
 func addheaders(
 	source http.Header,
-	destList *HTTPHeadersList,
-	destMap *HTTPHeaders,
+	destList *[]HTTPHeader,
+	destMap *map[string]MaybeBinaryValue,
 ) {
 	for key, values := range source {
 		for index, value := range values {
@@ -287,28 +273,37 @@ func addheaders(
 }
 
 // NewRequestList returns the list for "requests"
-func NewRequestList(begin time.Time, events []trace.Event) RequestList {
+func NewRequestList(begin time.Time, events []trace.Event) []RequestEntry {
+	// OONI wants the least request to appear first
+	var out []RequestEntry
+	tmp := newRequestList(begin, events)
+	for i := len(tmp) - 1; i >= 0; i-- {
+		out = append(out, tmp[i])
+	}
+	return out
+}
+
+func newRequestList(begin time.Time, events []trace.Event) []RequestEntry {
 	var (
-		tmp   RequestList
+		out   []RequestEntry
 		entry RequestEntry
 	)
 	for _, ev := range events {
 		switch ev.Name {
 		case "http_transaction_start":
-			entry = RequestEntry{
-				Request:  HTTPRequest{Headers: make(HTTPHeaders)},
-				Response: HTTPResponse{Headers: make(HTTPHeaders)},
-			}
+			entry = RequestEntry{}
 			entry.T = ev.Time.Sub(begin).Seconds()
 		case "http_request_body_snapshot":
 			entry.Request.Body.Value = string(ev.Data)
 			entry.Request.BodyIsTruncated = ev.DataIsTruncated
 		case "http_request_metadata":
+			entry.Request.Headers = make(map[string]MaybeBinaryValue)
 			addheaders(
 				ev.HTTPHeaders, &entry.Request.HeadersList, &entry.Request.Headers)
 			entry.Request.Method = ev.HTTPMethod
 			entry.Request.URL = ev.HTTPURL
 		case "http_response_metadata":
+			entry.Response.Headers = make(map[string]MaybeBinaryValue)
 			addheaders(
 				ev.HTTPHeaders, &entry.Response.HeadersList, &entry.Response.Headers)
 			entry.Response.Code = int64(ev.HTTPStatusCode)
@@ -316,14 +311,9 @@ func NewRequestList(begin time.Time, events []trace.Event) RequestList {
 			entry.Response.Body.Value = string(ev.Data)
 			entry.Response.BodyIsTruncated = ev.DataIsTruncated
 		case "http_transaction_done":
-			entry.Failure = makeFailure(ev.Err)
-			tmp = append(tmp, entry)
+			entry.Failure = NewFailure(ev.Err)
+			out = append(out, entry)
 		}
-	}
-	var out RequestList
-	// OONI's data format wants more recent request first
-	for i := len(tmp) - 1; i >= 0; i-- {
-		out = append(out, tmp[i])
 	}
 	return out
 }
@@ -352,16 +342,12 @@ type DNSQueryEntry struct {
 	TransactionID    int64            `json:"transaction_id,omitempty"`
 }
 
-type (
-	// DNSQueriesList is a list of DNS queries
-	DNSQueriesList []DNSQueryEntry
-	dnsQueryType   string
-)
+type dnsQueryType string
 
 // NewDNSQueriesList returns a list of DNS queries.
-func NewDNSQueriesList(begin time.Time, events []trace.Event) DNSQueriesList {
+func NewDNSQueriesList(begin time.Time, events []trace.Event) []DNSQueryEntry {
 	// TODO(bassosimone): add support for CNAME lookups.
-	var out DNSQueriesList
+	var out []DNSQueryEntry
 	for _, ev := range events {
 		if ev.Name != "resolve_done" {
 			continue
@@ -406,7 +392,7 @@ func (qtype dnsQueryType) makeanswerentry(addr string) DNSAnswerEntry {
 func (qtype dnsQueryType) makequeryentry(begin time.Time, ev trace.Event) DNSQueryEntry {
 	return DNSQueryEntry{
 		Engine:          ev.Proto,
-		Failure:         makeFailure(ev.Err),
+		Failure:         NewFailure(ev.Err),
 		Hostname:        ev.Hostname,
 		QueryType:       string(qtype),
 		ResolverAddress: ev.Address,
@@ -427,17 +413,14 @@ type NetworkEvent struct {
 	TransactionID int64   `json:"transaction_id,omitempty"`
 }
 
-// NetworkEventsList is a list of network events.
-type NetworkEventsList []*NetworkEvent
-
 // NewNetworkEventsList returns a list of DNS queries.
-func NewNetworkEventsList(begin time.Time, events []trace.Event) NetworkEventsList {
-	var out NetworkEventsList
+func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent {
+	var out []NetworkEvent
 	for _, ev := range events {
 		if ev.Name == "connect" {
-			out = append(out, &NetworkEvent{
+			out = append(out, NetworkEvent{
 				Address:   ev.Address,
-				Failure:   makeFailure(ev.Err),
+				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				Proto:     ev.Proto,
 				T:         ev.Time.Sub(begin).Seconds(),
@@ -445,27 +428,25 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) NetworkEventsLi
 			continue
 		}
 		if ev.Name == "read" {
-			out = append(out, &NetworkEvent{
-				Failure:   makeFailure(ev.Err),
+			out = append(out, NetworkEvent{
+				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				NumBytes:  int64(ev.NumBytes),
-				Proto:     ev.Proto,
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 			continue
 		}
 		if ev.Name == "write" {
-			out = append(out, &NetworkEvent{
-				Failure:   makeFailure(ev.Err),
+			out = append(out, NetworkEvent{
+				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				NumBytes:  int64(ev.NumBytes),
-				Proto:     ev.Proto,
 				T:         ev.Time.Sub(begin).Seconds(),
 			})
 			continue
 		}
-		out = append(out, &NetworkEvent{
-			Failure:   makeFailure(ev.Err),
+		out = append(out, NetworkEvent{
+			Failure:   NewFailure(ev.Err),
 			Operation: ev.Name,
 			T:         ev.Time.Sub(begin).Seconds(),
 		})
@@ -485,19 +466,16 @@ type TLSHandshake struct {
 	TransactionID      int64              `json:"transaction_id,omitempty"`
 }
 
-// TLSHandshakesList is a list of TLS handshakes
-type TLSHandshakesList []TLSHandshake
-
 // NewTLSHandshakesList creates a new TLSHandshakesList
-func NewTLSHandshakesList(begin time.Time, events []trace.Event) TLSHandshakesList {
-	var out TLSHandshakesList
+func NewTLSHandshakesList(begin time.Time, events []trace.Event) []TLSHandshake {
+	var out []TLSHandshake
 	for _, ev := range events {
 		if ev.Name != "tls_handshake_done" {
 			continue
 		}
 		out = append(out, TLSHandshake{
 			CipherSuite:        ev.TLSCipherSuite,
-			Failure:            makeFailure(ev.Err),
+			Failure:            NewFailure(ev.Err),
 			NegotiatedProtocol: ev.TLSNegotiatedProto,
 			PeerCertificates:   makePeerCerts(ev.TLSPeerCerts),
 			T:                  ev.Time.Sub(begin).Seconds(),
