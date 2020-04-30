@@ -1,6 +1,6 @@
 // Package archival contains data formats used for archival.
 //
-// This superseded the oonidatamodel package.
+// See https://github.com/ooni/spec.
 package archival
 
 import (
