@@ -218,8 +218,7 @@ func (hh *HTTPHeader) UnmarshalJSON(d []byte) error {
 // HTTPRequest contains an HTTP request.
 //
 // Headers are a map in Web Connectivity data format but
-// we have added support for a list since data format version
-// equal to 0.2.1 (later renamed to 0.3.0).
+// we have added support for a list since January 2020.
 type HTTPRequest struct {
 	Body            HTTPBody                    `json:"body"`
 	BodyIsTruncated bool                        `json:"body_is_truncated"`
@@ -233,8 +232,7 @@ type HTTPRequest struct {
 // HTTPResponse contains an HTTP response.
 //
 // Headers are a map in Web Connectivity data format but
-// we have added support for a list since data format version
-// equal to 0.2.1 (later renamed to 0.3.0).
+// we have added support for a list since January 2020.
 type HTTPResponse struct {
 	Body            HTTPBody                    `json:"body"`
 	BodyIsTruncated bool                        `json:"body_is_truncated"`
