@@ -20,10 +20,10 @@ import (
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
 	"github.com/ooni/probe-engine/experiment/httpheader"
+	"github.com/ooni/probe-engine/internal/netxlogger"
+	"github.com/ooni/probe-engine/internal/oonidatamodel"
+	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/trace"
 )
 
 const (
@@ -43,22 +43,20 @@ type Config struct {
 // This is what will end up into the Measurement.TestKeys field
 // when you run this experiment.
 type TestKeys struct {
-	Agent         string                     `json:"agent"`
-	BootstrapTime float64                    `json:"bootstrap_time"`
-	Failure       *string                    `json:"failure"`
-	MaxRuntime    float64                    `json:"max_runtime"`
-	NetworkEvents archival.NetworkEventsList `json:"network_events"`
-	Queries       archival.DNSQueriesList    `json:"queries"`
-	Requests      archival.RequestList       `json:"requests"`
-	SOCKSProxy    string                     `json:"socksproxy"`
-	TLSHandshakes archival.TLSHandshakesList `json:"tls_handshakes"`
+	Agent         string                          `json:"agent"`
+	BootstrapTime float64                         `json:"bootstrap_time"`
+	Failure       *string                         `json:"failure"`
+	MaxRuntime    float64                         `json:"max_runtime"`
+	Queries       oonidatamodel.DNSQueriesList    `json:"queries"`
+	Requests      oonidatamodel.RequestList       `json:"requests"`
+	SOCKSProxy    string                          `json:"socksproxy"`
+	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
 }
 
 func registerExtensions(m *model.Measurement) {
-	archival.ExtHTTP.AddTo(m)
-	archival.ExtDNS.AddTo(m)
-	archival.ExtNetevents.AddTo(m)
-	archival.ExtTLSHandshake.AddTo(m)
+	oonidatamodel.ExtHTTP.AddTo(m)
+	oonidatamodel.ExtDNS.AddTo(m)
+	oonidatamodel.ExtTLSHandshake.AddTo(m)
 }
 
 type runner struct {
@@ -111,63 +109,38 @@ func (r *runner) starttunnel(
 func (r *runner) usetunnel(
 	ctx context.Context, port int, logger model.Logger,
 ) error {
-	// TODO(bassosimone): understand if there is a way to ask
-	// the tunnel the number of bytes sent and received
 	r.testkeys.Agent = "redirect"
 	r.testkeys.SOCKSProxy = fmt.Sprintf("127.0.0.1:%d", port)
-	saver := new(trace.Saver)
-	clnt := &http.Client{Transport: httptransport.New(httptransport.Config{
-		ContextByteCounting: true,
-		DialSaver:           saver,
-		HTTPSaver:           saver,
-		Logger:              logger,
-		ProxyURL: &url.URL{
-			Scheme: "socks5",
-			Host:   r.testkeys.SOCKSProxy,
+	results := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
+		Accept:         httpheader.RandomAccept(),
+		AcceptLanguage: httpheader.RandomAcceptLanguage(),
+		Beginning:      r.beginning,
+		Handler:        netxlogger.NewHandler(logger),
+		Method:         "GET",
+		ProxyFunc: func(req *http.Request) (*url.URL, error) {
+			return &url.URL{
+				Scheme: "socks5",
+				Host:   r.testkeys.SOCKSProxy,
+			}, nil
 		},
-		ReadWriteSaver: saver,
-		ResolveSaver:   saver,
-		TLSSaver:       saver,
-	})}
-	defer clnt.CloseIdleConnections()
-	req, err := http.NewRequest("GET", "https://www.google.com/humans.txt", nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", httpheader.RandomAccept())
-	req.Header.Set("Accept-Language", httpheader.RandomAcceptLanguage())
-	req.Header.Set("User-Agent", httpheader.RandomUserAgent())
-	begin := time.Now()
-	defer func() {
-		events := saver.Read()
-		r.testkeys.Queries = append(
-			r.testkeys.Queries, archival.NewDNSQueriesList(begin, events)...,
-		)
-		r.testkeys.NetworkEvents = append(
-			r.testkeys.NetworkEvents, archival.NewNetworkEventsList(begin, events)...,
-		)
-		r.testkeys.Requests = append(
-			r.testkeys.Requests, archival.NewRequestList(begin, events)...,
-		)
-		r.testkeys.TLSHandshakes = append(
-			r.testkeys.TLSHandshakes, archival.NewTLSHandshakesList(begin, events)...,
-		)
-	}()
-	resp, err := clnt.Do(req.WithContext(ctx))
-	if err != nil {
-		s := err.Error()
+		URL:       "https://www.google.com/humans.txt",
+		UserAgent: httpheader.RandomUserAgent(),
+	})
+	r.testkeys.Queries = append(
+		r.testkeys.Queries, oonidatamodel.NewDNSQueriesList(results.TestKeys)...,
+	)
+	r.testkeys.Requests = append(
+		r.testkeys.Requests, oonidatamodel.NewRequestList(results.TestKeys)...,
+	)
+	r.testkeys.TLSHandshakes = append(
+		r.testkeys.TLSHandshakes, oonidatamodel.NewTLSHandshakesList(results.TestKeys)...,
+	)
+	// TODO(bassosimone): understand if there is a way to ask
+	// the tunnel the number of bytes sent and received
+	if results.Error != nil {
+		s := results.Error.Error()
 		r.testkeys.Failure = &s
-		return err
-	}
-	if _, err := ioutil.ReadAll(resp.Body); err != nil {
-		s := err.Error()
-		r.testkeys.Failure = &s
-		return err
-	}
-	if err := resp.Body.Close(); err != nil {
-		s := err.Error()
-		r.testkeys.Failure = &s
-		return err
+		return results.Error
 	}
 	return nil
 }
