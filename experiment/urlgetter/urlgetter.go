@@ -31,15 +31,19 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
-	ResolverURL   string `ooni:"URL describing a resolver"`
-	TLSServerName string `ooni:"Force TLS to using a specific SNI in Client Hello"`
-	Tunnel        string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
+	NoFollowRedirects bool   `ooni:"Disable following redirects"`
+	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`
+	ResolverURL       string `ooni:"URL describing the resolver to use"`
+	TLSServerName     string `ooni:"Force TLS to using a specific SNI in Client Hello"`
+	Tunnel            string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 }
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
 	Agent         string                   `json:"agent"`
 	BootstrapTime float64                  `json:"bootstrap_time,omitempty"`
+	Failure       *string                  `json:"failure"`
 	NetworkEvents []archival.NetworkEvent  `json:"network_events"`
 	Queries       []archival.DNSQueryEntry `json:"queries"`
 	Requests      []archival.RequestEntry  `json:"requests"`
@@ -59,6 +63,12 @@ type GetterConfig struct {
 // along with the error that occurred, if any.
 func Do(ctx context.Context, config GetterConfig) (tk TestKeys, err error) {
 	tk = TestKeys{Agent: "redirect", Tunnel: config.Tunnel}
+	if config.NoFollowRedirects {
+		tk.Agent = "agent"
+	}
+	defer func() {
+		tk.Failure = archival.NewFailure(err)
+	}()
 	targetURL, err := url.Parse(config.Target)
 	if err != nil {
 		return
@@ -162,7 +172,15 @@ func Do(ctx context.Context, config GetterConfig) (tk TestKeys, err error) {
 		req.Header.Set("Accept", httpheader.RandomAccept())
 		req.Header.Set("Accept-Language", httpheader.RandomAcceptLanguage())
 		req.Header.Set("User-Agent", httpheader.RandomUserAgent())
+		if config.HTTPHost != "" {
+			req.Host = config.HTTPHost
+		}
 		httpClient := &http.Client{Transport: httptransport.New(httpConfig)}
+		if config.NoFollowRedirects {
+			httpClient.CheckRedirect = func(*http.Request, []*http.Request) error {
+				return http.ErrUseLastResponse
+			}
+		}
 		defer httpClient.CloseIdleConnections()
 		resp, err = httpClient.Do(req)
 		if err != nil {

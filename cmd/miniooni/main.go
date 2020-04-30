@@ -278,9 +278,16 @@ func main() {
 		globalOptions.inputs = append(globalOptions.inputs, "")
 	}
 	for key, value := range extraOptions {
-		err := builder.SetOptionString(key, value)
-		if err != nil {
-			log.WithError(err).Fatal("cannot set string option")
+		if value == "true" || value == "false" {
+			err := builder.SetOptionBool(key, value == "true")
+			if err != nil {
+				log.WithError(err).Fatal("cannot set boolean option")
+			}
+		} else {
+			err := builder.SetOptionString(key, value)
+			if err != nil {
+				log.WithError(err).Fatal("cannot set string option")
+			}
 		}
 	}
 	experiment := builder.NewExperiment()
