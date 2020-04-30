@@ -29,6 +29,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
+	github.com/google/go-cmp v0.4.0
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
