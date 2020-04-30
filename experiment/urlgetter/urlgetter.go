@@ -52,7 +52,7 @@ const (
 // Config contains the experiment's configuration.
 type Config struct {
 	ResolverURL   string `ooni:"URL describing a resolver"`
-	TLSServerName string `ooni:"Force using a specific server name"`
+	TLSServerName string `ooni:"Force TLS to using a specific SNI in Client Hello"`
 	Tunnel        string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 }
 
