@@ -2,26 +2,6 @@
 // an official OONI nettest, but rather is a probe-engine specific internal
 // nettest that can be useful to do research.
 //
-// We manage the following URLs:
-//
-// 1. https://domain/path and http://domain/path trigger HTTP GETs
-//
-// 2. dnslookup://domain triggers a DNS lookup of domain
-//
-// 3. tlshandshake://domain:port triggers a TLS handshake connecting
-// to the specified domain and port
-//
-// 4. other://domain:port triggers a TCP connect
-//
-// In all cases, the options specified inside of Config apply:
-//
-// 1. ResolverURL is used to configure a resolver. As a special case
-// we recognize and properly handle `doh://google` and `doh://cloudflare`
-//
-// 2. TLSServerName allows to override the SNI
-//
-// 3. Tunnel allows to run the test inside a tunnel (e.g. psiphon)
-//
 // Because this is an experimental test, behaviour may change.
 package urlgetter
 
@@ -116,6 +96,16 @@ func Do(ctx context.Context, config GetterConfig) (tk TestKeys, err error) {
 			resolver.SaverDNSTransport{
 				RoundTripper: resolver.NewDNSOverHTTPS(
 					dohClient, config.ResolverURL,
+				),
+				Saver: saver,
+			},
+		)
+	case "udp":
+		dialer := httptransport.NewDialer(httpConfig)
+		httpConfig.BaseResolver = resolver.NewSerialResolver(
+			resolver.SaverDNSTransport{
+				RoundTripper: resolver.NewDNSOverUDP(
+					dialer, resolverURL.Host,
 				),
 				Saver: saver,
 			},
