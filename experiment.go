@@ -614,9 +614,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*urlgetter.Config),
 				))
 			},
-			config: &urlgetter.Config{
-				ResolverURL: "system:///",
-			},
+			config:     &urlgetter.Config{},
 			needsInput: true,
 		}
 	},
