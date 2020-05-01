@@ -3,8 +3,11 @@ package urlgetter
 import (
 	"crypto/tls"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -40,6 +43,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	configuration := Configuration{
 		HTTPConfig: httptransport.Config{
 			BogonIsError:        c.Config.RejectDNSBogons,
+			CacheResolutions:    true,
 			ContextByteCounting: true,
 			DialSaver:           c.Saver,
 			HTTPSaver:           c.Saver,
@@ -48,6 +52,23 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			ResolveSaver:        c.Saver,
 			TLSSaver:            c.Saver,
 		},
+	}
+	// fill DNS cache
+	if c.Config.DNSCache != "" {
+		entry := strings.Split(c.Config.DNSCache, " ")
+		if len(entry) != 2 {
+			return configuration, errors.New("invalid DNSCache string")
+		}
+		if net.ParseIP(entry[0]) == nil {
+			return configuration, errors.New("invalid IP in DNSCache")
+		}
+		domainregex := regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
+		if !domainregex.MatchString(entry[1]) {
+			return configuration, errors.New("invalid domain in DNSCache")
+		}
+		configuration.HTTPConfig.DNSCache = map[string][]string{
+			entry[1]: {entry[0]},
+		}
 	}
 	// configure the resolver
 	switch c.Config.ResolverURL {

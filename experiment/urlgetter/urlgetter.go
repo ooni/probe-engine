@@ -17,6 +17,7 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
+	DNSCache          string `ooni:"Add 'IP DOMAIN' to cache"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
 	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`

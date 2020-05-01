@@ -46,6 +46,7 @@ type Config struct {
 	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
 	CacheResolutions    bool                 // default: no caching
 	ContextByteCounting bool                 // default: no implicit byte counting
+	DNSCache            map[string][]string  // default: cache is empty
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
@@ -74,14 +75,21 @@ func NewResolver(config Config) Resolver {
 		r = resolver.BogonResolver{Resolver: r}
 	}
 	r = resolver.ErrorWrapperResolver{Resolver: r}
+	if config.CacheResolutions {
+		r = &resolver.CacheResolver{Resolver: r}
+	}
+	if config.DNSCache != nil {
+		cache := &resolver.CacheResolver{Resolver: r, ReadOnly: true}
+		for key, values := range config.DNSCache {
+			cache.Set(key, values)
+		}
+		r = cache
+	}
 	if config.Logger != nil {
 		r = resolver.LoggingResolver{Logger: config.Logger, Resolver: r}
 	}
 	if config.ResolveSaver != nil {
 		r = resolver.SaverResolver{Resolver: r, Saver: config.ResolveSaver}
-	}
-	if config.CacheResolutions {
-		r = &resolver.CacheResolver{Resolver: r}
 	}
 	return r
 }

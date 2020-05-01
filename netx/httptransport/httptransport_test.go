@@ -104,13 +104,42 @@ func TestNewResolverWithSaver(t *testing.T) {
 	}
 }
 
-func TestNewResolverWithCache(t *testing.T) {
+func TestNewResolverWithReadWriteCache(t *testing.T) {
 	r := httptransport.NewResolver(httptransport.Config{
 		CacheResolutions: true,
 	})
 	cr, ok := r.(*resolver.CacheResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
+	}
+	if cr.ReadOnly != false {
+		t.Fatal("expected readwrite cache here")
+	}
+	ewr, ok := cr.Resolver.(resolver.ErrorWrapperResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	_, ok = ewr.Resolver.(resolver.SystemResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+}
+
+func TestNewResolverWithPrefilledReadonlyCache(t *testing.T) {
+	r := httptransport.NewResolver(httptransport.Config{
+		DNSCache: map[string][]string{
+			"dns.google.com": {"8.8.8.8"},
+		},
+	})
+	cr, ok := r.(*resolver.CacheResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if cr.ReadOnly != true {
+		t.Fatal("expected readonly cache here")
+	}
+	if cr.Get("dns.google.com")[0] != "8.8.8.8" {
+		t.Fatal("cache not correctly prefilled")
 	}
 	ewr, ok := cr.Resolver.(resolver.ErrorWrapperResolver)
 	if !ok {
