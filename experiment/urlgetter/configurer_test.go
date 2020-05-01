@@ -28,6 +28,9 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
+	if configuration.HTTPConfig.CacheResolutions != true {
+		t.Fatal("not the CacheResolutions we expected")
+	}
 	if configuration.HTTPConfig.ContextByteCounting != true {
 		t.Fatal("not the ContextByteCounting we expected")
 	}
@@ -82,6 +85,9 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
+	}
+	if configuration.HTTPConfig.CacheResolutions != true {
+		t.Fatal("not the CacheResolutions we expected")
 	}
 	if configuration.HTTPConfig.ContextByteCounting != true {
 		t.Fatal("not the ContextByteCounting we expected")
@@ -153,6 +159,9 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSCloudflare(t *testing.T) 
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
+	if configuration.HTTPConfig.CacheResolutions != true {
+		t.Fatal("not the CacheResolutions we expected")
+	}
 	if configuration.HTTPConfig.ContextByteCounting != true {
 		t.Fatal("not the ContextByteCounting we expected")
 	}
@@ -223,6 +232,9 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
+	if configuration.HTTPConfig.CacheResolutions != true {
+		t.Fatal("not the CacheResolutions we expected")
+	}
 	if configuration.HTTPConfig.ContextByteCounting != true {
 		t.Fatal("not the ContextByteCounting we expected")
 	}
@@ -270,6 +282,75 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 	}
 	if configuration.HTTPConfig.ProxyURL != nil {
 		t.Fatal("not the ProxyURL we expected")
+	}
+}
+
+func TestConfigurerNewConfigurationDNSCacheInvalidString(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			DNSCache: "a b c",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	_, err := configurer.NewConfiguration()
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid DNSCache string") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestConfigurerNewConfigurationDNSCacheNotIP(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			DNSCache: "a b",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	_, err := configurer.NewConfiguration()
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid IP in DNSCache") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestConfigurerNewConfigurationDNSCacheNotDomain(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			DNSCache: "127.0.0.1 b",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	_, err := configurer.NewConfiguration()
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid domain in DNSCache") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestConfigurerNewConfigurationDNSCacheGood(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			DNSCache: "127.0.0.1 google.com",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.DNSCache) != 1 {
+		t.Fatal("invalid number of entries in DNSCache")
+	}
+	if len(configuration.HTTPConfig.DNSCache["google.com"]) != 1 {
+		t.Fatal("invalid number of IPs saved in DNSCache")
+	}
+	if configuration.HTTPConfig.DNSCache["google.com"][0] != "127.0.0.1" {
+		t.Fatal("invalid IPs saved in DNSCache")
 	}
 }
 
