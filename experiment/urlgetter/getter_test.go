@@ -250,7 +250,7 @@ func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
 	}
-	if tk.Failure == nil || *tk.Failure != "unsupported resolver scheme" {
+	if tk.Failure == nil || *tk.Failure != "unknown_failure: unsupported resolver scheme" {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 0 {
