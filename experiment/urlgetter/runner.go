@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/ooni/probe-engine/experiment/httpheader"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
@@ -42,9 +43,7 @@ func (r Runner) Run(ctx context.Context) error {
 
 func (r Runner) httpGet(ctx context.Context, url string) error {
 	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
+	runtimex.PanicOnError(err, "http.NewRequest failed")
 	req = req.WithContext(ctx)
 	req.Header.Set("Accept", httpheader.RandomAccept())
 	req.Header.Set("Accept-Language", httpheader.RandomAcceptLanguage())
