@@ -471,6 +471,7 @@ type TLSHandshake struct {
 	ConnID             int64              `json:"conn_id,omitempty"`
 	Failure            *string            `json:"failure"`
 	NegotiatedProtocol string             `json:"negotiated_protocol"`
+	NoTLSVerify        bool               `json:"no_tls_verify"`
 	PeerCertificates   []MaybeBinaryValue `json:"peer_certificates"`
 	T                  float64            `json:"t"`
 	TLSVersion         string             `json:"tls_version"`
@@ -488,6 +489,7 @@ func NewTLSHandshakesList(begin time.Time, events []trace.Event) []TLSHandshake 
 			CipherSuite:        ev.TLSCipherSuite,
 			Failure:            NewFailure(ev.Err),
 			NegotiatedProtocol: ev.TLSNegotiatedProto,
+			NoTLSVerify:        ev.NoTLSVerify,
 			PeerCertificates:   makePeerCerts(ev.TLSPeerCerts),
 			T:                  ev.Time.Sub(begin).Seconds(),
 			TLSVersion:         ev.TLSVersion,

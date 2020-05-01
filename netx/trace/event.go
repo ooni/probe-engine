@@ -22,6 +22,7 @@ type Event struct {
 	HTTPURL            string              `json:",omitempty"`
 	Hostname           string              `json:",omitempty"`
 	Name               string              `json:",omitempty"`
+	NoTLSVerify        bool                `json:",omitempty"`
 	NumBytes           int                 `json:",omitempty"`
 	Proto              string              `json:",omitempty"`
 	TLSServerName      string              `json:",omitempty"`
