@@ -63,6 +63,8 @@ func scrub(b []byte) []byte {
 	return scrubbedBytes
 }
 
-func scrubs(s string) string {
+// Scrub sanitizes a string containing an error such that
+// any occurrence of IP endpoints is scrubbed
+func Scrub(s string) string {
 	return string(scrub([]byte(s)))
 }

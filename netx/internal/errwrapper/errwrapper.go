@@ -102,7 +102,7 @@ func toFailureString(err error) string {
 	}
 
 	formatted := fmt.Sprintf("unknown_failure: %s", s)
-	return scrubs(formatted) // scrub IP addresses in the error
+	return Scrub(formatted) // scrub IP addresses in the error
 }
 
 func toOperationString(err error, operation string) string {

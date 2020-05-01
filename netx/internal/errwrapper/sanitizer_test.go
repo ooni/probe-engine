@@ -68,7 +68,7 @@ func TestLogScrubberMessages(t *testing.T) {
 			"2019/05/08 15:37:31 starting",
 		},
 	} {
-		if scrubs(test.input) != test.expected {
+		if Scrub(test.input) != test.expected {
 			t.Error(cmp.Diff(test.input, test.expected))
 		}
 	}
@@ -122,7 +122,7 @@ func TestLogScrubberGoodFormats(t *testing.T) {
 		"[::ffff:0:255.255.255.255]",
 		"[2001:db8:3:4::192.0.2.33]",
 	} {
-		if scrubs(addr) != "[scrubbed]" {
+		if Scrub(addr) != "[scrubbed]" {
 			t.Error(cmp.Diff(addr, "[scrubbed]"))
 		}
 	}
