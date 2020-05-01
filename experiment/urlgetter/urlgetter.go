@@ -19,6 +19,7 @@ const (
 type Config struct {
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
+	NoTLSVerify       bool   `ooni:"Disable TLS verification"`
 	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`
 	ResolverURL       string `ooni:"URL describing the resolver to use"`
 	TLSServerName     string `ooni:"Force TLS to using a specific SNI in Client Hello"`

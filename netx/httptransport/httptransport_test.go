@@ -507,6 +507,82 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 	}
 }
 
+func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
+	td := httptransport.NewTLSDialer(httptransport.Config{
+		TLSConfig:   new(tls.Config),
+		NoTLSVerify: true,
+	})
+	rtd, ok := td.(dialer.TLSDialer)
+	if !ok {
+		t.Fatal("not the TLSDialer we expected")
+	}
+	if len(rtd.Config.NextProtos) != 0 {
+		t.Fatal("invalid len(config.NextProtos)")
+	}
+	if rtd.Config.InsecureSkipVerify != true {
+		t.Fatal("expected true InsecureSkipVerify")
+	}
+	if rtd.Dialer == nil {
+		t.Fatal("invalid Dialer")
+	}
+	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+		t.Fatal("not the Dialer we expected")
+	}
+	if rtd.TLSHandshaker == nil {
+		t.Fatal("invalid TLSHandshaker")
+	}
+	ewth, ok := rtd.TLSHandshaker.(dialer.ErrorWrapperTLSHandshaker)
+	if !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+	tth, ok := ewth.TLSHandshaker.(dialer.TimeoutTLSHandshaker)
+	if !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+	if _, ok := tth.TLSHandshaker.(dialer.SystemTLSHandshaker); !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+}
+
+func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
+	td := httptransport.NewTLSDialer(httptransport.Config{
+		NoTLSVerify: true,
+	})
+	rtd, ok := td.(dialer.TLSDialer)
+	if !ok {
+		t.Fatal("not the TLSDialer we expected")
+	}
+	if len(rtd.Config.NextProtos) != 2 {
+		t.Fatal("invalid len(config.NextProtos)")
+	}
+	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid Config.NextProtos")
+	}
+	if rtd.Config.InsecureSkipVerify != true {
+		t.Fatal("expected true InsecureSkipVerify")
+	}
+	if rtd.Dialer == nil {
+		t.Fatal("invalid Dialer")
+	}
+	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+		t.Fatal("not the Dialer we expected")
+	}
+	if rtd.TLSHandshaker == nil {
+		t.Fatal("invalid TLSHandshaker")
+	}
+	ewth, ok := rtd.TLSHandshaker.(dialer.ErrorWrapperTLSHandshaker)
+	if !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+	tth, ok := ewth.TLSHandshaker.(dialer.TimeoutTLSHandshaker)
+	if !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+	if _, ok := tth.TLSHandshaker.(dialer.SystemTLSHandshaker); !ok {
+		t.Fatal("not the TLSHandshaker we expected")
+	}
+}
+
 func TestNewVanilla(t *testing.T) {
 	txp := httptransport.New(httptransport.Config{})
 	uatxp, ok := txp.(httptransport.UserAgentTransport)
