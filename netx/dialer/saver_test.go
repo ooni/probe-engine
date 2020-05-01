@@ -259,6 +259,9 @@ func TestIntegrationSaverTLSHandshakerHostnameError(t *testing.T) {
 		if ev.Name != "tls_handshake_done" {
 			continue
 		}
+		if ev.NoTLSVerify == true {
+			t.Fatal("expected NoTLSVerify to be false")
+		}
 		if len(ev.TLSPeerCerts) < 1 {
 			t.Fatal("expected at least a certificate here")
 		}
@@ -289,6 +292,9 @@ func TestIntegrationSaverTLSHandshakerInvalidCertError(t *testing.T) {
 		if ev.Name != "tls_handshake_done" {
 			continue
 		}
+		if ev.NoTLSVerify == true {
+			t.Fatal("expected NoTLSVerify to be false")
+		}
 		if len(ev.TLSPeerCerts) < 1 {
 			t.Fatal("expected at least a certificate here")
 		}
@@ -318,6 +324,44 @@ func TestIntegrationSaverTLSHandshakerAuthorityError(t *testing.T) {
 	for _, ev := range saver.Read() {
 		if ev.Name != "tls_handshake_done" {
 			continue
+		}
+		if ev.NoTLSVerify == true {
+			t.Fatal("expected NoTLSVerify to be false")
+		}
+		if len(ev.TLSPeerCerts) < 1 {
+			t.Fatal("expected at least a certificate here")
+		}
+	}
+}
+
+func TestIntegrationSaverTLSHandshakerNoTLSVerify(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	saver := &trace.Saver{}
+	tlsdlr := dialer.TLSDialer{
+		Config: &tls.Config{InsecureSkipVerify: true},
+		Dialer: new(net.Dialer),
+		TLSHandshaker: dialer.SaverTLSHandshaker{
+			TLSHandshaker: dialer.SystemTLSHandshaker{},
+			Saver:         saver,
+		},
+	}
+	conn, err := tlsdlr.DialTLSContext(
+		context.Background(), "tcp", "self-signed.badssl.com:443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conn == nil {
+		t.Fatal("expected non-nil conn here")
+	}
+	conn.Close()
+	for _, ev := range saver.Read() {
+		if ev.Name != "tls_handshake_done" {
+			continue
+		}
+		if ev.NoTLSVerify != true {
+			t.Fatal("expected NoTLSVerify to be true")
 		}
 		if len(ev.TLSPeerCerts) < 1 {
 			t.Fatal("expected at least a certificate here")

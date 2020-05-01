@@ -52,6 +52,7 @@ type Config struct {
 	FullResolver        Resolver             // default: base resolver + goodies
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
+	NoTLSVerify         bool                 // default: perform TLS verify
 	ProxyURL            *url.URL             // default: no proxy
 	ReadWriteSaver      *trace.Saver         // default: not saving read/write
 	ResolveSaver        *trace.Saver         // default: not saving resolves
@@ -136,6 +137,7 @@ func NewTLSDialer(config Config) TLSDialer {
 	if config.TLSConfig == nil {
 		config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
 	}
+	config.TLSConfig.InsecureSkipVerify = config.NoTLSVerify
 	return dialer.TLSDialer{
 		Config:        config.TLSConfig,
 		Dialer:        config.Dialer,

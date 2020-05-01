@@ -58,6 +58,9 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 	if configuration.HTTPConfig.TLSConfig != nil {
 		t.Fatal("not the TLSConfig we expected")
 	}
+	if configuration.HTTPConfig.NoTLSVerify == true {
+		t.Fatal("not the NoTLSVerify we expected")
+	}
 	if configuration.HTTPConfig.ProxyURL != nil {
 		t.Fatal("not the ProxyURL we expected")
 	}
@@ -127,6 +130,9 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 	}
 	if configuration.HTTPConfig.TLSConfig != nil {
 		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.NoTLSVerify == true {
+		t.Fatal("not the NoTLSVerify we expected")
 	}
 	if configuration.HTTPConfig.ProxyURL != nil {
 		t.Fatal("not the ProxyURL we expected")
@@ -198,6 +204,9 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSCloudflare(t *testing.T) 
 	if configuration.HTTPConfig.TLSConfig != nil {
 		t.Fatal("not the TLSConfig we expected")
 	}
+	if configuration.HTTPConfig.NoTLSVerify == true {
+		t.Fatal("not the NoTLSVerify we expected")
+	}
 	if configuration.HTTPConfig.ProxyURL != nil {
 		t.Fatal("not the ProxyURL we expected")
 	}
@@ -267,6 +276,9 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 	}
 	if configuration.HTTPConfig.TLSConfig != nil {
 		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.NoTLSVerify == true {
+		t.Fatal("not the NoTLSVerify we expected")
 	}
 	if configuration.HTTPConfig.ProxyURL != nil {
 		t.Fatal("not the ProxyURL we expected")
@@ -396,6 +408,24 @@ func TestConfigurerNewConfigurationTLSServerName(t *testing.T) {
 	}
 	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid NextProtos[1]")
+	}
+}
+
+func TestConfigurerNewConfigurationNoTLSVerify(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			NoTLSVerify: true,
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if configuration.HTTPConfig.NoTLSVerify != true {
+		t.Fatal("not the NoTLSVerify we expected")
 	}
 }
 

@@ -3,6 +3,7 @@ package archival_test
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"io"
 	"net/http"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -394,6 +396,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 			}, {
 				Name:               "tls_handshake_done",
 				Err:                io.EOF,
+				NoTLSVerify:        false,
 				TLSCipherSuite:     "SUITE",
 				TLSNegotiatedProto: "h2",
 				TLSPeerCerts: []*x509.Certificate{{
@@ -409,6 +412,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 			CipherSuite:        "SUITE",
 			Failure:            archival.NewFailure(io.EOF),
 			NegotiatedProtocol: "h2",
+			NoTLSVerify:        false,
 			PeerCertificates: []archival.MaybeBinaryValue{{
 				Value: "deadbeef",
 			}, {
@@ -768,6 +772,72 @@ func TestHTTPHeader_UnmarshalJSON(t *testing.T) {
 			}
 			if d := cmp.Diff(hh, expect); d != "" {
 				t.Error(d)
+			}
+		})
+	}
+}
+
+func TestNewFailure(t *testing.T) {
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name string
+		args args
+		want *string
+	}{{
+		name: "when error is nil",
+		args: args{
+			err: nil,
+		},
+		want: nil,
+	}, {
+		name: "when error is wrapped and failure meaningful",
+		args: args{
+			err: &modelx.ErrWrapper{
+				Failure: modelx.FailureConnectionRefused,
+			},
+		},
+		want: func() *string {
+			s := modelx.FailureConnectionRefused
+			return &s
+		}(),
+	}, {
+		name: "when error is wrapped and failure is notmeaningful",
+		args: args{
+			err: &modelx.ErrWrapper{},
+		},
+		want: func() *string {
+			s := "unknown_failure: errWrapper.Failure is empty"
+			return &s
+		}(),
+	}, {
+		name: "otherwise",
+		args: args{
+			err: errors.New("use of closed socket 127.0.0.1:8080->10.0.0.1:22"),
+		},
+		want: func() *string {
+			s := "unknown_failure: use of closed socket [scrubbed]->[scrubbed]"
+			return &s
+		}(),
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := archival.NewFailure(tt.args.err)
+			if tt.want == nil && got == nil {
+				return
+			}
+			if tt.want == nil && got != nil {
+				t.Errorf("NewFailure:  want %+v, got %s", tt.want, *got)
+				return
+			}
+			if tt.want != nil && got == nil {
+				t.Errorf("NewFailure:  want %s, got %+v", *tt.want, got)
+				return
+			}
+			if *tt.want != *got {
+				t.Errorf("NewFailure:  want %s, got %s", *tt.want, *got)
+				return
 			}
 		})
 	}

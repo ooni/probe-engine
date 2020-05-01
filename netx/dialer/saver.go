@@ -47,6 +47,7 @@ func (h SaverTLSHandshaker) Handshake(
 	start := time.Now()
 	h.Saver.Write(trace.Event{
 		Name:          "tls_handshake_start",
+		NoTLSVerify:   config.InsecureSkipVerify,
 		TLSNextProtos: config.NextProtos,
 		TLSServerName: config.ServerName,
 		Time:          start,
@@ -57,6 +58,7 @@ func (h SaverTLSHandshaker) Handshake(
 		Duration:           stop.Sub(start),
 		Err:                err,
 		Name:               "tls_handshake_done",
+		NoTLSVerify:        config.InsecureSkipVerify,
 		TLSCipherSuite:     tlsx.CipherSuiteString(state.CipherSuite),
 		TLSNegotiatedProto: state.NegotiatedProtocol,
 		TLSNextProtos:      config.NextProtos,

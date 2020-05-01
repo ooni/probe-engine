@@ -117,6 +117,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			ServerName: c.Config.TLSServerName,
 		}
 	}
+	configuration.HTTPConfig.NoTLSVerify = c.Config.NoTLSVerify
 	// configure proxy
 	configuration.HTTPConfig.ProxyURL = c.ProxyURL
 	return configuration, nil
