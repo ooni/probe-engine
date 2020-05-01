@@ -1,10 +1,22 @@
 package httptransport
 
 import (
+	"context"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 )
+
+type FakeDialer struct {
+	Conn net.Conn
+	Err  error
+}
+
+func (d FakeDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	time.Sleep(10 * time.Microsecond)
+	return d.Conn, d.Err
+}
 
 type FakeTransport struct {
 	Err  error
