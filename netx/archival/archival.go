@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -16,6 +17,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/internal/errwrapper"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -92,12 +95,20 @@ func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry 
 }
 
 // NewFailure creates a failure nullable string from the given error
-func NewFailure(err error) (s *string) {
-	if err != nil {
-		serio := err.Error()
-		s = &serio
+func NewFailure(err error) *string {
+	if err == nil {
+		return nil
 	}
-	return
+	var errWrapper *modelx.ErrWrapper
+	if errors.As(err, &errWrapper) {
+		s := errWrapper.Failure
+		if s == "" {
+			s = "unknown_failure: errWrapper.Failure is empty"
+		}
+		return &s
+	}
+	s := fmt.Sprintf("unknown_failure: %s", errwrapper.Scrub(err.Error()))
+	return &s
 }
 
 // HTTPTor contains Tor information
