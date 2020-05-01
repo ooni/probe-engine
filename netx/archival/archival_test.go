@@ -396,6 +396,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 			}, {
 				Name:               "tls_handshake_done",
 				Err:                io.EOF,
+				NoTLSVerify:        false,
 				TLSCipherSuite:     "SUITE",
 				TLSNegotiatedProto: "h2",
 				TLSPeerCerts: []*x509.Certificate{{
@@ -411,6 +412,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 			CipherSuite:        "SUITE",
 			Failure:            archival.NewFailure(io.EOF),
 			NegotiatedProtocol: "h2",
+			NoTLSVerify:        false,
 			PeerCertificates: []archival.MaybeBinaryValue{{
 				Value: "deadbeef",
 			}, {
