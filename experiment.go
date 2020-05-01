@@ -24,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
@@ -603,6 +604,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:     &tor.Config{},
 			needsInput: false,
+		}
+	},
+
+	"urlgetter": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, urlgetter.NewExperimentMeasurer(
+					*config.(*urlgetter.Config),
+				))
+			},
+			config:     &urlgetter.Config{},
+			needsInput: true,
 		}
 	},
 
