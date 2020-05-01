@@ -27,7 +27,7 @@ function require() {
 require jq "sudo apt install jq"
 require uuidgen "sudo apt install uuid-runtime"
 
-uuid=$(uuidgen --random)
+uuid=$(uuidgen)
 
 function log() {
   echo "$@" 1>&2
@@ -55,25 +55,25 @@ function getipv4first() {
 }
 
 function getipv4list() {
-  echo $(tail -n1 report.jsonl|jq -r ".test_keys.queries|.[]|select(.hostname==\"$1\")|select(.query_type==\"A\")|.answers|.[].ipv4"|sort)
+  tail -n1 report.jsonl|jq -r ".test_keys.queries|.[]|select(.hostname==\"$1\")|select(.query_type==\"A\")|.answers|.[].ipv4"|sort
 }
 
 function getbody() {
-  # Implementation note: the first request is the latest one
+  # Implementation note: requests stored in LIFO order
   tail -n1 report.jsonl|jq -r ".test_keys.requests|.[0]|.response.body"
 }
 
 testdomain=${MINIOONI_TEST_DOMAIN:-example.org}
 dohurl=${MINIOONI_DOH_URL:-doh://google}
 
-log "* getting IP address of test domain"
+log "* getting IP address of $testdomain"
 urlgetter -OResolverURL=$dohurl -i dnslookup://$testdomain
 if [ "$(getfailure)" != "null" ]; then
-  fatal "cannot determine IP address of test domain"
+  fatal "cannot determine IP address of $testdomain"
 fi
 testip=$(getipv4first $testdomain)
 if [ -z "$testip" ]; then
-  fatal "no available IPv4 for test domain"
+  fatal "no available IPv4 for $testdomain"
 fi
 output "MINIOONI_DOH_URL=$dohurl"
 output "MINIOONI_TEST_DOMAIN=$testdomain"
@@ -97,21 +97,42 @@ if [ "$(getfailure)" = "null" ]; then
   output "MINIOONI_DNS_INJECTION=1"
 fi
 
-log "* checking for DNS bogons returned by the system resolver"
+log "* resolving $domain using the system resolver"
 urlgetter -OResolverURL=system:/// -ORejectDNSBogons=true -i dnslookup://$domain
 if [ "$(getfailure)" = "dns_bogon_error" ]; then
   output "MINIOONI_DNS_BOGONS=1"
 fi
-ipv4_system_list=$(getipv4list $domain)
+ipv4_system_list=$(mktemp $TMPDIR/miniooni-domain-check.XXXXXX)
 log $ipv4_system_list
+getipv4list $domain > $ipv4_system_list
+log $(cat $ipv4_system_list)
+
+log "* resolving $domain using a DoH resolver"
+urlgetter -OResolverURL=$dohurl -i dnslookup://$domain
+ipv4_doh_list=$(mktemp $TMPDIR/miniooni-domain-check.XXXXXX)
+log $ipv4_doh_list
+getipv4list $domain > $ipv4_doh_list
+log $(cat $ipv4_doh_list)
 
 log "* checking for DNS consistency"
-urlgetter -OResolverURL=$dohurl -i dnslookup://$domain
-ipv4_doh_list=$(getipv4list $domain)
-log $ipv4_doh_list
-if [ "$ipv4_system_list" = "$ipv4_doh_list" ]; then
+ipv4_overlap_list=$(comm -13 $ipv4_system_list $ipv4_doh_list)
+if [ "$ipv4_overlap_list" != "" ]; then
   output "MINIOONI_DNS_CONSISTENCY=1"
 fi
+
+log "* selecting IP address provided by system resolver"
+ipv4_system_candidate=$(comm -23 $ipv4_system_list $ipv4_doh_list|sort -uR|head -n1)
+log $ipv4_system_candidate
+
+log "* selecting IP address provided by DoH resolver"
+ipv4_doh_candidate=$(comm -1 $ipv4_system_list $ipv4_doh_list|sort -uR|head -n1)
+log $ipv4_doh_candidate
+
+if [ "$ipv4_system_candidate" != "" ]; then
+  log "* using $ipv4_system_candidate as a server for $domain"
+  urlgetter -ODNSCache="$ipv4_system_candidate $domain" -ONoTLSVerify=true -i http://$domain
+fi
+
 exit 0
 
 log "* checking for HTTP consistency"
