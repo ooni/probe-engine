@@ -8,16 +8,26 @@
 # Inspired by great chats and great code. Main source of ispiration is
 # currently https://github.com/Jigsaw-Code/net-analysis/blob/master/netanalysis/blocktest/measure.sh
 
-if ! [ -x "$(command -v jq)" ]; then
-  echo 'Error: jq is not installed. Please run: sudo apt install jq' >&2
+function fatal() {
+  echo "FATAL: $@" 1>&2
   exit 1
-fi
+}
 
 if [ $# -ne 1 ]; then
-  echo "usage: $0 domain" 1>&2
-  exit 1
+  fatal "usage: $0 domain"
 fi
 domain=$1
+
+function require() {
+  if ! [ -x "$(command -v $1)" ]; then
+    fatal "$1 not installed, please run: $2"
+  fi
+}
+
+require jq "sudo apt install jq"
+require uuidgen "sudo apt install uuid-runtime"
+
+uuid=$(uuidgen --random)
 
 function log() {
   echo "$@" 1>&2
@@ -28,6 +38,10 @@ function run() {
   $@
 }
 
+function urlgetter() {
+  run ./miniooni -A session=$uuid $@ urlgetter
+}
+
 function getfailure() {
   tail -n1 report.jsonl|jq -r .test_keys.failure
 }
@@ -36,56 +50,77 @@ function output() {
   echo "$@"
 }
 
-function getipv4s() {
+function getipv4first() {
+  tail -n1 report.jsonl|jq -r ".test_keys.queries|.[]|select(.hostname==\"$1\")|select(.query_type==\"A\")|.answers|.[0].ipv4"
+}
+
+function getipv4list() {
   echo $(tail -n1 report.jsonl|jq -r ".test_keys.queries|.[]|select(.hostname==\"$1\")|select(.query_type==\"A\")|.answers|.[].ipv4"|sort)
 }
 
 function getbody() {
-  tail -n1 report.jsonl|jq -r ".test_keys.requests|.[0]|.respone.body"
+  # Implementation note: the first request is the latest one
+  tail -n1 report.jsonl|jq -r ".test_keys.requests|.[0]|.response.body"
 }
 
+testdomain=${MINIOONI_TEST_DOMAIN:-example.org}
+dohurl=${MINIOONI_DOH_URL:-doh://google}
+
+log "* getting IP address of test domain"
+urlgetter -OResolverURL=$dohurl -i dnslookup://$testdomain
+if [ "$(getfailure)" != "null" ]; then
+  fatal "cannot determine IP address of test domain"
+fi
+testip=$(getipv4first $testdomain)
+if [ -z "$testip" ]; then
+  fatal "no available IPv4 for test domain"
+fi
+output "MINIOONI_DOH_URL=$dohurl"
+output "MINIOONI_TEST_DOMAIN=$testdomain"
+output "MINIOONI_TEST_IP=$testip"
+
+log "* checking for sni-triggered blocking"
+urlgetter -OTLSServerName=$domain -i tlshandshake://$testip:443
+if [ "$(getfailure)" != "ssl_invalid_hostname" ]; then
+  output "MINIOONI_SNI_BLOCKING=1"
+fi
+
+log "* checking for host-header-triggered censorship"
+urlgetter -OHTTPHost=$domain -ONoFollowRedirects=true -i http://$testip
+if [ "$(getfailure)" != "null" ]; then
+  output "MINIOONI_HOST_BLOCKING=1"
+fi
+
 log "* checking for DNS injection"
-run ./miniooni -OResolverURL=udp://example.com:53 -i dnslookup://$domain urlgetter
+urlgetter -OResolverURL=udp://$testip:53 -i dnslookup://$domain
 if [ "$(getfailure)" = "null" ]; then
   output "MINIOONI_DNS_INJECTION=1"
 fi
 
 log "* checking for DNS bogons returned by the system resolver"
-run ./miniooni -OResolverURL=system:/// -ORejectDNSBogons=true -i dnslookup://$domain urlgetter
-if [ "$(getfailure)" != "null" ]; then
+urlgetter -OResolverURL=system:/// -ORejectDNSBogons=true -i dnslookup://$domain
+if [ "$(getfailure)" = "dns_bogon_error" ]; then
   output "MINIOONI_DNS_BOGONS=1"
 fi
+ipv4_system_list=$(getipv4list $domain)
+log $ipv4_system_list
 
 log "* checking for DNS consistency"
-run ./miniooni -OResolverURL=system:/// -i dnslookup://$domain urlgetter
-ipv4_system_rv=$(getfailure)
-ipv4_system_list=$(getipv4s $domain)
-output "MINIOONI_DNS_SYSTEM_IPV4=$ipv4_system_list"
-run ./miniooni -OResolverURL=doh://google -i dnslookup://$domain urlgetter
-ipv4_doh_rv=$(getfailure)
-ipv4_doh_list=$(getipv4s $domain)
-output "MINIOONI_DNS_DOH_IPV4=$ipv4_doh_list"
-if [ "$ipv4_system_list" == "$ipv4_doh_list" ]; then
+urlgetter -OResolverURL=$dohurl -i dnslookup://$domain
+ipv4_doh_list=$(getipv4list $domain)
+log $ipv4_doh_list
+if [ "$ipv4_system_list" = "$ipv4_doh_list" ]; then
   output "MINIOONI_DNS_CONSISTENCY=1"
 fi
+exit 0
 
-log "* checking for SNI triggered censorship"
-run ./miniooni -OTLSServerName=$domain -i tlshandshake://example.com:443 urlgetter
-if [ "$(getfailure)" != "ssl_invalid_hostname" ]; then
-  output "MINIOONI_SNI_BLOCKING=1"
-fi
-
-log "* checking for Host header triggered censorship"
-run ./miniooni -OHTTPHost=$domain -ONoFollowRedirects=true -i http://example.com urlgetter
-if [ "$(getfailure)" != "null" ]; then
-  output "MINIOONI_HOST_BLOCKING=1"
-fi
-
-log "* checking for HTTP requests consistency"
-run ./miniooni -i http://$domain urlgetter
+log "* checking for HTTP consistency"
+urlgetter -ONoFollowRedirects=true -i http://$domain
 body_vanilla=$(getbody)
-run ./miniooni -OTunnel=psiphon -i http://$domain urlgetter
+log $body_vanilla
+urlgetter -ONoFollowRedirects=true -OTunnel=psiphon -i http://$domain
 body_tunnel=$(getbody)
+log $body_tunnel
 if [ "$body_vanilla" == "$body_tunnel" ]; then
-  output "MINIOONI_BODY_CONSISTENCY=1"
+  output "MINIOONI_HTTP_CONSISTENCY=1"
 fi
