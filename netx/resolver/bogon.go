@@ -60,7 +60,9 @@ func (r BogonResolver) LookupHost(ctx context.Context, hostname string) ([]strin
 	addrs, err := r.Resolver.LookupHost(ctx, hostname)
 	for _, addr := range addrs {
 		if IsBogon(addr) == true {
-			return nil, modelx.ErrDNSBogon
+			// We need to return the addrs otherwise the caller cannot see/log/save
+			// the specific addresses that triggered our bogon filter
+			return addrs, modelx.ErrDNSBogon
 		}
 	}
 	return addrs, err
