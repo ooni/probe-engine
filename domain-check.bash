@@ -99,6 +99,7 @@ if [ "$(getfailure)" = "null" ]; then
 fi
 
 log "* resolving $domain using the system resolver"
+# Implementation note: this saves the IPs _and_ records the error.
 urlgetter -OResolverURL=system:/// -ORejectDNSBogons=true -i dnslookup://$domain
 if [ "$(getfailure)" = "dns_bogon_error" ]; then
   output "MINIOONI_DNS_BOGONS=1"
