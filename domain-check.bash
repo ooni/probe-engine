@@ -34,13 +34,13 @@ function log() {
 }
 
 function run() {
-  log $@
-  $@
+  log "$@"
+  "$@"
 }
 
 function urlgetter() {
   #run ./miniooni -A session=$uuid $@ urlgetter
-  run ./miniooni -n --no-bouncer -A session=$uuid $@ urlgetter
+  run ./miniooni -n --no-bouncer -A session=$uuid "$@" urlgetter
 }
 
 function getfailure() {
@@ -65,10 +65,9 @@ function getbody() {
 }
 
 testdomain=${MINIOONI_TEST_DOMAIN:-example.org}
-dohurl=${MINIOONI_DOH_URL:-doh://google}
 
 log "* getting IP address of $testdomain"
-urlgetter -OResolverURL=$dohurl -i dnslookup://$testdomain
+urlgetter -ODNSCache="8.8.4.4 dns.google" -OResolverURL=doh://google -i dnslookup://$testdomain
 if [ "$(getfailure)" != "null" ]; then
   fatal "cannot determine IP address of $testdomain"
 fi
@@ -76,7 +75,6 @@ testip=$(getipv4first $testdomain)
 if [ -z "$testip" ]; then
   fatal "no available IPv4 for $testdomain"
 fi
-output "MINIOONI_DOH_URL=$dohurl"
 output "MINIOONI_TEST_DOMAIN=$testdomain"
 output "MINIOONI_TEST_IP=$testip"
 
@@ -100,6 +98,7 @@ fi
 
 log "* resolving $domain using the system resolver"
 # Implementation note: this saves the IPs _and_ records the error.
+# XXX: maybe make these two checks separate checks for now?
 urlgetter -OResolverURL=system:/// -ORejectDNSBogons=true -i dnslookup://$domain
 if [ "$(getfailure)" = "dns_bogon_error" ]; then
   output "MINIOONI_DNS_BOGONS=1"
@@ -110,34 +109,34 @@ getipv4list $domain > $ipv4_system_list
 log $(cat $ipv4_system_list)
 
 log "* resolving $domain using a DoH resolver"
-urlgetter -OResolverURL=$dohurl -i dnslookup://$domain
+urlgetter -ODNSCache="8.8.4.4 dns.google" -OResolverURL=doh://google -i dnslookup://$domain
 ipv4_doh_list=$(mktemp $TMPDIR/miniooni-domain-check.XXXXXX)
 log $ipv4_doh_list
 getipv4list $domain > $ipv4_doh_list
 log $(cat $ipv4_doh_list)
 
 log "* checking for DNS consistency"
-ipv4_overlap_list=$(comm -13 $ipv4_system_list $ipv4_doh_list)
+ipv4_overlap_list=$(comm -12 $ipv4_system_list $ipv4_doh_list)
 if [ "$ipv4_overlap_list" != "" ]; then
   output "MINIOONI_DNS_CONSISTENCY=1"
 fi
 
-log "* selecting IP address provided by system resolver"
-ipv4_system_candidate=$(cat $ipv4_system_list|sort -uR|head -n1)
-log $ipv4_system_candidate
-
-log "* selecting IP address provided by DoH resolver"
-ipv4_doh_candidate=$(cat $ipv4_doh_list|sort -uR|head -n1)
-log $ipv4_doh_candidate
-
-exit 0
-
-if [ "$ipv4_system_candidate" != "" ]; then
-  log "* using $ipv4_system_candidate as a server for $domain"
-  urlgetter -ODNSCache="$ipv4_system_candidate $domain" -ONoTLSVerify=true -i http://$domain
+log "* checking for IPs accessibility and validity for $domain"
+valid=0
+total=0
+for ip in $(cat $ipv4_system_list); do
+  log "* checking whether $ip is valid for $domain"
+  urlgetter -OTLSServerName=$domain -i tlshandshake://$ip:443
+  if [ "$(getfailure)" == "null" ]; then
+    valid=$(($valid + 1))
+  fi
+  total=$(($total + 1))
+done
+if [ $total -gt 0 ]; then
+  output "MINIOONI_DNS_REPLY_VALID=$(echo $valid/$total|bc -l)"
 fi
 
-log "* checking for HTTP consistency"
+log "* checking for HTTP body consistency"
 urlgetter -ONoFollowRedirects=true -i http://$domain
 body_vanilla=$(getbody)
 log $body_vanilla
