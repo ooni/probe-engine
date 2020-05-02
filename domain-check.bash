@@ -39,7 +39,8 @@ function run() {
 }
 
 function urlgetter() {
-  run ./miniooni -A session=$uuid $@ urlgetter
+  #run ./miniooni -A session=$uuid $@ urlgetter
+  run ./miniooni -n --no-bouncer -A session=$uuid $@ urlgetter
 }
 
 function getfailure() {
@@ -121,19 +122,19 @@ if [ "$ipv4_overlap_list" != "" ]; then
 fi
 
 log "* selecting IP address provided by system resolver"
-ipv4_system_candidate=$(comm -23 $ipv4_system_list $ipv4_doh_list|sort -uR|head -n1)
+ipv4_system_candidate=$(cat $ipv4_system_list|sort -uR|head -n1)
 log $ipv4_system_candidate
 
 log "* selecting IP address provided by DoH resolver"
-ipv4_doh_candidate=$(comm -1 $ipv4_system_list $ipv4_doh_list|sort -uR|head -n1)
+ipv4_doh_candidate=$(cat $ipv4_doh_list|sort -uR|head -n1)
 log $ipv4_doh_candidate
+
+exit 0
 
 if [ "$ipv4_system_candidate" != "" ]; then
   log "* using $ipv4_system_candidate as a server for $domain"
   urlgetter -ODNSCache="$ipv4_system_candidate $domain" -ONoTLSVerify=true -i http://$domain
 fi
-
-exit 0
 
 log "* checking for HTTP consistency"
 urlgetter -ONoFollowRedirects=true -i http://$domain
