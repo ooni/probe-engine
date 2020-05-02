@@ -72,10 +72,6 @@ func NewResolver(config Config) Resolver {
 		config.BaseResolver = resolver.SystemResolver{}
 	}
 	var r Resolver = config.BaseResolver
-	if config.BogonIsError {
-		r = resolver.BogonResolver{Resolver: r}
-	}
-	r = resolver.ErrorWrapperResolver{Resolver: r}
 	if config.CacheResolutions {
 		r = &resolver.CacheResolver{Resolver: r}
 	}
@@ -86,6 +82,10 @@ func NewResolver(config Config) Resolver {
 		}
 		r = cache
 	}
+	if config.BogonIsError {
+		r = resolver.BogonResolver{Resolver: r}
+	}
+	r = resolver.ErrorWrapperResolver{Resolver: r}
 	if config.Logger != nil {
 		r = resolver.LoggingResolver{Logger: config.Logger, Resolver: r}
 	}
