@@ -289,7 +289,7 @@ func TestConfigurerNewConfigurationDNSCacheInvalidString(t *testing.T) {
 	saver := new(trace.Saver)
 	configurer := urlgetter.Configurer{
 		Config: urlgetter.Config{
-			DNSCache: "a b c",
+			DNSCache: "a",
 		},
 		Logger: log.Log,
 		Saver:  saver,
@@ -300,26 +300,11 @@ func TestConfigurerNewConfigurationDNSCacheInvalidString(t *testing.T) {
 	}
 }
 
-func TestConfigurerNewConfigurationDNSCacheNotIP(t *testing.T) {
-	saver := new(trace.Saver)
-	configurer := urlgetter.Configurer{
-		Config: urlgetter.Config{
-			DNSCache: "a b",
-		},
-		Logger: log.Log,
-		Saver:  saver,
-	}
-	_, err := configurer.NewConfiguration()
-	if err == nil || !strings.HasSuffix(err.Error(), "invalid IP in DNSCache") {
-		t.Fatal("not the error we expected")
-	}
-}
-
 func TestConfigurerNewConfigurationDNSCacheNotDomain(t *testing.T) {
 	saver := new(trace.Saver)
 	configurer := urlgetter.Configurer{
 		Config: urlgetter.Config{
-			DNSCache: "127.0.0.1 b",
+			DNSCache: "b b",
 		},
 		Logger: log.Log,
 		Saver:  saver,
@@ -330,11 +315,26 @@ func TestConfigurerNewConfigurationDNSCacheNotDomain(t *testing.T) {
 	}
 }
 
+func TestConfigurerNewConfigurationDNSCacheNotIP(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			DNSCache: "x.org b",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	_, err := configurer.NewConfiguration()
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid IP in DNSCache") {
+		t.Fatal("not the error we expected")
+	}
+}
+
 func TestConfigurerNewConfigurationDNSCacheGood(t *testing.T) {
 	saver := new(trace.Saver)
 	configurer := urlgetter.Configurer{
 		Config: urlgetter.Config{
-			DNSCache: "127.0.0.1 google.com",
+			DNSCache: "dns.google.com 8.8.8.8 8.8.4.4",
 		},
 		Logger: log.Log,
 		Saver:  saver,
@@ -346,10 +346,13 @@ func TestConfigurerNewConfigurationDNSCacheGood(t *testing.T) {
 	if len(configuration.HTTPConfig.DNSCache) != 1 {
 		t.Fatal("invalid number of entries in DNSCache")
 	}
-	if len(configuration.HTTPConfig.DNSCache["google.com"]) != 1 {
+	if len(configuration.HTTPConfig.DNSCache["dns.google.com"]) != 2 {
 		t.Fatal("invalid number of IPs saved in DNSCache")
 	}
-	if configuration.HTTPConfig.DNSCache["google.com"][0] != "127.0.0.1" {
+	if configuration.HTTPConfig.DNSCache["dns.google.com"][0] != "8.8.8.8" {
+		t.Fatal("invalid IPs saved in DNSCache")
+	}
+	if configuration.HTTPConfig.DNSCache["dns.google.com"][1] != "8.8.4.4" {
 		t.Fatal("invalid IPs saved in DNSCache")
 	}
 }
