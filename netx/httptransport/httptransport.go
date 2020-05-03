@@ -92,6 +92,7 @@ func NewResolver(config Config) Resolver {
 	if config.ResolveSaver != nil {
 		r = resolver.SaverResolver{Resolver: r, Saver: config.ResolveSaver}
 	}
+	r = resolver.AddressResolver{Resolver: r}
 	return r
 }
 
