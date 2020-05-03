@@ -31,6 +31,7 @@ type Config struct {
 type TestKeys struct {
 	Agent         string                   `json:"agent"`
 	BootstrapTime float64                  `json:"bootstrap_time,omitempty"`
+	DNSCache      []string                 `json:"dns_cache,omitempty"`
 	Failure       *string                  `json:"failure"`
 	NetworkEvents []archival.NetworkEvent  `json:"network_events"`
 	Queries       []archival.DNSQueryEntry `json:"queries"`
@@ -70,6 +71,7 @@ func (m measurer) Run(
 		Target:  string(measurement.Input),
 	}
 	tk, err := g.Get(ctx)
+	tk.DNSCache = []string{m.Config.DNSCache}
 	measurement.TestKeys = tk
 	return err
 }
