@@ -56,18 +56,22 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	// fill DNS cache
 	if c.Config.DNSCache != "" {
 		entry := strings.Split(c.Config.DNSCache, " ")
-		if len(entry) != 2 {
+		if len(entry) < 2 {
 			return configuration, errors.New("invalid DNSCache string")
 		}
-		if net.ParseIP(entry[0]) == nil {
-			return configuration, errors.New("invalid IP in DNSCache")
-		}
 		domainregex := regexp.MustCompile(`^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$`)
-		if !domainregex.MatchString(entry[1]) {
+		if !domainregex.MatchString(entry[0]) {
 			return configuration, errors.New("invalid domain in DNSCache")
 		}
+		var addresses []string
+		for i := 1; i < len(entry); i++ {
+			if net.ParseIP(entry[i]) == nil {
+				return configuration, errors.New("invalid IP in DNSCache")
+			}
+			addresses = append(addresses, entry[i])
+		}
 		configuration.HTTPConfig.DNSCache = map[string][]string{
-			entry[1]: {entry[0]},
+			entry[0]: addresses,
 		}
 	}
 	// configure the resolver
