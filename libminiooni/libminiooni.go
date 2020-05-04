@@ -22,19 +22,20 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
-type options struct {
-	annotations  []string
-	bouncerURL   string
-	collectorURL string
-	inputs       []string
-	extraOptions []string
-	noBouncer    bool
-	noGeoIP      bool
-	noJSON       bool
-	noCollector  bool
-	proxy        string
-	reportfile   string
-	verbose      bool
+// Options contains the options you can set from the CLI.
+type Options struct {
+	Annotations  []string
+	BouncerURL   string
+	CollectorURL string
+	Inputs       []string
+	ExtraOptions []string
+	NoBouncer    bool
+	NoGeoIP      bool
+	NoJSON       bool
+	NoCollector  bool
+	Proxy        string
+	ReportFile   string
+	Verbose      bool
 }
 
 const (
@@ -43,51 +44,51 @@ const (
 )
 
 var (
-	globalOptions options
+	globalOptions Options
 	startTime     = time.Now()
 )
 
 func init() {
 	getopt.FlagLong(
-		&globalOptions.annotations, "annotation", 'A', "Add annotaton", "KEY=VALUE",
+		&globalOptions.Annotations, "annotation", 'A', "Add annotaton", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.bouncerURL, "bouncer", 'b', "Set bouncer base URL", "URL",
+		&globalOptions.BouncerURL, "bouncer", 'b', "Set bouncer base URL", "URL",
 	)
 	getopt.FlagLong(
-		&globalOptions.collectorURL, "collector", 'c',
+		&globalOptions.CollectorURL, "collector", 'c',
 		"Set collector base URL", "URL",
 	)
 	getopt.FlagLong(
-		&globalOptions.inputs, "input", 'i',
+		&globalOptions.Inputs, "input", 'i',
 		"Add test-dependent input to the test input", "INPUT",
 	)
 	getopt.FlagLong(
-		&globalOptions.extraOptions, "option", 'O',
+		&globalOptions.ExtraOptions, "option", 'O',
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.noBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
+		&globalOptions.NoBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
 	)
 	getopt.FlagLong(
-		&globalOptions.noGeoIP, "no-geoip", 'g',
+		&globalOptions.NoGeoIP, "no-geoip", 'g',
 		"Disable GeoIP lookup (not implemented!)",
 	)
 	getopt.FlagLong(
-		&globalOptions.noJSON, "no-json", 'N', "Disable writing to disk",
+		&globalOptions.NoJSON, "no-json", 'N', "Disable writing to disk",
 	)
 	getopt.FlagLong(
-		&globalOptions.noCollector, "no-collector", 'n', "Don't use a collector",
+		&globalOptions.NoCollector, "no-collector", 'n', "Don't use a collector",
 	)
 	getopt.FlagLong(
-		&globalOptions.proxy, "proxy", 'P', "Set the proxy URL", "URL",
+		&globalOptions.Proxy, "proxy", 'P', "Set the proxy URL", "URL",
 	)
 	getopt.FlagLong(
-		&globalOptions.reportfile, "reportfile", 'o',
+		&globalOptions.ReportFile, "reportfile", 'o',
 		"Set the report file path", "PATH",
 	)
 	getopt.FlagLong(
-		&globalOptions.verbose, "verbose", 'v', "Increase verbosity",
+		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
 	)
 }
 
@@ -189,16 +190,16 @@ func gethomedir() string {
 //
 // This function will panic in case of a fatal error. It is up to you that
 // integrate this function to either handle the panic of ignore it.
-func MainWithConfiguration(experimentName string, currentOptions options) {
-	extraOptions := mustMakeMap(currentOptions.extraOptions)
-	annotations := mustMakeMap(currentOptions.annotations)
+func MainWithConfiguration(experimentName string, currentOptions Options) {
+	extraOptions := mustMakeMap(currentOptions.ExtraOptions)
+	annotations := mustMakeMap(currentOptions.Annotations)
 
 	logger := &log.Logger{Level: log.InfoLevel, Handler: &logHandler{Writer: os.Stderr}}
-	if currentOptions.verbose {
+	if currentOptions.Verbose {
 		logger.Level = log.DebugLevel
 	}
-	if currentOptions.reportfile == "" {
-		currentOptions.reportfile = "report.jsonl"
+	if currentOptions.ReportFile == "" {
+		currentOptions.ReportFile = "report.jsonl"
 	}
 	log.Log = logger
 
@@ -214,8 +215,8 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 	log.Debugf("miniooni temporary directory: %s", tempDir)
 
 	var proxyURL *url.URL
-	if currentOptions.proxy != "" {
-		proxyURL = mustParseURL(currentOptions.proxy)
+	if currentOptions.Proxy != "" {
+		proxyURL = mustParseURL(currentOptions.Proxy)
 	}
 
 	kvstore2dir := filepath.Join(miniooniDir, "kvstore2")
@@ -240,24 +241,24 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 		)
 	}()
 
-	if currentOptions.bouncerURL != "" {
-		sess.AddAvailableHTTPSBouncer(currentOptions.bouncerURL)
+	if currentOptions.BouncerURL != "" {
+		sess.AddAvailableHTTPSBouncer(currentOptions.BouncerURL)
 	}
-	if currentOptions.collectorURL != "" {
+	if currentOptions.CollectorURL != "" {
 		// Implementation note: setting the collector before doing the lookup
 		// is totally fine because it's a maybe lookup, meaning that any bit
 		// of information already available will not be looked up again.
-		sess.AddAvailableHTTPSCollector(currentOptions.collectorURL)
+		sess.AddAvailableHTTPSCollector(currentOptions.CollectorURL)
 	}
 
-	if !currentOptions.noBouncer {
+	if !currentOptions.NoBouncer {
 		log.Info("Looking up OONI backends; please be patient...")
 		err := sess.MaybeLookupBackends()
 		fatalOnError(err, "cannot lookup OONI backends")
 	}
 	// See https://github.com/ooni/probe-engine/issues/297
 	fatalIfFalse(
-		currentOptions.noGeoIP == false,
+		currentOptions.NoGeoIP == false,
 		"Sorry, the -g option is not implemented.",
 	)
 	log.Info("Looking up your location; please be patient...")
@@ -273,21 +274,21 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
 	if builder.NeedsInput() {
-		if len(currentOptions.inputs) <= 0 {
+		if len(currentOptions.Inputs) <= 0 {
 			log.Info("Fetching test lists")
 			list, err := sess.QueryTestListsURLs(&engine.TestListsURLsConfig{
 				Limit: 16,
 			})
 			fatalOnError(err, "cannot fetch test lists")
 			for _, entry := range list.Result {
-				currentOptions.inputs = append(currentOptions.inputs, entry.URL)
+				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
 			}
 		}
-	} else if len(currentOptions.inputs) != 0 {
+	} else if len(currentOptions.Inputs) != 0 {
 		fatalWithString("this experiment does not expect any input")
 	} else {
 		// Tests that do not expect input internally require an empty input to run
-		currentOptions.inputs = append(currentOptions.inputs, "")
+		currentOptions.Inputs = append(currentOptions.Inputs, "")
 	}
 	for key, value := range extraOptions {
 		if value == "true" || value == "false" {
@@ -306,7 +307,7 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 		)
 	}()
 
-	if !currentOptions.noCollector {
+	if !currentOptions.NoCollector {
 		log.Info("Opening report; please be patient...")
 		err := experiment.OpenReport()
 		fatalOnError(err, "cannot open report")
@@ -314,9 +315,9 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 		log.Infof("Report ID: %s", experiment.ReportID())
 	}
 
-	inputCount := len(currentOptions.inputs)
+	inputCount := len(currentOptions.Inputs)
 	inputCounter := 0
-	for _, input := range currentOptions.inputs {
+	for _, input := range currentOptions.Inputs {
 		inputCounter++
 		if input != "" {
 			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
@@ -324,16 +325,16 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
-		if !currentOptions.noCollector {
+		if !currentOptions.NoCollector {
 			log.Infof("submitting measurement to OONI collector; please be patient...")
 			err := experiment.SubmitAndUpdateMeasurement(measurement)
 			warnOnError(err, "submitting measurement failed")
 		}
-		if !currentOptions.noJSON {
+		if !currentOptions.NoJSON {
 			// Note: must be after submission because submission modifies
 			// the measurement to include the report ID.
 			log.Infof("saving measurement to disk")
-			err := experiment.SaveMeasurement(measurement, currentOptions.reportfile)
+			err := experiment.SaveMeasurement(measurement, currentOptions.ReportFile)
 			warnOnError(err, "saving measurement failed")
 		}
 	}
