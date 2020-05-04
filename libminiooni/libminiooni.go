@@ -98,13 +98,23 @@ func split(s string) (string, string, error) {
 	return v[0], v[1], nil
 }
 
+func fatalOnError(err error, msg string) {
+	if err != nil {
+		log.WithError(err).Fatal(msg)
+	}
+}
+
+func warnOnError(err error, msg string) {
+	if err != nil {
+		log.WithError(err).Warn(msg)
+	}
+}
+
 func mustMakeMap(input []string) (output map[string]string) {
 	output = make(map[string]string)
 	for _, opt := range input {
 		key, value, err := split(opt)
-		if err != nil {
-			log.WithError(err).Fatal("cannot split key-value pair")
-		}
+		fatalOnError(err, "cannot split key-value pair")
 		output[key] = value
 	}
 	return
@@ -112,9 +122,7 @@ func mustMakeMap(input []string) (output map[string]string) {
 
 func mustParseURL(URL string) *url.URL {
 	rv, err := url.Parse(URL)
-	if err != nil {
-		log.WithError(err).Fatal("cannot parse URL")
-	}
+	fatalOnError(err, "cannot parse URL")
 	return rv
 }
 
@@ -162,10 +170,7 @@ func Main() {
 	extraOptions := mustMakeMap(globalOptions.extraOptions)
 	annotations := mustMakeMap(globalOptions.annotations)
 
-	logger := &log.Logger{
-		Level:   log.InfoLevel,
-		Handler: &logHandler{Writer: os.Stderr},
-	}
+	logger := &log.Logger{Level: log.InfoLevel, Handler: &logHandler{Writer: os.Stderr}}
 	if globalOptions.verbose {
 		logger.Level = log.DebugLevel
 	}
@@ -180,14 +185,11 @@ func Main() {
 	}
 	miniooniDir := path.Join(homeDir, ".miniooni")
 	assetsDir := path.Join(miniooniDir, "assets")
-	if err := os.MkdirAll(assetsDir, 0700); err != nil {
-		log.WithError(err).Fatal("cannot create assets directory")
-	}
+	err := os.MkdirAll(assetsDir, 0700)
+	fatalOnError(err, "cannot create assets directory")
 	log.Infof("miniooni state directory: %s", miniooniDir)
 	tempDir, err := ioutil.TempDir("", "miniooni")
-	if err != nil {
-		log.WithError(err).Fatal("cannot get a temporary directory")
-	}
+	fatalOnError(err, "cannot get a temporary directory")
 	log.Debugf("miniooni temporary directory: %s", tempDir)
 
 	var proxyURL *url.URL
@@ -197,9 +199,7 @@ func Main() {
 
 	kvstore2dir := filepath.Join(miniooniDir, "kvstore2")
 	kvstore, err := engine.NewFileSystemKVStore(kvstore2dir)
-	if err != nil {
-		log.WithError(err).Fatal("cannot create kvstore2 directory")
-	}
+	fatalOnError(err, "cannot create kvstore2 directory")
 
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir:       assetsDir,
@@ -210,9 +210,7 @@ func Main() {
 		SoftwareVersion: softwareVersion,
 		TempDir:         tempDir,
 	})
-	if err != nil {
-		log.WithError(err).Fatal("cannot create measurement session")
-	}
+	fatalOnError(err, "cannot create measurement session")
 	defer func() {
 		sess.Close()
 		log.Infof("whole session: recv %s, sent %s",
@@ -233,43 +231,31 @@ func Main() {
 
 	if !globalOptions.noBouncer {
 		log.Info("Looking up OONI backends; please be patient...")
-		if err := sess.MaybeLookupBackends(); err != nil {
-			log.WithError(err).Fatal("cannot lookup OONI backends")
-		}
+		err := sess.MaybeLookupBackends()
+		fatalOnError(err, "cannot lookup OONI backends")
 	}
 	if !globalOptions.noGeoIP {
 		log.Info("Looking up your location; please be patient...")
-		if err := sess.MaybeLookupLocation(); err != nil {
-			log.WithError(err).Warn("cannot lookup your location")
-		} else {
-			log.Infof("- IP: %s", sess.ProbeIP())
-			log.Infof("- country: %s", sess.ProbeCC())
-			log.Infof(
-				"- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString(),
-			)
-			log.Infof("- resolver's IP: %s", sess.ResolverIP())
-			log.Infof(
-				"- resolver's network: %s (%s)",
-				sess.ResolverNetworkName(),
-				sess.ResolverASNString(),
-			)
-		}
+		err := sess.MaybeLookupLocation()
+		warnOnError(err, "cannot lookup your location")
+		log.Infof("- IP: %s", sess.ProbeIP())
+		log.Infof("- country: %s", sess.ProbeCC())
+		log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
+		log.Infof("- resolver's IP: %s", sess.ResolverIP())
+		log.Infof("- resolver's network: %s (%s)", sess.ResolverNetworkName(),
+			sess.ResolverASNString())
 	}
 
 	name := getopt.Args()[0]
 	builder, err := sess.NewExperimentBuilder(name)
-	if err != nil {
-		log.WithError(err).Fatal("cannot create experiment builder")
-	}
+	fatalOnError(err, "cannot create experiment builder")
 	if builder.NeedsInput() {
 		if len(globalOptions.inputs) <= 0 {
 			log.Info("Fetching test lists")
 			list, err := sess.QueryTestListsURLs(&engine.TestListsURLsConfig{
 				Limit: 16,
 			})
-			if err != nil {
-				log.WithError(err).Fatal("cannot fetch test lists")
-			}
+			fatalOnError(err, "cannot fetch test lists")
 			for _, entry := range list.Result {
 				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
 			}
@@ -283,14 +269,10 @@ func Main() {
 	for key, value := range extraOptions {
 		if value == "true" || value == "false" {
 			err := builder.SetOptionBool(key, value == "true")
-			if err != nil {
-				log.WithError(err).Fatal("cannot set boolean option")
-			}
+			fatalOnError(err, "cannot set boolean option")
 		} else {
 			err := builder.SetOptionString(key, value)
-			if err != nil {
-				log.WithError(err).Fatal("cannot set string option")
-			}
+			fatalOnError(err, "cannot set string option")
 		}
 	}
 	experiment := builder.NewExperiment()
@@ -303,9 +285,8 @@ func Main() {
 
 	if !globalOptions.noCollector {
 		log.Info("Opening report; please be patient...")
-		if err := experiment.OpenReport(); err != nil {
-			log.WithError(err).Fatal("cannot open report")
-		}
+		err := experiment.OpenReport()
+		fatalOnError(err, "cannot open report")
 		defer experiment.CloseReport()
 		log.Infof("Report ID: %s", experiment.ReportID())
 	}
@@ -318,30 +299,19 @@ func Main() {
 			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
 		}
 		measurement, err := experiment.Measure(input)
-		if err != nil {
-			log.WithError(err).Warn("measurement failed")
-			// fallthrough and try to submit what we have anyway. Even if it
-			// has failed badly, we'd rather see it.
-		}
+		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
 		if !globalOptions.noCollector {
 			log.Infof("submitting measurement to OONI collector; please be patient...")
-			if err := experiment.SubmitAndUpdateMeasurement(measurement); err != nil {
-				log.WithError(err).Warn("submitting measurement failed")
-				// fallthrough and save to disk what we have. Not saving is
-				// worst because it means we cannot eventually resubmit.
-			}
+			err := experiment.SubmitAndUpdateMeasurement(measurement)
+			warnOnError(err, "submitting measurement failed")
 		}
 		if !globalOptions.noJSON {
 			// Note: must be after submission because submission modifies
 			// the measurement to include the report ID.
 			log.Infof("saving measurement to disk")
-			if err := experiment.SaveMeasurement(
-				measurement, globalOptions.reportfile,
-			); err != nil {
-				log.WithError(err).Warn("saving measurement failed")
-				// fallthrough because we're at the bottom of the loop
-			}
+			err := experiment.SaveMeasurement(measurement, globalOptions.reportfile)
+			warnOnError(err, "saving measurement failed")
 		}
 	}
 }
