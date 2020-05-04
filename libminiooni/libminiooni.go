@@ -131,9 +131,7 @@ type logHandler struct {
 }
 
 func (h *logHandler) HandleLog(e *log.Entry) (err error) {
-	s := fmt.Sprintf("[%14.6f] <%s> %s",
-		time.Since(startTime).Seconds(),
-		e.Level, e.Message)
+	s := fmt.Sprintf("[%14.6f] <%s> %s", time.Since(startTime).Seconds(), e.Level, e.Message)
 	if len(e.Fields) > 0 {
 		s += fmt.Sprintf(": %+v", e.Fields)
 	}
