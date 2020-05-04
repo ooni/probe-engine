@@ -19,6 +19,7 @@ import (
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/internal/humanizex"
+	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
 )
 
@@ -40,7 +41,7 @@ type Options struct {
 
 const (
 	softwareName    = "miniooni"
-	softwareVersion = "0.1.0-dev"
+	softwareVersion = version.Version
 )
 
 var (
