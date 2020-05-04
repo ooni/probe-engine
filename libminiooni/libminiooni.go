@@ -110,6 +110,12 @@ func warnOnError(err error, msg string) {
 	}
 }
 
+func fatalIfFalse(cond bool, msg string) {
+	if !cond {
+		log.Fatal(msg)
+	}
+}
+
 func mustMakeMap(input []string) (output map[string]string) {
 	output = make(map[string]string)
 	for _, opt := range input {
@@ -162,9 +168,7 @@ func gethomedir() string {
 // Main is the main function of miniooni
 func Main() {
 	getopt.Parse()
-	if len(getopt.Args()) != 1 {
-		log.Fatal("You must specify the name of the experiment to run")
-	}
+	fatalIfFalse(len(getopt.Args()) == 1, "Missing experiment name")
 	extraOptions := mustMakeMap(globalOptions.extraOptions)
 	annotations := mustMakeMap(globalOptions.annotations)
 
@@ -178,9 +182,7 @@ func Main() {
 	log.Log = logger
 
 	homeDir := gethomedir()
-	if homeDir == "" {
-		log.Fatal("home directory is empty")
-	}
+	fatalIfFalse(homeDir != "", "home directory is empty")
 	miniooniDir := path.Join(homeDir, ".miniooni")
 	assetsDir := path.Join(miniooniDir, "assets")
 	err := os.MkdirAll(assetsDir, 0700)
