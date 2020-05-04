@@ -404,8 +404,9 @@ func TestNewTLSHandshakesList(t *testing.T) {
 				}, {
 					Raw: []byte("abad1dea"),
 				}},
-				TLSVersion: "TLSv1.3",
-				Time:       begin.Add(55 * time.Millisecond),
+				TLSServerName: "x.org",
+				TLSVersion:    "TLSv1.3",
+				Time:          begin.Add(55 * time.Millisecond),
 			}},
 		},
 		want: []archival.TLSHandshake{{
@@ -418,6 +419,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 			}, {
 				Value: "abad1dea",
 			}},
+			ServerName: "x.org",
 			T:          0.055,
 			TLSVersion: "TLSv1.3",
 		}},
