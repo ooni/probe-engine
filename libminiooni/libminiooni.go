@@ -91,7 +91,23 @@ func init() {
 	)
 }
 
-// Main is the main function of miniooni
+func fatalWithString(msg string) {
+	panic(msg)
+}
+
+func fatalIfFalse(cond bool, msg string) {
+	if !cond {
+		log.Warn(msg)
+		panic(msg)
+	}
+}
+
+// Main is the main function of miniooni. This function parses the command line
+// options and uses a global state. Use MainWithConfiguration if you want to avoid
+// using any global state and relying on command line options.
+//
+// This function will panic in case of a fatal error. It is up to you that
+// integrate this function to either handle the panic of ignore it.
 func Main() {
 	getopt.Parse()
 	fatalIfFalse(len(getopt.Args()) == 1, "Missing experiment name")
@@ -108,19 +124,14 @@ func split(s string) (string, string, error) {
 
 func fatalOnError(err error, msg string) {
 	if err != nil {
-		log.WithError(err).Fatal(msg)
+		log.WithError(err).Warn(msg)
+		panic(msg)
 	}
 }
 
 func warnOnError(err error, msg string) {
 	if err != nil {
 		log.WithError(err).Warn(msg)
-	}
-}
-
-func fatalIfFalse(cond bool, msg string) {
-	if !cond {
-		log.Fatal(msg)
 	}
 }
 
@@ -175,6 +186,9 @@ func gethomedir() string {
 
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
+//
+// This function will panic in case of a fatal error. It is up to you that
+// integrate this function to either handle the panic of ignore it.
 func MainWithConfiguration(experimentName string, currentOptions options) {
 	extraOptions := mustMakeMap(currentOptions.extraOptions)
 	annotations := mustMakeMap(currentOptions.annotations)
@@ -270,7 +284,7 @@ func MainWithConfiguration(experimentName string, currentOptions options) {
 			}
 		}
 	} else if len(currentOptions.inputs) != 0 {
-		log.Fatal("this experiment does not expect any input")
+		fatalWithString("this experiment does not expect any input")
 	} else {
 		// Tests that do not expect input internally require an empty input to run
 		currentOptions.inputs = append(currentOptions.inputs, "")
