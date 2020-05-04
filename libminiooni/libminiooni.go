@@ -91,6 +91,13 @@ func init() {
 	)
 }
 
+// Main is the main function of miniooni
+func Main() {
+	getopt.Parse()
+	fatalIfFalse(len(getopt.Args()) == 1, "Missing experiment name")
+	MainWithConfiguration(getopt.Arg(0), globalOptions)
+}
+
 func split(s string) (string, string, error) {
 	v := strings.SplitN(s, "=", 2)
 	if len(v) != 2 {
@@ -166,19 +173,18 @@ func gethomedir() string {
 	return os.Getenv("HOME")
 }
 
-// Main is the main function of miniooni
-func Main() {
-	getopt.Parse()
-	fatalIfFalse(len(getopt.Args()) == 1, "Missing experiment name")
-	extraOptions := mustMakeMap(globalOptions.extraOptions)
-	annotations := mustMakeMap(globalOptions.annotations)
+// MainWithConfiguration is the miniooni main with a specific configuration
+// represented by the experiment name and the current options.
+func MainWithConfiguration(experimentName string, currentOptions options) {
+	extraOptions := mustMakeMap(currentOptions.extraOptions)
+	annotations := mustMakeMap(currentOptions.annotations)
 
 	logger := &log.Logger{Level: log.InfoLevel, Handler: &logHandler{Writer: os.Stderr}}
-	if globalOptions.verbose {
+	if currentOptions.verbose {
 		logger.Level = log.DebugLevel
 	}
-	if globalOptions.reportfile == "" {
-		globalOptions.reportfile = "report.jsonl"
+	if currentOptions.reportfile == "" {
+		currentOptions.reportfile = "report.jsonl"
 	}
 	log.Log = logger
 
@@ -194,8 +200,8 @@ func Main() {
 	log.Debugf("miniooni temporary directory: %s", tempDir)
 
 	var proxyURL *url.URL
-	if globalOptions.proxy != "" {
-		proxyURL = mustParseURL(globalOptions.proxy)
+	if currentOptions.proxy != "" {
+		proxyURL = mustParseURL(currentOptions.proxy)
 	}
 
 	kvstore2dir := filepath.Join(miniooniDir, "kvstore2")
@@ -220,24 +226,24 @@ func Main() {
 		)
 	}()
 
-	if globalOptions.bouncerURL != "" {
-		sess.AddAvailableHTTPSBouncer(globalOptions.bouncerURL)
+	if currentOptions.bouncerURL != "" {
+		sess.AddAvailableHTTPSBouncer(currentOptions.bouncerURL)
 	}
-	if globalOptions.collectorURL != "" {
+	if currentOptions.collectorURL != "" {
 		// Implementation note: setting the collector before doing the lookup
 		// is totally fine because it's a maybe lookup, meaning that any bit
 		// of information already available will not be looked up again.
-		sess.AddAvailableHTTPSCollector(globalOptions.collectorURL)
+		sess.AddAvailableHTTPSCollector(currentOptions.collectorURL)
 	}
 
-	if !globalOptions.noBouncer {
+	if !currentOptions.noBouncer {
 		log.Info("Looking up OONI backends; please be patient...")
 		err := sess.MaybeLookupBackends()
 		fatalOnError(err, "cannot lookup OONI backends")
 	}
 	// See https://github.com/ooni/probe-engine/issues/297
 	fatalIfFalse(
-		globalOptions.noGeoIP == false,
+		currentOptions.noGeoIP == false,
 		"Sorry, the -g option is not implemented.",
 	)
 	log.Info("Looking up your location; please be patient...")
@@ -250,25 +256,24 @@ func Main() {
 	log.Infof("- resolver's network: %s (%s)", sess.ResolverNetworkName(),
 		sess.ResolverASNString())
 
-	name := getopt.Args()[0]
-	builder, err := sess.NewExperimentBuilder(name)
+	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
 	if builder.NeedsInput() {
-		if len(globalOptions.inputs) <= 0 {
+		if len(currentOptions.inputs) <= 0 {
 			log.Info("Fetching test lists")
 			list, err := sess.QueryTestListsURLs(&engine.TestListsURLsConfig{
 				Limit: 16,
 			})
 			fatalOnError(err, "cannot fetch test lists")
 			for _, entry := range list.Result {
-				globalOptions.inputs = append(globalOptions.inputs, entry.URL)
+				currentOptions.inputs = append(currentOptions.inputs, entry.URL)
 			}
 		}
-	} else if len(globalOptions.inputs) != 0 {
+	} else if len(currentOptions.inputs) != 0 {
 		log.Fatal("this experiment does not expect any input")
 	} else {
 		// Tests that do not expect input internally require an empty input to run
-		globalOptions.inputs = append(globalOptions.inputs, "")
+		currentOptions.inputs = append(currentOptions.inputs, "")
 	}
 	for key, value := range extraOptions {
 		if value == "true" || value == "false" {
@@ -287,7 +292,7 @@ func Main() {
 		)
 	}()
 
-	if !globalOptions.noCollector {
+	if !currentOptions.noCollector {
 		log.Info("Opening report; please be patient...")
 		err := experiment.OpenReport()
 		fatalOnError(err, "cannot open report")
@@ -295,9 +300,9 @@ func Main() {
 		log.Infof("Report ID: %s", experiment.ReportID())
 	}
 
-	inputCount := len(globalOptions.inputs)
+	inputCount := len(currentOptions.inputs)
 	inputCounter := 0
-	for _, input := range globalOptions.inputs {
+	for _, input := range currentOptions.inputs {
 		inputCounter++
 		if input != "" {
 			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
@@ -305,16 +310,16 @@ func Main() {
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
-		if !globalOptions.noCollector {
+		if !currentOptions.noCollector {
 			log.Infof("submitting measurement to OONI collector; please be patient...")
 			err := experiment.SubmitAndUpdateMeasurement(measurement)
 			warnOnError(err, "submitting measurement failed")
 		}
-		if !globalOptions.noJSON {
+		if !currentOptions.noJSON {
 			// Note: must be after submission because submission modifies
 			// the measurement to include the report ID.
 			log.Infof("saving measurement to disk")
-			err := experiment.SaveMeasurement(measurement, globalOptions.reportfile)
+			err := experiment.SaveMeasurement(measurement, currentOptions.reportfile)
 			warnOnError(err, "saving measurement failed")
 		}
 	}
