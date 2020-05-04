@@ -70,7 +70,8 @@ func init() {
 		&globalOptions.noBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
 	)
 	getopt.FlagLong(
-		&globalOptions.noGeoIP, "no-geoip", 'g', "Disable GeoIP lookup",
+		&globalOptions.noGeoIP, "no-geoip", 'g',
+		"Disable GeoIP lookup (not implemented!)",
 	)
 	getopt.FlagLong(
 		&globalOptions.noJSON, "no-json", 'N', "Disable writing to disk",
@@ -234,17 +235,20 @@ func Main() {
 		err := sess.MaybeLookupBackends()
 		fatalOnError(err, "cannot lookup OONI backends")
 	}
-	if !globalOptions.noGeoIP {
-		log.Info("Looking up your location; please be patient...")
-		err := sess.MaybeLookupLocation()
-		warnOnError(err, "cannot lookup your location")
-		log.Infof("- IP: %s", sess.ProbeIP())
-		log.Infof("- country: %s", sess.ProbeCC())
-		log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
-		log.Infof("- resolver's IP: %s", sess.ResolverIP())
-		log.Infof("- resolver's network: %s (%s)", sess.ResolverNetworkName(),
-			sess.ResolverASNString())
-	}
+	// See https://github.com/ooni/probe-engine/issues/297
+	fatalIfFalse(
+		globalOptions.noGeoIP == false,
+		"Sorry, the -g option is not implemented.",
+	)
+	log.Info("Looking up your location; please be patient...")
+	err = sess.MaybeLookupLocation()
+	fatalOnError(err, "cannot lookup your location")
+	log.Infof("- IP: %s", sess.ProbeIP())
+	log.Infof("- country: %s", sess.ProbeCC())
+	log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
+	log.Infof("- resolver's IP: %s", sess.ResolverIP())
+	log.Infof("- resolver's network: %s (%s)", sess.ResolverNetworkName(),
+		sess.ResolverASNString())
 
 	name := getopt.Args()[0]
 	builder, err := sess.NewExperimentBuilder(name)
