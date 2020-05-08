@@ -8,6 +8,7 @@ assignees: bassosimone
 ---
 
 - [ ] Update dependencies
+- [ ] Update Host header used for measuring
 - [ ] Update version/version.go
 - [ ] Update assets
 - [ ] Tag a new version of ooni/probe-engine
