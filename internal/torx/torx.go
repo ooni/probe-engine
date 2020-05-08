@@ -104,12 +104,12 @@ func StartWithConfig(ctx context.Context, config StartConfig) (*Tunnel, error) {
 	}
 	if len(info) != 1 || info[0].Key != "net/listeners/socks" {
 		instance.Close()
-		return nil, fmt.Errorf("Unable to get socks proxy address")
+		return nil, fmt.Errorf("unable to get socks proxy address")
 	}
 	proxyAddress := info[0].Val
 	if strings.HasPrefix(proxyAddress, "unix:") {
 		instance.Close()
-		return nil, fmt.Errorf("Tor returned unsupported proxy")
+		return nil, fmt.Errorf("tor returned unsupported proxy")
 	}
 	return &Tunnel{
 		bootstrapTime: stop.Sub(start),
