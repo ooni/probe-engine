@@ -25,7 +25,7 @@ type Config struct {
 }
 
 // Start starts a new tunnel by name or returns an error. Note that if you
-// request this function the "" tunnel, you get back nil, nil.
+// pass to this function the "" tunnel, you get back nil, nil.
 func Start(ctx context.Context, config Config) (Tunnel, error) {
 	logger := config.Session.Logger()
 	switch config.Name {
