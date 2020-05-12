@@ -37,8 +37,8 @@ func TestUnitDiscoverCancelledContext(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if locateResult.FQDN != "" {
-		t.Fatal("not the fqdn we expected")
+	if locateResult.Hostname != "" {
+		t.Fatal("not the Machine we expected")
 	}
 }
 
@@ -62,7 +62,9 @@ func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
-	err := m.doDownload(ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys), "host.name")
+	err := m.doDownload(
+		ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys),
+		"ws://host.name")
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
 	}
@@ -77,7 +79,9 @@ func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
-	err := m.doUpload(ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys), "host.name")
+	err := m.doUpload(
+		ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys),
+		"ws://host.name")
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
 	}

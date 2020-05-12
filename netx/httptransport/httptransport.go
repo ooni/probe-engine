@@ -118,6 +118,7 @@ func NewDialer(config Config) Dialer {
 	if config.ContextByteCounting {
 		d = dialer.ByteCounterDialer{Dialer: d}
 	}
+	d = dialer.ShapingDialer{Dialer: d}
 	return d
 }
 

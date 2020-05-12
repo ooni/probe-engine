@@ -3,7 +3,6 @@ package ndt7
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,7 +16,7 @@ import (
 func TestDialDownloadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately halt
-	mgr := newDialManager("hostname.fake", nil, log.Log, "miniooni/0.1.0-dev")
+	mgr := newDialManager("wss://hostname.fake", nil, log.Log, "miniooni/0.1.0-dev")
 	conn, err := mgr.dialDownload(ctx)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
@@ -30,7 +29,7 @@ func TestDialDownloadWithCancelledContext(t *testing.T) {
 func TestDialUploadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately halt
-	mgr := newDialManager("hostname.fake", nil, log.Log, "miniooni/0.1.0-dev")
+	mgr := newDialManager("wss://hostname.fake", nil, log.Log, "miniooni/0.1.0-dev")
 	conn, err := mgr.dialUpload(ctx)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
@@ -53,13 +52,8 @@ func TestDialIncludesUserAgent(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		hostname, port, err := net.SplitHostPort(url.Host)
-		if err != nil {
-			t.Fatal(err)
-		}
-		mgr := newDialManager(hostname, nil, log.Log, "miniooni/0.1.0-dev")
-		mgr.port = port
-		mgr.scheme = "ws"
+		url.Scheme = "ws"
+		mgr := newDialManager(url.String(), nil, log.Log, "miniooni/0.1.0-dev")
 		conn, err := mgr.dialWithTestName(context.Background(), testName)
 		if !errors.Is(err, websocket.ErrBadHandshake) {
 			t.Fatal("not the error we expected")

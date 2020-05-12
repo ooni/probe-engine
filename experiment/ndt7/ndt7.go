@@ -10,7 +10,7 @@ import (
 
 	"github.com/m-lab/ndt7-client-go/spec"
 	"github.com/ooni/probe-engine/internal/humanizex"
-	"github.com/ooni/probe-engine/internal/mlablocate"
+	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
@@ -83,7 +83,8 @@ type measurer struct {
 	preUploadHook   func()
 }
 
-func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (mlablocate.Result, error) {
+func (m *measurer) discover(
+	ctx context.Context, sess model.ExperimentSession) (mlablocatev2.NDT7Result, error) {
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			Logger:   sess.Logger(),
@@ -91,8 +92,12 @@ func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
-	client := mlablocate.NewClient(httpClient, sess.Logger(), sess.UserAgent())
-	return client.Query(ctx, "ndt7")
+	client := mlablocatev2.NewClient(httpClient, sess.Logger(), sess.UserAgent())
+	out, err := client.QueryNDT7(ctx)
+	if err != nil {
+		return mlablocatev2.NDT7Result{}, err
+	}
+	return out[0], nil // same as with locate services v1
 }
 
 func (m *measurer) ExperimentName() string {
@@ -106,9 +111,9 @@ func (m *measurer) ExperimentVersion() string {
 func (m *measurer) doDownload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
-	hostname string,
+	URL string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(),
+	conn, err := newDialManager(URL, sess.ProxyURL(),
 		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
 		return err
@@ -173,9 +178,9 @@ func (m *measurer) doDownload(
 func (m *measurer) doUpload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
-	hostname string,
+	URL string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(),
+	conn, err := newDialManager(URL, sess.ProxyURL(),
 		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
 		return err
@@ -233,22 +238,22 @@ func (m *measurer) Run(
 		return err
 	}
 	tk.Server = ServerInfo{
-		Hostname: locateResult.FQDN,
+		Hostname: locateResult.Hostname,
 		Site:     locateResult.Site,
 	}
-	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", locateResult.FQDN))
+	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", locateResult.WSSDownloadURL))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
 	}
-	if err := m.doDownload(ctx, sess, callbacks, tk, locateResult.FQDN); err != nil {
+	if err := m.doDownload(ctx, sess, callbacks, tk, locateResult.WSSDownloadURL); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", locateResult.FQDN))
+	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", locateResult.WSSUploadURL))
 	if m.preUploadHook != nil {
 		m.preUploadHook()
 	}
-	if err := m.doUpload(ctx, sess, callbacks, tk, locateResult.FQDN); err != nil {
+	if err := m.doUpload(ctx, sess, callbacks, tk, locateResult.WSSUploadURL); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
