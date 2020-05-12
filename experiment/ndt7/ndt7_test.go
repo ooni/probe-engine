@@ -38,7 +38,7 @@ func TestUnitDiscoverCancelledContext(t *testing.T) {
 		t.Fatal("not the error we expected")
 	}
 	if locateResult.Hostname != "" {
-		t.Fatal("not the Machine we expected")
+		t.Fatal("not the Hostname we expected")
 	}
 }
 
