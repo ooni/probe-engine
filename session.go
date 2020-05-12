@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/bouncer"
@@ -18,6 +19,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
+	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
@@ -44,16 +46,16 @@ type Session struct {
 	availableTestHelpers map[string][]model.Service
 	byteCounter          *bytecounter.Counter
 	httpDefaultTransport httptransport.RoundTripper
-	httpNoProxyTransport httptransport.RoundTripper
 	kvStore              model.KeyValueStore
 	privacySettings      model.PrivacySettings
-	explicitProxy        bool
 	location             *model.LocationInfo
 	logger               model.Logger
+	proxyURL             *url.URL
 	queryBouncerCount    *atomicx.Int64
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
+	tunnel               *psiphonx.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -84,26 +86,18 @@ func NewSession(config SessionConfig) (*Session, error) {
 			IncludeCountry: true,
 			IncludeASN:     true,
 		},
-		explicitProxy:     config.ProxyURL != nil,
 		logger:            config.Logger,
+		proxyURL:          config.ProxyURL,
 		queryBouncerCount: atomicx.NewInt64(),
 		softwareName:      config.SoftwareName,
 		softwareVersion:   config.SoftwareVersion,
 		tempDir:           config.TempDir,
 	}
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
-		ByteCounter: sess.byteCounter,
-		Logger:      sess.logger,
-		Proxy: func(req *http.Request) (*url.URL, error) {
-			if config.ProxyURL != nil {
-				return config.ProxyURL, nil
-			}
-			return http.ProxyFromEnvironment(req)
-		},
-	})
-	sess.httpNoProxyTransport = httptransport.New(httptransport.Config{
-		ByteCounter: sess.byteCounter,
-		Logger:      sess.logger,
+		ByteCounter:  sess.byteCounter,
+		BogonIsError: true,
+		Logger:       sess.logger,
+		ProxyURL:     config.ProxyURL,
 	})
 	return sess, nil
 }
@@ -153,19 +147,13 @@ func (s *Session) CABundlePath() string {
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
-	s.httpNoProxyTransport.CloseIdleConnections()
+	s.tunnel.Stop() // safe if s.tunnel is nil
 	return nil
 }
 
 // CountryDatabasePath is like ASNDatabasePath but for the country DB path.
 func (s *Session) CountryDatabasePath() string {
 	return filepath.Join(s.assetsDir, resources.CountryDatabaseName)
-}
-
-// ExplicitProxy returns true if the user has explicitly set
-// a proxy (as opposed to using the HTTP_PROXY envvar).
-func (s *Session) ExplicitProxy() bool {
-	return s.explicitProxy
 }
 
 // GetTestHelpersByName returns the available test helpers that
@@ -193,6 +181,36 @@ func (s *Session) MaybeLookupLocation() error {
 // MaybeLookupBackends is a caching OONI backends lookup call.
 func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
+}
+
+// MaybeStartTunnel starts the requested tunnel. This function silently
+// succeeds if we're already using a tunnel (or proxy) or if the provided
+// tunnel name is the empty string (i.e. no tunnel). This function fails
+// if we don't know the requested tunnel, or if starting the tunnel actually
+// fails. We currently only know the "psiphon" tunnel. A side effect of
+// starting the tunnel is that we will correctly set the proxy URL. Note
+// that the tunnel will be active until session.Close is called.
+func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
+	switch name {
+	case "psiphon":
+	case "":
+		s.logger.Debugf("no tunnel has been requested")
+		return nil
+	default:
+		return errors.New("unsupported tunnel")
+	}
+	if s.proxyURL != nil {
+		s.logger.Debugf("not starting tunnel because we already have a proxy")
+		return nil
+	}
+	s.logger.Infof("starting %s tunnel; please be patient...", name)
+	tunnel, err := psiphonx.Start(ctx, s, psiphonx.Config{})
+	if err != nil {
+		return err
+	}
+	s.tunnel = tunnel
+	s.proxyURL = tunnel.SOCKS5ProxyURL()
+	return nil
 }
 
 // NewExperimentBuilder returns a new experiment builder
@@ -273,6 +291,11 @@ func (s *Session) ProbeIP() string {
 	return ip
 }
 
+// ProxyURL returns the Proxy URL, or nil if not set
+func (s *Session) ProxyURL() *url.URL {
+	return s.proxyURL
+}
+
 // ResolverASNString returns the resolver ASN as a string
 func (s *Session) ResolverASNString() string {
 	return fmt.Sprintf("AS%d", s.ResolverASN())
@@ -335,6 +358,12 @@ func (s *Session) TempDir() string {
 	return s.tempDir
 }
 
+// TunnelBootstrapTime returns the time required to bootstrap the tunnel
+// we're using, or zero if we're using no tunnel.
+func (s *Session) TunnelBootstrapTime() time.Duration {
+	return s.tunnel.BootstrapTime() // safe if s.tunnel is nil
+}
+
 // UserAgent constructs the user agent to be used in this session.
 func (s *Session) UserAgent() string {
 	return s.softwareName + "/" + s.softwareVersion
@@ -342,7 +371,7 @@ func (s *Session) UserAgent() string {
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	return (&resources.Client{
-		HTTPClient: s.DefaultHTTPClient(), // proxy is OK
+		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
 		UserAgent:  s.UserAgent(),
 		WorkDir:    s.assetsDir,
@@ -392,11 +421,9 @@ func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
-		HTTPClient: &http.Client{
-			Transport: s.httpNoProxyTransport, // No proxy to have the correct IP
-		},
-		Logger:    s.logger,
-		UserAgent: s.UserAgent(),
+		HTTPClient: s.DefaultHTTPClient(),
+		Logger:     s.logger,
+		UserAgent:  s.UserAgent(),
 	}).Do(ctx)
 }
 
@@ -439,8 +466,8 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 			asn         uint
 			org         string
 			cc          string
-			resolverASN uint
-			resolverIP  string
+			resolverASN uint   = model.DefaultResolverASN
+			resolverIP  string = model.DefaultResolverIP
 			resolverOrg string
 		)
 		err = s.fetchResourcesIdempotent(ctx)
@@ -451,12 +478,14 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 		runtimex.PanicOnError(err, "s.lookupASN #1 failed")
 		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
 		runtimex.PanicOnError(err, "s.lookupProbeCC failed")
-		resolverIP, err = s.lookupResolverIP(ctx)
-		runtimex.PanicOnError(err, "s.lookupResolverIP failed")
-		resolverASN, resolverOrg, err = s.lookupASN(
-			s.ASNDatabasePath(), resolverIP,
-		)
-		runtimex.PanicOnError(err, "s.lookupASN #2 failed")
+		if s.proxyURL == nil {
+			resolverIP, err = s.lookupResolverIP(ctx)
+			runtimex.PanicOnError(err, "s.lookupResolverIP failed")
+			resolverASN, resolverOrg, err = s.lookupASN(
+				s.ASNDatabasePath(), resolverIP,
+			)
+			runtimex.PanicOnError(err, "s.lookupASN #2 failed")
+		}
 		s.location = &model.LocationInfo{
 			ASN:                 asn,
 			CountryCode:         cc,
@@ -489,7 +518,7 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) 
 		}
 		err := query(&bouncer.Client{
 			BaseURL:    e.Address,
-			HTTPClient: s.DefaultHTTPClient(), // proxy is OK
+			HTTPClient: s.DefaultHTTPClient(),
 			Logger:     s.logger,
 			UserAgent:  s.UserAgent(),
 		})
@@ -500,3 +529,5 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) 
 	}
 	return errors.New("All available bouncers failed")
 }
+
+var _ model.ExperimentSession = &Session{}

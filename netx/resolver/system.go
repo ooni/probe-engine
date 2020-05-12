@@ -13,4 +13,14 @@ func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]stri
 	return net.DefaultResolver.LookupHost(ctx, hostname)
 }
 
+// Network implements Resolver.Network
+func (r SystemResolver) Network() string {
+	return "system"
+}
+
+// Address implements Resolver.Address
+func (r SystemResolver) Address() string {
+	return ""
+}
+
 var _ Resolver = SystemResolver{}

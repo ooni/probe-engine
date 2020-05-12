@@ -10,7 +10,7 @@ import (
 
 func TestUnitUserAgentWithDefault(t *testing.T) {
 	txp := httptransport.UserAgentTransport{
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{StatusCode: 200},
 		},
 	}
@@ -31,7 +31,7 @@ func TestUnitUserAgentWithDefault(t *testing.T) {
 
 func TestUnitUserAgentWithExplicitValue(t *testing.T) {
 	txp := httptransport.UserAgentTransport{
-		RoundTripper: httptransport.MockableTransport{
+		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{StatusCode: 200},
 		},
 	}

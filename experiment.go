@@ -19,12 +19,12 @@ import (
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
-	"github.com/ooni/probe-engine/experiment/ndt5"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
@@ -162,8 +162,6 @@ func canonicalizeExperimentName(name string) string {
 	switch name = strcase.ToSnake(name); name {
 	case "ndt_7":
 		name = "ndt" // since 2020-03-18, we use ndt7 to implement ndt by default
-	case "ndt_5":
-		name = "ndt5"
 	default:
 	}
 	return name
@@ -320,8 +318,7 @@ func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) 
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	ctx := dialer.WithExperimentByteCounter(context.Background(), e.byteCounter)
-	return e.report.SubmitMeasurement(ctx, measurement)
+	return e.report.SubmitMeasurement(context.Background(), measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
@@ -344,6 +341,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		ProbeIP:                   e.session.ProbeIP(),
 		ProbeASN:                  e.session.ProbeASNString(),
 		ProbeCC:                   e.session.ProbeCC(),
+		ProbeNetworkName:          e.session.ProbeNetworkName(),
 		ReportID:                  e.ReportID(),
 		ResolverASN:               e.session.ResolverASNString(),
 		ResolverIP:                e.session.ResolverIP(),
@@ -544,19 +542,6 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
-	"ndt5": func(session *Session) *ExperimentBuilder {
-		return &ExperimentBuilder{
-			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, ndt5.NewExperimentMeasurer(
-					*config.(*ndt5.Config),
-				))
-			},
-			config:        &ndt5.Config{},
-			interruptible: true,
-			needsInput:    false,
-		}
-	},
-
 	"ndt": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
@@ -619,6 +604,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:     &tor.Config{},
 			needsInput: false,
+		}
+	},
+
+	"urlgetter": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, urlgetter.NewExperimentMeasurer(
+					*config.(*urlgetter.Config),
+				))
+			},
+			config:     &urlgetter.Config{},
+			needsInput: true,
 		}
 	},
 

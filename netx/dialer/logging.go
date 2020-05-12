@@ -41,7 +41,7 @@ type LoggingTLSHandshaker struct {
 func (h LoggingTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
-	h.Logger.Debugf("tls {sni=%s netx=%+v}...", config.ServerName, config.NextProtos)
+	h.Logger.Debugf("tls {sni=%s next=%+v}...", config.ServerName, config.NextProtos)
 	start := time.Now()
 	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
 	stop := time.Now()

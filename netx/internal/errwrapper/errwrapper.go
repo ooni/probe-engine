@@ -101,7 +101,8 @@ func toFailureString(err error) string {
 		return modelx.FailureDNSNXDOMAINError
 	}
 
-	return fmt.Sprintf("unknown_failure: %s", s)
+	formatted := fmt.Sprintf("unknown_failure: %s", s)
+	return Scrub(formatted) // scrub IP addresses in the error
 }
 
 func toOperationString(err error, operation string) string {

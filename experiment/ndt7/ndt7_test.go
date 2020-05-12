@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.4.0" {
+	if measurer.ExperimentVersion() != "0.6.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -32,36 +33,11 @@ func TestUnitDiscoverCancelledContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
-	fqdn, err := m.discover(ctx, sess)
+	locateResult, err := m.discover(ctx, sess)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if fqdn != "" {
-		t.Fatal("not the fqdn we expected")
-	}
-}
-
-func TestUnitDiscoverWithExplicitProxy(t *testing.T) {
-	m := new(measurer)
-	expected := errors.New("expected error")
-	sess := &mockable.ExperimentSession{
-		MockableExplicitProxy: true,
-		MockableHTTPClient: &http.Client{
-			Transport: &verifyRequestTransport{
-				ExpectedError: expected,
-			},
-		},
-		MockableLogger:    log.Log,
-		MockableProbeIP:   "1.2.3.4",
-		MockableUserAgent: "miniooni/0.1.0-dev",
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // immediately cancel
-	fqdn, err := m.discover(ctx, sess)
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-	if fqdn != "" {
+	if locateResult.FQDN != "" {
 		t.Fatal("not the fqdn we expected")
 	}
 }
@@ -119,6 +95,42 @@ func TestUnitRunWithCancelledContext(t *testing.T) {
 	err := m.Run(ctx, sess, new(model.Measurement), handler.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
+	m := new(measurer)
+	expected := errors.New("mocked error")
+	sess := &mockable.ExperimentSession{
+		MockableHTTPClient:          http.DefaultClient,
+		MockableMaybeStartTunnelErr: expected,
+		MockableLogger:              log.Log,
+		MockableUserAgent:           "miniooni/0.1.0-dev",
+	}
+	measurement := new(model.Measurement)
+	err := m.Run(context.TODO(), sess, measurement, handler.NewPrinterCallbacks(log.Log))
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitRunWithProxyURL(t *testing.T) {
+	m := new(measurer)
+	sess := &mockable.ExperimentSession{
+		MockableHTTPClient: http.DefaultClient,
+		MockableLogger:     log.Log,
+		MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
+		MockableUserAgent:  "miniooni/0.1.0-dev",
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // immediately cancel
+	measurement := new(model.Measurement)
+	err := m.Run(ctx, sess, measurement, handler.NewPrinterCallbacks(log.Log))
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
+		t.Fatal("not the SOCKSProxy we expected")
 	}
 }
 

@@ -127,10 +127,25 @@ func NewResolver(network, address string) (modelx.DNSResolver, error) {
 	return newResolver(time.Now(), handlers.NoHandler, network, address)
 }
 
+type chainWrapperResolver struct {
+	modelx.DNSResolver
+}
+
+func (r chainWrapperResolver) Network() string {
+	return "chain"
+}
+
+func (r chainWrapperResolver) Address() string {
+	return ""
+}
+
 // ChainResolvers chains a primary and a secondary resolver such that
 // we can fallback to the secondary if primary is broken.
 func ChainResolvers(primary, secondary modelx.DNSResolver) modelx.DNSResolver {
-	return resolver.ChainResolver{Primary: primary, Secondary: secondary}
+	return resolver.ChainResolver{
+		Primary:   chainWrapperResolver{DNSResolver: primary},
+		Secondary: chainWrapperResolver{DNSResolver: secondary},
+	}
 }
 
 func resolverWrapResolver(r resolver.Resolver) resolver.EmitterResolver {

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -72,6 +73,9 @@ type Measurement struct {
 
 	// ProbeIP contains the probe IP
 	ProbeIP string `json:"probe_ip,omitempty"`
+
+	// ProbeNetworkName contains the probe network name
+	ProbeNetworkName string `json:"probe_network_name,omitempty"`
 
 	// ReportID contains the report ID
 	ReportID string `json:"report_id"`
@@ -353,18 +357,20 @@ type ExperimentOrchestraClient interface {
 type ExperimentSession interface {
 	ASNDatabasePath() string
 	CABundlePath() string
-	ExplicitProxy() bool
 	GetTestHelpersByName(name string) ([]Service, bool)
 	DefaultHTTPClient() *http.Client
 	Logger() Logger
+	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
 	ProbeASNString() string
 	ProbeCC() string
 	ProbeIP() string
 	ProbeNetworkName() string
+	ProxyURL() *url.URL
 	SoftwareName() string
 	SoftwareVersion() string
 	TempDir() string
+	TunnelBootstrapTime() time.Duration
 	UserAgent() string
 }
 
