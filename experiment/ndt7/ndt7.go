@@ -241,7 +241,7 @@ func (m *measurer) Run(
 		Hostname: locateResult.Hostname,
 		Site:     locateResult.Site,
 	}
-	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", locateResult.WSSDownloadURL))
+	callbacks.OnProgress(0, fmt.Sprintf(" download: url: %s", locateResult.WSSDownloadURL))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
 	}
@@ -249,7 +249,7 @@ func (m *measurer) Run(
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", locateResult.WSSUploadURL))
+	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: url: %s", locateResult.WSSUploadURL))
 	if m.preUploadHook != nil {
 		m.preUploadHook()
 	}
