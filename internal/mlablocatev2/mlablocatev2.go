@@ -100,7 +100,7 @@ func (c Client) query(ctx context.Context, path string) (resultRecord, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return resultRecord{}, fmt.Errorf("%+w: %d", ErrRequestFailed, resp.StatusCode)
+		return resultRecord{}, fmt.Errorf("%w: %d", ErrRequestFailed, resp.StatusCode)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
