@@ -83,6 +83,8 @@ func StartWithConfig(ctx context.Context, config StartConfig) (*Tunnel, error) {
 	// caller such that we can also understand why it didn't work.
 	instance, err := config.Start(ctx, &tor.StartConf{
 		DataDir:         config.Sess.TempDir(),
+		ExtraArgs:       config.Sess.TorArgs(),
+		ExePath:         config.Sess.TorBinary(),
 		NoHush:          true,
 		TempDataDirBase: config.Sess.TempDir(),
 	})

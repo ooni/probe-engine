@@ -36,6 +36,8 @@ type Options struct {
 	NoCollector  bool
 	Proxy        string
 	ReportFile   string
+	TorArgs      []string
+	TorBinary    string
 	Verbose      bool
 }
 
@@ -87,6 +89,14 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',
 		"Set the report file path", "PATH",
+	)
+	getopt.FlagLong(
+		&globalOptions.TorArgs, "tor-args", 0,
+		"Extra args for tor binary (may be specified multiple times)",
+	)
+	getopt.FlagLong(
+		&globalOptions.TorBinary, "tor-binary", 0,
+		"Specify path to a specific tor binary",
 	)
 	getopt.FlagLong(
 		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
@@ -232,6 +242,8 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
 		TempDir:         tempDir,
+		TorArgs:         currentOptions.TorArgs,
+		TorBinary:       currentOptions.TorBinary,
 	})
 	fatalOnError(err, "cannot create measurement session")
 	defer func() {

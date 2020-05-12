@@ -37,6 +37,8 @@ type SessionConfig struct {
 	SoftwareName    string
 	SoftwareVersion string
 	TempDir         string
+	TorArgs         []string
+	TorBinary       string
 }
 
 // Session is a measurement session
@@ -56,6 +58,8 @@ type Session struct {
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
+	torArgs              []string
+	torBinary            string
 	tunnel               sessiontunnel.Tunnel
 	tunnelMu             sync.Mutex
 }
@@ -94,6 +98,8 @@ func NewSession(config SessionConfig) (*Session, error) {
 		softwareName:      config.SoftwareName,
 		softwareVersion:   config.SoftwareVersion,
 		tempDir:           config.TempDir,
+		torArgs:           config.TorArgs,
+		torBinary:         config.TorBinary,
 	}
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
 		ByteCounter:  sess.byteCounter,
@@ -360,6 +366,18 @@ func (s *Session) SoftwareVersion() string {
 // TempDir returns the temporary directory.
 func (s *Session) TempDir() string {
 	return s.tempDir
+}
+
+// TorArgs returns the configured extra args for the tor binary. If not set
+// we will not pass in any extra arg. Applies to `-OTunnel=tor` mainly.
+func (s *Session) TorArgs() []string {
+	return s.torArgs
+}
+
+// TorBinary returns the configured path to the tor binary. If not set
+// we will attempt to use "tor". Applies to `-OTunnel=tor` mainly.
+func (s *Session) TorBinary() string {
+	return s.torBinary
 }
 
 // TunnelBootstrapTime returns the time required to bootstrap the tunnel
