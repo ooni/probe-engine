@@ -403,6 +403,7 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 	for !task.IsDone() {
 		task.WaitForNextEvent()
 	}
+	t.Log(time.Now().Sub(begin))
 	if time.Now().Sub(begin) > 4*time.Second {
 		t.Fatal("expected shorter runtime")
 	}
