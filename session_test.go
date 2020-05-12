@@ -193,6 +193,21 @@ func TestBouncerError(t *testing.T) {
 	}
 }
 
+func TestIntegrationMaybeStartTunnel(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
+		t.Fatal(err)
+	}
+	if sess.TunnelBootstrapTime() <= 0 {
+		t.Fatal("expected positive boostrap time")
+	}
+	if sess.ProxyURL() == nil {
+		t.Fatal("expected non nil proxy URL")
+	}
+}
+
 func TestIntegrationSessionLocationLookup(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()

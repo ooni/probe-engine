@@ -314,6 +314,12 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if experiment.KibiBytesSent() <= 0 {
+		t.Fatal("no data sent?!")
+	}
+	if experiment.KibiBytesReceived() <= 0 {
+		t.Fatal("no data received?!")
+	}
 }
 
 func TestOptions(t *testing.T) {

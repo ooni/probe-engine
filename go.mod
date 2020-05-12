@@ -58,4 +58,5 @@ require (
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
 	golang.org/x/net v0.0.0-20200421231249-e086a090c8fd
+	github.com/cretz/bine v0.1.0
 )

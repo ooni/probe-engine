@@ -70,6 +70,11 @@ func makeworkingdir(config Config) (string, error) {
 // Start starts the psiphon tunnel.
 func Start(
 	ctx context.Context, sess model.ExperimentSession, config Config) (*Tunnel, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err() // simplifies unit testing this code
+	default:
+	}
 	if config.Dependencies == nil {
 		config.Dependencies = defaultDependencies{}
 	}
