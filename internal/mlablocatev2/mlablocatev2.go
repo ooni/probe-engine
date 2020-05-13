@@ -93,11 +93,12 @@ func (c Client) query(ctx context.Context, path string) (resultRecord, error) {
 		return resultRecord{}, err
 	}
 	req.Header.Add("User-Agent", c.UserAgent)
-	c.Logger.Debugf("mlablocatev2: GET %s", URL.String())
+	c.Logger.Infof("mlablocatev2: GET %s", URL.String()) // XXX: for testing
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return resultRecord{}, err
 	}
+	c.Logger.Infof("mlablocatev2: %d", resp.StatusCode) // XXX: for testing
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return resultRecord{}, fmt.Errorf("%w: %d", ErrRequestFailed, resp.StatusCode)
