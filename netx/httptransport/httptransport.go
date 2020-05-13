@@ -5,10 +5,13 @@ package httptransport
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
 	"net/url"
 
+	"github.com/certifi/gocertifi"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/resolver"
@@ -64,6 +67,15 @@ type Config struct {
 type tlsHandshaker interface {
 	Handshake(ctx context.Context, conn net.Conn, config *tls.Config) (
 		net.Conn, tls.ConnectionState, error)
+}
+
+// CertPool is the certificate pool we're using by default
+var CertPool *x509.CertPool
+
+func init() {
+	var err error
+	CertPool, err = gocertifi.CACerts()
+	runtimex.PanicOnError(err, "gocertifi.CACerts() failed")
 }
 
 // NewResolver creates a new resolver from the specified config
@@ -139,6 +151,7 @@ func NewTLSDialer(config Config) TLSDialer {
 	if config.TLSConfig == nil {
 		config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
 	}
+	config.TLSConfig.RootCAs = CertPool // always use our own CA
 	config.TLSConfig.InsecureSkipVerify = config.NoTLSVerify
 	return dialer.TLSDialer{
 		Config:        config.TLSConfig,

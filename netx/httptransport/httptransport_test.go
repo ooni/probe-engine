@@ -446,6 +446,9 @@ func TestNewTLSDialerVanilla(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
@@ -482,6 +485,9 @@ func TestNewTLSDialerWithConfig(t *testing.T) {
 	}
 	if len(rtd.Config.NextProtos) != 0 {
 		t.Fatal("invalid len(config.NextProtos)")
+	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
@@ -522,6 +528,9 @@ func TestNewTLSDialerWithLogging(t *testing.T) {
 	}
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
+	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
@@ -571,6 +580,9 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
@@ -619,6 +631,9 @@ func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
@@ -661,6 +676,9 @@ func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
 	}
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
+	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
