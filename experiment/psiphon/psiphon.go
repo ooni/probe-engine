@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/Psiphon-Labs/psiphon-tunnel-core/ClientLibrary/clientlib"
-	"github.com/ooni/probe-engine/experiment/httpheader"
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
