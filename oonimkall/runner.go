@@ -272,7 +272,7 @@ func (r *runner) Run(ctx context.Context) {
 
 	builder.SetCallbacks(&runnerCallbacks{emitter: r.emitter})
 	if len(r.settings.Inputs) <= 0 {
-		if builder.NeedsInput() {
+		if builder.InputPolicy() == engine.InputRequired {
 			r.emitter.EmitFailureStartup("no input provided")
 			return
 		}
@@ -303,7 +303,7 @@ func (r *runner) Run(ctx context.Context) {
 	// sense, here we're changing the behaviour.
 	//
 	// See https://github.com/measurement-kit/measurement-kit/issues/1922
-	if r.settings.Options.MaxRuntime > 0 && builder.NeedsInput() {
+	if r.settings.Options.MaxRuntime > 0 && builder.InputPolicy() == engine.InputRequired {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(
 			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
