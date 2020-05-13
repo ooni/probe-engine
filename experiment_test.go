@@ -116,7 +116,7 @@ func TestNeedsInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if builder.NeedsInput() == false {
+	if builder.InputPolicy() != InputRequired {
 		t.Fatal("web_connectivity certainly needs input")
 	}
 }

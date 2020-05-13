@@ -286,7 +286,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
-	if builder.NeedsInput() {
+	if builder.InputPolicy() == engine.InputRequired {
 		if len(currentOptions.Inputs) <= 0 {
 			log.Info("Fetching test lists")
 			list, err := sess.QueryTestListsURLs(&engine.TestListsURLsConfig{
@@ -297,6 +297,8 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
 			}
 		}
+	} else if builder.InputPolicy() == engine.InputOptional {
+		// nothing
 	} else if len(currentOptions.Inputs) != 0 {
 		fatalWithString("this experiment does not expect any input")
 	} else {
