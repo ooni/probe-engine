@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
@@ -448,7 +449,7 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
-		UserAgent:  s.UserAgent(),
+		UserAgent:  httpheader.RandomUserAgent(), // no need to identify as OONI
 	}).Do(ctx)
 }
 
