@@ -13,7 +13,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
-      - run: go test -tags nomk,shaping -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
+      - run: go test -tags nomk -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: probe-engine.cov
