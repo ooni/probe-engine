@@ -11,6 +11,8 @@ assignees: bassosimone
 - [ ] Update Host header used for measuring
 - [ ] Update version/version.go
 - [ ] Update assets
+- [ ] Update measurementkit/mkcgo/mkcgo.go
+- [ ] Update .github/workflows/mk.sh
 - [ ] Tag a new version of ooni/probe-engine
 - [ ] Update ooni/probe-engine mobile-staging branch
 - [ ] Pin ooni/probe-cli to ooni/probe-engine
