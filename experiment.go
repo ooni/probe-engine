@@ -24,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
@@ -40,13 +41,32 @@ func formatTimeNowUTC() string {
 	return time.Now().UTC().Format(dateFormat)
 }
 
+// InputPolicy describes the experiment policy with respect to input. That is
+// whether it requires input, optionally accepts input, does not want input.
+type InputPolicy string
+
+const (
+	// InputRequired indicates that the experiment requires
+	// external input to run. If this input is not provided to
+	// the experiment, it will not know what to do.
+	InputRequired = InputPolicy("required")
+
+	// InputOptional indicates that the experiment handles input,
+	// if any; otherwise it fetchs input/uses a default.
+	InputOptional = InputPolicy("optional")
+
+	// InputNone indicates that the experiment does not want any
+	// input and ignores the input if provided with it.
+	InputNone = InputPolicy("none")
+)
+
 // ExperimentBuilder is an experiment builder.
 type ExperimentBuilder struct {
 	build         func(interface{}) *Experiment
 	callbacks     model.ExperimentCallbacks
 	config        interface{}
+	inputPolicy   InputPolicy
 	interruptible bool
-	needsInput    bool
 }
 
 // Interruptible tells you whether this is an interruptible experiment. This kind
@@ -55,9 +75,9 @@ func (b *ExperimentBuilder) Interruptible() bool {
 	return b.interruptible
 }
 
-// NeedsInput returns whether the experiment needs input
-func (b *ExperimentBuilder) NeedsInput() bool {
-	return b.needsInput
+// InputPolicy returns the experiment input policy
+func (b *ExperimentBuilder) InputPolicy() InputPolicy {
+	return b.inputPolicy
 }
 
 // OptionInfo contains info about an option
@@ -432,7 +452,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:        &dash.Config{},
 			interruptible: true,
-			needsInput:    false,
+			inputPolicy:   InputNone,
 		}
 	},
 
@@ -448,7 +468,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(5 * time.Second),
 			},
 			interruptible: true,
-			needsInput:    false,
+			inputPolicy:   InputNone,
 		}
 	},
 
@@ -464,7 +484,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(5 * time.Second),
 			},
 			interruptible: true,
-			needsInput:    true,
+			inputPolicy:   InputRequired,
 		}
 	},
 
@@ -484,7 +504,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(5 * time.Second),
 			},
 			interruptible: false,
-			needsInput:    true,
+			inputPolicy:   InputRequired,
 		}
 	},
 
@@ -501,7 +521,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime:   int64(5 * time.Second),
 			},
 			interruptible: true,
-			needsInput:    false,
+			inputPolicy:   InputNone,
 		}
 	},
 
@@ -512,8 +532,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*fbmessenger.Config),
 				))
 			},
-			config:     &fbmessenger.Config{},
-			needsInput: false,
+			config:      &fbmessenger.Config{},
+			inputPolicy: InputNone,
 		}
 	},
 
@@ -524,8 +544,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*hhfm.Config),
 				))
 			},
-			config:     &hhfm.Config{},
-			needsInput: false,
+			config:      &hhfm.Config{},
+			inputPolicy: InputNone,
 		}
 	},
 
@@ -536,8 +556,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*hirl.Config),
 				))
 			},
-			config:     &hirl.Config{},
-			needsInput: false,
+			config:      &hirl.Config{},
+			inputPolicy: InputNone,
 		}
 	},
 
@@ -550,7 +570,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:        &ndt7.Config{},
 			interruptible: true,
-			needsInput:    false,
+			inputPolicy:   InputNone,
 		}
 	},
 
@@ -561,10 +581,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*psiphon.Config),
 				))
 			},
-			config: &psiphon.Config{
-				WorkDir: session.TempDir(),
-			},
-			needsInput: false,
+			config:      &psiphon.Config{},
+			inputPolicy: InputOptional,
 		}
 	},
 
@@ -578,7 +596,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			config: &sniblocking.Config{
 				ControlSNI: "example.com",
 			},
-			needsInput: true,
+			inputPolicy: InputRequired,
 		}
 	},
 
@@ -589,8 +607,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*telegram.Config),
 				))
 			},
-			config:     &telegram.Config{},
-			needsInput: false,
+			config:      &telegram.Config{},
+			inputPolicy: InputNone,
 		}
 	},
 
@@ -601,8 +619,20 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*tor.Config),
 				))
 			},
-			config:     &tor.Config{},
-			needsInput: false,
+			config:      &tor.Config{},
+			inputPolicy: InputNone,
+		}
+	},
+
+	"urlgetter": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, urlgetter.NewExperimentMeasurer(
+					*config.(*urlgetter.Config),
+				))
+			},
+			config:      &urlgetter.Config{},
+			inputPolicy: InputRequired,
 		}
 	},
 
@@ -613,8 +643,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*web_connectivity.Config),
 				))
 			},
-			config:     &web_connectivity.Config{},
-			needsInput: true,
+			config:      &web_connectivity.Config{},
+			inputPolicy: InputRequired,
 		}
 	},
 
@@ -625,8 +655,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*whatsapp.Config),
 				))
 			},
-			config:     &whatsapp.Config{},
-			needsInput: false,
+			config:      &whatsapp.Config{},
+			inputPolicy: InputNone,
 		}
 	},
 }

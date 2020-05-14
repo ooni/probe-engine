@@ -116,7 +116,7 @@ func TestNeedsInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if builder.NeedsInput() == false {
+	if builder.InputPolicy() != InputRequired {
 		t.Fatal("web_connectivity certainly needs input")
 	}
 }
@@ -313,6 +313,12 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	err = experiment.CloseReport()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if experiment.KibiBytesSent() <= 0 {
+		t.Fatal("no data sent?!")
+	}
+	if experiment.KibiBytesReceived() <= 0 {
+		t.Fatal("no data received?!")
 	}
 }
 

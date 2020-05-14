@@ -44,21 +44,21 @@ type SaverTLSHandshaker struct {
 func (h SaverTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
-	measuringconn := tlsMeasuringConn{Conn: conn, saver: h.Saver}
-	proxyconn := tlsProxyConn{Conn: measuringconn}
 	start := time.Now()
 	h.Saver.Write(trace.Event{
 		Name:          "tls_handshake_start",
+		NoTLSVerify:   config.InsecureSkipVerify,
 		TLSNextProtos: config.NextProtos,
 		TLSServerName: config.ServerName,
 		Time:          start,
 	})
-	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, proxyconn, config)
+	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
 	stop := time.Now()
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
 		Err:                err,
 		Name:               "tls_handshake_done",
+		NoTLSVerify:        config.InsecureSkipVerify,
 		TLSCipherSuite:     tlsx.CipherSuiteString(state.CipherSuite),
 		TLSNegotiatedProto: state.NegotiatedProtocol,
 		TLSNextProtos:      config.NextProtos,
@@ -67,20 +67,31 @@ func (h SaverTLSHandshaker) Handshake(
 		TLSVersion:         tlsx.VersionString(state.Version),
 		Time:               stop,
 	})
-	proxyconn.Conn = conn // stop measuring
 	return tlsconn, state, err
 }
 
-type tlsProxyConn struct {
-	net.Conn
+// SaverConnDialer wraps the returned connection such that we
+// collect all the read/write events that occur.
+type SaverConnDialer struct {
+	Dialer
+	Saver *trace.Saver
 }
 
-type tlsMeasuringConn struct {
+// DialContext implements Dialer.DialContext
+func (d SaverConnDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	conn, err := d.Dialer.DialContext(ctx, network, address)
+	if err != nil {
+		return nil, err
+	}
+	return saverConn{saver: d.Saver, Conn: conn}, nil
+}
+
+type saverConn struct {
 	net.Conn
 	saver *trace.Saver
 }
 
-func (c tlsMeasuringConn) Read(p []byte) (int, error) {
+func (c saverConn) Read(p []byte) (int, error) {
 	start := time.Now()
 	count, err := c.Conn.Read(p)
 	stop := time.Now()
@@ -95,7 +106,7 @@ func (c tlsMeasuringConn) Read(p []byte) (int, error) {
 	return count, err
 }
 
-func (c tlsMeasuringConn) Write(p []byte) (int, error) {
+func (c saverConn) Write(p []byte) (int, error) {
 	start := time.Now()
 	count, err := c.Conn.Write(p)
 	stop := time.Now()
@@ -134,5 +145,4 @@ func peerCerts(state tls.ConnectionState, err error) []*x509.Certificate {
 
 var _ Dialer = SaverDialer{}
 var _ TLSHandshaker = SaverTLSHandshaker{}
-var _ net.Conn = tlsMeasuringConn{}
-var _ net.Conn = tlsProxyConn{}
+var _ net.Conn = saverConn{}

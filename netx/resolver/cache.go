@@ -7,6 +7,7 @@ import (
 
 // CacheResolver is a resolver that caches successful replies.
 type CacheResolver struct {
+	ReadOnly bool
 	Resolver
 	mu    sync.Mutex
 	cache map[string][]string
@@ -22,7 +23,9 @@ func (r *CacheResolver) LookupHost(
 	if err != nil {
 		return nil, err
 	}
-	r.Set(hostname, entry)
+	if r.ReadOnly == false {
+		r.Set(hostname, entry)
+	}
 	return entry, nil
 }
 

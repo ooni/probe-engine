@@ -22,13 +22,16 @@ require (
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
+	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894
 	github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea // indirect
 	github.com/creack/goselect v0.1.1 // indirect
+	github.com/cretz/bine v0.1.0
 	github.com/deckarep/golang-set v0.0.0-20171013212420-1d4478f51bed // indirect
 	github.com/dgraph-io/badger v1.5.4-0.20180815194500-3a87f6d9c273 // indirect
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
+	github.com/google/go-cmp v0.4.0
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect

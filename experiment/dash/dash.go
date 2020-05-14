@@ -47,9 +47,19 @@ type Simple struct {
 	MinPlayoutDelay float64 `json:"min_playout_delay"`
 }
 
+// ServerInfo contains information on the selected server
+//
+// This is currently an extension to the DASH specification
+// until the data format of the new mlab locate is clear.
+type ServerInfo struct {
+	Hostname string `json:"hostname"`
+	Site     string `json:"site,omitempty"`
+}
+
 // TestKeys contains the test keys
 type TestKeys struct {
 	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
+	Server        ServerInfo      `json:"server"`
 	Simple        Simple          `json:"simple"`
 	Failure       *string         `json:"failure"`
 	ReceiverData  []clientResults `json:"receiver_data"`
@@ -94,10 +104,15 @@ func (r runner) UserAgent() string {
 }
 
 func (r runner) loop(ctx context.Context, numIterations int64) error {
-	fqdn, err := locate(ctx, r)
+	locateResult, err := locate(ctx, r)
 	if err != nil {
 		return err
 	}
+	r.tk.Server = ServerInfo{
+		Hostname: locateResult.FQDN,
+		Site:     locateResult.Site,
+	}
+	fqdn := locateResult.FQDN
 	r.callbacks.OnProgress(0.0, fmt.Sprintf("streaming: server: %s", fqdn))
 	negotiateResp, err := negotiate(ctx, fqdn, r)
 	if err != nil {
@@ -256,9 +271,9 @@ func (m measurer) Run(
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			ContextByteCounting: true,
+			DialSaver:           saver,
 			Logger:              sess.Logger(),
 			ProxyURL:            sess.ProxyURL(),
-			Saver:               saver,
 		}),
 	}
 	defer httpClient.CloseIdleConnections()

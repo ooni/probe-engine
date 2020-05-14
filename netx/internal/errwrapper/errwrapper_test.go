@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -118,6 +119,22 @@ func TestToFailureString(t *testing.T) {
 			Err: "no such host",
 		}) != modelx.FailureDNSNXDOMAINError {
 			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for errors including IPv4 address", func(t *testing.T) {
+		input := errors.New("read tcp 10.0.2.15:56948->93.184.216.34:443: use of closed network connection")
+		expected := "unknown_failure: read tcp [scrubbed]->[scrubbed]: use of closed network connection"
+		out := toFailureString(input)
+		if out != expected {
+			t.Fatal(cmp.Diff(expected, out))
+		}
+	})
+	t.Run("for errors including IPv6 address", func(t *testing.T) {
+		input := errors.New("read tcp [::1]:56948->[::1]:443: use of closed network connection")
+		expected := "unknown_failure: read tcp [scrubbed]->[scrubbed]: use of closed network connection"
+		out := toFailureString(input)
+		if out != expected {
+			t.Fatal(cmp.Diff(expected, out))
 		}
 	})
 }

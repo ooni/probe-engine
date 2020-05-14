@@ -10,14 +10,14 @@ import (
 
 	"github.com/m-lab/ndt7-client-go/spec"
 	"github.com/ooni/probe-engine/internal/humanizex"
-	"github.com/ooni/probe-engine/internal/mlablocate"
+	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
 	testName    = "ndt"
-	testVersion = "0.5.0"
+	testVersion = "0.6.0"
 )
 
 // Config contains the experiment settings
@@ -38,8 +38,12 @@ type Summary struct {
 }
 
 // ServerInfo contains information on the selected server
+//
+// Site is currently an extension to the NDT specification
+// until the data format of the new mlab locate is clear.
 type ServerInfo struct {
 	Hostname string `json:"hostname"`
+	Site     string `json:"site,omitempty"`
 }
 
 // TestKeys contains the test keys
@@ -79,7 +83,8 @@ type measurer struct {
 	preUploadHook   func()
 }
 
-func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (string, error) {
+func (m *measurer) discover(
+	ctx context.Context, sess model.ExperimentSession) (mlablocatev2.NDT7Result, error) {
 	httpClient := &http.Client{
 		Transport: httptransport.New(httptransport.Config{
 			Logger:   sess.Logger(),
@@ -87,8 +92,12 @@ func (m *measurer) discover(ctx context.Context, sess model.ExperimentSession) (
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
-	client := mlablocate.NewClient(httpClient, sess.Logger(), sess.UserAgent())
-	return client.Query(ctx, "ndt7")
+	client := mlablocatev2.NewClient(httpClient, sess.Logger(), sess.UserAgent())
+	out, err := client.QueryNDT7(ctx)
+	if err != nil {
+		return mlablocatev2.NDT7Result{}, err
+	}
+	return out[0], nil // same as with locate services v1
 }
 
 func (m *measurer) ExperimentName() string {
@@ -102,9 +111,10 @@ func (m *measurer) ExperimentVersion() string {
 func (m *measurer) doDownload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
-	hostname string,
+	URL string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialDownload(ctx)
+	conn, err := newDialManager(URL, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
 		return err
 	}
@@ -168,9 +178,10 @@ func (m *measurer) doDownload(
 func (m *measurer) doUpload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
-	hostname string,
+	URL string,
 ) error {
-	conn, err := newDialManager(hostname, sess.ProxyURL(), sess.Logger()).dialUpload(ctx)
+	conn, err := newDialManager(URL, sess.ProxyURL(),
+		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
 		return err
 	}
@@ -221,25 +232,28 @@ func (m *measurer) Run(
 	if url := sess.ProxyURL(); url != nil {
 		tk.SOCKSProxy = url.Host
 	}
-	hostname, err := m.discover(ctx, sess)
+	locateResult, err := m.discover(ctx, sess)
 	if err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	tk.Server = ServerInfo{Hostname: hostname}
-	callbacks.OnProgress(0, fmt.Sprintf(" download: server: %s", hostname))
+	tk.Server = ServerInfo{
+		Hostname: locateResult.Hostname,
+		Site:     locateResult.Site,
+	}
+	callbacks.OnProgress(0, fmt.Sprintf(" download: url: %s", locateResult.WSSDownloadURL))
 	if m.preDownloadHook != nil {
 		m.preDownloadHook()
 	}
-	if err := m.doDownload(ctx, sess, callbacks, tk, hostname); err != nil {
+	if err := m.doDownload(ctx, sess, callbacks, tk, locateResult.WSSDownloadURL); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}
-	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: server: %s", hostname))
+	callbacks.OnProgress(0.5, fmt.Sprintf("   upload: url: %s", locateResult.WSSUploadURL))
 	if m.preUploadHook != nil {
 		m.preUploadHook()
 	}
-	if err := m.doUpload(ctx, sess, callbacks, tk, hostname); err != nil {
+	if err := m.doUpload(ctx, sess, callbacks, tk, locateResult.WSSUploadURL); err != nil {
 		tk.Failure = failureFromError(err)
 		return err
 	}

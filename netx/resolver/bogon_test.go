@@ -32,8 +32,8 @@ func TestUnitBogonAwareResolverWithBogon(t *testing.T) {
 	if !errors.Is(err, modelx.ErrDNSBogon) {
 		t.Fatal("not the error we expected")
 	}
-	if addrs != nil {
-		t.Fatal("expected nil address here")
+	if len(addrs) != 1 || addrs[0] != "127.0.0.1" {
+		t.Fatal("expected to see address here")
 	}
 }
 

@@ -13,6 +13,28 @@ import (
 	"github.com/ooni/probe-engine/internal/psiphonx"
 )
 
+func TestStartWithCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	sess, err := engine.NewSession(engine.SessionConfig{
+		AssetsDir:       "../../testdata",
+		Logger:          log.Log,
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "../../testdata",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tunnel, err := psiphonx.Start(ctx, sess, psiphonx.Config{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if tunnel != nil {
+		t.Fatal("expected nil tunnel here")
+	}
+}
+
 func TestIntegrationStartStop(t *testing.T) {
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir:       "../../testdata",
