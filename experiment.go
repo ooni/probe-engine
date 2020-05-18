@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/ooni/probe-engine/collector"
+	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
@@ -201,7 +201,7 @@ type Experiment struct {
 	byteCounter   *bytecounter.Counter
 	callbacks     model.ExperimentCallbacks
 	measurer      model.ExperimentMeasurer
-	report        *collector.Report
+	report        *probeservices.Report
 	session       *Session
 	testName      string
 	testStartTime string
@@ -353,7 +353,7 @@ func (e *Experiment) CloseReport() (err error) {
 func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	utctimenow := time.Now().UTC()
 	m := model.Measurement{
-		DataFormatVersion:         collector.DefaultDataFormatVersion,
+		DataFormatVersion:         probeservices.DefaultDataFormatVersion,
 		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
@@ -395,15 +395,15 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 			)
 			continue
 		}
-		client := &collector.Client{
+		client := &probeservices.Client{
 			BaseURL:    c.Address,
 			HTTPClient: httpClient,
 			Logger:     e.session.logger,
 			UserAgent:  e.session.UserAgent(),
 		}
-		template := collector.ReportTemplate{
-			DataFormatVersion: collector.DefaultDataFormatVersion,
-			Format:            collector.DefaultFormat,
+		template := probeservices.ReportTemplate{
+			DataFormatVersion: probeservices.DefaultDataFormatVersion,
+			Format:            probeservices.DefaultFormat,
 			ProbeASN:          e.session.ProbeASNString(),
 			ProbeCC:           e.session.ProbeCC(),
 			SoftwareName:      e.session.SoftwareName(),

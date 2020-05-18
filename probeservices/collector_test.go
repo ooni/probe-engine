@@ -1,4 +1,4 @@
-package collector_test
+package probeservices_test
 
 import (
 	"bytes"
@@ -9,17 +9,17 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 type fakeTestKeys struct {
 	Failure *string `json:"failure"`
 }
 
-func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
+func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measurement {
 	return model.Measurement{
-		DataFormatVersion:    collector.DefaultDataFormatVersion,
+		DataFormatVersion:    probeservices.DefaultDataFormatVersion,
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementRuntime:   5.0565230846405,
 		MeasurementStartTime: "2018-11-01 15:33:20",
@@ -41,8 +41,8 @@ func makeMeasurement(rt collector.ReportTemplate, ID string) model.Measurement {
 	}
 }
 
-func makeClient() *collector.Client {
-	return &collector.Client{
+func makeClient() *probeservices.Client {
+	return &probeservices.Client{
 		BaseURL:    "https://ps-test.ooni.io/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -53,9 +53,9 @@ func makeClient() *collector.Client {
 func TestReportLifecycle(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
-		DataFormatVersion: collector.DefaultDataFormatVersion,
-		Format:            collector.DefaultFormat,
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
 		SoftwareName:      "ooniprobe-engine",
@@ -82,9 +82,9 @@ func TestReportLifecycle(t *testing.T) {
 func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
+	template := probeservices.ReportTemplate{
 		DataFormatVersion: "0.1.0",
-		Format:            collector.DefaultFormat,
+		Format:            probeservices.DefaultFormat,
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
 		SoftwareName:      "ooniprobe-engine",
@@ -105,8 +105,8 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 func TestOpenReportInvalidFormat(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
-		DataFormatVersion: collector.DefaultDataFormatVersion,
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
 		Format:            "yaml",
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
@@ -128,9 +128,9 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 func TestJSONAPIClientCreateFailure(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
-		DataFormatVersion: collector.DefaultDataFormatVersion,
-		Format:            collector.DefaultFormat,
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
 		SoftwareName:      "ooniprobe-engine",
@@ -158,9 +158,9 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
-		DataFormatVersion: collector.DefaultDataFormatVersion,
-		Format:            collector.DefaultFormat,
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
 		SoftwareName:      "ooniprobe-engine",
@@ -211,9 +211,9 @@ func TestEndToEnd(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	template := collector.ReportTemplate{
-		DataFormatVersion: collector.DefaultDataFormatVersion,
-		Format:            collector.DefaultFormat,
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
 		ProbeASN:          "AS0",
 		ProbeCC:           "ZZ",
 		SoftwareName:      "ooniprobe-engine",
