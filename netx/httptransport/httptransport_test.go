@@ -181,7 +181,11 @@ func TestNewResolverWithPrefilledReadonlyCache(t *testing.T) {
 
 func TestNewDialerVanilla(t *testing.T) {
 	d := httptransport.NewDialer(httptransport.Config{})
-	pd, ok := d.(dialer.ProxyDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	pd, ok := sd.Dialer.(dialer.ProxyDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -217,7 +221,11 @@ func TestNewDialerWithResolver(t *testing.T) {
 			// not initialized because it doesn't matter in this context
 		},
 	})
-	pd, ok := d.(dialer.ProxyDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	pd, ok := sd.Dialer.(dialer.ProxyDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -251,7 +259,11 @@ func TestNewDialerWithLogger(t *testing.T) {
 	d := httptransport.NewDialer(httptransport.Config{
 		Logger: log.Log,
 	})
-	pd, ok := d.(dialer.ProxyDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	pd, ok := sd.Dialer.(dialer.ProxyDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -293,7 +305,11 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 	d := httptransport.NewDialer(httptransport.Config{
 		DialSaver: saver,
 	})
-	pd, ok := d.(dialer.ProxyDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	pd, ok := sd.Dialer.(dialer.ProxyDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -310,14 +326,14 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
-	sd, ok := dnsd.Dialer.(dialer.SaverDialer)
+	sad, ok := dnsd.Dialer.(dialer.SaverDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if sd.Saver != saver {
+	if sad.Saver != saver {
 		t.Fatal("not the logger we expected")
 	}
-	ewd, ok := sd.Dialer.(dialer.ErrorWrapperDialer)
+	ewd, ok := sad.Dialer.(dialer.ErrorWrapperDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -335,7 +351,11 @@ func TestNewDialerWithReadWriteSaver(t *testing.T) {
 	d := httptransport.NewDialer(httptransport.Config{
 		ReadWriteSaver: saver,
 	})
-	pd, ok := d.(dialer.ProxyDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	pd, ok := sd.Dialer.(dialer.ProxyDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -376,7 +396,11 @@ func TestNewDialerWithContextByteCounting(t *testing.T) {
 	d := httptransport.NewDialer(httptransport.Config{
 		ContextByteCounting: true,
 	})
-	bcd, ok := d.(dialer.ByteCounterDialer)
+	sd, ok := d.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	bcd, ok := sd.Dialer.(dialer.ByteCounterDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
@@ -422,10 +446,17 @@ func TestNewTLSDialerVanilla(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {
@@ -455,10 +486,17 @@ func TestNewTLSDialerWithConfig(t *testing.T) {
 	if len(rtd.Config.NextProtos) != 0 {
 		t.Fatal("invalid len(config.NextProtos)")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {
@@ -491,10 +529,17 @@ func TestNewTLSDialerWithLogging(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {
@@ -535,10 +580,17 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {
@@ -579,10 +631,17 @@ func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {
@@ -618,10 +677,17 @@ func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
+	if rtd.Config.RootCAs != httptransport.CertPool {
+		t.Fatal("invalid Config.RootCAs")
+	}
 	if rtd.Dialer == nil {
 		t.Fatal("invalid Dialer")
 	}
-	if _, ok := rtd.Dialer.(dialer.ProxyDialer); !ok {
+	sd, ok := rtd.Dialer.(dialer.ShapingDialer)
+	if !ok {
+		t.Fatal("not the dialer we expected")
+	}
+	if _, ok := sd.Dialer.(dialer.ProxyDialer); !ok {
 		t.Fatal("not the Dialer we expected")
 	}
 	if rtd.TLSHandshaker == nil {

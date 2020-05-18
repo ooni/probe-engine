@@ -33,6 +33,8 @@ type ExperimentSession struct {
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
 	MockableTempDir              string
+	MockableTorArgs              []string
+	MockableTorBinary            string
 	MockableTunnelBootstrapTime  time.Duration
 	MockableUserAgent            string
 }
@@ -132,6 +134,16 @@ func (sess *ExperimentSession) SoftwareVersion() string {
 // TempDir implements ExperimentSession.TempDir
 func (sess *ExperimentSession) TempDir() string {
 	return sess.MockableTempDir
+}
+
+// TorArgs implements ExperimentSession.TorArgs.
+func (sess *ExperimentSession) TorArgs() []string {
+	return sess.MockableTorArgs
+}
+
+// TorBinary implements ExperimentSession.TorBinary.
+func (sess *ExperimentSession) TorBinary() string {
+	return sess.MockableTorBinary
 }
 
 // TunnelBootstrapTime implements ExperimentSession.TunnelBootstrapTime

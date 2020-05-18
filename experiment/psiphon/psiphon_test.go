@@ -1,178 +1,106 @@
-package psiphon
+package psiphon_test
 
 import (
 	"context"
 	"errors"
-	"net/http"
-	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/handler"
-	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/experiment/psiphon"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
+// Implementation note: integration test performed by
+// the $topdir/experiment_test.go file
+
+func TestNewExperimentMeasurer(t *testing.T) {
+	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
 	if measurer.ExperimentName() != "psiphon" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.3.2" {
+	if measurer.ExperimentVersion() != "0.4.0" {
 		t.Fatal("unexpected version")
 	}
 }
 
-func TestUnitMeasureWithCancelledContext(t *testing.T) {
-	m := &measurer{config: makeconfig()}
+func TestRunWithCancelledContext(t *testing.T) {
+	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
-	err := m.Run(
-		ctx, newsession(),
-		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
-	)
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if !strings.HasSuffix(err.Error(), "context canceled") {
-		t.Fatal("not the error we expected")
-	}
-}
-
-func TestUnitMakeWorkingDirEmptyWorkingDir(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	r.config.WorkDir = ""
-	workdir, err := r.makeworkingdir()
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if workdir != "" {
-		t.Fatal("expected an empty string here")
-	}
-}
-
-func TestUnitMakeWorkingDirOsRemoveAllError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	expected := errors.New("mocked error")
-	r.osRemoveAll = func(path string) error {
-		return expected
-	}
-	workdir, err := r.makeworkingdir()
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-	if workdir != "" {
-		t.Fatal("expected an empty string here")
-	}
-}
-
-func TestUnitMakeWorkingDirOsMkdirAllError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	expected := errors.New("mocked error")
-	r.osMkdirAll = func(path string, perm os.FileMode) error {
-		return expected
-	}
-	workdir, err := r.makeworkingdir()
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-	if workdir != "" {
-		t.Fatal("expected an empty string here")
-	}
-}
-
-func TestUnitRunFetchPsiphonConfigError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	expected := errors.New("mocked error")
-	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
-		return nil, expected
-	})
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-}
-
-func TestUnitRunMakeworkingdirError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	expected := errors.New("mocked error")
-	r.osRemoveAll = func(path string) error {
-		return expected
-	}
-	clnt, err := newclient()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = r.run(context.Background(), log.Log, clnt.FetchPsiphonConfig)
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-}
-
-func TestUnitRunStartTunnelError(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	err := r.run(context.Background(), log.Log, func(context.Context) ([]byte, error) {
-		return []byte("{"), nil
-	})
-	if !strings.HasSuffix(err.Error(), "unexpected end of JSON input") {
-		t.Fatal("not the error we expected")
-	}
-}
-
-func newclient() (*orchestra.Client, error) {
-	clnt := orchestra.NewClient(
-		http.DefaultClient,
-		log.Log,
-		"miniooni/0.1.0-dev",
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
-	)
-	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
-	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
-	ctx := context.Background()
-	meta := testorchestra.MetadataFixture()
-	if err := clnt.MaybeRegister(ctx, meta); err != nil {
-		return nil, err
-	}
-	if err := clnt.MaybeLogin(ctx); err != nil {
-		return nil, err
-	}
-	return clnt, nil
-}
-
-func TestIntegration(t *testing.T) {
-	m := &measurer{config: makeconfig()}
-	if err := m.Run(
-		context.Background(),
-		newsession(),
-		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
-	); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestUnitUsetunnel(t *testing.T) {
-	r := newRunner(makeconfig(), handler.NewPrinterCallbacks(log.Log), time.Now())
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // so should fail immediately
-	err := r.usetunnel(ctx, 8080, log.Log)
+	measurement := new(model.Measurement)
+	err := measurer.Run(ctx, newfakesession(), measurement,
+		handler.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
-		t.Fatal("not the error we expected")
+		t.Fatal("expected another error here")
+	}
+	tk := measurement.TestKeys.(psiphon.TestKeys)
+	if tk.MaxRuntime <= 0 {
+		t.Fatal("you did not set the max runtime")
 	}
 }
 
-func makeconfig() Config {
-	return Config{
-		WorkDir: "../../testdata/psiphon_unit_tests",
+func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
+	expected := "http://x.org"
+	measurement := &model.Measurement{
+		Input: model.MeasurementTarget(expected),
+	}
+	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	measurer.(*psiphon.Measurer).BeforeGetHook = func(g urlgetter.Getter) {
+		if g.Target != expected {
+			t.Fatal("target was not correctly set")
+		}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // fail immediately
+	err := measurer.Run(ctx, newfakesession(), measurement,
+		handler.NewPrinterCallbacks(log.Log))
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("expected another error here")
+	}
+	tk := measurement.TestKeys.(psiphon.TestKeys)
+	if tk.MaxRuntime <= 0 {
+		t.Fatal("you did not set the max runtime")
 	}
 }
 
-func newsession() model.ExperimentSession {
+func TestRunWillPrintSomethingWithCancelledContext(t *testing.T) {
+	measurement := new(model.Measurement)
+	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	measurer.(*psiphon.Measurer).BeforeGetHook = func(g urlgetter.Getter) {
+		time.Sleep(2 * time.Second)
+		cancel() // fail after we've given the printer a chance to run
+	}
+	observer := observerCallbacks{progress: atomicx.NewInt64()}
+	err := measurer.Run(ctx, newfakesession(), measurement, observer)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("expected another error here")
+	}
+	tk := measurement.TestKeys.(psiphon.TestKeys)
+	if tk.MaxRuntime <= 0 {
+		t.Fatal("you did not set the max runtime")
+	}
+	if observer.progress.Load() < 2 {
+		t.Fatal("not enough progress emitted?!")
+	}
+}
+
+type observerCallbacks struct {
+	progress *atomicx.Int64
+}
+
+func (d observerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
+}
+
+func (d observerCallbacks) OnProgress(percentage float64, message string) {
+	d.progress.Add(1)
+}
+
+func newfakesession() model.ExperimentSession {
 	return &mockable.ExperimentSession{MockableLogger: log.Log}
 }

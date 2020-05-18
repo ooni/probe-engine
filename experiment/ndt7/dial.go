@@ -14,27 +14,23 @@ import (
 )
 
 type dialManager struct {
-	hostname        string
+	ndt7URL         string
 	logger          model.Logger
-	port            string
 	proxyURL        *url.URL
 	readBufferSize  int
-	scheme          string
 	tlsConfig       *tls.Config
 	userAgent       string
 	writeBufferSize int
 }
 
 func newDialManager(
-	hostname string, proxyURL *url.URL, logger model.Logger,
+	ndt7URL string, proxyURL *url.URL, logger model.Logger,
 	userAgent string) dialManager {
 	return dialManager{
-		hostname:        hostname,
+		ndt7URL:         ndt7URL,
 		logger:          logger,
-		port:            "443",
 		proxyURL:        proxyURL,
 		readBufferSize:  paramMaxMessageSize,
-		scheme:          "wss",
 		userAgent:       userAgent,
 		writeBufferSize: paramMaxMessageSize,
 	}
@@ -50,22 +46,18 @@ func (mgr dialManager) dialWithTestName(ctx context.Context, testName string) (*
 	dlr = dialer.DNSDialer{Dialer: dlr, Resolver: reso}
 	dlr = dialer.ProxyDialer{Dialer: dlr, ProxyURL: mgr.proxyURL}
 	dlr = dialer.ByteCounterDialer{Dialer: dlr}
+	dlr = dialer.ShapingDialer{Dialer: dlr}
 	dialer := websocket.Dialer{
 		NetDialContext:  dlr.DialContext,
 		ReadBufferSize:  mgr.readBufferSize,
 		TLSClientConfig: mgr.tlsConfig,
 		WriteBufferSize: mgr.writeBufferSize,
 	}
-	URL := url.URL{
-		Scheme: mgr.scheme,
-		Host:   mgr.hostname + ":" + mgr.port,
-	}
-	URL.Path = "/ndt/v7/" + testName
 	headers := http.Header{}
 	headers.Add("Sec-WebSocket-Protocol", "net.measurementlab.ndt.v7")
 	headers.Add("User-Agent", mgr.userAgent)
-	mgr.logrequest(URL.String(), headers)
-	conn, _, err := dialer.DialContext(ctx, URL.String(), headers)
+	mgr.logrequest(mgr.ndt7URL, headers)
+	conn, _, err := dialer.DialContext(ctx, mgr.ndt7URL, headers)
 	mgr.logresponse(err)
 	return conn, err
 }

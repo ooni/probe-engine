@@ -41,7 +41,9 @@ type TestKeys struct {
 	Tunnel        string                   `json:"tunnel,omitempty"`
 }
 
-func registerExtensions(m *model.Measurement) {
+// RegisterExtensions registers the extensions used by the urlgetter
+// experiment into the provided measurement.
+func RegisterExtensions(m *model.Measurement) {
 	archival.ExtHTTP.AddTo(m)
 	archival.ExtDNS.AddTo(m)
 	archival.ExtNetevents.AddTo(m)
@@ -64,14 +66,13 @@ func (m measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
-	registerExtensions(measurement)
+	RegisterExtensions(measurement)
 	g := Getter{
 		Config:  m.Config,
 		Session: sess,
 		Target:  string(measurement.Input),
 	}
 	tk, err := g.Get(ctx)
-	tk.DNSCache = []string{m.Config.DNSCache}
 	measurement.TestKeys = tk
 	return err
 }

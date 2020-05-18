@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
@@ -14,14 +15,15 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/internal/sessiontunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -36,6 +38,8 @@ type SessionConfig struct {
 	SoftwareName    string
 	SoftwareVersion string
 	TempDir         string
+	TorArgs         []string
+	TorBinary       string
 }
 
 // Session is a measurement session
@@ -55,7 +59,10 @@ type Session struct {
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
-	tunnel               *psiphonx.Tunnel
+	torArgs              []string
+	torBinary            string
+	tunnel               sessiontunnel.Tunnel
+	tunnelMu             sync.Mutex
 }
 
 // NewSession creates a new session or returns an error
@@ -92,6 +99,8 @@ func NewSession(config SessionConfig) (*Session, error) {
 		softwareName:      config.SoftwareName,
 		softwareVersion:   config.SoftwareVersion,
 		tempDir:           config.TempDir,
+		torArgs:           config.TorArgs,
+		torBinary:         config.TorBinary,
 	}
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
 		ByteCounter:  sess.byteCounter,
@@ -147,7 +156,9 @@ func (s *Session) CABundlePath() string {
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
-	s.tunnel.Stop() // safe if s.tunnel is nil
+	if s.tunnel != nil {
+		s.tunnel.Stop()
+	}
 	return nil
 }
 
@@ -191,25 +202,25 @@ func (s *Session) MaybeLookupBackends() error {
 // starting the tunnel is that we will correctly set the proxy URL. Note
 // that the tunnel will be active until session.Close is called.
 func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
-	switch name {
-	case "psiphon":
-	case "":
-		s.logger.Debugf("no tunnel has been requested")
-		return nil
-	default:
-		return errors.New("unsupported tunnel")
-	}
-	if s.proxyURL != nil {
+	s.tunnelMu.Lock()
+	defer s.tunnelMu.Unlock()
+	if s.proxyURL != nil || s.tunnel != nil {
 		s.logger.Debugf("not starting tunnel because we already have a proxy")
 		return nil
 	}
-	s.logger.Infof("starting %s tunnel; please be patient...", name)
-	tunnel, err := psiphonx.Start(ctx, s, psiphonx.Config{})
+	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+		Name:    name,
+		Session: s,
+	})
 	if err != nil {
+		s.logger.Warnf("cannot start tunnel: %+v", err)
 		return err
 	}
-	s.tunnel = tunnel
-	s.proxyURL = tunnel.SOCKS5ProxyURL()
+	// Implementation note: tunnel _may_ be NIL here if name is ""
+	if tunnel != nil {
+		s.tunnel = tunnel
+		s.proxyURL = tunnel.SOCKS5ProxyURL()
+	}
 	return nil
 }
 
@@ -358,10 +369,25 @@ func (s *Session) TempDir() string {
 	return s.tempDir
 }
 
+// TorArgs returns the configured extra args for the tor binary. If not set
+// we will not pass in any extra arg. Applies to `-OTunnel=tor` mainly.
+func (s *Session) TorArgs() []string {
+	return s.torArgs
+}
+
+// TorBinary returns the configured path to the tor binary. If not set
+// we will attempt to use "tor". Applies to `-OTunnel=tor` mainly.
+func (s *Session) TorBinary() string {
+	return s.torBinary
+}
+
 // TunnelBootstrapTime returns the time required to bootstrap the tunnel
 // we're using, or zero if we're using no tunnel.
 func (s *Session) TunnelBootstrapTime() time.Duration {
-	return s.tunnel.BootstrapTime() // safe if s.tunnel is nil
+	if s.tunnel == nil {
+		return 0
+	}
+	return s.tunnel.BootstrapTime()
 }
 
 // UserAgent constructs the user agent to be used in this session.
@@ -423,7 +449,7 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
-		UserAgent:  s.UserAgent(),
+		UserAgent:  httpheader.RandomUserAgent(), // no need to identify as OONI
 	}).Do(ctx)
 }
 
