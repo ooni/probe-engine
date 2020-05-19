@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -834,4 +835,140 @@ func TestNewWithSaver(t *testing.T) {
 	if _, ok := smtxp.RoundTripper.(*http.Transport); !ok {
 		t.Fatal("not the transport we expected")
 	}
+}
+
+func TestNewDNSClientInvalidURL(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "\t\t\t")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
+	}
+	if dnsclient.Resolver != nil {
+		t.Fatal("expected nil resolver here")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUnsupportedScheme(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "antani:///")
+	if err == nil || err.Error() != "unsupported resolver scheme" {
+		t.Fatal("not the error we expected")
+	}
+	if dnsclient.Resolver != nil {
+		t.Fatal("expected nil resolver here")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientSystemResolver(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "system:///")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := dnsclient.Resolver.(resolver.SystemResolver); !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientEmpty(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := dnsclient.Resolver.(resolver.SystemResolver); !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientGoogleDoH(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "doh://google")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientCloudflareDoH(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "doh://cloudflare")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUDP(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "udp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverUDP); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "doh://cloudflare")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if _, ok := txp.RoundTripper.(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "udp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if _, ok := txp.RoundTripper.(resolver.DNSOverUDP); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
 }

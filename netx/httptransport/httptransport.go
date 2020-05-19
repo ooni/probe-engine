@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -41,6 +42,9 @@ type Resolver interface {
 	Network() string
 	Address() string
 }
+
+// TODO(bassosimone): we should probably simplify the Config structure by
+// using a single Saver. We don't need different Savers.
 
 // Config contains configuration for creating a new transport. When any
 // field of Config is nil/empty, we will use a suitable default.
@@ -188,4 +192,81 @@ func New(config Config) RoundTripper {
 	}
 	txp = UserAgentTransport{RoundTripper: txp}
 	return txp
+}
+
+// DNSClient is a DNS client. It wraps a Resolver and it possibly
+// also wraps an HTTP client, but only when we're using DoH.
+type DNSClient struct {
+	Resolver
+	httpClient *http.Client
+}
+
+// CloseIdleConnections closes idle connections, if any.
+func (c DNSClient) CloseIdleConnections() {
+	if c.httpClient != nil {
+		c.httpClient.CloseIdleConnections()
+	}
+}
+
+// NewDNSClient creates a new DNS client. The config argument is used to
+// create the underlying Dialer and/or HTTP transport, if needed. The URL
+// argument describes the kind of client that we want to make:
+//
+// - if the URL is `doh://google` or `doh://cloudflare` or the URL
+// starts with `https://`, then we create a DoH client.
+//
+// - if the URL is `` or `system:///`, then we create a system client,
+// i.e. a client using the system resolver.
+//
+// - if the URL starts with `udp://`, then we create a client using
+// a resolver that uses the specified UDP endpoint.
+//
+// We return error if the URL does not parse or the URL scheme does not
+// fall into one of the cases described above.
+//
+// If config.ResolveSaver is not nil and we're creating an underlying
+// resolver where this is possible, we will also save events.
+func NewDNSClient(config Config, URL string) (DNSClient, error) {
+	var c DNSClient
+	switch URL {
+	case "doh://google":
+		URL = "https://dns.google/dns-query"
+	case "doh://cloudflare":
+		URL = "https://cloudflare-dns.com/dns-query"
+	case "":
+		URL = "system:///"
+	}
+	resolverURL, err := url.Parse(URL)
+	if err != nil {
+		return c, err
+	}
+	switch resolverURL.Scheme {
+	case "system":
+		c.Resolver = resolver.SystemResolver{}
+		return c, nil
+	case "https":
+		c.httpClient = &http.Client{Transport: New(config)}
+		var txp resolver.RoundTripper = resolver.NewDNSOverHTTPS(c.httpClient, URL)
+		if config.ResolveSaver != nil {
+			txp = resolver.SaverDNSTransport{
+				RoundTripper: txp,
+				Saver:        config.ResolveSaver,
+			}
+		}
+		c.Resolver = resolver.NewSerialResolver(txp)
+		return c, nil
+	case "udp":
+		dialer := NewDialer(config)
+		var txp resolver.RoundTripper = resolver.NewDNSOverUDP(dialer, resolverURL.Host)
+		if config.ResolveSaver != nil {
+			txp = resolver.SaverDNSTransport{
+				RoundTripper: txp,
+				Saver:        config.ResolveSaver,
+			}
+		}
+		c.Resolver = resolver.NewSerialResolver(txp)
+		return c, nil
+	default:
+		return c, errors.New("unsupported resolver scheme")
+	}
 }
