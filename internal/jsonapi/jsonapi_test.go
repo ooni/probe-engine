@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/netx/dialer"
 )
 
 type httpbinheaders struct {
@@ -225,6 +226,49 @@ func TestUnitDoxReadallFailure(t *testing.T) {
 		},
 		req, nil,
 	)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitCloudFronting(t *testing.T) {
+	client := makeclient()
+	client.Host = "www.x.org"
+	req, err := client.makeRequest(
+		context.Background(), "GET", "/status/404", nil, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := errors.New("mocked error")
+	err = client.dox(
+		func(req *http.Request) (*http.Response, error) {
+			if req.Host != "www.x.org" {
+				return nil, errors.New("expected req.Host to be set")
+			}
+			return nil, expected
+		}, nil, req, nil)
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUnitProxyTunnel(t *testing.T) {
+	client := makeclient()
+	client.ProxyURL = &url.URL{Scheme: "socks5", Host: "[::1]:443"}
+	req, err := client.makeRequest(context.Background(), "GET", "/status/404", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := errors.New("mocked error")
+	err = client.dox(
+		func(req *http.Request) (*http.Response, error) {
+			url := dialer.ContextProxyURL(req.Context())
+			if url == nil || url.Scheme != "socks5" || url.Host != "[::1]:443" {
+				return nil, errors.New("expected a different context URL")
+			}
+			return nil, expected
+		}, nil, req, nil)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}

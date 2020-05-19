@@ -13,6 +13,7 @@ import (
 	"net/url"
 
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/dialer"
 )
 
 // Client is a client for a JSON API.
@@ -26,8 +27,14 @@ type Client struct {
 	// HTTPClient is the http client to use.
 	HTTPClient *http.Client
 
+	// Host allows to set a specific host header.
+	Host string
+
 	// Logger is the logger to use.
 	Logger model.Logger
+
+	// ProxyURL allows to force a proxy URL to fallback to a tunnel.
+	ProxyURL *url.URL
 
 	// UserAgent is the user agent to use.
 	UserAgent string
@@ -63,6 +70,7 @@ func (c *Client) makeRequest(
 	if err != nil {
 		return nil, err
 	}
+	request.Host = c.Host // allow cloudfronting
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
@@ -70,6 +78,7 @@ func (c *Client) makeRequest(
 		request.Header.Set("Authorization", c.Authorization)
 	}
 	request.Header.Set("User-Agent", c.UserAgent)
+	ctx = dialer.WithProxyURL(ctx, c.ProxyURL) // allow tunneling if not nil
 	return request.WithContext(ctx), nil
 }
 
