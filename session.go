@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/bouncer"
 	"github.com/ooni/probe-engine/geoiplookup/iplookup"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/httpheader"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
@@ -27,6 +27,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 // SessionConfig contains the Session config
@@ -474,7 +475,7 @@ func (s *Session) maybeLookupCollectors(ctx context.Context) error {
 	if len(s.availableCollectors) > 0 {
 		return nil
 	}
-	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
+	return s.queryBouncer(ctx, func(client *probeservices.Client) (err error) {
 		s.availableCollectors, err = client.GetCollectors(ctx)
 		return
 	})
@@ -529,24 +530,26 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 	if len(s.availableTestHelpers) > 0 {
 		return nil
 	}
-	return s.queryBouncer(ctx, func(client *bouncer.Client) (err error) {
+	return s.queryBouncer(ctx, func(client *probeservices.Client) (err error) {
 		s.availableTestHelpers, err = client.GetTestHelpers(ctx)
 		return
 	})
 }
 
-func (s *Session) queryBouncer(ctx context.Context, query func(*bouncer.Client) error) error {
+func (s *Session) queryBouncer(ctx context.Context, query func(*probeservices.Client) error) error {
 	s.queryBouncerCount.Add(1)
 	for _, e := range s.getAvailableBouncers() {
 		if e.Type != "https" {
 			s.logger.Debugf("session: unsupported bouncer type: %s", e.Type)
 			continue
 		}
-		err := query(&bouncer.Client{
-			BaseURL:    e.Address,
-			HTTPClient: s.DefaultHTTPClient(),
-			Logger:     s.logger,
-			UserAgent:  s.UserAgent(),
+		err := query(&probeservices.Client{
+			Client: jsonapi.Client{
+				BaseURL:    e.Address,
+				HTTPClient: s.DefaultHTTPClient(),
+				Logger:     s.logger,
+				UserAgent:  s.UserAgent(),
+			},
 		})
 		if err == nil {
 			return nil
