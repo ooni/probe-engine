@@ -10,6 +10,7 @@ package probeservices
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
@@ -23,8 +24,14 @@ type Client struct {
 	// HTTPClient is the HTTP client to use.
 	HTTPClient *http.Client
 
+	// Host allows to force a host header for cloudfronting.
+	Host string
+
 	// Logger is the logger to use.
 	Logger model.Logger
+
+	// ProxyURL allows to force a proxy URL to fallback to a tunnel.
+	ProxyURL *url.URL
 
 	// UserAgent is the user agent to use.
 	UserAgent string
@@ -36,7 +43,9 @@ func (c *Client) GetCollectors(ctx context.Context) (output []model.Service, err
 	err = (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
+		Host:       c.Host,
 		Logger:     c.Logger,
+		ProxyURL:   c.ProxyURL,
 		UserAgent:  c.UserAgent,
 	}).Read(ctx, "/api/v1/collectors", &output)
 	return
@@ -48,7 +57,9 @@ func (c *Client) GetTestHelpers(
 	err = (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
+		Host:       c.Host,
 		Logger:     c.Logger,
+		ProxyURL:   c.ProxyURL,
 		UserAgent:  c.UserAgent,
 	}).Read(ctx, "/api/v1/test-helpers", &output)
 	return

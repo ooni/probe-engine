@@ -75,7 +75,9 @@ func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, er
 	err := (&jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
+		Host:       c.Host,
 		Logger:     c.Logger,
+		ProxyURL:   c.ProxyURL,
 		UserAgent:  c.UserAgent,
 	}).Create(ctx, "/report", rt, &or)
 	if err != nil {
@@ -112,7 +114,9 @@ func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) er
 	err := (&jsonapi.Client{
 		BaseURL:    r.client.BaseURL,
 		HTTPClient: r.client.HTTPClient,
+		Host:       r.client.Host,
 		Logger:     r.client.Logger,
+		ProxyURL:   r.client.ProxyURL,
 		UserAgent:  r.client.UserAgent,
 	}).Create(
 		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
@@ -132,7 +136,9 @@ func (r *Report) Close(ctx context.Context) error {
 	err := (&jsonapi.Client{
 		BaseURL:    r.client.BaseURL,
 		HTTPClient: r.client.HTTPClient,
+		Host:       r.client.Host,
 		Logger:     r.client.Logger,
+		ProxyURL:   r.client.ProxyURL,
 		UserAgent:  r.client.UserAgent,
 	}).Create(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
