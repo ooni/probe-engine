@@ -42,8 +42,8 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 	}
 }
 
-func makeClient() *probeservices.Client {
-	return &probeservices.Client{
+func makeClient() probeservices.Client {
+	return probeservices.Client{
 		Client: jsonapi.Client{
 			BaseURL:    "https://ps-test.ooni.io/",
 			HTTPClient: http.DefaultClient,
