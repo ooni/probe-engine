@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -41,12 +42,14 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 	}
 }
 
-func makeClient() *probeservices.Client {
-	return &probeservices.Client{
-		BaseURL:    "https://ps-test.ooni.io/",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "ooniprobe-engine/0.1.0",
+func makeClient() probeservices.Client {
+	return probeservices.Client{
+		Client: jsonapi.Client{
+			BaseURL:    "https://ps-test.ooni.io/",
+			HTTPClient: http.DefaultClient,
+			Logger:     log.Log,
+			UserAgent:  "ooniprobe-engine/0.1.0",
+		},
 	}
 }
 

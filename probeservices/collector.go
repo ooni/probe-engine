@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -60,11 +59,11 @@ type Report struct {
 	ID string
 
 	// client is the client that was used.
-	client *Client
+	client Client
 }
 
 // OpenReport opens a new report.
-func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
+func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
 		return nil, errors.New("Unsupported data format version")
 	}
@@ -72,14 +71,7 @@ func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, er
 		return nil, errors.New("Unsupported format")
 	}
 	var or openResponse
-	err := (&jsonapi.Client{
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Host:       c.Host,
-		Logger:     c.Logger,
-		ProxyURL:   c.ProxyURL,
-		UserAgent:  c.UserAgent,
-	}).Create(ctx, "/report", rt, &or)
+	err := c.Client.Create(ctx, "/report", rt, &or)
 	if err != nil {
 		return nil, err
 	}
@@ -108,17 +100,10 @@ type updateResponse struct {
 // to the OONI collector. We will unconditionally modify the measurement
 // with the ReportID it should contain. If the collector supports sending
 // back to us a measurement ID, we also update the m.OOID field with it.
-func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
+func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse updateResponse
 	m.ReportID = r.ID
-	err := (&jsonapi.Client{
-		BaseURL:    r.client.BaseURL,
-		HTTPClient: r.client.HTTPClient,
-		Host:       r.client.Host,
-		Logger:     r.client.Logger,
-		ProxyURL:   r.client.ProxyURL,
-		UserAgent:  r.client.UserAgent,
-	}).Create(
+	err := r.client.Client.Create(
 		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
 			Format:  "json",
 			Content: m,
@@ -131,16 +116,9 @@ func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) er
 }
 
 // Close closes the report. Returns nil on success; an error on failure.
-func (r *Report) Close(ctx context.Context) error {
+func (r Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	err := (&jsonapi.Client{
-		BaseURL:    r.client.BaseURL,
-		HTTPClient: r.client.HTTPClient,
-		Host:       r.client.Host,
-		Logger:     r.client.Logger,
-		ProxyURL:   r.client.ProxyURL,
-		UserAgent:  r.client.UserAgent,
-	}).Create(
+	err := r.client.Client.Create(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
 	// Implementation note: the server is not compliant with
@@ -148,8 +126,7 @@ func (r *Report) Close(ctx context.Context) error {
 	// instead return an empty string. Intercept this error
 	// and turn it to nil, since we cannot really act upon
 	// this error, and we ought be flexible.
-	if _, ok := err.(*json.SyntaxError); ok &&
-		err.Error() == "unexpected end of JSON input" {
+	if _, ok := err.(*json.SyntaxError); ok && err.Error() == "unexpected end of JSON input" {
 		r.client.Logger.Debug(
 			"collector.go: working around collector returning empty string bug",
 		)

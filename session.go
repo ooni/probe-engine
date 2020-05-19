@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/httpheader"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
@@ -543,10 +544,12 @@ func (s *Session) queryBouncer(ctx context.Context, query func(*probeservices.Cl
 			continue
 		}
 		err := query(&probeservices.Client{
-			BaseURL:    e.Address,
-			HTTPClient: s.DefaultHTTPClient(),
-			Logger:     s.logger,
-			UserAgent:  s.UserAgent(),
+			Client: jsonapi.Client{
+				BaseURL:    e.Address,
+				HTTPClient: s.DefaultHTTPClient(),
+				Logger:     s.logger,
+				UserAgent:  s.UserAgent(),
+			},
 		})
 		if err == nil {
 			return nil
