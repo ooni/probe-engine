@@ -23,8 +23,8 @@ func TestNoHelpers(t *testing.T) {
 func TestNoSuitableHelper(t *testing.T) {
 	sess := &mockable.ExperimentSession{
 		MockableTestHelpers: map[string][]model.Service{
-			"foobar": []model.Service{
-				model.Service{
+			"foobar": {
+				{
 					Address: "mascetti",
 					Type:    "melandri",
 				},
@@ -43,8 +43,8 @@ func TestNoSuitableHelper(t *testing.T) {
 func TestGoodHelper(t *testing.T) {
 	sess := &mockable.ExperimentSession{
 		MockableTestHelpers: map[string][]model.Service{
-			"foobar": []model.Service{
-				model.Service{
+			"foobar": {
+				{
 					Address: "mascetti",
 					Type:    "melandri",
 				},

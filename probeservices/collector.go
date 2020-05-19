@@ -1,15 +1,10 @@
-// Package collector contains a OONI collector client implementation.
-//
-// Specifically we implement v2.0.0 of the OONI collector specification defined
-// in https://github.com/ooni/spec/blob/master/backends/bk-003-collector.md.
-package collector
+package probeservices
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
@@ -24,21 +19,6 @@ const (
 	// DefaultFormat is the default format
 	DefaultFormat = "json"
 )
-
-// Client is a client for the OONI collector API.
-type Client struct {
-	// BaseURL is the bouncer base URL.
-	BaseURL string
-
-	// HTTPClient is the HTTP client to use.
-	HTTPClient *http.Client
-
-	// Logger is the logger to use.
-	Logger model.Logger
-
-	// UserAgent is the user agent to use.
-	UserAgent string
-}
 
 // ReportTemplate is the template for opening a report
 type ReportTemplate struct {
@@ -84,9 +64,7 @@ type Report struct {
 }
 
 // OpenReport opens a new report.
-func (c *Client) OpenReport(
-	ctx context.Context, rt ReportTemplate,
-) (*Report, error) {
+func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
 		return nil, errors.New("Unsupported data format version")
 	}
@@ -128,9 +106,7 @@ type updateResponse struct {
 // to the OONI collector. We will unconditionally modify the measurement
 // with the ReportID it should contain. If the collector supports sending
 // back to us a measurement ID, we also update the m.OOID field with it.
-func (r *Report) SubmitMeasurement(
-	ctx context.Context, m *model.Measurement,
-) error {
+func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse updateResponse
 	m.ReportID = r.ID
 	err := (&jsonapi.Client{

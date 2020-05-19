@@ -1,22 +1,11 @@
-package bouncer_test
+package probeservices_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/bouncer"
 )
-
-func makeClient() *bouncer.Client {
-	return &bouncer.Client{
-		BaseURL:    "https://ps-test.ooni.io/",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "ooniprobe-engine/0.1.0",
-	}
-}
 
 func TestGetCollectors(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
