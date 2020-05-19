@@ -15,7 +15,6 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/httpheader"
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
@@ -378,10 +377,7 @@ func (s *Session) getAvailableBouncers() []model.Service {
 	if len(s.availableBouncers) > 0 {
 		return s.availableBouncers
 	}
-	return []model.Service{{
-		Address: "https://bouncer.ooni.io",
-		Type:    "https",
-	}}
+	return probeservices.Default()
 }
 
 func (s *Session) initOrchestraClient(
@@ -508,18 +504,12 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 func (s *Session) queryBouncer(ctx context.Context, query func(*probeservices.Client) error) error {
 	s.queryBouncerCount.Add(1)
 	for _, e := range s.getAvailableBouncers() {
-		if e.Type != "https" {
-			s.logger.Debugf("session: unsupported bouncer type: %s", e.Type)
+		client, err := probeservices.NewClient(s, e)
+		if err != nil {
+			s.logger.Debugf("%+v", err)
 			continue
 		}
-		err := query(&probeservices.Client{
-			Client: jsonapi.Client{
-				BaseURL:    e.Address,
-				HTTPClient: s.DefaultHTTPClient(),
-				Logger:     s.logger,
-				UserAgent:  s.UserAgent(),
-			},
-		})
+		err = query(client)
 		if err == nil {
 			return nil
 		}
