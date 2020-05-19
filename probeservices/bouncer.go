@@ -9,6 +9,7 @@ package probeservices
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
