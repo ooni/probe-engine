@@ -11,10 +11,12 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -298,14 +300,9 @@ func TestUnitGetAvailableBouncers(t *testing.T) {
 	}
 	defer sess.Close()
 	all := sess.GetAvailableBouncers()
-	if len(all) != 1 {
-		t.Fatal("unexpected number of bouncers")
-	}
-	if all[0].Address != "https://bouncer.ooni.io" {
-		t.Fatal("unexpected bouncer address")
-	}
-	if all[0].Type != "https" {
-		t.Fatal("unexpected bouncer type")
+	diff := cmp.Diff(all, probeservices.Default())
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
 
