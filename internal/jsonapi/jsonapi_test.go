@@ -18,8 +18,8 @@ type httpbinheaders struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func makeclient() *Client {
-	return &Client{
+func makeclient() Client {
+	return Client{
 		BaseURL:    "https://httpbin.org",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

@@ -40,7 +40,7 @@ type Client struct {
 // GetCollectors queries the bouncer for collectors. Returns a list of
 // entries on success; an error on failure.
 func (c *Client) GetCollectors(ctx context.Context) (output []model.Service, err error) {
-	err = (&jsonapi.Client{
+	err = (jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Host:       c.Host,
@@ -54,7 +54,7 @@ func (c *Client) GetCollectors(ctx context.Context) (output []model.Service, err
 // GetTestHelpers is like GetCollectors but for test helpers.
 func (c *Client) GetTestHelpers(
 	ctx context.Context) (output map[string][]model.Service, err error) {
-	err = (&jsonapi.Client{
+	err = (jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Host:       c.Host,

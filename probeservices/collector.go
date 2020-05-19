@@ -72,7 +72,7 @@ func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, er
 		return nil, errors.New("Unsupported format")
 	}
 	var or openResponse
-	err := (&jsonapi.Client{
+	err := (jsonapi.Client{
 		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Host:       c.Host,
@@ -111,7 +111,7 @@ type updateResponse struct {
 func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse updateResponse
 	m.ReportID = r.ID
-	err := (&jsonapi.Client{
+	err := (jsonapi.Client{
 		BaseURL:    r.client.BaseURL,
 		HTTPClient: r.client.HTTPClient,
 		Host:       r.client.Host,
@@ -133,7 +133,7 @@ func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) er
 // Close closes the report. Returns nil on success; an error on failure.
 func (r *Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	err := (&jsonapi.Client{
+	err := (jsonapi.Client{
 		BaseURL:    r.client.BaseURL,
 		HTTPClient: r.client.HTTPClient,
 		Host:       r.client.Host,

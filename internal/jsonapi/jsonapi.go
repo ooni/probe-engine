@@ -42,10 +42,9 @@ type Client struct {
 	UserAgent string
 }
 
-func (c *Client) makeRequestWithJSONBody(
+func (c Client) makeRequestWithJSONBody(
 	ctx context.Context, method, resourcePath string,
-	query url.Values, body interface{},
-) (*http.Request, error) {
+	query url.Values, body interface{}) (*http.Request, error) {
 	data, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -54,10 +53,9 @@ func (c *Client) makeRequestWithJSONBody(
 	return c.makeRequest(ctx, method, resourcePath, query, bytes.NewReader(data))
 }
 
-func (c *Client) makeRequest(
+func (c Client) makeRequest(
 	ctx context.Context, method, resourcePath string,
-	query url.Values, body io.Reader,
-) (*http.Request, error) {
+	query url.Values, body io.Reader) (*http.Request, error) {
 	URL, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, err
@@ -84,12 +82,11 @@ func (c *Client) makeRequest(
 	return request.WithContext(ctx), nil
 }
 
-func (c *Client) dox(
+func (c Client) dox(
 	do func(req *http.Request) (*http.Response, error),
 	readall func(r io.Reader) ([]byte, error),
 	request *http.Request,
-	output interface{},
-) error {
+	output interface{}) error {
 	response, err := do(request)
 	if err != nil {
 		return err
@@ -106,7 +103,7 @@ func (c *Client) dox(
 	return json.Unmarshal(data, output)
 }
 
-func (c *Client) do(request *http.Request, output interface{}) error {
+func (c Client) do(request *http.Request, output interface{}) error {
 	return c.dox(
 		c.HTTPClient.Do,
 		ioutil.ReadAll,
@@ -117,17 +114,14 @@ func (c *Client) do(request *http.Request, output interface{}) error {
 // Read reads the JSON resource at resourcePath and unmarshals the
 // results into output. The request is bounded by the lifetime of the
 // context passed as argument. Returns the error that occurred.
-func (c *Client) Read(
-	ctx context.Context, resourcePath string, output interface{},
-) error {
+func (c Client) Read(ctx context.Context, resourcePath string, output interface{}) error {
 	return c.ReadWithQuery(ctx, resourcePath, nil, output)
 }
 
 // ReadWithQuery is like Read but also has a query.
-func (c *Client) ReadWithQuery(
+func (c Client) ReadWithQuery(
 	ctx context.Context, resourcePath string,
-	query url.Values, output interface{},
-) error {
+	query url.Values, output interface{}) error {
 	request, err := c.makeRequest(ctx, "GET", resourcePath, query, nil)
 	if err != nil {
 		return err
@@ -139,9 +133,8 @@ func (c *Client) ReadWithQuery(
 // using the JSON document at input and returning the result into the
 // JSON document at output. The request is bounded by the context's
 // lifetime. Returns the error that occurred.
-func (c *Client) Create(
-	ctx context.Context, resourcePath string, input, output interface{},
-) error {
+func (c Client) Create(
+	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.makeRequestWithJSONBody(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
 		return err
@@ -151,9 +144,8 @@ func (c *Client) Create(
 
 // Update updates a JSON resource at a specific path and returns
 // the error that occurred and possibly an output document
-func (c *Client) Update(
-	ctx context.Context, resourcePath string, input, output interface{},
-) error {
+func (c Client) Update(
+	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.makeRequestWithJSONBody(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {
 		return err
