@@ -10,14 +10,8 @@ package probeservices
 import (
 	"context"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 )
-
-// Client is a client for the OONI probe services API.
-type Client struct {
-	jsonapi.Client
-}
 
 // GetCollectors queries the bouncer for collectors. Returns a list of
 // entries on success; an error on failure.

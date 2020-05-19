@@ -26,7 +26,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -390,20 +389,13 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 		},
 	}
 	for _, c := range e.session.availableCollectors {
-		if c.Type != "https" {
-			e.session.logger.Debugf(
-				"experiment: unsupported collector type: %s", c.Type,
-			)
+		var client *probeservices.Client
+		client, err = probeservices.NewClient(e.session, c)
+		if err != nil {
+			e.session.logger.Debugf("%+v", err)
 			continue
 		}
-		client := &probeservices.Client{
-			Client: jsonapi.Client{
-				BaseURL:    c.Address,
-				HTTPClient: httpClient,
-				Logger:     e.session.logger,
-				UserAgent:  e.session.UserAgent(),
-			},
-		}
+		client.HTTPClient = httpClient // patch HTTP client to use
 		template := probeservices.ReportTemplate{
 			DataFormatVersion: probeservices.DefaultDataFormatVersion,
 			Format:            probeservices.DefaultFormat,
