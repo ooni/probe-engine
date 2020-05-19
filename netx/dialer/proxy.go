@@ -13,8 +13,8 @@ import (
 // dialer is a passthrough for the next Dialer in chain. Otherwise, it will internally
 // create a SOCKS5 dialer that will connect to the proxy using the underlying Dialer.
 //
-// As a special case, you can force a proxy to be used only when. To this end, you
-// can use the WithProxyURL function, to store the proxy URL in the context. This
+// As a special case, you can force a proxy to be used only extemporarily. To this end,
+// you can use the WithProxyURL function, to store the proxy URL in the context. This
 // will take precedence over any otherwise configured proxy. The use case for this
 // functionality is when you need a tunnel to contact OONI probe services.
 type ProxyDialer struct {
