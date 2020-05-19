@@ -1,33 +1,24 @@
 // Package selfcensor contains code that triggers censorship. We use
 // this functionality to implement integration tests.
 //
-// Jafar is the evil grand vizier of censorship. It has been implemented
-// at github.com/ooni/jafar. Libjafar brings some jafar concepts inside
-// the github.com/ooni/probe-engine repository. While the code in the jafar
-// repository requires Linux for most cool stuff, this code is portable
-// to all systems. Yet, the code in here works by changing the probe-engine
-// internals, so it is definitely a much less accurate mechanism.
-//
-// To use this library, you need to use `-tags selfcensor`. If this that is
-// specified, them the code will honour the MINIOONI_SELFCENSOR_SPEC environment
-// variable and will implement the censorship policy described by its
-// content. Such variable shall contain a JSON serialized Spec structure.
-//
-// Examples
+// The self censoring functionality is disabled by default. To enable it,
+// call Enable with a JSON-serialized Spec structure as its argument.
 //
 // The following example causes NXDOMAIN to be returned for `dns.google`:
 //
-//     export MINIOONI_SELFCENSOR_SPEC='{"PoisonSystemDNS":{"dns.google":["NXDOMAIN"]}}'
+//     selfcensor.Enable(`{"PoisonSystemDNS":{"dns.google":["NXDOMAIN"]}}`)
 //
 // The following example blocks connecting to `8.8.8.8:443`:
 //
-//     export MINIOONI_SELFCENSOR_SPEC='{"BlockedEndpoints":{"8.8.8.8:443":"REJECT"}}'
+//     selfcensor.Enable(`{"BlockedEndpoints":{"8.8.8.8:443":"REJECT"}}`)
 //
 // The following example blocks packets containing dns.google:
 //
-//     export MINIOONI_SELFCENSOR_SPEC='{"BlockedFingerprints":{"dns.google":"RST"}}'
+//     selfcensor.Enable(`{"BlockedFingerprints":{"dns.google":"RST"}}`)
 //
-// The documentation of the Spec structure contains further information.
+// The documentation of the Spec structure contains further information on
+// how to populate the JSON. Miniooni uses the `--self-censor-spec flag` to
+// which you are supposed to pass a serialized JSON.
 package selfcensor
 
 import (
@@ -40,11 +31,9 @@ import (
 	"sync"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
-// Spec contains the spec for minijafar. This spec should be passed as a
-// serialized JSON in the MINIOONI_SELFCENSOR_SPEC environment variable.
+// Spec indicates what self censorship techniques to implement.
 type Spec struct {
 	// PoisonSystemDNS allows you to change the behaviour of the system
 	// DNS regarding specific domains. They keys are the domains and the
@@ -71,31 +60,53 @@ type Spec struct {
 	BlockedFingerprints map[string]string
 }
 
-// EnvironmentVariable is the name of the environment variable that you
-// must set in order to enable selfcensor functionality.
-const EnvironmentVariable = "MINIOONI_SELFCENSOR_SPEC"
-
 var (
-	enabled *atomicx.Int64
-	spec    *Spec
-	mu      sync.Mutex
+	attempts *atomicx.Int64 = atomicx.NewInt64()
+	enabled  *atomicx.Int64 = atomicx.NewInt64()
+	mu       sync.Mutex
+	spec     *Spec
 )
 
-func init() {
-	enabled = atomicx.NewInt64()
-	env := getenv(EnvironmentVariable)
-	if env == "" {
-		return // no environment variable or no `-tags selfcensor`
-	}
-	spec = new(Spec)
-	runtimex.PanicOnError(
-		json.Unmarshal([]byte(env), spec), "selfcensor: cannot parse spec")
-	enabled.Add(1)
-	log.Printf("selfcensor: enabled and using this spec: %s", env)
+// Enabled returns whether self censorship is enabled
+func Enabled() bool {
+	return enabled.Load() != 0
 }
 
-// SystemResolver is selfcensor system resolver. If MINIOONI_SELFCENSOR_SPEC is
-// set, it will use its content to censor the system resolver.
+// Attempts returns the number of self censorship attempts so far. A self
+// censorship attempt is defined as the code entering into the branch that
+// _may_ perform self censorship. We expected to see this counter being
+// equal to zero when Enabled() returns false.
+func Attempts() int64 {
+	return attempts.Load()
+}
+
+// Enable turns on the self censorship engine. This function returns
+// an error if we cannot parse a Spec from the serialized JSON inside
+// data. Each time you call Enable you overwrite the previous spec.
+func Enable(data string) error {
+	mu.Lock()
+	defer mu.Unlock()
+	s := new(Spec)
+	if err := json.Unmarshal([]byte(data), s); err != nil {
+		return err
+	}
+	spec = s
+	enabled.Add(1)
+	log.Printf("selfcensor: spec %+v", *spec)
+	return nil
+}
+
+// MaybeEnable is like enable except that it does nothing in case
+// the string provided as argument is an empty string.
+func MaybeEnable(data string) (err error) {
+	if data != "" {
+		err = Enable(data)
+	}
+	return
+}
+
+// SystemResolver is a self-censoring system resolver. This resolver does
+// not censor anything unless you call selfcensor.Enable().
 type SystemResolver struct{}
 
 // LookupHost implements Resolver.LookupHost
@@ -103,6 +114,7 @@ func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]stri
 	if enabled.Load() != 0 { // jumps not taken by default
 		mu.Lock()
 		defer mu.Unlock()
+		attempts.Add(1)
 		if spec.PoisonSystemDNS != nil {
 			values := spec.PoisonSystemDNS[hostname]
 			if len(values) == 1 && values[0] == "NXDOMAIN" {
@@ -131,8 +143,8 @@ func (r SystemResolver) Address() string {
 	return ""
 }
 
-// SystemDialer is selfcensor system dialer. If MINIOONI_SELFCENSOR_SPEC is
-// set, it will use its content to censor the system dialer.
+// SystemDialer is a self-censoring system dialer. This dialer does
+// not censor anything unless you call selfcensor.Enable().
 type SystemDialer struct{}
 
 // defaultDialer is the dialer we use by default
@@ -144,6 +156,7 @@ func (d SystemDialer) DialContext(
 	if enabled.Load() != 0 { // jumps not taken by default
 		mu.Lock()
 		defer mu.Unlock()
+		attempts.Add(1)
 		if spec.BlockedEndpoints != nil {
 			action, ok := spec.BlockedEndpoints[address]
 			if ok && action == "TIMEOUT" {
@@ -164,7 +177,7 @@ func (d SystemDialer) DialContext(
 			if err != nil {
 				return nil, err
 			}
-			return connWrapper{Conn: conn, closed: make(chan interface{}),
+			return connWrapper{Conn: conn, closed: make(chan interface{}, 128),
 				fingerprints: spec.BlockedFingerprints}, nil
 		}
 		// FALLTHROUGH
@@ -178,17 +191,9 @@ type connWrapper struct {
 	fingerprints map[string]string
 }
 
-func (c connWrapper) Read(p []byte) (int, error) {
+func (c connWrapper) Write(p []byte) (int, error) {
 	// TODO(bassosimone): implement reassembly to workaround the
 	// splitting of the ClientHello message.
-	count, err := c.Conn.Read(p)
-	if err != nil {
-		return 0, err
-	}
-	return c.match(p, count)
-}
-
-func (c connWrapper) Write(p []byte) (int, error) {
 	if _, err := c.match(p, len(p)); err != nil {
 		return 0, err
 	}
@@ -210,6 +215,9 @@ func (c connWrapper) match(p []byte, n int) (int, error) {
 }
 
 func (c connWrapper) Close() error {
+	// Implementation note: we will block here if we attempt to close
+	// too many times and noone's reading. Because we have a large buffer,
+	// and because this is integration testing code, that's fine.
 	c.closed <- true
 	return c.Conn.Close()
 }
