@@ -49,7 +49,7 @@ func (c Client) makeRequestWithJSONBody(
 	if err != nil {
 		return nil, err
 	}
-	c.Logger.Debugf("jsonapi: request body: %s", string(data))
+	c.Logger.Debugf("jsonapi: request body: %d bytes", len(data))
 	return c.makeRequest(ctx, method, resourcePath, query, bytes.NewReader(data))
 }
 
@@ -99,7 +99,7 @@ func (c Client) dox(
 	if err != nil {
 		return err
 	}
-	c.Logger.Debugf("jsonapi: response body: %s", string(data))
+	c.Logger.Debugf("jsonapi: response body: %d bytes", len(data))
 	return json.Unmarshal(data, output)
 }
 
