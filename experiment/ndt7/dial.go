@@ -3,7 +3,6 @@ package ndt7
 import (
 	"context"
 	"crypto/tls"
-	"net"
 	"net/http"
 	"net/url"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/resolver"
+	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
 type dialManager struct {
@@ -39,7 +39,7 @@ func newDialManager(
 func (mgr dialManager) dialWithTestName(ctx context.Context, testName string) (*websocket.Conn, error) {
 	var reso resolver.Resolver = resolver.SystemResolver{}
 	reso = resolver.LoggingResolver{Resolver: reso, Logger: mgr.logger}
-	var dlr dialer.Dialer = new(net.Dialer)
+	var dlr dialer.Dialer = selfcensor.SystemDialer{}
 	dlr = dialer.TimeoutDialer{Dialer: dlr}
 	dlr = dialer.ErrorWrapperDialer{Dialer: dlr}
 	dlr = dialer.LoggingDialer{Dialer: dlr, Logger: mgr.logger}

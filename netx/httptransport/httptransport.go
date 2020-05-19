@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/resolver"
+	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -113,7 +114,7 @@ func NewDialer(config Config) Dialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d Dialer = new(net.Dialer)
+	var d Dialer = selfcensor.SystemDialer{}
 	d = dialer.TimeoutDialer{Dialer: d}
 	d = dialer.ErrorWrapperDialer{Dialer: d}
 	if config.Logger != nil {

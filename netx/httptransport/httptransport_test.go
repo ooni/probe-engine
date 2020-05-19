@@ -3,7 +3,6 @@ package httptransport_test
 import (
 	"crypto/tls"
 	"errors"
-	"net"
 	"net/http"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/resolver"
+	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -210,7 +210,7 @@ func TestNewDialerVanilla(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -250,7 +250,7 @@ func TestNewDialerWithResolver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -295,7 +295,7 @@ func TestNewDialerWithLogger(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -341,7 +341,7 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -387,7 +387,7 @@ func TestNewDialerWithReadWriteSaver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -429,7 +429,7 @@ func TestNewDialerWithContextByteCounting(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }

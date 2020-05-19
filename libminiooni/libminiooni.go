@@ -19,26 +19,28 @@ import (
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/internal/humanizex"
+	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
 )
 
 // Options contains the options you can set from the CLI.
 type Options struct {
-	Annotations  []string
-	BouncerURL   string
-	CollectorURL string
-	Inputs       []string
-	ExtraOptions []string
-	NoBouncer    bool
-	NoGeoIP      bool
-	NoJSON       bool
-	NoCollector  bool
-	Proxy        string
-	ReportFile   string
-	TorArgs      []string
-	TorBinary    string
-	Verbose      bool
+	Annotations    []string
+	BouncerURL     string
+	CollectorURL   string
+	Inputs         []string
+	ExtraOptions   []string
+	NoBouncer      bool
+	NoGeoIP        bool
+	NoJSON         bool
+	NoCollector    bool
+	Proxy          string
+	ReportFile     string
+	SelfCensorSpec string
+	TorArgs        []string
+	TorBinary      string
+	Verbose        bool
 }
 
 const (
@@ -89,6 +91,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',
 		"Set the report file path", "PATH",
+	)
+	getopt.FlagLong(
+		&globalOptions.SelfCensorSpec, "self-censor-spec", 0,
+		"Enable and configure self censorship", "JSON",
 	)
 	getopt.FlagLong(
 		&globalOptions.TorArgs, "tor-args", 0,
@@ -205,6 +211,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	extraOptions := mustMakeMap(currentOptions.ExtraOptions)
 	annotations := mustMakeMap(currentOptions.Annotations)
 
+	err := selfcensor.MaybeEnable(currentOptions.SelfCensorSpec)
+	fatalOnError(err, "cannot parse --self-censor-spec argument")
+
 	logger := &log.Logger{Level: log.InfoLevel, Handler: &logHandler{Writer: os.Stderr}}
 	if currentOptions.Verbose {
 		logger.Level = log.DebugLevel
@@ -218,7 +227,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	fatalIfFalse(homeDir != "", "home directory is empty")
 	miniooniDir := path.Join(homeDir, ".miniooni")
 	assetsDir := path.Join(miniooniDir, "assets")
-	err := os.MkdirAll(assetsDir, 0700)
+	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
 	log.Infof("miniooni state directory: %s", miniooniDir)
 	tempDir, err := ioutil.TempDir("", "miniooni")

@@ -1,26 +1,10 @@
 package resolver
 
-import (
-	"context"
-	"net"
-)
+import "github.com/ooni/probe-engine/netx/selfcensor"
 
-// SystemResolver is the system resolver
-type SystemResolver struct{}
-
-// LookupHost returns the IP addresses of a host
-func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	return net.DefaultResolver.LookupHost(ctx, hostname)
-}
-
-// Network implements Resolver.Network
-func (r SystemResolver) Network() string {
-	return "system"
-}
-
-// Address implements Resolver.Address
-func (r SystemResolver) Address() string {
-	return ""
-}
+// SystemResolver is the system resolver. It is implemented using
+// selfcensor.SystemResolver so that we can perform integration testing
+// by forcing the code to return specific responses.
+type SystemResolver = selfcensor.SystemResolver
 
 var _ Resolver = SystemResolver{}
