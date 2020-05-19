@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -72,14 +71,7 @@ func (c *Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, er
 		return nil, errors.New("Unsupported format")
 	}
 	var or openResponse
-	err := (jsonapi.Client{
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Host:       c.Host,
-		Logger:     c.Logger,
-		ProxyURL:   c.ProxyURL,
-		UserAgent:  c.UserAgent,
-	}).Create(ctx, "/report", rt, &or)
+	err := c.Client.Create(ctx, "/report", rt, &or)
 	if err != nil {
 		return nil, err
 	}
@@ -111,14 +103,7 @@ type updateResponse struct {
 func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse updateResponse
 	m.ReportID = r.ID
-	err := (jsonapi.Client{
-		BaseURL:    r.client.BaseURL,
-		HTTPClient: r.client.HTTPClient,
-		Host:       r.client.Host,
-		Logger:     r.client.Logger,
-		ProxyURL:   r.client.ProxyURL,
-		UserAgent:  r.client.UserAgent,
-	}).Create(
+	err := r.client.Client.Create(
 		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
 			Format:  "json",
 			Content: m,
@@ -133,14 +118,7 @@ func (r *Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) er
 // Close closes the report. Returns nil on success; an error on failure.
 func (r *Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	err := (jsonapi.Client{
-		BaseURL:    r.client.BaseURL,
-		HTTPClient: r.client.HTTPClient,
-		Host:       r.client.Host,
-		Logger:     r.client.Logger,
-		ProxyURL:   r.client.ProxyURL,
-		UserAgent:  r.client.UserAgent,
-	}).Create(
+	err := r.client.Client.Create(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
 	// Implementation note: the server is not compliant with

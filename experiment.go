@@ -26,6 +26,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
+	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -396,10 +397,12 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 			continue
 		}
 		client := &probeservices.Client{
-			BaseURL:    c.Address,
-			HTTPClient: httpClient,
-			Logger:     e.session.logger,
-			UserAgent:  e.session.UserAgent(),
+			Client: jsonapi.Client{
+				BaseURL:    c.Address,
+				HTTPClient: httpClient,
+				Logger:     e.session.logger,
+				UserAgent:  e.session.UserAgent(),
+			},
 		}
 		template := probeservices.ReportTemplate{
 			DataFormatVersion: probeservices.DefaultDataFormatVersion,

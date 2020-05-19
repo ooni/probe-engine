@@ -13,7 +13,9 @@ func TestGetCollectors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Infof("%+v", collectors)
+	if len(collectors) <= 1 {
+		t.Fatal("no returned collectors?!")
+	}
 }
 
 func TestGetTestHelpers(t *testing.T) {
@@ -22,5 +24,7 @@ func TestGetTestHelpers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Infof("%+v", testhelpers)
+	if len(testhelpers) <= 1 {
+		t.Fatal("no returned test helpers?!")
+	}
 }
