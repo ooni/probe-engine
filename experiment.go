@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
@@ -32,6 +31,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/version"
 )
 
