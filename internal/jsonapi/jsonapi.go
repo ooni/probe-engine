@@ -27,13 +27,15 @@ type Client struct {
 	// HTTPClient is the http client to use.
 	HTTPClient *http.Client
 
-	// Host allows to set a specific host header.
+	// Host allows to set a specific host header. This is useful
+	// to implement, e.g., cloudfronting.
 	Host string
 
 	// Logger is the logger to use.
 	Logger model.Logger
 
-	// ProxyURL allows to force a proxy URL to fallback to a tunnel.
+	// ProxyURL allows to force a proxy URL to fallback to a
+	// tunnel, e.g., Psiphon.
 	ProxyURL *url.URL
 
 	// UserAgent is the user agent to use.
