@@ -19,6 +19,7 @@ import (
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/internal/humanizex"
+	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
@@ -243,17 +244,38 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	kvstore, err := engine.NewFileSystemKVStore(kvstore2dir)
 	fatalOnError(err, "cannot create kvstore2 directory")
 
-	sess, err := engine.NewSession(engine.SessionConfig{
-		AssetsDir:       assetsDir,
-		KVStore:         kvstore,
-		Logger:          logger,
+	config := engine.SessionConfig{
+		AssetsDir: assetsDir,
+		KVStore:   kvstore,
+		Logger:    logger,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     true,
+			IncludeCountry: true,
+		},
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
 		TempDir:         tempDir,
 		TorArgs:         currentOptions.TorArgs,
 		TorBinary:       currentOptions.TorBinary,
-	})
+	}
+	if currentOptions.BouncerURL != "" {
+		config.AvailableBouncers = []model.Service{{
+			Address: currentOptions.BouncerURL,
+			Type:    "https",
+		}}
+	}
+	if currentOptions.CollectorURL != "" {
+		// Implementation note: setting the collector before doing the lookup
+		// is totally fine because it's a maybe lookup, meaning that any bit
+		// of information already available will not be looked up again.
+		config.AvailableCollectors = []model.Service{{
+			Address: currentOptions.CollectorURL,
+			Type:    "https",
+		}}
+	}
+
+	sess, err := engine.NewSession(config)
 	fatalOnError(err, "cannot create measurement session")
 	defer func() {
 		sess.Close()
@@ -262,16 +284,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
-
-	if currentOptions.BouncerURL != "" {
-		sess.AddAvailableHTTPSBouncer(currentOptions.BouncerURL)
-	}
-	if currentOptions.CollectorURL != "" {
-		// Implementation note: setting the collector before doing the lookup
-		// is totally fine because it's a maybe lookup, meaning that any bit
-		// of information already available will not be looked up again.
-		sess.AddAvailableHTTPSCollector(currentOptions.CollectorURL)
-	}
 
 	if !currentOptions.NoBouncer {
 		log.Info("Looking up OONI backends; please be patient...")
