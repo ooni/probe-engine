@@ -4,14 +4,12 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
-	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/resolver"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -26,15 +24,13 @@ type Configurer struct {
 
 // The Configuration is the configuration for running a measurement.
 type Configuration struct {
-	HTTPConfig        httptransport.Config
-	DNSOverHTTPClient *http.Client
+	HTTPConfig httptransport.Config
+	DNSClient  httptransport.DNSClient
 }
 
 // CloseIdleConnections will close idle connections, if needed.
 func (c Configuration) CloseIdleConnections() {
-	if c.DNSOverHTTPClient != nil {
-		c.DNSOverHTTPClient.CloseIdleConnections()
-	}
+	c.DNSClient.CloseIdleConnections()
 }
 
 // NewConfiguration builds a new measurement configuration.
@@ -74,46 +70,14 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			entry[0]: addresses,
 		}
 	}
-	// configure the resolver
-	switch c.Config.ResolverURL {
-	case "doh://google":
-		c.Config.ResolverURL = "https://dns.google/dns-query"
-	case "doh://cloudflare":
-		c.Config.ResolverURL = "https://cloudflare-dns.com/dns-query"
-	case "":
-		c.Config.ResolverURL = "system:///"
-	}
-	resolverURL, err := url.Parse(c.Config.ResolverURL)
+	dnsclient, err := httptransport.NewDNSClient(
+		configuration.HTTPConfig, c.Config.ResolverURL,
+	)
 	if err != nil {
 		return configuration, err
 	}
-	switch resolverURL.Scheme {
-	case "system":
-	case "https":
-		configuration.DNSOverHTTPClient = &http.Client{
-			Transport: httptransport.New(configuration.HTTPConfig),
-		}
-		configuration.HTTPConfig.BaseResolver = resolver.NewSerialResolver(
-			resolver.SaverDNSTransport{
-				RoundTripper: resolver.NewDNSOverHTTPS(
-					configuration.DNSOverHTTPClient, c.Config.ResolverURL,
-				),
-				Saver: c.Saver,
-			},
-		)
-	case "udp":
-		dialer := httptransport.NewDialer(configuration.HTTPConfig)
-		configuration.HTTPConfig.BaseResolver = resolver.NewSerialResolver(
-			resolver.SaverDNSTransport{
-				RoundTripper: resolver.NewDNSOverUDP(
-					dialer, resolverURL.Host,
-				),
-				Saver: c.Saver,
-			},
-		)
-	default:
-		return configuration, errors.New("unsupported resolver scheme")
-	}
+	configuration.DNSClient = dnsclient
+	configuration.HTTPConfig.BaseResolver = dnsclient.Resolver
 	// configure TLS
 	if c.Config.TLSServerName != "" {
 		configuration.HTTPConfig.TLSConfig = &tls.Config{

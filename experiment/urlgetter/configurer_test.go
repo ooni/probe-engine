@@ -22,9 +22,6 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient != nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -52,7 +49,7 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 	if configuration.HTTPConfig.TLSSaver != saver {
 		t.Fatal("not the TLSSaver we expected")
 	}
-	if configuration.HTTPConfig.BaseResolver != nil {
+	if configuration.HTTPConfig.BaseResolver == nil {
 		t.Fatal("not the BaseResolver we expected")
 	}
 	if configuration.HTTPConfig.TLSConfig != nil {
@@ -80,9 +77,6 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient == nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -153,9 +147,6 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSCloudflare(t *testing.T) 
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient == nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -226,9 +217,6 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient != nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
