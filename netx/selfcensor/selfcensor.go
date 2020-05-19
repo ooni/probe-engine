@@ -150,7 +150,7 @@ type SystemDialer struct{}
 // defaultDialer is the dialer we use by default
 var defaultDialer = new(net.Dialer)
 
-// DialContext implemnts Dialer.DialContext
+// DialContext implements Dialer.DialContext
 func (d SystemDialer) DialContext(
 	ctx context.Context, network, address string) (net.Conn, error) {
 	if enabled.Load() != 0 { // jumps not taken by default
