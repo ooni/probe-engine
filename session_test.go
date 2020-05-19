@@ -69,8 +69,21 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 		t.Fatal(err)
 	}
 	sess, err := NewSession(SessionConfig{
-		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		AssetsDir: "testdata",
+		AvailableBouncers: []model.Service{{
+			Address: "https://ps-test.ooni.io",
+			Type:    "https",
+		}},
+		AvailableCollectors: []model.Service{{
+			Address: "https://ps-test.ooni.io",
+			Type:    "https",
+		}},
+		Logger: log.Log,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     true,
+			IncludeCountry: true,
+			IncludeIP:      false,
+		},
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
@@ -79,11 +92,6 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 	if err != nil {
 		t.Fatal(err)
 	}
-	sess.AddAvailableHTTPSBouncer("https://ps-test.ooni.io")
-	sess.AddAvailableHTTPSCollector("https://ps-test.ooni.io")
-	sess.SetIncludeProbeASN(true)
-	sess.SetIncludeProbeCC(true)
-	sess.SetIncludeProbeIP(false)
 	return sess
 }
 

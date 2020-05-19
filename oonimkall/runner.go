@@ -7,6 +7,7 @@ import (
 
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/model"
 )
 
 const (
@@ -156,14 +157,32 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return engine.NewSession(engine.SessionConfig{
-		AssetsDir:       r.settings.AssetsDir,
-		KVStore:         kvstore,
-		Logger:          logger,
+	config := engine.SessionConfig{
+		AssetsDir: r.settings.AssetsDir,
+		KVStore:   kvstore,
+		Logger:    logger,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     r.settings.Options.SaveRealProbeASN,
+			IncludeCountry: r.settings.Options.SaveRealProbeCC,
+			IncludeIP:      r.settings.Options.SaveRealProbeIP,
+		},
 		SoftwareName:    r.settings.Options.SoftwareName,
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TempDir:         r.settings.TempDir,
-	})
+	}
+	if r.settings.Options.BouncerBaseURL != "" {
+		config.AvailableBouncers = []model.Service{{
+			Address: r.settings.Options.BouncerBaseURL,
+			Type:    "https",
+		}}
+	}
+	if r.settings.Options.CollectorBaseURL != "" {
+		config.AvailableCollectors = []model.Service{{
+			Address: r.settings.Options.CollectorBaseURL,
+			Type:    "https",
+		}}
+	}
+	return engine.NewSession(config)
 }
 
 func (r *runner) contextForExperiment(
@@ -205,9 +224,6 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
-	sess.SetIncludeProbeASN(r.settings.Options.SaveRealProbeASN)
-	sess.SetIncludeProbeCC(r.settings.Options.SaveRealProbeCC)
-	sess.SetIncludeProbeIP(r.settings.Options.SaveRealProbeIP)
 	endEvent := new(eventStatusEnd)
 	defer func() {
 		sess.Close()
@@ -218,13 +234,6 @@ func (r *runner) Run(ctx context.Context) {
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
-	}
-
-	if r.settings.Options.BouncerBaseURL != "" {
-		sess.AddAvailableHTTPSBouncer(r.settings.Options.BouncerBaseURL)
-	}
-	if r.settings.Options.CollectorBaseURL != "" {
-		sess.AddAvailableHTTPSCollector(r.settings.Options.CollectorBaseURL)
 	}
 
 	if !r.settings.Options.NoBouncer {

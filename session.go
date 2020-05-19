@@ -32,15 +32,18 @@ import (
 
 // SessionConfig contains the Session config
 type SessionConfig struct {
-	AssetsDir       string
-	KVStore         KVStore
-	Logger          model.Logger
-	ProxyURL        *url.URL
-	SoftwareName    string
-	SoftwareVersion string
-	TempDir         string
-	TorArgs         []string
-	TorBinary       string
+	AssetsDir           string
+	AvailableBouncers   []model.Service
+	AvailableCollectors []model.Service
+	KVStore             KVStore
+	Logger              model.Logger
+	PrivacySettings     model.PrivacySettings
+	ProxyURL            *url.URL
+	SoftwareName        string
+	SoftwareVersion     string
+	TempDir             string
+	TorArgs             []string
+	TorBinary           string
 }
 
 // Session is a measurement session
@@ -87,21 +90,20 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
 	sess := &Session{
-		assetsDir:   config.AssetsDir,
-		byteCounter: bytecounter.New(),
-		kvStore:     config.KVStore,
-		privacySettings: model.PrivacySettings{
-			IncludeCountry: true,
-			IncludeASN:     true,
-		},
-		logger:            config.Logger,
-		proxyURL:          config.ProxyURL,
-		queryBouncerCount: atomicx.NewInt64(),
-		softwareName:      config.SoftwareName,
-		softwareVersion:   config.SoftwareVersion,
-		tempDir:           config.TempDir,
-		torArgs:           config.TorArgs,
-		torBinary:         config.TorBinary,
+		assetsDir:           config.AssetsDir,
+		availableBouncers:   config.AvailableBouncers,
+		availableCollectors: config.AvailableCollectors,
+		byteCounter:         bytecounter.New(),
+		kvStore:             config.KVStore,
+		privacySettings:     config.PrivacySettings,
+		logger:              config.Logger,
+		proxyURL:            config.ProxyURL,
+		queryBouncerCount:   atomicx.NewInt64(),
+		softwareName:        config.SoftwareName,
+		softwareVersion:     config.SoftwareVersion,
+		tempDir:             config.TempDir,
+		torArgs:             config.TorArgs,
+		torBinary:           config.TorBinary,
 	}
 	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
 		ByteCounter:  sess.byteCounter,
@@ -116,24 +118,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 // be if you have called s.FetchResourcesIdempotent.
 func (s *Session) ASNDatabasePath() string {
 	return filepath.Join(s.assetsDir, resources.ASNDatabaseName)
-}
-
-// AddAvailableHTTPSBouncer adds an HTTPS bouncer to the list
-// of bouncers that we'll try to contact.
-func (s *Session) AddAvailableHTTPSBouncer(baseURL string) {
-	s.availableBouncers = append(s.availableBouncers, model.Service{
-		Address: baseURL,
-		Type:    "https",
-	})
-}
-
-// AddAvailableHTTPSCollector adds an HTTPS collector to the
-// list of collectors that we'll try to use.
-func (s *Session) AddAvailableHTTPSCollector(baseURL string) {
-	s.availableCollectors = append(s.availableCollectors, model.Service{
-		Address: baseURL,
-		Type:    "https",
-	})
 }
 
 // KibiBytesReceived accounts for the KibiBytes received by the HTTP clients
@@ -338,21 +322,6 @@ func (s *Session) ResolverNetworkName() string {
 		nn = s.location.ResolverNetworkName
 	}
 	return nn
-}
-
-// SetIncludeProbeASN controls whether to include the ASN
-func (s *Session) SetIncludeProbeASN(value bool) {
-	s.privacySettings.IncludeASN = value
-}
-
-// SetIncludeProbeCC controls whether to include the country code
-func (s *Session) SetIncludeProbeCC(value bool) {
-	s.privacySettings.IncludeCountry = value
-}
-
-// SetIncludeProbeIP controls whether to include the IP
-func (s *Session) SetIncludeProbeIP(value bool) {
-	s.privacySettings.IncludeIP = value
 }
 
 // SoftwareName returns the application name.
