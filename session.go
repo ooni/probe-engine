@@ -509,7 +509,7 @@ func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
 
 func (s *Session) queryBouncer(ctx context.Context, query func(*probeservices.Client) error) error {
 	s.queryBouncerCount.Add(1)
-	for _, e := range s.getAvailableBouncers() {
+	for _, e := range probeservices.SortEndpoints(s.getAvailableBouncers()) {
 		client, err := probeservices.NewClient(s, e)
 		if err != nil {
 			s.logger.Debugf("%+v", err)

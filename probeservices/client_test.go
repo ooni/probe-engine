@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
@@ -171,5 +172,35 @@ func TestDefaultProbeServicesWorkAsIntended(t *testing.T) {
 		if len(testhelpers) < 1 {
 			t.Fatal("no test helpers?!")
 		}
+	}
+}
+
+func TestSortEndpoints(t *testing.T) {
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://ams-ps2.ooni.nu:443",
+	}}
+	expect := []model.Service{{
+		Type:    "https",
+		Address: "https://ams-ps2.ooni.nu:443",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}}
+	out := probeservices.SortEndpoints(in)
+	diff := cmp.Diff(out, expect)
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
