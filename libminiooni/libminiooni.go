@@ -4,6 +4,7 @@
 package libminiooni
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -41,6 +42,7 @@ type Options struct {
 	SelfCensorSpec string
 	TorArgs        []string
 	TorBinary      string
+	Tunnel         string
 	Verbose        bool
 }
 
@@ -104,6 +106,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.TorBinary, "tor-binary", 0,
 		"Specify path to a specific tor binary",
+	)
+	getopt.FlagLong(
+		&globalOptions.Tunnel, "tunnel", 0,
+		"Name of the tunnel to use (one of `tor`, `psiphon`)",
 	)
 	getopt.FlagLong(
 		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
@@ -285,6 +291,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		)
 	}()
 
+	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
+	fatalOnError(err, "cannot start session tunnel")
+
 	if !currentOptions.NoBouncer {
 		log.Info("Looking up OONI backends; please be patient...")
 		err := sess.MaybeLookupBackends()
@@ -319,7 +328,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			}
 		}
 	} else if builder.InputPolicy() == engine.InputOptional {
-		// nothing
+		if len(currentOptions.Inputs) == 0 {
+			currentOptions.Inputs = append(currentOptions.Inputs, "")
+		}
 	} else if len(currentOptions.Inputs) != 0 {
 		fatalWithString("this experiment does not expect any input")
 	} else {

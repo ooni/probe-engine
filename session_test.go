@@ -372,25 +372,82 @@ func TestUnitAllBouncersUnsupported(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnel(t *testing.T) {
+func TestIntegrationStartTunnelGood(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
-	if sess.MaybeStartTunnel(ctx, "") != nil {
-		t.Fatal("expected no error here")
-	}
-	if err := sess.MaybeStartTunnel(ctx, "antani"); err.Error() != "unsupported tunnel" {
-		t.Fatal("not the error we expected")
-	}
 	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
 		t.Fatal(err)
 	}
 	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
 		t.Fatal(err) // check twice, must be idempotent
 	}
+	if sess.ProxyURL() == nil {
+		t.Fatal("expected non-nil ProxyURL")
+	}
 }
 
-func TestIntegrationStartTunnelFailure(t *testing.T) {
+func TestIntegrationStartTunnelNonexistent(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if err := sess.MaybeStartTunnel(ctx, "antani"); err.Error() != "unsupported tunnel" {
+		t.Fatal("not the error we expected")
+	}
+	if sess.ProxyURL() != nil {
+		t.Fatal("expected nil ProxyURL")
+	}
+}
+
+func TestIntegrationStartTunnelEmptyString(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "") != nil {
+		t.Fatal("expected no error here")
+	}
+	if sess.ProxyURL() != nil {
+		t.Fatal("expected nil ProxyURL")
+	}
+}
+
+func TestIntegrationStartTunnelWithAlreadyExistingTunnel(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "psiphon") != nil {
+		t.Fatal("expected no error here")
+	}
+	prev := sess.ProxyURL()
+	err := sess.MaybeStartTunnel(ctx, "tor")
+	if !errors.Is(err, ErrAlreadyUsingProxy) {
+		t.Fatal("expected another error here")
+	}
+	cur := sess.ProxyURL()
+	diff := cmp.Diff(prev, cur)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestIntegrationStartTunnelWithAlreadyExistingProxy(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	orig := &url.URL{Scheme: "socks5", Host: "[::1]:9050"}
+	sess.proxyURL = orig
+	err := sess.MaybeStartTunnel(ctx, "psiphon")
+	if !errors.Is(err, ErrAlreadyUsingProxy) {
+		t.Fatal("expected another error here")
+	}
+	cur := sess.ProxyURL()
+	diff := cmp.Diff(orig, cur)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx, cancel := context.WithCancel(context.Background())
