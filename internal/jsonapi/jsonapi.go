@@ -80,7 +80,11 @@ func (c Client) newRequestWithSerializedJSONBody(
 		request.Header.Set("Authorization", c.Authorization)
 	}
 	request.Header.Set("User-Agent", c.UserAgent)
-	ctx = dialer.WithProxyURL(ctx, c.ProxyURL) // allow tunneling if not nil
+	// Implementation note: the following allows tunneling if c.ProxyURL
+	// is not nil. Because the proxy URL is set as part of each request
+	// generated using this function, every request that eventually needs
+	// to reconnect will always do so using the proxy.
+	ctx = dialer.WithProxyURL(ctx, c.ProxyURL)
 	return request.WithContext(ctx), nil
 }
 
