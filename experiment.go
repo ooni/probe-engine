@@ -388,7 +388,7 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 			Counter:      e.byteCounter,
 		},
 	}
-	for _, c := range e.session.availableCollectors {
+	for _, c := range probeservices.SortEndpoints(e.session.availableCollectors) {
 		var client *probeservices.Client
 		client, err = probeservices.NewClient(e.session, c)
 		if err != nil {

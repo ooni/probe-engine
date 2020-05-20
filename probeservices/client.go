@@ -70,3 +70,23 @@ func Default() []model.Service {
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
 	}}
 }
+
+// SortEndpoints gives priority to https, then cloudfronted, then onion.
+func SortEndpoints(in []model.Service) (out []model.Service) {
+	for _, entry := range in {
+		if entry.Type == "https" {
+			out = append(out, entry)
+		}
+	}
+	for _, entry := range in {
+		if entry.Type == "cloudfront" {
+			out = append(out, entry)
+		}
+	}
+	for _, entry := range in {
+		if entry.Type == "onion" {
+			out = append(out, entry)
+		}
+	}
+	return
+}
