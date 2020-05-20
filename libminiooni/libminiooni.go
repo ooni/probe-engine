@@ -319,7 +319,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			}
 		}
 	} else if builder.InputPolicy() == engine.InputOptional {
-		// nothing
+		if len(currentOptions.Inputs) == 0 {
+			currentOptions.Inputs = append(currentOptions.Inputs, "")
+		}
 	} else if len(currentOptions.Inputs) != 0 {
 		fatalWithString("this experiment does not expect any input")
 	} else {
