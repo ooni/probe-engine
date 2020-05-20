@@ -66,8 +66,9 @@ type Session struct {
 	tempDir              string
 	torArgs              []string
 	torBinary            string
-	tunnel               sessiontunnel.Tunnel
 	tunnelMu             sync.Mutex
+	tunnelName           string
+	tunnel               sessiontunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -184,19 +185,31 @@ func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
 }
 
-// MaybeStartTunnel starts the requested tunnel. This function silently
-// succeeds if we're already using a tunnel (or proxy) or if the provided
-// tunnel name is the empty string (i.e. no tunnel). This function fails
-// if we don't know the requested tunnel, or if starting the tunnel actually
-// fails. We currently only know the "psiphon" tunnel. A side effect of
-// starting the tunnel is that we will correctly set the proxy URL. Note
-// that the tunnel will be active until session.Close is called.
+// ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
+// a specific name because we already configured a proxy.
+var ErrAlreadyUsingProxy = errors.New(
+	"session: cannot create a new tunnel of this kind: we are already using a proxy",
+)
+
+// MaybeStartTunnel starts the requested tunnel.
+//
+// This function silently succeeds if we're already using a tunnel with
+// the same name or if the requested tunnel name is the empty string. This
+// function fails, tho, when we already have a proxy or a tunnel with
+// another name and we try to open a tunnel. This function of course also
+// fails if we cannot start the requested tunnel. All in all, if you request
+// for a tunnel name that is not the empty string and you get a nil error,
+// you can be confident that session.ProxyURL() gives you the tunnel URL.
+//
+// The tunnel will be closed by session.Close().
 func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 	s.tunnelMu.Lock()
 	defer s.tunnelMu.Unlock()
-	if s.proxyURL != nil || s.tunnel != nil {
-		s.logger.Debugf("not starting tunnel because we already have a proxy")
+	if s.tunnel != nil && s.tunnelName == name {
 		return nil
+	}
+	if s.proxyURL != nil || s.tunnel != nil {
+		return ErrAlreadyUsingProxy
 	}
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 		Name:    name,
@@ -207,10 +220,12 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 		return err
 	}
 	// Implementation note: tunnel _may_ be NIL here if name is ""
-	if tunnel != nil {
-		s.tunnel = tunnel
-		s.proxyURL = tunnel.SOCKS5ProxyURL()
+	if tunnel == nil {
+		return nil
 	}
+	s.tunnelName = name
+	s.tunnel = tunnel
+	s.proxyURL = tunnel.SOCKS5ProxyURL()
 	return nil
 }
 
