@@ -22,6 +22,7 @@ import (
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/sessiontunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -59,6 +60,7 @@ type Session struct {
 	logger               model.Logger
 	proxyURL             *url.URL
 	queryBouncerCount    *atomicx.Int64
+	resolver             *sessionresolver.Resolver
 	softwareName         string
 	softwareVersion      string
 	tempDir              string
@@ -104,12 +106,15 @@ func NewSession(config SessionConfig) (*Session, error) {
 		torArgs:             config.TorArgs,
 		torBinary:           config.TorBinary,
 	}
-	sess.httpDefaultTransport = httptransport.New(httptransport.Config{
+	httpConfig := httptransport.Config{
 		ByteCounter:  sess.byteCounter,
 		BogonIsError: true,
 		Logger:       sess.logger,
-		ProxyURL:     config.ProxyURL,
-	})
+	}
+	sess.resolver = sessionresolver.New(httpConfig)
+	httpConfig.FullResolver = sess.resolver
+	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
+	sess.httpDefaultTransport = httptransport.New(httpConfig)
 	return sess, nil
 }
 
@@ -140,6 +145,7 @@ func (s *Session) CABundlePath() string {
 // cause memory leaks in your application because of open idle connections.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
+	s.resolver.CloseIdleConnections()
 	if s.tunnel != nil {
 		s.tunnel.Stop()
 	}
