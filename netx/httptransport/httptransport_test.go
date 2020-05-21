@@ -915,22 +915,6 @@ func TestNewDNSClientCloudflareDoH(t *testing.T) {
 	dnsclient.CloseIdleConnections()
 }
 
-func TestNewDNSClientUDP(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "udp://8.8.8.8:53")
-	if err != nil {
-		t.Fatal(err)
-	}
-	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
-	if !ok {
-		t.Fatal("not the resolver we expected")
-	}
-	if _, ok := r.Transport().(resolver.DNSOverUDP); !ok {
-		t.Fatal("not the transport we expected")
-	}
-	dnsclient.CloseIdleConnections()
-}
-
 func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
 	saver := new(trace.Saver)
 	dnsclient, err := httptransport.NewDNSClient(
@@ -952,7 +936,23 @@ func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
 	dnsclient.CloseIdleConnections()
 }
 
-func TestNewDNSClientDNSSaver(t *testing.T) {
+func TestNewDNSClientUDP(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "udp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverUDP); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUDPDNSSaver(t *testing.T) {
 	saver := new(trace.Saver)
 	dnsclient, err := httptransport.NewDNSClient(
 		httptransport.Config{ResolveSaver: saver}, "udp://8.8.8.8:53")
@@ -969,6 +969,96 @@ func TestNewDNSClientDNSSaver(t *testing.T) {
 	}
 	if _, ok := txp.RoundTripper.(resolver.DNSOverUDP); !ok {
 		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientTCP(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "tcp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if txp.Network() != "tcp" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientTCPDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "tcp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dotcp, ok := txp.RoundTripper.(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if dotcp.Network() != "tcp" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientDoT(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "dot://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if txp.Network() != "dot" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientDoTDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "dot://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dotls, ok := txp.RoundTripper.(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if dotls.Network() != "dot" {
+		t.Fatal("not the Network we expected")
 	}
 	dnsclient.CloseIdleConnections()
 }

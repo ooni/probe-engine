@@ -266,6 +266,30 @@ func NewDNSClient(config Config, URL string) (DNSClient, error) {
 		}
 		c.Resolver = resolver.NewSerialResolver(txp)
 		return c, nil
+	case "dot":
+		tlsDialer := NewTLSDialer(config)
+		var txp resolver.RoundTripper = resolver.NewDNSOverTLS(
+			tlsDialer.DialTLSContext, resolverURL.Host)
+		if config.ResolveSaver != nil {
+			txp = resolver.SaverDNSTransport{
+				RoundTripper: txp,
+				Saver:        config.ResolveSaver,
+			}
+		}
+		c.Resolver = resolver.NewSerialResolver(txp)
+		return c, nil
+	case "tcp":
+		dialer := NewDialer(config)
+		var txp resolver.RoundTripper = resolver.NewDNSOverTCP(
+			dialer.DialContext, resolverURL.Host)
+		if config.ResolveSaver != nil {
+			txp = resolver.SaverDNSTransport{
+				RoundTripper: txp,
+				Saver:        config.ResolveSaver,
+			}
+		}
+		c.Resolver = resolver.NewSerialResolver(txp)
+		return c, nil
 	default:
 		return c, errors.New("unsupported resolver scheme")
 	}
