@@ -429,7 +429,7 @@ func (s *Session) initOrchestraClient(
 }
 
 func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
-	return mmdblookup.LookupASN(dbPath, ip, s.logger)
+	return mmdblookup.ASN(dbPath, ip)
 }
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
@@ -441,7 +441,7 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 }
 
 func (s *Session) lookupProbeCC(dbPath, probeIP string) (string, error) {
-	return mmdblookup.LookupCC(dbPath, probeIP, s.logger)
+	return mmdblookup.CC(dbPath, probeIP)
 }
 
 func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {

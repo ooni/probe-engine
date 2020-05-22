@@ -10,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/websocket"
+	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -208,10 +210,20 @@ func TestNewRequestList(t *testing.T) {
 }
 
 func TestNewDNSQueriesList(t *testing.T) {
+	err := (&resources.Client{
+		HTTPClient: http.DefaultClient,
+		Logger:     log.Log,
+		UserAgent:  "miniooni/0.1.0-dev",
+		WorkDir:    "../../testdata",
+	}).Ensure(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
 	begin := time.Now()
 	type args struct {
 		begin  time.Time
 		events []trace.Event
+		dbpath string
 	}
 	tests := []struct {
 		name string
@@ -284,10 +296,61 @@ func TestNewDNSQueriesList(t *testing.T) {
 			QueryType: "AAAA",
 			T:         0.2,
 		}},
+	}, {
+		name: "run with ASN DB",
+		args: args{
+			begin: begin,
+			events: []trace.Event{{
+				Addresses: []string{"2001:4860:4860::8888"},
+				Hostname:  "dns.google.com",
+				Name:      "resolve_done",
+				Time:      begin.Add(200 * time.Millisecond),
+			}},
+			dbpath: "../../testdata/asn.mmdb",
+		},
+		want: []archival.DNSQueryEntry{{
+			Answers: []archival.DNSAnswerEntry{{
+				ASN:        15169,
+				ASOrgName:  "Google LLC",
+				AnswerType: "AAAA",
+				IPv6:       "2001:4860:4860::8888",
+			}},
+			Hostname:  "dns.google.com",
+			QueryType: "AAAA",
+			T:         0.2,
+		}},
+	}, {
+		name: "run with errors",
+		args: args{
+			begin: begin,
+			events: []trace.Event{{
+				Err:      &modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError},
+				Hostname: "dns.google.com",
+				Name:     "resolve_done",
+				Time:     begin.Add(200 * time.Millisecond),
+			}},
+			dbpath: "../../testdata/asn.mmdb",
+		},
+		want: []archival.DNSQueryEntry{{
+			Answers: nil,
+			Failure: archival.NewFailure(
+				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+			Hostname:  "dns.google.com",
+			QueryType: "A",
+			T:         0.2,
+		}, {
+			Answers: nil,
+			Failure: archival.NewFailure(
+				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+			Hostname:  "dns.google.com",
+			QueryType: "AAAA",
+			T:         0.2,
+		}},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := archival.NewDNSQueriesList(tt.args.begin, tt.args.events); !reflect.DeepEqual(got, tt.want) {
+			if got := archival.NewDNSQueriesList(
+				tt.args.begin, tt.args.events, tt.args.dbpath); !reflect.DeepEqual(got, tt.want) {
 				t.Error(cmp.Diff(got, tt.want))
 			}
 		})
