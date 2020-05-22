@@ -374,7 +374,14 @@ func NewDNSQueriesList(begin time.Time, events []trace.Event, dbpath string) []D
 						entry.Answers, qtype.makeanswerentry(addr, dbpath))
 				}
 			}
-			if len(entry.Answers) <= 0 {
+			if len(entry.Answers) <= 0 && ev.Err == nil {
+				// This allows us to skip cases where the server does not have
+				// an IPv6 address but has an IPv4 address. Instead, when we
+				// receive an error, we want to track its existence. The main
+				// issue here is that we are cheating, because we are creating
+				// entries representing queries, but we don't know what the
+				// resolver actually did, especially the system resolver. So,
+				// this output is just our best guess.
 				continue
 			}
 			out = append(out, entry)

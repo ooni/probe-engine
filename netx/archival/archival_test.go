@@ -319,6 +319,33 @@ func TestNewDNSQueriesList(t *testing.T) {
 			QueryType: "AAAA",
 			T:         0.2,
 		}},
+	}, {
+		name: "run with errors",
+		args: args{
+			begin: begin,
+			events: []trace.Event{{
+				Err:      &modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError},
+				Hostname: "dns.google.com",
+				Name:     "resolve_done",
+				Time:     begin.Add(200 * time.Millisecond),
+			}},
+			dbpath: "../../testdata/asn.mmdb",
+		},
+		want: []archival.DNSQueryEntry{{
+			Answers: nil,
+			Failure: archival.NewFailure(
+				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+			Hostname:  "dns.google.com",
+			QueryType: "A",
+			T:         0.2,
+		}, {
+			Answers: nil,
+			Failure: archival.NewFailure(
+				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+			Hostname:  "dns.google.com",
+			QueryType: "AAAA",
+			T:         0.2,
+		}},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
