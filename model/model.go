@@ -282,7 +282,7 @@ const (
 	DefaultResolverASN uint = 0
 
 	// DefaultResolverIP is the default resolver IP.
-	DefaultResolverIP = "127.0.0.1"
+	DefaultResolverIP = "127.0.0.2"
 
 	// DefaultResolverNetworkName is the default resolver network name.
 	DefaultResolverNetworkName = ""
