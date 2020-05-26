@@ -43,11 +43,11 @@ type Resolver interface {
 	Address() string
 }
 
-// TODO(bassosimone): we should probably simplify the Config structure by
-// using a single Saver. We don't need different Savers.
-
 // Config contains configuration for creating a new transport. When any
 // field of Config is nil/empty, we will use a suitable default.
+//
+// We use different savers for different kind of events such that the
+// user of this library can choose what to save.
 type Config struct {
 	BaseResolver        Resolver             // default: system resolver
 	BogonIsError        bool                 // default: bogon is not error
