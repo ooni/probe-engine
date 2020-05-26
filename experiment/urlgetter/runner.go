@@ -54,7 +54,7 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 	}
 	// Implementation note: the following cookiejar accepts all cookies
 	// from all domains. As such, would not be safe for usage where cookies
-	// metter, but it's totally fine for performing measurements.
+	// matter, but it's totally fine for performing measurements.
 	jar, err := cookiejar.New(nil)
 	runtimex.PanicOnError(err, "cookiejar.New failed")
 	httpClient := &http.Client{
