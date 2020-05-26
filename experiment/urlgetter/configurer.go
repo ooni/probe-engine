@@ -79,11 +79,29 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	configuration.DNSClient = dnsclient
 	configuration.HTTPConfig.BaseResolver = dnsclient.Resolver
 	// configure TLS
+	configuration.HTTPConfig.TLSConfig = &tls.Config{
+		NextProtos: []string{"h2", "http/1.1"},
+	}
 	if c.Config.TLSServerName != "" {
-		configuration.HTTPConfig.TLSConfig = &tls.Config{
-			NextProtos: []string{"h2", "http/1.1"},
-			ServerName: c.Config.TLSServerName,
-		}
+		configuration.HTTPConfig.TLSConfig.ServerName = c.Config.TLSServerName
+	}
+	switch c.Config.TLSVersion {
+	case "TLSv1.3":
+		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS13
+		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS13
+	case "TLSv1.2":
+		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS12
+		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS12
+	case "TLSv1.1":
+		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS11
+		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS11
+	case "TLSv1.0", "TLSv1":
+		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS10
+		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS10
+	case "":
+		// nothing
+	default:
+		return configuration, errors.New("unsupported TLS version")
 	}
 	configuration.HTTPConfig.NoTLSVerify = c.Config.NoTLSVerify
 	// configure proxy
