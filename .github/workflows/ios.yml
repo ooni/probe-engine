@@ -1,5 +1,8 @@
 name: ios
-on: [push]
+on:
+  push:
+    branches:
+      - mobile-staging
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
