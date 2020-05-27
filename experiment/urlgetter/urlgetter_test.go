@@ -31,7 +31,7 @@ func TestMeasurer(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if len(measurement.Extensions) != 4 {
+	if len(measurement.Extensions) != 5 {
 		t.Fatal("not the expected number of extensions")
 	}
 }
@@ -57,7 +57,7 @@ func TestMeasurerDNSCache(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if len(measurement.Extensions) != 4 {
+	if len(measurement.Extensions) != 5 {
 		t.Fatal("not the expected number of extensions")
 	}
 	tk := measurement.TestKeys.(urlgetter.TestKeys)
