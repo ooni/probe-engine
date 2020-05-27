@@ -239,7 +239,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	log.Infof("miniooni state directory: %s", miniooniDir)
 	tempDir, err := ioutil.TempDir("", "miniooni")
 	fatalOnError(err, "cannot get a temporary directory")
-	log.Debugf("miniooni temporary directory: %s", tempDir)
+	log.Infof("miniooni temporary directory: %s", tempDir)
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
