@@ -22,7 +22,9 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 		Options: settingsOptions{
 			AllEndpoints:          &falsebool,
 			Backend:               "foo",
+			BouncerBaseURL:        "https://ps.ooni.io/",
 			CABundlePath:          "foo",
+			CollectorBaseURL:      "https://ps.ooni.io/",
 			ConstantBitrate:       &falsebool,
 			DNSNameserver:         &emptystring,
 			DNSEngine:             &emptystring,
@@ -80,7 +82,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 			log.Fatalf("invalid key: %s", ev.Key)
 		}
 	}
-	const expected = 31
+	const expected = 33
 	if len(seen) != expected {
 		t.Fatalf("expected: %d; seen %+v", expected, seen)
 	}

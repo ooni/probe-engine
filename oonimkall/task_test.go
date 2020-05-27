@@ -251,39 +251,6 @@ func TestIntegrationUnknownExperiment(t *testing.T) {
 	}
 }
 
-func TestIntegrationInvalidBouncerBaseURL(t *testing.T) {
-	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../testdata/oonimkall/assets",
-		"log_level": "DEBUG",
-		"name": "Example",
-		"options": {
-			"bouncer_base_url": "\t",
-			"software_name": "oonimkall-test",
-			"software_version": "0.1.0"
-		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
-	}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var seen bool
-	for !task.IsDone() {
-		eventstr := task.WaitForNextEvent()
-		var event eventlike
-		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
-			t.Fatal(err)
-		}
-		if event.Key == "failure.startup" {
-			seen = true
-		}
-		t.Logf("%+v", event)
-	}
-	if !seen {
-		t.Fatal("did not see failure.startup")
-	}
-}
-
 func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
@@ -347,39 +314,6 @@ func TestIntegrationInputIsRequired(t *testing.T) {
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
-	}
-}
-
-func TestIntegrationBadCollectorURL(t *testing.T) {
-	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../testdata/oonimkall/assets",
-		"log_level": "DEBUG",
-		"name": "Example",
-		"options": {
-			"collector_base_url": "\t",
-			"software_name": "oonimkall-test",
-			"software_version": "0.1.0"
-		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
-	}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var seen bool
-	for !task.IsDone() {
-		eventstr := task.WaitForNextEvent()
-		var event eventlike
-		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
-			t.Fatal(err)
-		}
-		if event.Key == "failure.report_create" {
-			seen = true
-		}
-		t.Logf("%+v", event)
-	}
-	if !seen {
-		t.Fatal("did not see failure.report_create")
 	}
 }
 
