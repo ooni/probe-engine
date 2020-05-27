@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -79,14 +80,17 @@ func StartWithConfig(ctx context.Context, config StartConfig) (*Tunnel, error) {
 		return nil, ctx.Err() // allows to write unit tests using this code
 	default:
 	}
-	// TODO(bassosimone): we need support for returning the tor logs to the
-	// caller such that we can also understand why it didn't work.
+	logfile := LogFile(config.Sess)
+	extraArgs := append([]string{}, config.Sess.TorArgs()...)
+	extraArgs = append(extraArgs, "Log")
+	extraArgs = append(extraArgs, "notice stderr")
+	extraArgs = append(extraArgs, "Log")
+	extraArgs = append(extraArgs, fmt.Sprintf(`notice file %s`, logfile))
 	instance, err := config.Start(ctx, &tor.StartConf{
-		DataDir:         config.Sess.TempDir(),
-		ExtraArgs:       config.Sess.TorArgs(),
-		ExePath:         config.Sess.TorBinary(),
-		NoHush:          true,
-		TempDataDirBase: config.Sess.TempDir(),
+		DataDir:   path.Join(config.Sess.TempDir(), "tor"),
+		ExtraArgs: extraArgs,
+		ExePath:   config.Sess.TorBinary(),
+		NoHush:    true,
 	})
 	if err != nil {
 		return nil, err
@@ -118,4 +122,10 @@ func StartWithConfig(ctx context.Context, config StartConfig) (*Tunnel, error) {
 		instance:      instance,
 		proxy:         &url.URL{Scheme: "socks5", Host: proxyAddress},
 	}, nil
+}
+
+// LogFile returns the name of tor logs given a specific session. The file
+// is always located somewhere inside the sess.TempDir() directory.
+func LogFile(sess model.ExperimentSession) string {
+	return path.Join(sess.TempDir(), "tor.log")
 }
