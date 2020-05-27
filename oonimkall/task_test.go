@@ -588,11 +588,11 @@ func TestIntegrationNonblock(t *testing.T) {
 	if !task.IsRunning() {
 		t.Fatal("The runner should be running at this point")
 	}
-	// Assumption: the example experiment emits less than bufsiz = 128
-	// events and runs for less than 15 seconds (should be five).
-	time.Sleep(15 * time.Second)
-	if task.IsRunning() {
-		t.Fatal("The runner should be stopped by now")
+	// If the task blocks because it emits too much events, this test
+	// will run forever and will be killed. Because we have room for up
+	// to 128 events in the buffer, we should hopefully be fine.
+	for task.IsRunning() {
+		time.Sleep(time.Second)
 	}
 	for !task.IsDone() {
 		task.WaitForNextEvent()
