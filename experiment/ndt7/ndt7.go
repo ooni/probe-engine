@@ -12,6 +12,7 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
@@ -74,6 +75,10 @@ type TestKeys struct {
 
 	// Upload contains upload results
 	Upload []spec.Measurement `json:"upload"`
+}
+
+func registerExtensions(m *model.Measurement) {
+	archival.ExtTunnel.AddTo(m)
 }
 
 type measurer struct {
@@ -222,6 +227,7 @@ func (m *measurer) Run(
 	tk := new(TestKeys)
 	tk.Protocol = 7
 	measurement.TestKeys = tk
+	registerExtensions(measurement)
 	tk.Tunnel = m.config.Tunnel
 	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
 		s := err.Error()

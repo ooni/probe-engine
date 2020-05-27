@@ -49,6 +49,7 @@ func RegisterExtensions(m *model.Measurement) {
 	archival.ExtDNS.AddTo(m)
 	archival.ExtNetevents.AddTo(m)
 	archival.ExtTLSHandshake.AddTo(m)
+	archival.ExtTunnel.AddTo(m)
 }
 
 type measurer struct {
