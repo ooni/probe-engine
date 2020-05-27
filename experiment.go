@@ -240,7 +240,7 @@ func (e *Experiment) Name() string {
 }
 
 // OpenReport is an idempotent method to open a report. We assume that
-// you have configured the available collectors, either manually or
+// you have configured the available probe services, either manually or
 // through using the session's MaybeLookupBackends method.
 func (e *Experiment) OpenReport() (err error) {
 	return e.openReport(context.Background())
@@ -377,9 +377,9 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	return &m
 }
 
-func (e *Experiment) openReport(ctx context.Context) (err error) {
+func (e *Experiment) openReport(ctx context.Context) error {
 	if e.report != nil {
-		return // already open
+		return nil // already open
 	}
 	// use custom client to have proper byte accounting
 	httpClient := &http.Client{
@@ -388,32 +388,31 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 			Counter:      e.byteCounter,
 		},
 	}
-	for _, c := range probeservices.SortEndpoints(e.session.availableCollectors) {
-		var client *probeservices.Client
-		client, err = probeservices.NewClient(e.session, c)
-		if err != nil {
-			e.session.logger.Debugf("%+v", err)
-			continue
-		}
-		client.HTTPClient = httpClient // patch HTTP client to use
-		template := probeservices.ReportTemplate{
-			DataFormatVersion: probeservices.DefaultDataFormatVersion,
-			Format:            probeservices.DefaultFormat,
-			ProbeASN:          e.session.ProbeASNString(),
-			ProbeCC:           e.session.ProbeCC(),
-			SoftwareName:      e.session.SoftwareName(),
-			SoftwareVersion:   e.session.SoftwareVersion(),
-			TestName:          e.testName,
-			TestVersion:       e.testVersion,
-		}
-		e.report, err = client.OpenReport(ctx, template)
-		if err == nil {
-			return
-		}
-		e.session.logger.Debugf("experiment: collector error: %s", err.Error())
+	if e.session.selectedProbeService == nil {
+		return errors.New("no probe services selected")
 	}
-	err = errors.New("All collectors failed")
-	return
+	client, err := probeservices.NewClient(e.session, *e.session.selectedProbeService)
+	if err != nil {
+		e.session.logger.Debugf("%+v", err)
+		return err
+	}
+	client.HTTPClient = httpClient // patch HTTP client to use
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          e.session.ProbeASNString(),
+		ProbeCC:           e.session.ProbeCC(),
+		SoftwareName:      e.session.SoftwareName(),
+		SoftwareVersion:   e.session.SoftwareVersion(),
+		TestName:          e.testName,
+		TestVersion:       e.testVersion,
+	}
+	e.report, err = client.OpenReport(ctx, template)
+	if err != nil {
+		e.session.logger.Debugf("experiment: probe services error: %s", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (e *Experiment) saveMeasurement(

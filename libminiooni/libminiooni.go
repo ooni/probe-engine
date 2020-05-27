@@ -281,13 +281,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		TorBinary:       currentOptions.TorBinary,
 	}
 	if currentOptions.ProbeServicesURL != "" {
-		// TODO(bassosimone): in a follow-up commit we will unify
-		// these two config variables into a single variable
-		config.AvailableBouncers = []model.Service{{
-			Address: currentOptions.ProbeServicesURL,
-			Type:    "https",
-		}}
-		config.AvailableCollectors = []model.Service{{
+		config.AvailableProbeServices = []model.Service{{
 			Address: currentOptions.ProbeServicesURL,
 			Type:    "https",
 		}}

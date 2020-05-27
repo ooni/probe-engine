@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ooni/probe-engine/experiment/example"
@@ -556,22 +557,38 @@ func TestOpenReportFailure(t *testing.T) {
 		},
 	))
 	defer server.Close()
-	sess := newSessionForTesting(t)
+	sess := newSessionForTestingNoBackendsLookup(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
 	if err != nil {
 		t.Fatal(err)
 	}
 	exp := builder.NewExperiment()
-	exp.session.availableCollectors = []model.Service{
-		{
-			Address: server.URL,
-			Type:    "https",
-		},
+	exp.session.selectedProbeService = &model.Service{
+		Address: server.URL,
+		Type:    "https",
 	}
 	err = exp.OpenReport()
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !strings.HasPrefix(err.Error(), "jsonapi: request failed") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestOpenReportNewClientFailure(t *testing.T) {
+	sess := newSessionForTestingNoBackendsLookup(t)
+	defer sess.Close()
+	builder, err := sess.NewExperimentBuilder("example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exp := builder.NewExperiment()
+	exp.session.selectedProbeService = &model.Service{
+		Address: "antani:///",
+		Type:    "antani",
+	}
+	err = exp.OpenReport()
+	if err.Error() != "probe services: unsupported endpoint type" {
+		t.Fatal(err)
 	}
 }
 
@@ -604,7 +621,7 @@ func TestMeasureLookupLocationFailure(t *testing.T) {
 func TestOpenReportNonHTTPS(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	sess.availableCollectors = []model.Service{
+	sess.availableProbeServices = []model.Service{
 		{
 			Address: "antani",
 			Type:    "mascetti",
