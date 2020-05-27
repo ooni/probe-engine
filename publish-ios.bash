@@ -8,7 +8,7 @@ frameworkzip=./MOBILE/dist/$pkgname.framework.zip
 podspecfile=./MOBILE/dist/$pkgname.podspec
 podspectemplate=./MOBILE/template.podspec
 user=bassosimone
-(cd ./MOBILE/dist && rm -f $pkgname.framework.zip && zip -r $pkgname.framework.zip $pkgname.framework)
+(cd ./MOBILE/dist && rm -f $pkgname.framework.zip && zip -yr $pkgname.framework.zip $pkgname.framework)
 cat $podspectemplate|sed "s/@VERSION@/$version/g" > $podspecfile
 if [ -z $BINTRAY_API_KEY ]; then
     echo "FATAL: missing BINTRAY_API_KEY variable" 1>&2
