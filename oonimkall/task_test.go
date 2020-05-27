@@ -340,12 +340,12 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 	// The runtime is long because of ancillary operations and is even more
 	// longer because of self shaping we may be performing (especially in
 	// CI builds) using `-tags shaping`). We have experimentally determined
-	// that ~5 seconds is the typical CI build time. See:
+	// that ~10 seconds is the typical CI test run time. See:
 	//
 	// 1. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263788
 	//
 	// 2. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263855
-	if time.Now().Sub(begin) > 7*time.Second {
+	if time.Now().Sub(begin) > 10*time.Second {
 		t.Fatal("expected shorter runtime")
 	}
 }
