@@ -52,6 +52,9 @@ var (
 
 	// ExtTLSHandshake is the version of df-006-tlshandshake.md
 	ExtTLSHandshake = ExtSpec{Name: "tlshandshake", V: 0}
+
+	// ExtTunnel is the version of df-009-tunnel.md
+	ExtTunnel = ExtSpec{Name: "tunnel", V: 0}
 )
 
 // TCPConnectStatus contains the TCP connect status.
