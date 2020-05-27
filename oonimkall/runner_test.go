@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	engine "github.com/ooni/probe-engine"
@@ -146,6 +149,101 @@ func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
 	r.Run(context.Background())
 	close(out)
 	if n := <-seench; n != 4 {
+		t.Fatal("unexpected number of events")
+	}
+}
+
+func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+	defer server.Close()
+	out := make(chan *eventRecord)
+	settings := &settingsRecord{
+		AssetsDir: "../testdata/oonimkall/assets",
+		Name:      "Example",
+		Options: settingsOptions{
+			ProbeServicesBaseURL: server.URL,
+			SoftwareName:         "oonimkall-test",
+			SoftwareVersion:      "0.1.0",
+		},
+		StateDir: "../testdata/oonimkall/state",
+		TempDir:  "../testdata/oonimkall/tmp",
+	}
+	seench := make(chan int64)
+	go func() {
+		var seen int64
+		for ev := range out {
+			switch ev.Key {
+			case "failure.startup":
+				seen++
+			case "status.queued", "status.started", "log", "status.end":
+			default:
+				panic(fmt.Sprintf("unexpected key: %s", ev.Key))
+			}
+		}
+		seench <- seen
+	}()
+	r := newRunner(settings, out)
+	r.Run(context.Background())
+	close(out)
+	if n := <-seench; n != 1 {
+		t.Fatal("unexpected number of events")
+	}
+}
+
+func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
+	var (
+		nreq int64
+		mu   sync.Mutex
+	)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		nreq++
+		if nreq == 1 {
+			w.Write([]byte(`{}`))
+			return
+		}
+		w.WriteHeader(500)
+	}))
+	defer server.Close()
+	out := make(chan *eventRecord)
+	settings := &settingsRecord{
+		AssetsDir: "../testdata/oonimkall/assets",
+		Name:      "Example",
+		Options: settingsOptions{
+			ProbeServicesBaseURL: server.URL,
+			SoftwareName:         "oonimkall-test",
+			SoftwareVersion:      "0.1.0",
+		},
+		StateDir: "../testdata/oonimkall/state",
+		TempDir:  "../testdata/oonimkall/tmp",
+	}
+	seench := make(chan int64)
+	go func() {
+		var seen int64
+		for ev := range out {
+			switch ev.Key {
+			case "failure.report_create":
+				seen++
+			case "status.progress":
+				evv := ev.Value.(eventStatusProgress)
+				if evv.Percentage >= 0.4 {
+					panic(fmt.Sprintf("too much progress: %+v", ev))
+				}
+			case "status.queued", "status.started", "log", "status.end",
+				"status.geoip_lookup", "status.resolver_lookup":
+			default:
+				panic(fmt.Sprintf("unexpected key: %s", ev.Key))
+			}
+		}
+		seench <- seen
+	}()
+	r := newRunner(settings, out)
+	r.Run(context.Background())
+	close(out)
+	if n := <-seench; n != 1 {
 		t.Fatal("unexpected number of events")
 	}
 }

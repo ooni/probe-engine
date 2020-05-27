@@ -204,6 +204,9 @@ type settingsOptions struct {
 	// library will otherwise ignore this setting.
 	ProbeNetworkName string `json:"probe_network_name,omitempty"`
 
+	// ProbeServicesBaseURL contains the probe services base URL.
+	ProbeServicesBaseURL string `json:"probe_services_base_url,omitempty"`
+
 	// RandomizeInput indicates whether to randomize inputs. This
 	// option is not implemented by this library. Attempting
 	// to set it to true will cause a startup error.

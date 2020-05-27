@@ -176,6 +176,12 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TempDir:         r.settings.TempDir,
 	}
+	if r.settings.Options.ProbeServicesBaseURL != "" {
+		config.AvailableProbeServices = []model.Service{{
+			Type:    "https",
+			Address: r.settings.Options.ProbeServicesBaseURL,
+		}}
+	}
 	return engine.NewSession(config)
 }
 
@@ -233,7 +239,6 @@ func (r *runner) Run(ctx context.Context) {
 	if !r.settings.Options.NoBouncer {
 		logger.Info("Looking up OONI backends... please, be patient")
 		if err := sess.MaybeLookupBackends(); err != nil {
-			// TODO(bassosimone): we need to test this error case
 			r.emitter.EmitFailureStartup(err.Error())
 			return
 		}
@@ -290,7 +295,6 @@ func (r *runner) Run(ctx context.Context) {
 	if !r.settings.Options.NoCollector {
 		logger.Info("Opening report... please, be patient")
 		if err := experiment.OpenReport(); err != nil {
-			// TODO(bassosimone): we need to test this error case
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
 			return
 		}
