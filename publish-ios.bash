@@ -2,7 +2,7 @@
 set -e
 pkgname=oonimkall
 version=$(date -u +%Y.%m.%d-%H%M%S)
-baseurl=https://api.bintray.com/content/ooni/ios/$pkgname/$version/
+baseurl=https://api.bintray.com/content/ooni/ios
 framework=./MOBILE/dist/$pkgname.framework
 frameworkzip=./MOBILE/dist/$pkgname.framework.zip
 podspecfile=./MOBILE/dist/$pkgname.podspec
@@ -18,6 +18,6 @@ fi
 # <curl -s $user:$BINTRAY_API_KEY https://api.bintray.com/packages/ooni/android/oonimkall>
 # query, which returns a list of versions. From such list, we can delete the versions we
 # don't need using <DELETE /packages/:subject/:repo/:package/versions/:version>.
-curl -sT $frameworkzip -u $user:$BINTRAY_API_KEY $baseurl/$pkgname.framework.zip?publish=1 >/dev/null
-curl -sT $podspecfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname.podspec?publish=1 >/dev/null
-echo "implementation 'org.ooni:oonimkall:$version'"
+curl -sT $frameworkzip -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.framework.zip?publish=1 >/dev/null
+curl -sT $podspecfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.podspec?publish=1 >/dev/null
+echo "pod 'OONIMKAll', :podspec => 'https://dl.bintray.com/ooni/ios/$pkgname-$pkgversion.podspec'"
