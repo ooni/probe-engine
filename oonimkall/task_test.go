@@ -335,7 +335,9 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 		t.Fatal(err)
 	}
 	for !task.IsDone() {
-		task.WaitForNextEvent()
+		ev := task.WaitForNextEvent()
+		delta := time.Now().Sub(begin)
+		fmt.Println(delta, ev)
 	}
 	// The runtime is long because of ancillary operations and is even more
 	// longer because of self shaping we may be performing (especially in
