@@ -66,7 +66,9 @@ type settingsOptions struct {
 	// to set it will cause a startup error.
 	Backend string `json:"backend,omitempty"`
 
-	// BouncerBaseURL contains the bouncer base URL
+	// BouncerBaseURL contains the bouncer base URL. This option is not
+	// implemented by this library. Attempting to set it will cause
+	// a startup failure.
 	BouncerBaseURL string `json:"bouncer_base_url,omitempty"`
 
 	// CABundlePath contains the CA bundle path. This
@@ -75,7 +77,9 @@ type settingsOptions struct {
 	// library will otherwise ignore this setting.
 	CABundlePath string `json:"net/ca_bundle_path,omitempty"`
 
-	// CollectorBaseURL contains the collector base URL
+	// CollectorBaseURL contains the collector base URL. This option is not
+	// implemented by this library. Attempting to set it will cause
+	// a startup failure.
 	CollectorBaseURL string `json:"collector_base_url,omitempty"`
 
 	// ConstantBitrate was an option for the DASH experiment that
