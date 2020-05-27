@@ -2,7 +2,7 @@
 set -e
 pkgname=oonimkall
 version=$(date -u +%Y.%m.%d-%H%M%S)
-baseurl=https://api.bintray.com/content/ooni/ios
+baseurl=https://api.bintray.com/content/ooni/ios/$pkgname/$pkgversion
 framework=./MOBILE/dist/$pkgname.framework
 frameworkzip=./MOBILE/dist/$pkgname.framework.zip
 podspecfile=./MOBILE/dist/$pkgname.podspec
