@@ -1,6 +1,7 @@
 package urlgetter_test
 
 import (
+	"crypto/tls"
 	"net/url"
 	"strings"
 	"testing"
@@ -22,9 +23,6 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient != nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -52,10 +50,16 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 	if configuration.HTTPConfig.TLSSaver != saver {
 		t.Fatal("not the TLSSaver we expected")
 	}
-	if configuration.HTTPConfig.BaseResolver != nil {
+	if configuration.HTTPConfig.BaseResolver == nil {
 		t.Fatal("not the BaseResolver we expected")
 	}
-	if configuration.HTTPConfig.TLSConfig != nil {
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
 		t.Fatal("not the TLSConfig we expected")
 	}
 	if configuration.HTTPConfig.NoTLSVerify == true {
@@ -80,9 +84,6 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient == nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -128,7 +129,13 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 	if dohtxp.URL != "https://dns.google/dns-query" {
 		t.Fatal("not the DoH URL we expected")
 	}
-	if configuration.HTTPConfig.TLSConfig != nil {
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
 		t.Fatal("not the TLSConfig we expected")
 	}
 	if configuration.HTTPConfig.NoTLSVerify == true {
@@ -153,9 +160,6 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSCloudflare(t *testing.T) 
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient == nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -201,7 +205,13 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSCloudflare(t *testing.T) 
 	if dohtxp.URL != "https://cloudflare-dns.com/dns-query" {
 		t.Fatal("not the DoH URL we expected")
 	}
-	if configuration.HTTPConfig.TLSConfig != nil {
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
 		t.Fatal("not the TLSConfig we expected")
 	}
 	if configuration.HTTPConfig.NoTLSVerify == true {
@@ -226,9 +236,6 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer configuration.CloseIdleConnections()
-	if configuration.DNSOverHTTPClient != nil {
-		t.Fatal("not the DNSOverHTTPClient we expected")
-	}
 	if configuration.HTTPConfig.BogonIsError != false {
 		t.Fatal("not the BogonIsError we expected")
 	}
@@ -274,7 +281,13 @@ func TestConfigurerNewConfigurationResolverUDP(t *testing.T) {
 	if udptxp.Address() != "8.8.8.8:53" {
 		t.Fatal("not the DoH URL we expected")
 	}
-	if configuration.HTTPConfig.TLSConfig != nil {
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
 		t.Fatal("not the TLSConfig we expected")
 	}
 	if configuration.HTTPConfig.NoTLSVerify == true {
@@ -429,6 +442,199 @@ func TestConfigurerNewConfigurationNoTLSVerify(t *testing.T) {
 	}
 	if configuration.HTTPConfig.NoTLSVerify != true {
 		t.Fatal("not the NoTLSVerify we expected")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSv1(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "TLSv1",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != tls.VersionTLS10 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != tls.VersionTLS10 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSv1dot0(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "TLSv1.0",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != tls.VersionTLS10 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != tls.VersionTLS10 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSv1dot1(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "TLSv1.1",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != tls.VersionTLS11 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != tls.VersionTLS11 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSv1dot2(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "TLSv1.2",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != tls.VersionTLS12 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != tls.VersionTLS12 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSv1dot3(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "TLSv1.3",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != tls.VersionTLS13 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != tls.VersionTLS13 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSvDefault(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("invalid len(NextProtos)")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("invalid NextProtos[0]")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("invalid NextProtos[1]")
+	}
+	if configuration.HTTPConfig.TLSConfig.MinVersion != 0 {
+		t.Fatal("invalid MinVersion")
+	}
+	if configuration.HTTPConfig.TLSConfig.MaxVersion != 0 {
+		t.Fatal("invalid MaxVersion")
+	}
+}
+
+func TestConfigurerNewConfigurationTLSvInvalid(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			TLSVersion: "SSLv3",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	_, err := configurer.NewConfiguration()
+	if err.Error() != "unsupported TLS version" {
+		t.Fatal("not the error we expected")
 	}
 }
 

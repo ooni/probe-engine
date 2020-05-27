@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/ooni/probe-engine/collector"
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
@@ -32,6 +31,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/version"
 )
 
@@ -201,7 +201,7 @@ type Experiment struct {
 	byteCounter   *bytecounter.Counter
 	callbacks     model.ExperimentCallbacks
 	measurer      model.ExperimentMeasurer
-	report        *collector.Report
+	report        *probeservices.Report
 	session       *Session
 	testName      string
 	testStartTime string
@@ -240,7 +240,7 @@ func (e *Experiment) Name() string {
 }
 
 // OpenReport is an idempotent method to open a report. We assume that
-// you have configured the available collectors, either manually or
+// you have configured the available probe services, either manually or
 // through using the session's MaybeLookupBackends method.
 func (e *Experiment) OpenReport() (err error) {
 	return e.openReport(context.Background())
@@ -353,7 +353,7 @@ func (e *Experiment) CloseReport() (err error) {
 func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	utctimenow := time.Now().UTC()
 	m := model.Measurement{
-		DataFormatVersion:         collector.DefaultDataFormatVersion,
+		DataFormatVersion:         probeservices.DefaultDataFormatVersion,
 		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
@@ -377,9 +377,9 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	return &m
 }
 
-func (e *Experiment) openReport(ctx context.Context) (err error) {
+func (e *Experiment) openReport(ctx context.Context) error {
 	if e.report != nil {
-		return // already open
+		return nil // already open
 	}
 	// use custom client to have proper byte accounting
 	httpClient := &http.Client{
@@ -388,37 +388,31 @@ func (e *Experiment) openReport(ctx context.Context) (err error) {
 			Counter:      e.byteCounter,
 		},
 	}
-	for _, c := range e.session.availableCollectors {
-		if c.Type != "https" {
-			e.session.logger.Debugf(
-				"experiment: unsupported collector type: %s", c.Type,
-			)
-			continue
-		}
-		client := &collector.Client{
-			BaseURL:    c.Address,
-			HTTPClient: httpClient,
-			Logger:     e.session.logger,
-			UserAgent:  e.session.UserAgent(),
-		}
-		template := collector.ReportTemplate{
-			DataFormatVersion: collector.DefaultDataFormatVersion,
-			Format:            collector.DefaultFormat,
-			ProbeASN:          e.session.ProbeASNString(),
-			ProbeCC:           e.session.ProbeCC(),
-			SoftwareName:      e.session.SoftwareName(),
-			SoftwareVersion:   e.session.SoftwareVersion(),
-			TestName:          e.testName,
-			TestVersion:       e.testVersion,
-		}
-		e.report, err = client.OpenReport(ctx, template)
-		if err == nil {
-			return
-		}
-		e.session.logger.Debugf("experiment: collector error: %s", err.Error())
+	if e.session.selectedProbeService == nil {
+		return errors.New("no probe services selected")
 	}
-	err = errors.New("All collectors failed")
-	return
+	client, err := probeservices.NewClient(e.session, *e.session.selectedProbeService)
+	if err != nil {
+		e.session.logger.Debugf("%+v", err)
+		return err
+	}
+	client.HTTPClient = httpClient // patch HTTP client to use
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          e.session.ProbeASNString(),
+		ProbeCC:           e.session.ProbeCC(),
+		SoftwareName:      e.session.SoftwareName(),
+		SoftwareVersion:   e.session.SoftwareVersion(),
+		TestName:          e.testName,
+		TestVersion:       e.testVersion,
+	}
+	e.report, err = client.OpenReport(ctx, template)
+	if err != nil {
+		e.session.logger.Debugf("experiment: probe services error: %s", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (e *Experiment) saveMeasurement(

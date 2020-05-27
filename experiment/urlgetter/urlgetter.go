@@ -24,6 +24,7 @@ type Config struct {
 	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`
 	ResolverURL       string `ooni:"URL describing the resolver to use"`
 	TLSServerName     string `ooni:"Force TLS to using a specific SNI in Client Hello"`
+	TLSVersion        string `ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 	Tunnel            string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 }
 

@@ -11,10 +11,12 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -63,14 +65,62 @@ func newSessionMustFail(t *testing.T, config SessionConfig) {
 	}
 }
 
+func TestSessionTorArgsTorBinary(t *testing.T) {
+	sess, err := NewSession(SessionConfig{
+		AssetsDir: "testdata",
+		AvailableProbeServices: []model.Service{{
+			Address: "https://ps-test.ooni.io",
+			Type:    "https",
+		}},
+		Logger: log.Log,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     true,
+			IncludeCountry: true,
+			IncludeIP:      false,
+		},
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.0.1",
+		TempDir:         "tempdir",
+		TorArgs:         []string{"antani1", "antani2", "antani3"},
+		TorBinary:       "mascetti",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sess.TorBinary() != "mascetti" {
+		t.Fatal("not the TorBinary we expected")
+	}
+	if len(sess.TorArgs()) != 3 {
+		t.Fatal("not the TorArgs length we expected")
+	}
+	if sess.TorArgs()[0] != "antani1" {
+		t.Fatal("not the TorArgs[0] we expected")
+	}
+	if sess.TorArgs()[1] != "antani2" {
+		t.Fatal("not the TorArgs[1] we expected")
+	}
+	if sess.TorArgs()[2] != "antani3" {
+		t.Fatal("not the TorArgs[2] we expected")
+	}
+}
+
 func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Session {
 	tempdir, err := ioutil.TempDir("testdata", "enginetests")
 	if err != nil {
 		t.Fatal(err)
 	}
 	sess, err := NewSession(SessionConfig{
-		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		AssetsDir: "testdata",
+		AvailableProbeServices: []model.Service{{
+			Address: "https://ps-test.ooni.io",
+			Type:    "https",
+		}},
+		Logger: log.Log,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     true,
+			IncludeCountry: true,
+			IncludeIP:      false,
+		},
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
@@ -79,11 +129,6 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 	if err != nil {
 		t.Fatal(err)
 	}
-	sess.AddAvailableHTTPSBouncer("https://ps-test.ooni.io")
-	sess.AddAvailableHTTPSCollector("https://ps-test.ooni.io")
-	sess.SetIncludeProbeASN(true)
-	sess.SetIncludeProbeCC(true)
-	sess.SetIncludeProbeIP(false)
 	return sess
 }
 
@@ -91,7 +136,7 @@ func newSessionForTestingNoLookups(t *testing.T) *Session {
 	return newSessionForTestingNoLookupsWithProxyURL(t, nil)
 }
 
-func newSessionForTesting(t *testing.T) *Session {
+func newSessionForTestingNoBackendsLookup(t *testing.T) *Session {
 	sess := newSessionForTestingNoLookups(t)
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
@@ -106,6 +151,11 @@ func newSessionForTesting(t *testing.T) *Session {
 	log.Infof("ResolverASNString: %s", sess.ResolverASNString())
 	log.Infof("ResolverIP: %s", sess.ResolverIP())
 	log.Infof("ResolverNetworkName: %s", sess.ResolverNetworkName())
+	return sess
+}
+
+func newSessionForTesting(t *testing.T) *Session {
+	sess := newSessionForTestingNoBackendsLookup(t)
 	if err := sess.MaybeLookupBackends(); err != nil {
 		t.Fatal(err)
 	}
@@ -193,6 +243,19 @@ func TestBouncerError(t *testing.T) {
 	}
 }
 
+func TestMaybeLookupBackendsNewClientError(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	sess.availableProbeServices = []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}}
+	defer sess.Close()
+	err := sess.MaybeLookupBackends()
+	if err.Error() != "all available probe services failed" {
+		t.Fatal("not the error we expected")
+	}
+}
+
 func TestIntegrationMaybeStartTunnel(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
@@ -277,7 +340,7 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	}
 }
 
-func TestUnitGetAvailableBouncers(t *testing.T) {
+func TestUnitGetAvailableProbeServices(t *testing.T) {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -289,15 +352,10 @@ func TestUnitGetAvailableBouncers(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer sess.Close()
-	all := sess.GetAvailableBouncers()
-	if len(all) != 1 {
-		t.Fatal("unexpected number of bouncers")
-	}
-	if all[0].Address != "https://bouncer.ooni.io" {
-		t.Fatal("unexpected bouncer address")
-	}
-	if all[0].Type != "https" {
-		t.Fatal("unexpected bouncer type")
+	all := sess.GetAvailableProbeServices()
+	diff := cmp.Diff(all, probeservices.Default())
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -316,7 +374,7 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	err = sess.MaybeLookupBackendsContext(ctx)
-	if !strings.HasSuffix(err.Error(), "All available bouncers failed") {
+	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
 		t.Fatal("unexpected error")
 	}
 }
@@ -334,18 +392,18 @@ func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
 	}
 	defer sess.Close()
 	ctx := context.Background()
-	if err = sess.MaybeLookupTestHelpersContext(ctx); err != nil {
+	if err = sess.MaybeLookupBackendsContext(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err = sess.MaybeLookupTestHelpersContext(ctx); err != nil {
+	if err = sess.MaybeLookupBackendsContext(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if sess.QueryBouncerCount() != 1 {
+	if sess.QueryProbeServicesCount() != 1 {
 		t.Fatal("unexpected number of queries sent to the bouncer")
 	}
 }
 
-func TestUnitAllBouncersUnsupported(t *testing.T) {
+func TestUnitAllProbeServicesUnsupported(t *testing.T) {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -357,35 +415,92 @@ func TestUnitAllBouncersUnsupported(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer sess.Close()
-	sess.AppendAvailableBouncer(model.Service{
+	sess.AppendAvailableProbeService(model.Service{
 		Address: "mascetti",
 		Type:    "antani",
 	})
 	err = sess.MaybeLookupBackends()
-	if !strings.HasSuffix(err.Error(), "All available bouncers failed") {
+	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
 		t.Fatal("unexpected error")
 	}
 }
 
-func TestIntegrationStartTunnel(t *testing.T) {
+func TestIntegrationStartTunnelGood(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
-	if sess.MaybeStartTunnel(ctx, "") != nil {
-		t.Fatal("expected no error here")
-	}
-	if err := sess.MaybeStartTunnel(ctx, "antani"); err.Error() != "unsupported tunnel" {
-		t.Fatal("not the error we expected")
-	}
 	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
 		t.Fatal(err)
 	}
 	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
 		t.Fatal(err) // check twice, must be idempotent
 	}
+	if sess.ProxyURL() == nil {
+		t.Fatal("expected non-nil ProxyURL")
+	}
 }
 
-func TestIntegrationStartTunnelFailure(t *testing.T) {
+func TestIntegrationStartTunnelNonexistent(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if err := sess.MaybeStartTunnel(ctx, "antani"); err.Error() != "unsupported tunnel" {
+		t.Fatal("not the error we expected")
+	}
+	if sess.ProxyURL() != nil {
+		t.Fatal("expected nil ProxyURL")
+	}
+}
+
+func TestIntegrationStartTunnelEmptyString(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "") != nil {
+		t.Fatal("expected no error here")
+	}
+	if sess.ProxyURL() != nil {
+		t.Fatal("expected nil ProxyURL")
+	}
+}
+
+func TestIntegrationStartTunnelWithAlreadyExistingTunnel(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "psiphon") != nil {
+		t.Fatal("expected no error here")
+	}
+	prev := sess.ProxyURL()
+	err := sess.MaybeStartTunnel(ctx, "tor")
+	if !errors.Is(err, ErrAlreadyUsingProxy) {
+		t.Fatal("expected another error here")
+	}
+	cur := sess.ProxyURL()
+	diff := cmp.Diff(prev, cur)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestIntegrationStartTunnelWithAlreadyExistingProxy(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	defer sess.Close()
+	ctx := context.Background()
+	orig := &url.URL{Scheme: "socks5", Host: "[::1]:9050"}
+	sess.proxyURL = orig
+	err := sess.MaybeStartTunnel(ctx, "psiphon")
+	if !errors.Is(err, ErrAlreadyUsingProxy) {
+		t.Fatal("expected another error here")
+	}
+	cur := sess.ProxyURL()
+	diff := cmp.Diff(orig, cur)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx, cancel := context.WithCancel(context.Background())

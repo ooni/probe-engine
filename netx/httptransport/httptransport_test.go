@@ -3,8 +3,8 @@ package httptransport_test
 import (
 	"crypto/tls"
 	"errors"
-	"net"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -12,6 +12,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/resolver"
+	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -210,7 +211,7 @@ func TestNewDialerVanilla(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -250,7 +251,7 @@ func TestNewDialerWithResolver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -295,7 +296,7 @@ func TestNewDialerWithLogger(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -341,7 +342,7 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -387,7 +388,7 @@ func TestNewDialerWithReadWriteSaver(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -429,7 +430,7 @@ func TestNewDialerWithContextByteCounting(t *testing.T) {
 	if !ok {
 		t.Fatal("not the dialer we expected")
 	}
-	if _, ok := td.Dialer.(*net.Dialer); !ok {
+	if _, ok := td.Dialer.(selfcensor.SystemDialer); !ok {
 		t.Fatal("not the dialer we expected")
 	}
 }
@@ -834,4 +835,230 @@ func TestNewWithSaver(t *testing.T) {
 	if _, ok := smtxp.RoundTripper.(*http.Transport); !ok {
 		t.Fatal("not the transport we expected")
 	}
+}
+
+func TestNewDNSClientInvalidURL(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "\t\t\t")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
+	}
+	if dnsclient.Resolver != nil {
+		t.Fatal("expected nil resolver here")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUnsupportedScheme(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "antani:///")
+	if err == nil || err.Error() != "unsupported resolver scheme" {
+		t.Fatal("not the error we expected")
+	}
+	if dnsclient.Resolver != nil {
+		t.Fatal("expected nil resolver here")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientSystemResolver(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "system:///")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := dnsclient.Resolver.(resolver.SystemResolver); !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientEmpty(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := dnsclient.Resolver.(resolver.SystemResolver); !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientGoogleDoH(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "doh://google")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientCloudflareDoH(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "doh://cloudflare")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "doh://cloudflare")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if _, ok := txp.RoundTripper.(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUDP(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "udp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverUDP); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientUDPDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "udp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if _, ok := txp.RoundTripper.(resolver.DNSOverUDP); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientTCP(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "tcp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if txp.Network() != "tcp" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientTCPDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "tcp://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dotcp, ok := txp.RoundTripper.(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if dotcp.Network() != "tcp" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientDoT(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "dot://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if txp.Network() != "dot" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
+func TestNewDNSClientDoTDNSSaver(t *testing.T) {
+	saver := new(trace.Saver)
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{ResolveSaver: saver}, "dot://8.8.8.8:53")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	txp, ok := r.Transport().(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dotls, ok := txp.RoundTripper.(resolver.DNSOverTCP)
+	if !ok {
+		t.Fatal("not the transport we expected")
+	}
+	if dotls.Network() != "dot" {
+		t.Fatal("not the Network we expected")
+	}
+	dnsclient.CloseIdleConnections()
 }

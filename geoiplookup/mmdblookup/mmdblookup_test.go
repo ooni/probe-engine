@@ -31,7 +31,7 @@ func maybeFetchResources(t *testing.T) {
 
 func TestLookupProbeASN(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.LookupASN(asnDBPath, ipAddr, log.Log)
+	asn, org, err := mmdblookup.ASN(asnDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestLookupProbeASN(t *testing.T) {
 
 func TestLookupProbeASNInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.LookupASN("/nonexistent", ipAddr, log.Log)
+	asn, org, err := mmdblookup.ASN("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -55,7 +55,7 @@ func TestLookupProbeASNInvalidFile(t *testing.T) {
 
 func TestLookupProbeASNInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.LookupASN(asnDBPath, "xxx", log.Log)
+	asn, org, err := mmdblookup.ASN(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -69,7 +69,7 @@ func TestLookupProbeASNInvalidIP(t *testing.T) {
 
 func TestLookupProbeCC(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.LookupCC(countryDBPath, ipAddr, log.Log)
+	cc, err := mmdblookup.CC(countryDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestLookupProbeCC(t *testing.T) {
 
 func TestLookupProbeCCInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.LookupCC("/nonexistent", ipAddr, log.Log)
+	cc, err := mmdblookup.CC("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -89,7 +89,7 @@ func TestLookupProbeCCInvalidFile(t *testing.T) {
 
 func TestLookupProbeCCInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.LookupCC(asnDBPath, "xxx", log.Log)
+	cc, err := mmdblookup.CC(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

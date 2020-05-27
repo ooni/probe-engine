@@ -7,6 +7,7 @@ import (
 
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/model"
 )
 
 const (
@@ -62,8 +63,14 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	if r.settings.Options.Backend != "" {
 		sadly("Options.Backend: not supported")
 	}
+	if r.settings.Options.BouncerBaseURL != "" {
+		sadly("Options.BouncerBaseURL: not supported")
+	}
 	if r.settings.Options.CABundlePath != "" {
 		logger.Warn("Options.CABundlePath: not supported")
+	}
+	if r.settings.Options.CollectorBaseURL != "" {
+		sadly("Options.CollectorBaseURL: not supported")
 	}
 	if r.settings.Options.ConstantBitrate != nil {
 		logger.Warn("Options.ConstantBitrate: not supported")
@@ -156,14 +163,26 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return engine.NewSession(engine.SessionConfig{
-		AssetsDir:       r.settings.AssetsDir,
-		KVStore:         kvstore,
-		Logger:          logger,
+	config := engine.SessionConfig{
+		AssetsDir: r.settings.AssetsDir,
+		KVStore:   kvstore,
+		Logger:    logger,
+		PrivacySettings: model.PrivacySettings{
+			IncludeASN:     r.settings.Options.SaveRealProbeASN,
+			IncludeCountry: r.settings.Options.SaveRealProbeCC,
+			IncludeIP:      r.settings.Options.SaveRealProbeIP,
+		},
 		SoftwareName:    r.settings.Options.SoftwareName,
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TempDir:         r.settings.TempDir,
-	})
+	}
+	if r.settings.Options.ProbeServicesBaseURL != "" {
+		config.AvailableProbeServices = []model.Service{{
+			Type:    "https",
+			Address: r.settings.Options.ProbeServicesBaseURL,
+		}}
+	}
+	return engine.NewSession(config)
 }
 
 func (r *runner) contextForExperiment(
@@ -205,9 +224,6 @@ func (r *runner) Run(ctx context.Context) {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
-	sess.SetIncludeProbeASN(r.settings.Options.SaveRealProbeASN)
-	sess.SetIncludeProbeCC(r.settings.Options.SaveRealProbeCC)
-	sess.SetIncludeProbeIP(r.settings.Options.SaveRealProbeIP)
 	endEvent := new(eventStatusEnd)
 	defer func() {
 		sess.Close()
@@ -218,13 +234,6 @@ func (r *runner) Run(ctx context.Context) {
 	if err != nil {
 		r.emitter.EmitFailureStartup(err.Error())
 		return
-	}
-
-	if r.settings.Options.BouncerBaseURL != "" {
-		sess.AddAvailableHTTPSBouncer(r.settings.Options.BouncerBaseURL)
-	}
-	if r.settings.Options.CollectorBaseURL != "" {
-		sess.AddAvailableHTTPSCollector(r.settings.Options.CollectorBaseURL)
 	}
 
 	if !r.settings.Options.NoBouncer {
