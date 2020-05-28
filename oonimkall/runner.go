@@ -63,8 +63,14 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	if r.settings.Options.Backend != "" {
 		sadly("Options.Backend: not supported")
 	}
+	if r.settings.Options.BouncerBaseURL != "" {
+		sadly("Options.BouncerBaseURL: not supported")
+	}
 	if r.settings.Options.CABundlePath != "" {
 		logger.Warn("Options.CABundlePath: not supported")
+	}
+	if r.settings.Options.CollectorBaseURL != "" {
+		sadly("Options.CollectorBaseURL: not supported")
 	}
 	if r.settings.Options.ConstantBitrate != nil {
 		logger.Warn("Options.ConstantBitrate: not supported")
@@ -170,16 +176,10 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TempDir:         r.settings.TempDir,
 	}
-	if r.settings.Options.BouncerBaseURL != "" {
-		config.AvailableBouncers = []model.Service{{
-			Address: r.settings.Options.BouncerBaseURL,
+	if r.settings.Options.ProbeServicesBaseURL != "" {
+		config.AvailableProbeServices = []model.Service{{
 			Type:    "https",
-		}}
-	}
-	if r.settings.Options.CollectorBaseURL != "" {
-		config.AvailableCollectors = []model.Service{{
-			Address: r.settings.Options.CollectorBaseURL,
-			Type:    "https",
+			Address: r.settings.Options.ProbeServicesBaseURL,
 		}}
 	}
 	return engine.NewSession(config)

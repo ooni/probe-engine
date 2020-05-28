@@ -14,22 +14,18 @@ func (s *Session) FetchResourcesIdempotent(ctx context.Context) error {
 	return s.fetchResourcesIdempotent(ctx)
 }
 
-func (s *Session) GetAvailableBouncers() []model.Service {
-	return s.getAvailableBouncers()
+func (s *Session) GetAvailableProbeServices() []model.Service {
+	return s.getAvailableProbeServices()
 }
 
-func (s *Session) AppendAvailableBouncer(bouncer model.Service) {
-	s.availableBouncers = append(s.availableBouncers, bouncer)
+func (s *Session) AppendAvailableProbeService(svc model.Service) {
+	s.availableProbeServices = append(s.availableProbeServices, svc)
 }
 
 func (s *Session) MaybeLookupBackendsContext(ctx context.Context) (err error) {
 	return s.maybeLookupBackends(ctx)
 }
 
-func (s *Session) MaybeLookupTestHelpersContext(ctx context.Context) error {
-	return s.maybeLookupTestHelpers(ctx)
-}
-
-func (s *Session) QueryBouncerCount() int64 {
-	return s.queryBouncerCount.Load()
+func (s *Session) QueryProbeServicesCount() int64 {
+	return s.queryProbeServicesCount.Load()
 }

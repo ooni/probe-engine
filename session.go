@@ -32,43 +32,42 @@ import (
 
 // SessionConfig contains the Session config
 type SessionConfig struct {
-	AssetsDir           string
-	AvailableBouncers   []model.Service
-	AvailableCollectors []model.Service
-	KVStore             KVStore
-	Logger              model.Logger
-	PrivacySettings     model.PrivacySettings
-	ProxyURL            *url.URL
-	SoftwareName        string
-	SoftwareVersion     string
-	TempDir             string
-	TorArgs             []string
-	TorBinary           string
+	AssetsDir              string
+	AvailableProbeServices []model.Service
+	KVStore                KVStore
+	Logger                 model.Logger
+	PrivacySettings        model.PrivacySettings
+	ProxyURL               *url.URL
+	SoftwareName           string
+	SoftwareVersion        string
+	TempDir                string
+	TorArgs                []string
+	TorBinary              string
 }
 
 // Session is a measurement session
 type Session struct {
-	assetsDir            string
-	availableBouncers    []model.Service
-	availableCollectors  []model.Service
-	availableTestHelpers map[string][]model.Service
-	byteCounter          *bytecounter.Counter
-	httpDefaultTransport httptransport.RoundTripper
-	kvStore              model.KeyValueStore
-	privacySettings      model.PrivacySettings
-	location             *model.LocationInfo
-	logger               model.Logger
-	proxyURL             *url.URL
-	queryBouncerCount    *atomicx.Int64
-	resolver             *sessionresolver.Resolver
-	softwareName         string
-	softwareVersion      string
-	tempDir              string
-	torArgs              []string
-	torBinary            string
-	tunnelMu             sync.Mutex
-	tunnelName           string
-	tunnel               sessiontunnel.Tunnel
+	assetsDir               string
+	availableProbeServices  []model.Service
+	availableTestHelpers    map[string][]model.Service
+	byteCounter             *bytecounter.Counter
+	httpDefaultTransport    httptransport.RoundTripper
+	kvStore                 model.KeyValueStore
+	privacySettings         model.PrivacySettings
+	location                *model.LocationInfo
+	logger                  model.Logger
+	proxyURL                *url.URL
+	queryProbeServicesCount *atomicx.Int64
+	resolver                *sessionresolver.Resolver
+	selectedProbeService    *model.Service
+	softwareName            string
+	softwareVersion         string
+	tempDir                 string
+	torArgs                 []string
+	torBinary               string
+	tunnelMu                sync.Mutex
+	tunnelName              string
+	tunnel                  sessiontunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -92,20 +91,19 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
 	sess := &Session{
-		assetsDir:           config.AssetsDir,
-		availableBouncers:   config.AvailableBouncers,
-		availableCollectors: config.AvailableCollectors,
-		byteCounter:         bytecounter.New(),
-		kvStore:             config.KVStore,
-		privacySettings:     config.PrivacySettings,
-		logger:              config.Logger,
-		proxyURL:            config.ProxyURL,
-		queryBouncerCount:   atomicx.NewInt64(),
-		softwareName:        config.SoftwareName,
-		softwareVersion:     config.SoftwareVersion,
-		tempDir:             config.TempDir,
-		torArgs:             config.TorArgs,
-		torBinary:           config.TorBinary,
+		assetsDir:               config.AssetsDir,
+		availableProbeServices:  config.AvailableProbeServices,
+		byteCounter:             bytecounter.New(),
+		kvStore:                 config.KVStore,
+		privacySettings:         config.PrivacySettings,
+		logger:                  config.Logger,
+		proxyURL:                config.ProxyURL,
+		queryProbeServicesCount: atomicx.NewInt64(),
+		softwareName:            config.SoftwareName,
+		softwareVersion:         config.SoftwareVersion,
+		tempDir:                 config.TempDir,
+		torArgs:                 config.TorArgs,
+		torBinary:               config.TorBinary,
 	}
 	httpConfig := httptransport.Config{
 		ByteCounter:  sess.byteCounter,
@@ -394,9 +392,9 @@ func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
 	}).Ensure(ctx)
 }
 
-func (s *Session) getAvailableBouncers() []model.Service {
-	if len(s.availableBouncers) > 0 {
-		return s.availableBouncers
+func (s *Session) getAvailableProbeServices() []model.Service {
+	if len(s.availableProbeServices) > 0 {
+		return s.availableProbeServices
 	}
 	return probeservices.Default()
 }
@@ -448,23 +446,27 @@ func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
 	return resolverlookup.First(ctx, nil)
 }
 
-func (s *Session) maybeLookupBackends(ctx context.Context) (err error) {
-	err = s.maybeLookupCollectors(ctx)
-	if err != nil {
-		return
-	}
-	err = s.maybeLookupTestHelpers(ctx)
-	return
-}
-
-func (s *Session) maybeLookupCollectors(ctx context.Context) error {
-	if len(s.availableCollectors) > 0 {
+func (s *Session) maybeLookupBackends(ctx context.Context) error {
+	// TODO(bassosimone): do we need a mutex here?
+	if s.selectedProbeService != nil {
 		return nil
 	}
-	return s.queryBouncer(ctx, func(client *probeservices.Client) (err error) {
-		s.availableCollectors, err = client.GetCollectors(ctx)
-		return
-	})
+	s.queryProbeServicesCount.Add(1)
+	for _, e := range probeservices.SortEndpoints(s.getAvailableProbeServices()) {
+		client, err := probeservices.NewClient(s, e)
+		if err != nil {
+			s.logger.Debugf("%+v", err)
+			continue
+		}
+		testhelpers, err := client.GetTestHelpers(ctx)
+		if err == nil {
+			s.selectedProbeService = &e
+			s.availableTestHelpers = testhelpers
+			return nil
+		}
+		s.logger.Warnf("session: probe services error: %s", err.Error())
+	}
+	return errors.New("all available probe services failed")
 }
 
 func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
@@ -510,33 +512,6 @@ func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
 		}
 	}
 	return
-}
-
-func (s *Session) maybeLookupTestHelpers(ctx context.Context) error {
-	if len(s.availableTestHelpers) > 0 {
-		return nil
-	}
-	return s.queryBouncer(ctx, func(client *probeservices.Client) (err error) {
-		s.availableTestHelpers, err = client.GetTestHelpers(ctx)
-		return
-	})
-}
-
-func (s *Session) queryBouncer(ctx context.Context, query func(*probeservices.Client) error) error {
-	s.queryBouncerCount.Add(1)
-	for _, e := range probeservices.SortEndpoints(s.getAvailableBouncers()) {
-		client, err := probeservices.NewClient(s, e)
-		if err != nil {
-			s.logger.Debugf("%+v", err)
-			continue
-		}
-		err = query(client)
-		if err == nil {
-			return nil
-		}
-		s.logger.Warnf("session: bouncer error: %s", err.Error())
-	}
-	return errors.New("All available bouncers failed")
 }
 
 var _ model.ExperimentSession = &Session{}
