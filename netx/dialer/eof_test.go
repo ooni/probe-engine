@@ -48,6 +48,18 @@ func (EOFConn) RemoteAddr() net.Addr {
 	return EOFAddr{}
 }
 
+func (EOFConn) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (EOFConn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (EOFConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
+
 type EOFAddr struct{}
 
 func (EOFAddr) Network() string {

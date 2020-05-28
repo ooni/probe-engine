@@ -25,19 +25,10 @@ func (h SystemTLSHandshaker) Handshake(
 	ctx context.Context, conn net.Conn, config *tls.Config,
 ) (net.Conn, tls.ConnectionState, error) {
 	tlsconn := tls.Client(conn, config)
-	errch := make(chan error, 1)
-	go func() {
-		errch <- tlsconn.Handshake()
-	}()
-	select {
-	case err := <-errch:
-		if err != nil {
-			return nil, tls.ConnectionState{}, err
-		}
-		return tlsconn, tlsconn.ConnectionState(), nil
-	case <-ctx.Done():
-		return nil, tls.ConnectionState{}, ctx.Err()
+	if err := tlsconn.Handshake(); err != nil {
+		return nil, tls.ConnectionState{}, err
 	}
+	return tlsconn, tlsconn.ConnectionState(), nil
 }
 
 // TimeoutTLSHandshaker is a TLSHandshaker with timeout
@@ -54,9 +45,12 @@ func (h TimeoutTLSHandshaker) Handshake(
 	if h.HandshakeTimeout != 0 {
 		timeout = h.HandshakeTimeout
 	}
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	return h.TLSHandshaker.Handshake(ctx, conn, config)
+	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+		return nil, tls.ConnectionState{}, err
+	}
+	tlsconn, connstate, err := h.TLSHandshaker.Handshake(ctx, conn, config)
+	conn.SetDeadline(time.Time{})
+	return tlsconn, connstate, err
 }
 
 // ErrorWrapperTLSHandshaker wraps the returned error to be an OONI error
