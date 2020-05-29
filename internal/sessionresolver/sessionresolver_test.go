@@ -21,7 +21,7 @@ func TestIntegration(t *testing.T) {
 	if reso.Address() != "" {
 		t.Fatal("unexpected Address")
 	}
-	addrs, err := reso.LookupHost(context.Background(), "antani.ooni.io")
+	addrs, err := reso.LookupHost(context.Background(), "antani.ooni.nu")
 	if err == nil || !strings.HasSuffix(err.Error(), "no such host") {
 		t.Fatal("not the error we expected")
 	}
