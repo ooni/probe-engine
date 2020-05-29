@@ -41,8 +41,8 @@ func NewClient(
 	return &Client{
 		HTTPClient:         httpClient,
 		Logger:             logger,
-		OrchestrateBaseURL: "https://orchestrate.ooni.io",
-		RegistryBaseURL:    "https://registry.ooni.io",
+		OrchestrateBaseURL: "https://ps.ooni.io",
+		RegistryBaseURL:    "https://ps.ooni.io",
 		StateFile:          stateFile,
 		UserAgent:          userAgent,
 	}

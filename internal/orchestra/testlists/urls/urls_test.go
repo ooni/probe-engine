@@ -10,7 +10,7 @@ import (
 
 func TestIntegrationSuccess(t *testing.T) {
 	config := Config{
-		BaseURL:           "https://orchestrate.ooni.io",
+		BaseURL:           "https://ps.ooni.io",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
 		HTTPClient:        http.DefaultClient,
