@@ -1,0 +1,22 @@
+name: ios
+on:
+  push:
+    branches:
+      - mobile-staging
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        go: ["1.14"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: ./build-ios.bash
+      - run: ./publish-ios.bash
+        env:
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}

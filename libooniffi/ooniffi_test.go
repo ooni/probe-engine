@@ -20,15 +20,15 @@ func TestUnitTaskStartInvalidJSON(t *testing.T) {
 
 func TestUnitTaskStartIdxWrapping(t *testing.T) {
 	settings := cstring(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	defer freestring(settings)
 	o := setmaxidx()
@@ -74,15 +74,15 @@ func TestUnitTaskDestroyNullPointer(t *testing.T) {
 
 func TestIntegrationExampleNormalUsage(t *testing.T) {
 	settings := cstring(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	defer freestring(settings)
 	task := ooniffi_task_start_(settings)
@@ -99,15 +99,15 @@ func TestIntegrationExampleNormalUsage(t *testing.T) {
 
 func TestIntegrationExampleInterruptAndDestroy(t *testing.T) {
 	settings := cstring(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	defer freestring(settings)
 	task := ooniffi_task_start_(settings)
@@ -120,15 +120,15 @@ func TestIntegrationExampleInterruptAndDestroy(t *testing.T) {
 
 func TestIntegrationExampleDestroyImmediately(t *testing.T) {
 	settings := cstring(`{
-		"assets_dir": "../../testdata/oonimkall/assets",
+		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../../testdata/oonimkall/state",
-		"temp_dir": "../../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state",
+		"temp_dir": "../testdata/oonimkall/tmp"
 	}`)
 	defer freestring(settings)
 	task := ooniffi_task_start_(settings)

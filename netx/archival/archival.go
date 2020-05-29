@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -51,6 +52,9 @@ var (
 
 	// ExtTLSHandshake is the version of df-006-tlshandshake.md
 	ExtTLSHandshake = ExtSpec{Name: "tlshandshake", V: 0}
+
+	// ExtTunnel is the version of df-009-tunnel.md
+	ExtTunnel = ExtSpec{Name: "tunnel", V: 0}
 )
 
 // TCPConnectStatus contains the TCP connect status.
@@ -331,6 +335,8 @@ func newRequestList(begin time.Time, events []trace.Event) []RequestEntry {
 
 // DNSAnswerEntry is the answer to a DNS query
 type DNSAnswerEntry struct {
+	ASN        int64   `json:"asn,omitempty"`
+	ASOrgName  string  `json:"as_org_name,omitempty"`
 	AnswerType string  `json:"answer_type"`
 	Hostname   string  `json:"hostname,omitempty"`
 	IPv4       string  `json:"ipv4,omitempty"`
@@ -356,7 +362,7 @@ type DNSQueryEntry struct {
 type dnsQueryType string
 
 // NewDNSQueriesList returns a list of DNS queries.
-func NewDNSQueriesList(begin time.Time, events []trace.Event) []DNSQueryEntry {
+func NewDNSQueriesList(begin time.Time, events []trace.Event, dbpath string) []DNSQueryEntry {
 	// TODO(bassosimone): add support for CNAME lookups.
 	var out []DNSQueryEntry
 	for _, ev := range events {
@@ -367,10 +373,18 @@ func NewDNSQueriesList(begin time.Time, events []trace.Event) []DNSQueryEntry {
 			entry := qtype.makequeryentry(begin, ev)
 			for _, addr := range ev.Addresses {
 				if qtype.ipoftype(addr) {
-					entry.Answers = append(entry.Answers, qtype.makeanswerentry(addr))
+					entry.Answers = append(
+						entry.Answers, qtype.makeanswerentry(addr, dbpath))
 				}
 			}
-			if len(entry.Answers) <= 0 {
+			if len(entry.Answers) <= 0 && ev.Err == nil {
+				// This allows us to skip cases where the server does not have
+				// an IPv6 address but has an IPv4 address. Instead, when we
+				// receive an error, we want to track its existence. The main
+				// issue here is that we are cheating, because we are creating
+				// entries representing queries, but we don't know what the
+				// resolver actually did, especially the system resolver. So,
+				// this output is just our best guess.
 				continue
 			}
 			out = append(out, entry)
@@ -389,8 +403,11 @@ func (qtype dnsQueryType) ipoftype(addr string) bool {
 	return false
 }
 
-func (qtype dnsQueryType) makeanswerentry(addr string) DNSAnswerEntry {
+func (qtype dnsQueryType) makeanswerentry(addr string, dbpath string) DNSAnswerEntry {
 	answer := DNSAnswerEntry{AnswerType: string(qtype)}
+	asn, org, _ := mmdblookup.ASN(dbpath, addr)
+	answer.ASN = int64(asn)
+	answer.ASOrgName = org
 	switch qtype {
 	case "A":
 		answer.IPv4 = addr
