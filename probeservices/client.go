@@ -1,8 +1,10 @@
 package probeservices
 
 import (
+	"context"
 	"errors"
 	"net/url"
+	"time"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
@@ -65,6 +67,12 @@ func Default() []model.Service {
 		Address: "https://ps.ooni.io",
 		Type:    "https",
 	}, {
+		Address: "https://mia-ps2.ooni.nu",
+		Type:    "https",
+	}, {
+		Address: "https://hkg-ps.ooni.nu",
+		Type:    "https",
+	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
@@ -86,6 +94,90 @@ func SortEndpoints(in []model.Service) (out []model.Service) {
 	for _, entry := range in {
 		if entry.Type == "onion" {
 			out = append(out, entry)
+		}
+	}
+	return
+}
+
+// OnlyHTTPS only returns the HTTPS endpoints.
+func OnlyHTTPS(in []model.Service) (out []model.Service) {
+	for _, entry := range in {
+		if entry.Type == "https" {
+			out = append(out, entry)
+		}
+	}
+	return
+}
+
+// OnlyFallbacks only returns the fallback endpoints.
+func OnlyFallbacks(in []model.Service) (out []model.Service) {
+	for _, entry := range SortEndpoints(in) {
+		if entry.Type != "https" {
+			out = append(out, entry)
+		}
+	}
+	return
+}
+
+// Candidate is a candidate probe service.
+type Candidate struct {
+	// Duration is the time it took to access the service.
+	Duration time.Duration
+
+	// Err indicates whether the service works.
+	Err error
+
+	// Endpoint is the service endpoint.
+	Endpoint model.Service
+
+	// TestHelpers contains the data returned by the endpoint.
+	TestHelpers map[string][]model.Service
+}
+
+func (c *Candidate) try(ctx context.Context, sess model.ExperimentSession) {
+	client, err := NewClient(sess, c.Endpoint)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	start := time.Now()
+	testhelpers, err := client.GetTestHelpers(ctx)
+	c.Duration = time.Now().Sub(start)
+	c.Err = err
+	c.TestHelpers = testhelpers
+	sess.Logger().Infof("probe services: %+v: %+v %s", c.Endpoint, err, c.Duration)
+}
+
+func try(ctx context.Context, sess model.ExperimentSession, svc model.Service) *Candidate {
+	candidate := &Candidate{Endpoint: svc}
+	candidate.try(ctx, sess)
+	return candidate
+}
+
+// TryAll tries all the input services using the provided context and session. It
+// returns a list containing information on each candidate that was tried. We will
+// try all the HTTPS candidates first. So, the beginning of the list will contain
+// all of them, and for each of them you will know whether it worked (by checking the
+// Err field) and how fast it was (by checking the Duration field). You should pick
+// the fastest one that worked. If none of them works, then TryAll will subsequently
+// attempt with all the available fallbacks, and return at the first success. In
+// such case, you will see a list of N failing HTTPS candidates, followed by a single
+// successful fallback candidate (e.g. cloudfronted). If all candidates fail, you
+// see in output a list containing all entries where Err is not nil.
+func TryAll(ctx context.Context, sess model.ExperimentSession, in []model.Service) (out []*Candidate) {
+	var found bool
+	for _, svc := range OnlyHTTPS(in) {
+		candidate := try(ctx, sess, svc)
+		out = append(out, candidate)
+		found = found || candidate.Err == nil
+	}
+	if !found {
+		for _, svc := range OnlyFallbacks(in) {
+			candidate := try(ctx, sess, svc)
+			out = append(out, candidate)
+			if candidate.Err == nil {
+				return
+			}
 		}
 	}
 	return
