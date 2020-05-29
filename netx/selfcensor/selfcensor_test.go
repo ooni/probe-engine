@@ -2,7 +2,6 @@ package selfcensor_test
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -108,7 +107,7 @@ func TestResolveCauseTimeout(t *testing.T) {
 		t.Fatal("we expected self censorship to be enabled now")
 	}
 	addrs, err := selfcensor.SystemResolver{}.LookupHost(ctx, "dns.google")
-	if !errors.Is(err, context.DeadlineExceeded) {
+	if err == nil || err.Error() != "i/o timeout" {
 		t.Fatal("not the error we expected")
 	}
 	if addrs != nil {
@@ -181,7 +180,7 @@ func TestDialCauseTimeout(t *testing.T) {
 		t.Fatal("we expected self censorship to be enabled now")
 	}
 	addrs, err := selfcensor.SystemDialer{}.DialContext(ctx, "tcp", "8.8.8.8:443")
-	if !errors.Is(err, context.DeadlineExceeded) {
+	if err == nil || err.Error() != "i/o timeout" {
 		t.Fatal("not the error we expected")
 	}
 	if addrs != nil {
