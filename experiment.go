@@ -27,6 +27,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/web_connectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
+	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
@@ -371,6 +372,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		TestStartTime:             e.testStartTime,
 		TestVersion:               e.testVersion,
 	}
+	m.AddAnnotation("assets_version", fmt.Sprintf("%d", resources.Version))
 	m.AddAnnotation("engine_name", "miniooni")
 	m.AddAnnotation("engine_version", version.Version)
 	m.AddAnnotation("platform", platform.Name())
