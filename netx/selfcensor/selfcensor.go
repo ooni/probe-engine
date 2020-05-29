@@ -40,23 +40,22 @@ type Spec struct {
 	// values are the IP addresses to return. If you set the values for
 	// a domain to `[]string{"NXDOMAIN"}`, the system resolver will return
 	// an NXDOMAIN response. If you set the values for a domain to
-	// `[]string{"TIMEOUT"}` the system resolver will block until the
-	// context used by the code is expired.
+	// `[]string{"TIMEOUT"}` the system resolver will return "i/o timeout".
 	PoisonSystemDNS map[string][]string
 
 	// BlockedEndpoints allows you to block specific IP endpoints. The key is
 	// `IP:port` to block. The format is the same of net.JoinHostPort. If
 	// the value is "REJECT", then the connection attempt will fail with
-	// ECONNREFUSED. If the value is "TIMEOUT", then the connector will block
-	// until the context is expired. If the value is anything else, we
-	// will perform a "REJECT".
+	// ECONNREFUSED. If the value is "TIMEOUT", then the connector will return
+	// claiming "i/o timeout". If the value is anything else, we will
+	// perform a "REJECT".
 	BlockedEndpoints map[string]string
 
 	// BlockedFingerprints allows you to block packets whose body contains
 	// specific fingerprints. Of course, the key is the fingerprint. If
 	// the value is "RST", then the connection will be reset. If the value
-	// is "TIMEOUT", then the code will block until the context is
-	// expired. If the value is anything else, we will perform a "RST".
+	// is "TIMEOUT", then the code will return claiming "i/o timeout". If
+	// the value is anything else, we will perform a "RST".
 	BlockedFingerprints map[string]string
 }
 
@@ -109,6 +108,9 @@ func MaybeEnable(data string) (err error) {
 // not censor anything unless you call selfcensor.Enable().
 type SystemResolver struct{}
 
+// errTimeout indicates that a timeout error has occurred.
+var errTimeout = errors.New("i/o timeout")
+
 // LookupHost implements Resolver.LookupHost
 func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if enabled.Load() != 0 { // jumps not taken by default
@@ -121,8 +123,7 @@ func (r SystemResolver) LookupHost(ctx context.Context, hostname string) ([]stri
 				return nil, errors.New("no such host")
 			}
 			if len(values) == 1 && values[0] == "TIMEOUT" {
-				<-ctx.Done()
-				return nil, ctx.Err()
+				return nil, errTimeout
 			}
 			if len(values) > 0 {
 				return values, nil
@@ -160,8 +161,7 @@ func (d SystemDialer) DialContext(
 		if spec.BlockedEndpoints != nil {
 			action, ok := spec.BlockedEndpoints[address]
 			if ok && action == "TIMEOUT" {
-				<-ctx.Done()
-				return nil, ctx.Err()
+				return nil, errTimeout
 			}
 			if ok {
 				switch network {
@@ -205,8 +205,7 @@ func (c connWrapper) match(p []byte, n int) (int, error) {
 	for key, value := range c.fingerprints {
 		if bytes.Index(p, []byte(key)) != -1 {
 			if value == "TIMEOUT" {
-				<-c.closed
-				return 0, errors.New("use of closed network connection")
+				return 0, errTimeout
 			}
 			return 0, errors.New("connection reset by peer")
 		}

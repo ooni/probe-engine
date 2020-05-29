@@ -14,19 +14,6 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
-func TestUnitSystemTLSHandshakerContextDone(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // immeditely cancel
-	h := dialer.SystemTLSHandshaker{}
-	conn, _, err := h.Handshake(ctx, dialer.EOFConn{}, new(tls.Config))
-	if err != context.Canceled {
-		t.Fatal("not the error that we expected")
-	}
-	if conn != nil {
-		t.Fatal("expected nil con here")
-	}
-}
-
 func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {
 	h := dialer.SystemTLSHandshaker{}
 	conn, _, err := h.Handshake(context.Background(), dialer.EOFConn{}, &tls.Config{
@@ -40,14 +27,16 @@ func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {
 	}
 }
 
-func TestUnitTimeoutTLSHandshaker(t *testing.T) {
+func TestUnitTimeoutTLSHandshakerSetDeadlineError(t *testing.T) {
 	h := dialer.TimeoutTLSHandshaker{
-		TLSHandshaker:    SlowTLSHandshaker{},
+		TLSHandshaker:    dialer.SystemTLSHandshaker{},
 		HandshakeTimeout: 200 * time.Millisecond,
 	}
+	expected := errors.New("mocked error")
 	conn, _, err := h.Handshake(
-		context.Background(), dialer.EOFConn{}, new(tls.Config))
-	if err != context.DeadlineExceeded {
+		context.Background(), &dialer.FakeConn{SetDeadlineError: expected},
+		new(tls.Config))
+	if !errors.Is(err, expected) {
 		t.Fatal("not the error that we expected")
 	}
 	if conn != nil {
@@ -55,17 +44,54 @@ func TestUnitTimeoutTLSHandshaker(t *testing.T) {
 	}
 }
 
-type SlowTLSHandshaker struct{}
-
-func (SlowTLSHandshaker) Handshake(
-	ctx context.Context, conn net.Conn, config *tls.Config,
-) (net.Conn, tls.ConnectionState, error) {
-	select {
-	case <-ctx.Done():
-		return nil, tls.ConnectionState{}, ctx.Err()
-	case <-time.After(30 * time.Second):
-		return nil, tls.ConnectionState{}, io.EOF
+func TestUnitTimeoutTLSHandshakerEOFError(t *testing.T) {
+	h := dialer.TimeoutTLSHandshaker{
+		TLSHandshaker:    dialer.SystemTLSHandshaker{},
+		HandshakeTimeout: 200 * time.Millisecond,
 	}
+	conn, _, err := h.Handshake(
+		context.Background(), dialer.EOFConn{}, &tls.Config{ServerName: "x.org"})
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("not the error that we expected")
+	}
+	if conn != nil {
+		t.Fatal("expected nil con here")
+	}
+}
+
+func TestUnitTimeoutTLSHandshakerCallsSetDeadline(t *testing.T) {
+	h := dialer.TimeoutTLSHandshaker{
+		TLSHandshaker:    dialer.SystemTLSHandshaker{},
+		HandshakeTimeout: 200 * time.Millisecond,
+	}
+	underlying := &SetDeadlineConn{}
+	conn, _, err := h.Handshake(
+		context.Background(), underlying, &tls.Config{ServerName: "x.org"})
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("not the error that we expected")
+	}
+	if conn != nil {
+		t.Fatal("expected nil con here")
+	}
+	if len(underlying.deadlines) != 2 {
+		t.Fatal("SetDeadline not called twice")
+	}
+	if underlying.deadlines[0].Before(time.Now()) {
+		t.Fatal("the first SetDeadline call was incorrect")
+	}
+	if !underlying.deadlines[1].IsZero() {
+		t.Fatal("the second SetDeadline call was incorrect")
+	}
+}
+
+type SetDeadlineConn struct {
+	dialer.EOFConn
+	deadlines []time.Time
+}
+
+func (c *SetDeadlineConn) SetDeadline(t time.Time) error {
+	c.deadlines = append(c.deadlines, t)
+	return nil
 }
 
 func TestUnitErrorWrapperTLSHandshakerFailure(t *testing.T) {
@@ -211,4 +237,40 @@ func (h *RecorderTLSHandshaker) Handshake(
 ) (net.Conn, tls.ConnectionState, error) {
 	h.SNI = config.ServerName
 	return h.TLSHandshaker.Handshake(ctx, conn, config)
+}
+
+func TestIntegrationDialTLSContextGood(t *testing.T) {
+	dialer := dialer.TLSDialer{
+		Config:        &tls.Config{ServerName: "google.com"},
+		Dialer:        new(net.Dialer),
+		TLSHandshaker: dialer.SystemTLSHandshaker{},
+	}
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "google.com:443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conn == nil {
+		t.Fatal("connection is nil")
+	}
+	conn.Close()
+}
+
+func TestIntegrationDialTLSContextTimeout(t *testing.T) {
+	dialer := dialer.TLSDialer{
+		Config: &tls.Config{ServerName: "google.com"},
+		Dialer: new(net.Dialer),
+		TLSHandshaker: dialer.ErrorWrapperTLSHandshaker{
+			TLSHandshaker: dialer.TimeoutTLSHandshaker{
+				TLSHandshaker:    dialer.SystemTLSHandshaker{},
+				HandshakeTimeout: 10 * time.Microsecond,
+			},
+		},
+	}
+	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "google.com:443")
+	if err.Error() != modelx.FailureGenericTimeoutError {
+		t.Fatal("not the error that we expected")
+	}
+	if conn != nil {
+		t.Fatal("connection is not nil")
+	}
 }
