@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/iancoleman/strcase"
@@ -372,7 +373,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		TestStartTime:             e.testStartTime,
 		TestVersion:               e.testVersion,
 	}
-	m.AddAnnotation("assets_version", fmt.Sprintf("%d", resources.Version))
+	m.AddAnnotation("assets_version", strconv.FormatInt(resources.Version, 10))
 	m.AddAnnotation("engine_name", "miniooni")
 	m.AddAnnotation("engine_version", version.Version)
 	m.AddAnnotation("platform", platform.Name())
