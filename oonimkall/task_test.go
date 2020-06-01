@@ -412,7 +412,7 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 		"task_terminated",
 	}
 	if diff := cmp.Diff(expect, keys); diff != "" {
-		t.Fatalf(diff)
+		t.Fatal(diff)
 	}
 }
 
@@ -463,7 +463,7 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 		"task_terminated",
 	}
 	if diff := cmp.Diff(expect, keys); diff != "" {
-		t.Fatalf(diff)
+		t.Fatal(diff)
 	}
 }
 

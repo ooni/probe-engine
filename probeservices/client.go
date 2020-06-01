@@ -67,12 +67,6 @@ func Default() []model.Service {
 		Address: "https://ps.ooni.io",
 		Type:    "https",
 	}, {
-		Address: "https://mia-ps2.ooni.nu",
-		Type:    "https",
-	}, {
-		Address: "https://hkg-ps.ooni.nu",
-		Type:    "https",
-	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
@@ -99,7 +93,7 @@ func SortEndpoints(in []model.Service) (out []model.Service) {
 	return
 }
 
-// OnlyHTTPS only returns the HTTPS endpoints.
+// OnlyHTTPS returns the HTTPS endpoints only.
 func OnlyHTTPS(in []model.Service) (out []model.Service) {
 	for _, entry := range in {
 		if entry.Type == "https" {
@@ -109,7 +103,7 @@ func OnlyHTTPS(in []model.Service) (out []model.Service) {
 	return
 }
 
-// OnlyFallbacks only returns the fallback endpoints.
+// OnlyFallbacks returns the fallback endpoints only.
 func OnlyFallbacks(in []model.Service) (out []model.Service) {
 	for _, entry := range SortEndpoints(in) {
 		if entry.Type != "https" {
@@ -145,7 +139,7 @@ func (c *Candidate) try(ctx context.Context, sess model.ExperimentSession) {
 	c.Duration = time.Now().Sub(start)
 	c.Err = err
 	c.TestHelpers = testhelpers
-	sess.Logger().Infof("probe services: %+v: %+v %s", c.Endpoint, err, c.Duration)
+	sess.Logger().Debugf("probe services: %+v: %+v %s", c.Endpoint, err, c.Duration)
 }
 
 func try(ctx context.Context, sess model.ExperimentSession, svc model.Service) *Candidate {
@@ -169,7 +163,9 @@ func TryAll(ctx context.Context, sess model.ExperimentSession, in []model.Servic
 	for _, svc := range OnlyHTTPS(in) {
 		candidate := try(ctx, sess, svc)
 		out = append(out, candidate)
-		found = found || candidate.Err == nil
+		if candidate.Err == nil {
+			found = true
+		}
 	}
 	if !found {
 		for _, svc := range OnlyFallbacks(in) {
