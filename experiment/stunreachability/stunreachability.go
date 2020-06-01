@@ -1,4 +1,6 @@
 // Package stunreachability contains the STUN reachability experiment.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-025-stun-reachability.md.
 package stunreachability
 
 import (
