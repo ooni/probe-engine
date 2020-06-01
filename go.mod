@@ -61,5 +61,6 @@ require (
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
+	github.com/pion/stun v0.3.5
 	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 )

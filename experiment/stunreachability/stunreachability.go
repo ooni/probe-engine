@@ -3,6 +3,7 @@ package stunreachability
 
 import (
 	"context"
+	"net"
 	"time"
 
 	"github.com/ooni/probe-engine/model"
@@ -19,7 +20,10 @@ const (
 )
 
 // Config contains the experiment config.
-type Config struct{}
+type Config struct {
+	dialContext func(ctx context.Context, network, address string) (net.Conn, error)
+	newClient   func(conn stun.Connection, options ...stun.ClientOption) (*stun.Client, error)
+}
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
@@ -53,15 +57,16 @@ func (m *measurer) Run(
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
 	registerExtensions(measurement)
-	if err := tk.run(ctx, sess, measurement, callbacks); err != nil {
+	if err := tk.run(ctx, m.config, sess, measurement, callbacks); err != nil {
 		s := err.Error()
 		tk.Failure = &s
+		return err
 	}
 	return nil
 }
 
 func (tk *TestKeys) run(
-	ctx context.Context, sess model.ExperimentSession,
+	ctx context.Context, config Config, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	const defaultAddress = "stun.l.google.com:19302"
@@ -72,7 +77,7 @@ func (tk *TestKeys) run(
 	tk.Endpoint = endpoint
 	saver := new(trace.Saver)
 	begin := time.Now()
-	err := tk.do(httptransport.NewDialer(httptransport.Config{
+	err := tk.do(ctx, config, httptransport.NewDialer(httptransport.Config{
 		ContextByteCounting: true,
 		DialSaver:           saver,
 		Logger:              sess.Logger(),
@@ -89,14 +94,22 @@ func (tk *TestKeys) run(
 	return err
 }
 
-func (tk *TestKeys) do(dialer dialer.Dialer, endpoint string) error {
-	// It's fine to use a background context because we're using UDP
-	conn, err := dialer.DialContext(context.Background(), "udp", endpoint)
+func (tk *TestKeys) do(
+	ctx context.Context, config Config, dialer dialer.Dialer, endpoint string) error {
+	dialContext := dialer.DialContext
+	if config.dialContext != nil {
+		dialContext = config.dialContext
+	}
+	conn, err := dialContext(ctx, "udp", endpoint)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	client, err := stun.NewClient(conn, stun.WithNoConnClose)
+	newClient := stun.NewClient
+	if config.newClient != nil {
+		newClient = config.newClient
+	}
+	client, err := newClient(conn, stun.WithNoConnClose)
 	if err != nil {
 		return err
 	}
@@ -109,11 +122,7 @@ func (tk *TestKeys) do(dialer dialer.Dialer, endpoint string) error {
 			return
 		}
 		var xorAddr stun.XORMappedAddress
-		if decodeErr := xorAddr.GetFrom(ev.Message); decodeErr != nil {
-			ch <- ev.Error
-			return
-		}
-		ch <- nil
+		ch <- xorAddr.GetFrom(ev.Message)
 	})
 	// Implementation note: if we successfully started, then the callback
 	// will be called when we receive a response or fail.
