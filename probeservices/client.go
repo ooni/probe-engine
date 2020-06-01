@@ -182,3 +182,22 @@ func TryAll(ctx context.Context, sess model.ExperimentSession, in []model.Servic
 	}
 	return
 }
+
+// SelectBest selects the best among the candidates. If there is no
+// suitable candidate, then this function returns nil.
+func SelectBest(candidates []*Candidate) (selected *Candidate) {
+	for _, e := range candidates {
+		if e.Err != nil {
+			continue
+		}
+		if selected == nil {
+			selected = e
+			continue
+		}
+		if selected.Duration > e.Duration {
+			selected = e
+			continue
+		}
+	}
+	return
+}

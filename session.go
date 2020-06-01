@@ -453,20 +453,7 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	}
 	s.queryProbeServicesCount.Add(1)
 	candidates := probeservices.TryAll(ctx, s, s.getAvailableProbeServices())
-	var selected *probeservices.Candidate
-	for _, e := range candidates {
-		if e.Err != nil {
-			continue
-		}
-		if selected == nil {
-			selected = e
-			continue
-		}
-		if selected.Duration > e.Duration {
-			selected = e
-			continue
-		}
-	}
+	selected := probeservices.SelectBest(candidates)
 	if selected == nil {
 		return errors.New("all available probe services failed")
 	}

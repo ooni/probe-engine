@@ -3,10 +3,12 @@ package probeservices_test
 import (
 	"context"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
@@ -529,5 +531,60 @@ func TestTryAllIntegrationWeFallback(t *testing.T) {
 	}
 	if out[3].Endpoint.Front != "dkyhjv0wpi2dk.cloudfront.net" {
 		t.Fatal("invalid front")
+	}
+}
+
+func TestSelectBestEmptyInput(t *testing.T) {
+	if out := probeservices.SelectBest(nil); out != nil {
+		t.Fatal("expected nil output here")
+	}
+}
+
+func TestSelectBestOnlyFailures(t *testing.T) {
+	in := []*probeservices.Candidate{{
+		Duration: 10 * time.Millisecond,
+		Err:      io.EOF,
+	}}
+	if out := probeservices.SelectBest(in); out != nil {
+		t.Fatal("expected nil output here")
+	}
+}
+
+func TestSelectBestSelectsTheFastest(t *testing.T) {
+	in := []*probeservices.Candidate{{
+		Duration: 10 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps1.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 4 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps2.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 7 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps3.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 11 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps4.ooni.io",
+			Type:    "https",
+		},
+	}}
+	expected := &probeservices.Candidate{
+		Duration: 4 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps2.ooni.io",
+			Type:    "https",
+		},
+	}
+	out := probeservices.SelectBest(in)
+	if diff := cmp.Diff(out, expected); diff != "" {
+		t.Fatal(diff)
 	}
 }
