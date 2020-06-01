@@ -3,10 +3,12 @@ package probeservices_test
 import (
 	"context"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
@@ -201,6 +203,388 @@ func TestSortEndpoints(t *testing.T) {
 	out := probeservices.SortEndpoints(in)
 	diff := cmp.Diff(out, expect)
 	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestOnlyHTTPS(t *testing.T) {
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Type:    "https",
+		Address: "https://ams-ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps.ooni.io",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps.ooni.io",
+	}}
+	expect := []model.Service{{
+		Type:    "https",
+		Address: "https://ams-ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps.ooni.io",
+	}}
+	out := probeservices.OnlyHTTPS(in)
+	diff := cmp.Diff(out, expect)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestOnlyFallbacks(t *testing.T) {
+	// put onion first so we also verify that we sort the endpoints
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Type:    "https",
+		Address: "https://ams-ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps.ooni.io",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps.ooni.io",
+	}}
+	expect := []model.Service{{
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}}
+	out := probeservices.OnlyFallbacks(in)
+	diff := cmp.Diff(out, expect)
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestTryAllCanceledContext(t *testing.T) {
+	// put onion first so we also verify that we sort the endpoints
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Type:    "https",
+		Address: "https://ams-ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps.ooni.io",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps.ooni.io",
+	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // immediately cancel and cause every attempt to fail
+	sess := &mockable.ExperimentSession{
+		MockableHTTPClient: http.DefaultClient,
+		MockableLogger:     log.Log,
+	}
+	out := probeservices.TryAll(ctx, sess, in)
+	if len(out) != 5 {
+		t.Fatal("invalid number of entries")
+	}
+	//
+	if out[0].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !errors.Is(out[0].Err, context.Canceled) {
+		t.Fatal("invalid error")
+	}
+	if out[0].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[0].Endpoint.Address != "https://ams-ps.ooni.io" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[1].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !errors.Is(out[1].Err, context.Canceled) {
+		t.Fatal("invalid error")
+	}
+	if out[1].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[1].Endpoint.Address != "https://hkg-ps.ooni.io" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[2].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !errors.Is(out[2].Err, context.Canceled) {
+		t.Fatal("invalid error")
+	}
+	if out[2].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[2].Endpoint.Address != "https://mia-ps.ooni.io" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[3].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !errors.Is(out[3].Err, context.Canceled) {
+		t.Fatal("invalid error")
+	}
+	if out[3].Endpoint.Type != "cloudfront" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[3].Endpoint.Front != "dkyhjv0wpi2dk.cloudfront.net" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[3].Endpoint.Address != "https://dkyhjv0wpi2dk.cloudfront.net" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	// Note: here duration may be zero because the endpoint is not supported
+	// and so we don't basically do anything. But it also may be nonzero since
+	// we also run tests in the cloud, which is slower than my desktop. So, I
+	// have not written a specific test concerning out[4].Duration.
+	if !errors.Is(out[4].Err, probeservices.ErrUnsupportedEndpoint) {
+		t.Fatal("invalid error")
+	}
+	if out[4].Endpoint.Type != "onion" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[4].Endpoint.Address != "httpo://jehhrikjjqrlpufu.onion" {
+		t.Fatal("invalid endpoint type")
+	}
+}
+
+func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	// put onion first so we also verify that we sort the endpoints
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Type:    "https",
+		Address: "https://ps.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps.ooni.nu",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps2.ooni.nu",
+	}}
+	sess := &mockable.ExperimentSession{
+		MockableHTTPClient: http.DefaultClient,
+		MockableLogger:     log.Log,
+	}
+	out := probeservices.TryAll(context.Background(), sess, in)
+	if len(out) != 3 {
+		t.Fatal("invalid number of entries")
+	}
+	//
+	if out[0].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if out[0].Err != nil {
+		t.Fatal("invalid error")
+	}
+	if out[0].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[0].Endpoint.Address != "https://ps.ooni.io" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[1].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if out[1].Err != nil {
+		t.Fatal("invalid error")
+	}
+	if out[1].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[1].Endpoint.Address != "https://hkg-ps.ooni.nu" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[2].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if out[2].Err != nil {
+		t.Fatal("invalid error")
+	}
+	if out[2].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[2].Endpoint.Address != "https://mia-ps2.ooni.nu" {
+		t.Fatal("invalid endpoint type")
+	}
+}
+
+func TestTryAllIntegrationWeFallback(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	// put onion first so we also verify that we sort the endpoints
+	in := []model.Service{{
+		Type:    "onion",
+		Address: "httpo://jehhrikjjqrlpufu.onion",
+	}, {
+		Type:    "https",
+		Address: "https://ps-nonexistent.ooni.io",
+	}, {
+		Type:    "https",
+		Address: "https://hkg-ps-nonexistent.ooni.nu",
+	}, {
+		Front:   "dkyhjv0wpi2dk.cloudfront.net",
+		Type:    "cloudfront",
+		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
+	}, {
+		Type:    "https",
+		Address: "https://mia-ps2-nonexistent.ooni.nu",
+	}}
+	sess := &mockable.ExperimentSession{
+		MockableHTTPClient: http.DefaultClient,
+		MockableLogger:     log.Log,
+	}
+	out := probeservices.TryAll(context.Background(), sess, in)
+	if len(out) != 4 {
+		t.Fatal("invalid number of entries")
+	}
+	//
+	if out[0].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !strings.HasSuffix(out[0].Err.Error(), "no such host") {
+		t.Fatal("invalid error")
+	}
+	if out[0].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[0].Endpoint.Address != "https://ps-nonexistent.ooni.io" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[1].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !strings.HasSuffix(out[1].Err.Error(), "no such host") {
+		t.Fatal("invalid error")
+	}
+	if out[1].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[1].Endpoint.Address != "https://hkg-ps-nonexistent.ooni.nu" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[2].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if !strings.HasSuffix(out[2].Err.Error(), "no such host") {
+		t.Fatal("invalid error")
+	}
+	if out[2].Endpoint.Type != "https" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[2].Endpoint.Address != "https://mia-ps2-nonexistent.ooni.nu" {
+		t.Fatal("invalid endpoint type")
+	}
+	//
+	if out[3].Duration <= 0 {
+		t.Fatal("invalid duration")
+	}
+	if out[3].Err != nil {
+		t.Fatal("invalid error")
+	}
+	if out[3].Endpoint.Type != "cloudfront" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[3].Endpoint.Address != "https://dkyhjv0wpi2dk.cloudfront.net" {
+		t.Fatal("invalid endpoint type")
+	}
+	if out[3].Endpoint.Front != "dkyhjv0wpi2dk.cloudfront.net" {
+		t.Fatal("invalid front")
+	}
+}
+
+func TestSelectBestEmptyInput(t *testing.T) {
+	if out := probeservices.SelectBest(nil); out != nil {
+		t.Fatal("expected nil output here")
+	}
+}
+
+func TestSelectBestOnlyFailures(t *testing.T) {
+	in := []*probeservices.Candidate{{
+		Duration: 10 * time.Millisecond,
+		Err:      io.EOF,
+	}}
+	if out := probeservices.SelectBest(in); out != nil {
+		t.Fatal("expected nil output here")
+	}
+}
+
+func TestSelectBestSelectsTheFastest(t *testing.T) {
+	in := []*probeservices.Candidate{{
+		Duration: 10 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps1.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 4 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps2.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 7 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps3.ooni.io",
+			Type:    "https",
+		},
+	}, {
+		Duration: 11 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps4.ooni.io",
+			Type:    "https",
+		},
+	}}
+	expected := &probeservices.Candidate{
+		Duration: 4 * time.Millisecond,
+		Endpoint: model.Service{
+			Address: "https://ps2.ooni.io",
+			Type:    "https",
+		},
+	}
+	out := probeservices.SelectBest(in)
+	if diff := cmp.Diff(out, expected); diff != "" {
 		t.Fatal(diff)
 	}
 }

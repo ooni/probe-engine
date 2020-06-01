@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/m-lab/ndt7-client-go/spec"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
@@ -53,7 +52,7 @@ type TestKeys struct {
 	BootstrapTime float64 `json:"bootstrap_time,omitempty"`
 
 	// Download contains download results
-	Download []spec.Measurement `json:"download"`
+	Download []Measurement `json:"download"`
 
 	// Failure is the failure string
 	Failure *string `json:"failure"`
@@ -74,7 +73,7 @@ type TestKeys struct {
 	Tunnel string `json:"tunnel,omitempty"`
 
 	// Upload contains upload results
-	Upload []spec.Measurement `json:"upload"`
+	Upload []Measurement `json:"upload"`
 }
 
 func registerExtensions(m *model.Measurement) {
@@ -137,8 +136,8 @@ func (m *measurer) doDownload(
 				float64(speed), "bit/s"))
 			tk.Summary.Download = speed / 1e03 /* bit/s => kbit/s */
 			callbacks.OnProgress(percentage, message)
-			tk.Download = append(tk.Download, spec.Measurement{
-				AppInfo: &spec.AppInfo{
+			tk.Download = append(tk.Download, Measurement{
+				AppInfo: &AppInfo{
 					ElapsedTime: int64(timediff / time.Microsecond),
 					NumBytes:    count,
 				},
@@ -148,7 +147,7 @@ func (m *measurer) doDownload(
 		},
 		func(data []byte) error {
 			sess.Logger().Debugf("%s", string(data))
-			var measurement spec.Measurement
+			var measurement Measurement
 			if err := m.jsonUnmarshal(data, &measurement); err != nil {
 				return err
 			}
@@ -204,8 +203,8 @@ func (m *measurer) doUpload(
 				float64(speed), "bit/s"))
 			tk.Summary.Upload = speed / 1e03 /* bit/s => kbit/s */
 			callbacks.OnProgress(percentage, message)
-			tk.Upload = append(tk.Upload, spec.Measurement{
-				AppInfo: &spec.AppInfo{
+			tk.Upload = append(tk.Upload, Measurement{
+				AppInfo: &AppInfo{
 					ElapsedTime: int64(timediff / time.Microsecond),
 					NumBytes:    count,
 				},

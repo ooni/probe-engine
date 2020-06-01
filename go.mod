@@ -16,7 +16,7 @@ require (
 	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200306193310-474e74c89fab // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20200326183334-7ff412878bba // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
-	github.com/apex/log v1.1.4
+	github.com/apex/log v1.3.0
 	github.com/aristanetworks/goarista v0.0.0-20200410125653-0a3087568c00 // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
@@ -31,14 +31,13 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
-	github.com/google/go-cmp v0.4.0
+	github.com/google/go-cmp v0.4.1
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 	github.com/juju/ratelimit v1.0.2-0.20191002062651-f60b32039441 // indirect
-	github.com/m-lab/ndt7-client-go v0.3.0
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
 	github.com/miekg/dns v1.1.29
 	github.com/montanaflynn/stats v0.6.3
@@ -61,6 +60,6 @@ require (
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
-	golang.org/x/net v0.0.0-20200513185701-a91f0712d120
-	golang.org/x/sys v0.0.0-20200513112337-417ce2331b5c // indirect
+	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
+	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 )

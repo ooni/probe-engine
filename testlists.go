@@ -48,7 +48,7 @@ func (s *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsR
 	if conf == nil {
 		return nil, errors.New("QueryTestListURLs: passed nil config")
 	}
-	baseURL := "https://orchestrate.ooni.io"
+	baseURL := "https://ps.ooni.io"
 	if conf.BaseURL != "" {
 		baseURL = conf.BaseURL
 	}
