@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -122,7 +122,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		TLSHandshakeDone: func(state tls.ConnectionState, err error) {
 			// Wrapping the error even if we're not returning it because it may
 			// less confusing to users to see the wrapped name
-			err = errwrapper.SafeErrWrapperBuilder{
+			err = errorx.SafeErrWrapperBuilder{
 				Error:         err,
 				Operation:     "tls_handshake",
 				TransactionID: tid,
@@ -186,7 +186,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		WroteRequest: func(info httptrace.WroteRequestInfo) {
 			// Wrapping the error even if we're not returning it because it may
 			// less confusing to users to see the wrapped name
-			err := errwrapper.SafeErrWrapperBuilder{
+			err := errorx.SafeErrWrapperBuilder{
 				Error:         info.Err,
 				Operation:     "http_round_trip",
 				TransactionID: tid,
@@ -225,7 +225,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	resp, err := t.roundTripper.RoundTrip(req)
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		Error:         err,
 		Operation:     majorOp,
 		TransactionID: tid,

@@ -1,4 +1,4 @@
-package errwrapper
+package errorx
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/pion/stun"
 )
 
 func TestMaybeBuildFactory(t *testing.T) {
@@ -86,11 +87,21 @@ func TestToFailureString(t *testing.T) {
 			t.Fatal("unexpected results")
 		}
 	})
-	t.Run("for context deadline expired", func(t *testing.T) {
+	t.Run("for context deadline exceeded", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
 		defer cancel()
 		<-ctx.Done()
 		if toFailureString(ctx.Err()) != modelx.FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for context operation was canceled", func(t *testing.T) {
+		if toFailureString(errors.New("operation was canceled")) != modelx.FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for stun's transaction is timed out", func(t *testing.T) {
+		if toFailureString(stun.ErrTransactionTimeOut) != modelx.FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})

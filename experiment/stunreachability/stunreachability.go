@@ -9,6 +9,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 	"github.com/pion/stun"
@@ -50,6 +51,13 @@ func (m *measurer) ExperimentVersion() string {
 	return testVersion
 }
 
+func wrap(err error) error {
+	return errorx.SafeErrWrapperBuilder{
+		Error:     err,
+		Operation: "stun",
+	}.MaybeBuild()
+}
+
 func (m *measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
@@ -57,7 +65,7 @@ func (m *measurer) Run(
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
 	registerExtensions(measurement)
-	if err := tk.run(ctx, m.config, sess, measurement, callbacks); err != nil {
+	if err := wrap(tk.run(ctx, m.config, sess, measurement, callbacks)); err != nil {
 		s := err.Error()
 		tk.Failure = &s
 		return err

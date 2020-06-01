@@ -1,5 +1,5 @@
-// Package errwrapper contains our error wrapper
-package errwrapper
+// Package errorx contains error extensions
+package errorx
 
 import (
 	"crypto/x509"
@@ -86,6 +86,12 @@ func toFailureString(err error) string {
 		return modelx.FailureConnectionReset
 	}
 	if strings.HasSuffix(s, "context deadline exceeded") {
+		return modelx.FailureGenericTimeoutError
+	}
+	if strings.HasSuffix(s, "operation was canceled") {
+		return modelx.FailureGenericTimeoutError
+	}
+	if strings.HasSuffix(s, "transaction is timed out") {
 		return modelx.FailureGenericTimeoutError
 	}
 	if strings.HasSuffix(s, "i/o timeout") {

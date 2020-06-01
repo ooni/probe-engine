@@ -12,6 +12,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/pion/stun"
 )
 
@@ -37,6 +38,48 @@ func TestIntegrationRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if tk.Failure != nil {
+		t.Fatal("expected nil failure here")
+	}
+	if tk.Endpoint != "stun.l.google.com:19302" {
+		t.Fatal("unexpected endpoint")
+	}
+	if len(tk.NetworkEvents) <= 0 {
+		t.Fatal("no network events?!")
+	}
+	if len(tk.Queries) <= 0 {
+		t.Fatal("no DNS queries?!")
+	}
+}
+
+func TestIntegrationRunCustomInput(t *testing.T) {
+	input := "stun.ekiga.net:3478"
+	measurer := stunreachability.NewExperimentMeasurer(stunreachability.Config{})
+	measurement := new(model.Measurement)
+	measurement.Input = model.MeasurementTarget(input)
+	err := measurer.Run(
+		context.Background(),
+		&mockable.ExperimentSession{},
+		measurement,
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if tk.Failure != nil {
+		t.Fatal("expected nil failure here")
+	}
+	if tk.Endpoint != input {
+		t.Fatal("unexpected endpoint")
+	}
+	if len(tk.NetworkEvents) <= 0 {
+		t.Fatal("no network events?!")
+	}
+	if len(tk.Queries) <= 0 {
+		t.Fatal("no DNS queries?!")
+	}
 }
 
 func TestCancelledContext(t *testing.T) {
@@ -50,8 +93,21 @@ func TestCancelledContext(t *testing.T) {
 		measurement,
 		handler.NewPrinterCallbacks(log.Log),
 	)
-	if !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if !strings.HasSuffix(err.Error(), "generic_timeout_error") {
 		t.Fatal("not the error we expected")
+	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if *tk.Failure != modelx.FailureGenericTimeoutError {
+		t.Fatal("expected different failure here")
+	}
+	if tk.Endpoint != "stun.l.google.com:19302" {
+		t.Fatal("unexpected endpoint")
+	}
+	if len(tk.NetworkEvents) <= 0 {
+		t.Fatal("no network events?!")
+	}
+	if len(tk.Queries) <= 0 {
+		t.Fatal("no DNS queries?!")
 	}
 }
 
@@ -72,6 +128,19 @@ func TestNewClientFailure(t *testing.T) {
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
+	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if !strings.HasPrefix(*tk.Failure, "unknown_failure") {
+		t.Fatal("expected different failure here")
+	}
+	if tk.Endpoint != "stun.l.google.com:19302" {
+		t.Fatal("unexpected endpoint")
+	}
+	if len(tk.NetworkEvents) <= 0 {
+		t.Fatal("no network events?!")
+	}
+	if len(tk.Queries) <= 0 {
+		t.Fatal("no DNS queries?!")
 	}
 }
 
@@ -94,6 +163,20 @@ func TestStartFailure(t *testing.T) {
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if !strings.HasPrefix(*tk.Failure, "unknown_failure") {
+		t.Fatal("expected different failure here")
+	}
+	if tk.Endpoint != "stun.l.google.com:19302" {
+		t.Fatal("unexpected endpoint")
+	}
+	// We're bypassing normal network with custom dial function
+	if len(tk.NetworkEvents) > 0 {
+		t.Fatal("network events?!")
+	}
+	if len(tk.Queries) > 0 {
+		t.Fatal("DNS queries?!")
+	}
 }
 
 func TestReadFailure(t *testing.T) {
@@ -114,5 +197,19 @@ func TestReadFailure(t *testing.T) {
 	)
 	if !errors.Is(err, stun.ErrTransactionTimeOut) {
 		t.Fatal("not the error we expected")
+	}
+	tk := measurement.TestKeys.(*stunreachability.TestKeys)
+	if *tk.Failure != modelx.FailureGenericTimeoutError {
+		t.Fatal("expected different failure here")
+	}
+	if tk.Endpoint != "stun.l.google.com:19302" {
+		t.Fatal("unexpected endpoint")
+	}
+	// We're bypassing normal network with custom dial function
+	if len(tk.NetworkEvents) > 0 {
+		t.Fatal("network events?!")
+	}
+	if len(tk.Queries) > 0 {
+		t.Fatal("DNS queries?!")
 	}
 }

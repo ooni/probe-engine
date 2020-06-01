@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/internal/connid"
-	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -64,7 +64,7 @@ func (h ErrorWrapperTLSHandshaker) Handshake(
 ) (net.Conn, tls.ConnectionState, error) {
 	connID := connid.Compute(conn.RemoteAddr().Network(), conn.RemoteAddr().String())
 	tlsconn, state, err := h.TLSHandshaker.Handshake(ctx, conn, config)
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    connID,
 		Error:     err,
 		Operation: "tls_handshake",
