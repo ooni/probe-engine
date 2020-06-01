@@ -452,21 +452,15 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 		return nil
 	}
 	s.queryProbeServicesCount.Add(1)
-	for _, e := range probeservices.SortEndpoints(s.getAvailableProbeServices()) {
-		client, err := probeservices.NewClient(s, e)
-		if err != nil {
-			s.logger.Debugf("%+v", err)
-			continue
-		}
-		testhelpers, err := client.GetTestHelpers(ctx)
-		if err == nil {
-			s.selectedProbeService = &e
-			s.availableTestHelpers = testhelpers
-			return nil
-		}
-		s.logger.Warnf("session: probe services error: %s", err.Error())
+	candidates := probeservices.TryAll(ctx, s, s.getAvailableProbeServices())
+	selected := probeservices.SelectBest(candidates)
+	if selected == nil {
+		return errors.New("all available probe services failed")
 	}
-	return errors.New("all available probe services failed")
+	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
+	s.selectedProbeService = &selected.Endpoint
+	s.availableTestHelpers = selected.TestHelpers
+	return nil
 }
 
 func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
