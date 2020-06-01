@@ -1,4 +1,4 @@
-package errwrapper
+package errorx
 
 import "regexp"
 

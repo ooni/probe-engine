@@ -18,7 +18,7 @@ import (
 
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/internal/errwrapper"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
@@ -111,7 +111,7 @@ func NewFailure(err error) *string {
 		}
 		return &s
 	}
-	s := fmt.Sprintf("unknown_failure: %s", errwrapper.Scrub(err.Error()))
+	s := fmt.Sprintf("unknown_failure: %s", errorx.Scrub(err.Error()))
 	return &s
 }
 

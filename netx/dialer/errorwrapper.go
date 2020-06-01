@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/errwrapper"
 )
 
 // ErrorWrapperDialer is a dialer that performs err wrapping
@@ -17,7 +17,7 @@ type ErrorWrapperDialer struct {
 func (d ErrorWrapperDialer) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
 	dialID := dialid.ContextDialID(ctx)
 	conn, err := d.Dialer.DialContext(ctx, network, address)
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		// ConnID does not make any sense if we've failed and the error
 		// does not make any sense (and is nil) if we succeded.
 		DialID:    dialID,
@@ -41,7 +41,7 @@ type ErrorWrapperConn struct {
 // Read implements net.Conn.Read
 func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 	n, err = c.Conn.Read(b)
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
@@ -53,7 +53,7 @@ func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 // Write implements net.Conn.Write
 func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 	n, err = c.Conn.Write(b)
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
@@ -65,7 +65,7 @@ func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 // Close implements net.Conn.Close
 func (c ErrorWrapperConn) Close() (err error) {
 	err = c.Conn.Close()
-	err = errwrapper.SafeErrWrapperBuilder{
+	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
