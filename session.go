@@ -472,6 +472,7 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	}
 	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
 	s.selectedProbeService = &selected.Endpoint
+	s.availableTestHelpers = selected.TestHelpers
 	return nil
 }
 
