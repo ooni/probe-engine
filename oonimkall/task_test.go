@@ -411,7 +411,7 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 		"status.end",
 		"task_terminated",
 	}
-	if diff := cmp.Diff(keys, expect); diff != "" {
+	if diff := cmp.Diff(expect, keys); diff != "" {
 		t.Fatalf(diff)
 	}
 }
@@ -431,7 +431,7 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 		t.Fatal(err)
 	}
 	go func() {
-		<-time.After(7 * time.Second)
+		<-time.After(11 * time.Second)
 		task.Interrupt()
 	}()
 	var keys []string
@@ -462,7 +462,7 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 		"status.end",
 		"task_terminated",
 	}
-	if diff := cmp.Diff(keys, expect); diff != "" {
+	if diff := cmp.Diff(expect, keys); diff != "" {
 		t.Fatalf(diff)
 	}
 }
