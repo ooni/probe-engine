@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -411,8 +411,8 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 		"status.end",
 		"task_terminated",
 	}
-	if !reflect.DeepEqual(keys, expect) {
-		t.Fatalf("seen different keys than expected: %+v", keys)
+	if diff := cmp.Diff(keys, expect); diff != "" {
+		t.Fatalf(diff)
 	}
 }
 
@@ -462,8 +462,8 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 		"status.end",
 		"task_terminated",
 	}
-	if !reflect.DeepEqual(keys, expect) {
-		t.Fatal("seen different keys than expected")
+	if diff := cmp.Diff(keys, expect); diff != "" {
+		t.Fatalf(diff)
 	}
 }
 
