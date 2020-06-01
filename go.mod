@@ -44,7 +44,7 @@ require (
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
-	github.com/pion/stun v0.3.3
+	github.com/pion/stun v0.3.5
 	github.com/redjack/marionette v0.0.0-20180818172807-360dd8f58226 // indirect
 	github.com/refraction-networking/gotapdance v0.0.0-20190909202946-3a6e1938ad70 // indirect
 	github.com/refraction-networking/utls v0.0.0-20190909200633-43c36d3c1f57 // indirect
@@ -61,6 +61,5 @@ require (
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
-	github.com/pion/stun v0.3.5
 	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 )
