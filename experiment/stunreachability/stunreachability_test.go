@@ -93,11 +93,11 @@ func TestCancelledContext(t *testing.T) {
 		measurement,
 		handler.NewPrinterCallbacks(log.Log),
 	)
-	if !strings.HasSuffix(err.Error(), "generic_timeout_error") {
+	if !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
 	}
 	tk := measurement.TestKeys.(*stunreachability.TestKeys)
-	if *tk.Failure != modelx.FailureGenericTimeoutError {
+	if !strings.HasPrefix(*tk.Failure, "unknown_failure") {
 		t.Fatal("expected different failure here")
 	}
 	if tk.Endpoint != "stun.l.google.com:19302" {

@@ -88,9 +88,6 @@ func toFailureString(err error) string {
 	if strings.HasSuffix(s, "context deadline exceeded") {
 		return modelx.FailureGenericTimeoutError
 	}
-	if strings.HasSuffix(s, "operation was canceled") {
-		return modelx.FailureGenericTimeoutError
-	}
 	if strings.HasSuffix(s, "transaction is timed out") {
 		return modelx.FailureGenericTimeoutError
 	}

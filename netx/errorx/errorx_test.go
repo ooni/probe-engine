@@ -95,11 +95,6 @@ func TestToFailureString(t *testing.T) {
 			t.Fatal("unexpected results")
 		}
 	})
-	t.Run("for context operation was canceled", func(t *testing.T) {
-		if toFailureString(errors.New("operation was canceled")) != modelx.FailureGenericTimeoutError {
-			t.Fatal("unexpected results")
-		}
-	})
 	t.Run("for stun's transaction is timed out", func(t *testing.T) {
 		if toFailureString(stun.ErrTransactionTimeOut) != modelx.FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
