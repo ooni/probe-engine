@@ -256,21 +256,6 @@ func TestMaybeLookupBackendsNewClientError(t *testing.T) {
 	}
 }
 
-func TestIntegrationMaybeStartTunnel(t *testing.T) {
-	sess := newSessionForTestingNoLookups(t)
-	defer sess.Close()
-	ctx := context.Background()
-	if err := sess.MaybeStartTunnel(ctx, "psiphon"); err != nil {
-		t.Fatal(err)
-	}
-	if sess.TunnelBootstrapTime() <= 0 {
-		t.Fatal("expected positive boostrap time")
-	}
-	if sess.ProxyURL() == nil {
-		t.Fatal("expected non nil proxy URL")
-	}
-}
-
 func TestIntegrationSessionLocationLookup(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
@@ -438,6 +423,9 @@ func TestIntegrationStartTunnelGood(t *testing.T) {
 	if sess.ProxyURL() == nil {
 		t.Fatal("expected non-nil ProxyURL")
 	}
+	if sess.TunnelBootstrapTime() <= 0 {
+		t.Fatal("expected positive boostrap time")
+	}
 }
 
 func TestIntegrationStartTunnelNonexistent(t *testing.T) {
@@ -461,6 +449,21 @@ func TestIntegrationStartTunnelEmptyString(t *testing.T) {
 	}
 	if sess.ProxyURL() != nil {
 		t.Fatal("expected nil ProxyURL")
+	}
+}
+
+func TestIntegrationStartTunnelEmptyStringWithProxy(t *testing.T) {
+	proxyURL := &url.URL{Scheme: "socks5", Host: "127.0.0.1:9050"}
+	sess := newSessionForTestingNoLookups(t)
+	sess.proxyURL = proxyURL
+	defer sess.Close()
+	ctx := context.Background()
+	if sess.MaybeStartTunnel(ctx, "") != nil {
+		t.Fatal("expected no error here")
+	}
+	diff := cmp.Diff(proxyURL, sess.ProxyURL())
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
 

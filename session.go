@@ -204,9 +204,17 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 	s.tunnelMu.Lock()
 	defer s.tunnelMu.Unlock()
 	if s.tunnel != nil && s.tunnelName == name {
+		// We've been asked more than once to start the same tunnel.
+		return nil
+	}
+	if s.proxyURL != nil && name == "" {
+		// The user configured a proxy and here we're not actually trying
+		// to start any tunnel since `name` is empty.
 		return nil
 	}
 	if s.proxyURL != nil || s.tunnel != nil {
+		// We already have a proxy or we have a different tunnel. Because a tunnel
+		// sets a proxy, the second check for s.tunnel is for robustness.
 		return ErrAlreadyUsingProxy
 	}
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
