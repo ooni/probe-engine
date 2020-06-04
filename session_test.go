@@ -17,6 +17,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/version"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -511,5 +512,15 @@ func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 	err := sess.MaybeStartTunnel(ctx, "psiphon")
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
+	}
+}
+
+func TestUserAgentNoProxy(t *testing.T) {
+	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + version.Version
+	sess := newSessionForTestingNoLookups(t)
+	ua := sess.UserAgent()
+	diff := cmp.Diff(expect, ua)
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }

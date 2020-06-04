@@ -28,6 +28,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/version"
 )
 
 // SessionConfig contains the Session config
@@ -387,8 +388,10 @@ func (s *Session) TunnelBootstrapTime() time.Duration {
 }
 
 // UserAgent constructs the user agent to be used in this session.
-func (s *Session) UserAgent() string {
-	return s.softwareName + "/" + s.softwareVersion
+func (s *Session) UserAgent() (useragent string) {
+	useragent += s.softwareName + "/" + s.softwareVersion
+	useragent += " ooniprobe-engine/" + version.Version
+	return
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
