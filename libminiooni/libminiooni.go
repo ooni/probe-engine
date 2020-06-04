@@ -95,7 +95,7 @@ func init() {
 		"Set the URL of the probe-services instance you want to use", "URL",
 	)
 	getopt.FlagLong(
-		&globalOptions.Proxy, "proxy", 'P', "Set the proxy URL", "URL",
+		&globalOptions.Proxy, "proxy", 0, "Set the proxy URL", "URL",
 	)
 	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',

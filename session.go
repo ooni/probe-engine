@@ -28,6 +28,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/version"
 )
 
 // SessionConfig contains the Session config
@@ -204,9 +205,17 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 	s.tunnelMu.Lock()
 	defer s.tunnelMu.Unlock()
 	if s.tunnel != nil && s.tunnelName == name {
+		// We've been asked more than once to start the same tunnel.
+		return nil
+	}
+	if s.proxyURL != nil && name == "" {
+		// The user configured a proxy and here we're not actually trying
+		// to start any tunnel since `name` is empty.
 		return nil
 	}
 	if s.proxyURL != nil || s.tunnel != nil {
+		// We already have a proxy or we have a different tunnel. Because a tunnel
+		// sets a proxy, the second check for s.tunnel is for robustness.
 		return ErrAlreadyUsingProxy
 	}
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
@@ -379,8 +388,10 @@ func (s *Session) TunnelBootstrapTime() time.Duration {
 }
 
 // UserAgent constructs the user agent to be used in this session.
-func (s *Session) UserAgent() string {
-	return s.softwareName + "/" + s.softwareVersion
+func (s *Session) UserAgent() (useragent string) {
+	useragent += s.softwareName + "/" + s.softwareVersion
+	useragent += " ooniprobe-engine/" + version.Version
+	return
 }
 
 func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
@@ -452,21 +463,15 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 		return nil
 	}
 	s.queryProbeServicesCount.Add(1)
-	for _, e := range probeservices.SortEndpoints(s.getAvailableProbeServices()) {
-		client, err := probeservices.NewClient(s, e)
-		if err != nil {
-			s.logger.Debugf("%+v", err)
-			continue
-		}
-		testhelpers, err := client.GetTestHelpers(ctx)
-		if err == nil {
-			s.selectedProbeService = &e
-			s.availableTestHelpers = testhelpers
-			return nil
-		}
-		s.logger.Warnf("session: probe services error: %s", err.Error())
+	candidates := probeservices.TryAll(ctx, s, s.getAvailableProbeServices())
+	selected := probeservices.SelectBest(candidates)
+	if selected == nil {
+		return errors.New("all available probe services failed")
 	}
-	return errors.New("all available probe services failed")
+	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
+	s.selectedProbeService = &selected.Endpoint
+	s.availableTestHelpers = selected.TestHelpers
+	return nil
 }
 
 func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {

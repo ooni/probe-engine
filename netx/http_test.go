@@ -114,7 +114,7 @@ func TestHTTPNewClientProxy(t *testing.T) {
 	httpProxyTestMain(t, client.HTTPClient, 451)
 }
 
-const httpProxyTestsURL = "http://explorer.ooni.io"
+const httpProxyTestsURL = "http://explorer.ooni.org"
 
 func httpProxyTestMain(t *testing.T, client *http.Client, expect int) {
 	req, err := http.NewRequest("GET", httpProxyTestsURL, nil)

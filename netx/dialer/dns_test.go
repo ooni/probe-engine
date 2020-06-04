@@ -15,7 +15,7 @@ import (
 
 func TestUnitDNSDialerNoPort(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
-	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.io")
+	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.nu")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

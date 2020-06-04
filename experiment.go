@@ -22,6 +22,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
+	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -594,6 +595,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				ControlSNI: "example.com",
 			},
 			inputPolicy: InputRequired,
+		}
+	},
+
+	"stun_reachability": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, stunreachability.NewExperimentMeasurer(
+					*config.(*stunreachability.Config),
+				))
+			},
+			config:      &stunreachability.Config{},
+			inputPolicy: InputOptional,
 		}
 	},
 
