@@ -4,6 +4,11 @@ pkgname=oonimkall
 version=$(date -u +%Y.%m.%d-%H%M%S)
 baseurl=https://api.bintray.com/content/ooni/android/$pkgname/$version/org/ooni/$pkgname/$version
 aarfile=./MOBILE/dist/$pkgname.aar
+aarfile_version=./MOBILE/dist/$pkgname-$version.aar
+ln $aarfile $aarfile_version
+sourcesfile=./MOBILE/dist/$pkgname-sources.jar
+sourcesfile_version=./MOBILE/dist/$pkgname-$version-sources.jar
+ln $sourcesfile $sourcesfile_version
 pomfile=./MOBILE/dist/$pkgname-$version.pom
 pomtemplate=./MOBILE/template.pom
 user=bassosimone
@@ -16,6 +21,8 @@ fi
 # <curl -s $user:$BINTRAY_API_KEY https://api.bintray.com/packages/ooni/android/oonimkall>
 # query, which returns a list of versions. From such list, we can delete the versions we
 # don't need using <DELETE /packages/:subject/:repo/:package/versions/:version>.
-curl -sT $aarfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.aar?publish=1 >/dev/null
-curl -sT $pomfile -u $user:$BINTRAY_API_KEY $baseurl/$pkgname-$version.pom?publish=1 >/dev/null
+for filename in $aarfile_version $sourcesfile_version $pomfile; do
+  basefilename=$(basename $filename)
+  curl -sT $filename -u $user:$BINTRAY_API_KEY $baseurl/$basefilename?publish=1 >/dev/null
+done
 echo "implementation 'org.ooni:oonimkall:$version'"
