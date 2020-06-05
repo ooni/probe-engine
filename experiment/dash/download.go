@@ -66,9 +66,10 @@ func download(ctx context.Context, config downloadConfig) (downloadResult, error
 	// turns out that Neubot and MK do the same. So, we do what they do. At
 	// the same time, we are currently not able to include the overhead that
 	// is caused by HTTP headers etc. So, we're a bit less precise.
-	result.elapsed = time.Now().Sub(savedTicks).Seconds()
+	now := time.Now()
+	result.elapsed = now.Sub(savedTicks).Seconds()
 	result.received = int64(len(data))
 	result.requestTicks = savedTicks.Sub(config.begin).Seconds()
-	result.timestamp = time.Now().Unix()
+	result.timestamp = now.Unix()
 	return result, nil
 }

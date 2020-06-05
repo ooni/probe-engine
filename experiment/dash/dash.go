@@ -12,11 +12,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/montanaflynn/stats"
-	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -25,15 +23,16 @@ import (
 
 const (
 	defaultTimeout = 120 * time.Second
-	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.10.0"
 	totalStep      = 15.0
+	version        = 11
 )
 
 var (
 	errServerBusy        = errors.New("Server busy; try again later")
 	errHTTPRequestFailed = errors.New("HTTP request failed")
+	magicVersion         = fmt.Sprintf("0.%03d000000", version)
+	testVersion          = fmt.Sprintf("0.%d.0", version)
 )
 
 // Config contains the experiment config.
@@ -43,9 +42,10 @@ type Config struct {
 
 // Simple contains the experiment total summary
 type Simple struct {
-	ConnectLatency  float64 `json:"connect_latency"`
-	MedianBitrate   int64   `json:"median_bitrate"`
-	MinPlayoutDelay float64 `json:"min_playout_delay"`
+	ConnectLatency      float64 `json:"connect_latency"`
+	MedianBitratePlayer int64   `json:"median_bitrate_player"`
+	MedianBitrate       int64   `json:"median_bitrate"`
+	MinPlayoutDelay     float64 `json:"min_playout_delay"`
 }
 
 // ServerInfo contains information on the selected server
@@ -60,11 +60,12 @@ type ServerInfo struct {
 // TestKeys contains the test keys
 type TestKeys struct {
 	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
-	Server        ServerInfo      `json:"server"`
-	Simple        Simple          `json:"simple"`
 	Failure       *string         `json:"failure"`
+	PlayerData    []playerInfo    `json:"player_data"`
 	ReceiverData  []clientResults `json:"receiver_data"`
 	SOCKSProxy    string          `json:"socksproxy,omitempty"`
+	Simple        Simple          `json:"simple"`
+	Server        ServerInfo      `json:"server"`
 	Tunnel        string          `json:"tunnel,omitempty"`
 }
 
@@ -137,99 +138,34 @@ func (r runner) loop(ctx context.Context, numIterations int64) error {
 func (r runner) measure(
 	ctx context.Context, fqdn string, negotiateResp negotiateResponse,
 	numIterations int64) error {
-	// Note: according to a comment in MK sources 3000 kbit/s was the
-	// minimum speed recommended by Netflix for SD quality in 2017.
-	//
-	// See: <https://help.netflix.com/en/node/306>.
-	const initialBitrate = 3000
-	current := clientResults{
-		ElapsedTarget: 2,
-		Platform:      runtime.GOOS,
-		Rate:          initialBitrate,
-		RealAddress:   negotiateResp.RealAddress,
-		Version:       magicVersion,
-	}
-	var (
-		begin       = time.Now()
-		connectTime float64
-		total       int64
-	)
-	for current.Iteration < numIterations {
-		result, err := download(ctx, downloadConfig{
-			authorization: negotiateResp.Authorization,
-			begin:         begin,
-			currentRate:   current.Rate,
-			deps:          r,
-			elapsedTarget: current.ElapsedTarget,
-			fqdn:          fqdn,
-		})
-		if err != nil {
-			// Implementation note: ndt7 controls the connection much
-			// more than us and it can tell whether an error occurs when
-			// connecting or later. We cannot say that very precisely
-			// because, in principle, we may reconnect. So we always
-			// return error here. This comment is being introduced so
-			// that we don't do https://github.com/ooni/probe-engine/pull/526
-			// again, because that isn't accurate.
-			return err
-		}
-		current.Elapsed = result.elapsed
-		current.Received = result.received
-		current.RequestTicks = result.requestTicks
-		current.Timestamp = result.timestamp
-		current.ServerURL = result.serverURL
-		// Read the events so far and possibly update our measurement
-		// of the latest connect time. We should have one sample in most
-		// cases, because the connection should be persistent.
-		for _, ev := range r.saver.Read() {
-			if ev.Name == "connect" {
-				connectTime = ev.Duration.Seconds()
-			}
-		}
-		current.ConnectTime = connectTime
-		r.tk.ReceiverData = append(r.tk.ReceiverData, current)
-		total += current.Received
-		avgspeed := 8 * float64(total) / time.Now().Sub(begin).Seconds()
-		percentage := float64(current.Iteration) / float64(numIterations)
-		message := fmt.Sprintf("streaming: speed: %s", humanizex.SI(avgspeed, "bit/s"))
-		r.callbacks.OnProgress(percentage, message)
-		current.Iteration++
-		speed := float64(current.Received) / float64(current.Elapsed)
-		speed *= 8.0    // to bits per second
-		speed /= 1000.0 // to kbit/s
-		current.Rate = int64(speed)
-	}
-	return nil
+	return r.play(ctx, playConfig{
+		authorization: negotiateResp.Authorization,
+		fqdn:          fqdn,
+		numIterations: numIterations,
+		realAddress:   negotiateResp.RealAddress,
+	})
 }
 
 func (tk *TestKeys) analyze() error {
-	var (
-		rates          []float64
-		frameReadyTime float64
-		playTime       float64
-	)
+	var rates []float64
 	for _, results := range tk.ReceiverData {
 		rates = append(rates, float64(results.Rate))
 		// Same in all samples if we're using a single connection
 		tk.Simple.ConnectLatency = results.ConnectTime
-		// Rationale: first segment plays when it arrives. Subsequent segments
-		// would play in ElapsedTarget seconds. However, will play when they
-		// arrive. Stall is the time we need to wait for a frame to arrive with
-		// the video stopped and the spinning icon.
-		frameReadyTime += results.Elapsed
-		if playTime == 0.0 {
-			playTime += frameReadyTime
-		} else {
-			playTime += float64(results.ElapsedTarget)
-		}
-		stall := frameReadyTime - playTime
-		if stall > tk.Simple.MinPlayoutDelay {
-			tk.Simple.MinPlayoutDelay = stall
-		}
 	}
-	median, err := stats.Median(rates)
+	median, _ := stats.Median(rates)
 	tk.Simple.MedianBitrate = int64(median)
-	return err
+	return tk.analyzePlayer()
+}
+
+func (tk *TestKeys) analyzePlayer() error {
+	var playRates []float64
+	for _, results := range tk.PlayerData {
+		playRates = append(playRates, float64(results.Rate))
+	}
+	median, _ := stats.Median(playRates)
+	tk.Simple.MedianBitratePlayer = int64(median)
+	return nil
 }
 
 func (r runner) do(ctx context.Context) error {
