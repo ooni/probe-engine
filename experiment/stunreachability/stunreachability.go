@@ -5,6 +5,7 @@ package stunreachability
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -84,6 +85,9 @@ func (tk *TestKeys) run(
 	if endpoint == "" {
 		endpoint = defaultAddress
 	}
+	callbacks.OnProgress(0, fmt.Sprintf("stunreachability: measuring: %s...", endpoint))
+	defer callbacks.OnProgress(
+		1, fmt.Sprintf("stunreachability: measuring: %s... done", endpoint))
 	tk.Endpoint = endpoint
 	saver := new(trace.Saver)
 	begin := time.Now()
