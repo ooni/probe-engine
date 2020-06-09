@@ -136,6 +136,9 @@ const (
 
 	// WriteOperation is when we write to a socket
 	WriteOperation = "write"
+
+	// UnknownOperation is when we cannot determine the operation
+	UnknownOperation = "unknown"
 )
 
 // ErrWrapper is our error wrapper for Go errors. The key objective of
