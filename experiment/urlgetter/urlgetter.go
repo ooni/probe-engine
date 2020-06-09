@@ -31,17 +31,18 @@ type Config struct {
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
-	Agent         string                     `json:"agent"`
-	BootstrapTime float64                    `json:"bootstrap_time,omitempty"`
-	DNSCache      []string                   `json:"dns_cache,omitempty"`
-	Failure       *string                    `json:"failure"`
-	NetworkEvents []archival.NetworkEvent    `json:"network_events"`
-	Queries       []archival.DNSQueryEntry   `json:"queries"`
-	Requests      []archival.RequestEntry    `json:"requests"`
-	TCPConnect    []archival.TCPConnectEntry `json:"tcp_connect"`
-	SOCKSProxy    string                     `json:"socksproxy,omitempty"`
-	TLSHandshakes []archival.TLSHandshake    `json:"tls_handshakes"`
-	Tunnel        string                     `json:"tunnel,omitempty"`
+	Agent           string                     `json:"agent"`
+	BootstrapTime   float64                    `json:"bootstrap_time,omitempty"`
+	DNSCache        []string                   `json:"dns_cache,omitempty"`
+	FailedOperation *string                    `json:"failed_operation"`
+	Failure         *string                    `json:"failure"`
+	NetworkEvents   []archival.NetworkEvent    `json:"network_events"`
+	Queries         []archival.DNSQueryEntry   `json:"queries"`
+	Requests        []archival.RequestEntry    `json:"requests"`
+	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
+	SOCKSProxy      string                     `json:"socksproxy,omitempty"`
+	TLSHandshakes   []archival.TLSHandshake    `json:"tls_handshakes"`
+	Tunnel          string                     `json:"tunnel,omitempty"`
 }
 
 // RegisterExtensions registers the extensions used by the urlgetter
