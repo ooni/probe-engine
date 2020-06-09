@@ -34,7 +34,7 @@ func TestGetterWithCancelledContextVanilla(t *testing.T) {
 	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
 		t.Fatal("not the FailedOperation we expected")
 	}
-	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
+	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "interrupted") {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 3 {
@@ -102,7 +102,7 @@ func TestGetterWithCancelledContextAndMethod(t *testing.T) {
 	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
 		t.Fatal("not the FailedOperation we expected")
 	}
-	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
+	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "interrupted") {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 3 {
@@ -172,7 +172,7 @@ func TestGetterWithCancelledContextNoFollowRedirects(t *testing.T) {
 	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
 		t.Fatal("not the FailedOperation we expected")
 	}
-	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
+	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "interrupted") {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 3 {
@@ -300,7 +300,7 @@ func TestGetterWithCancelledContextWithTunnel(t *testing.T) {
 	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
 		t.Fatal("not the FailedOperation we expected")
 	}
-	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
+	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "interrupted") {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 3 {

@@ -2,6 +2,7 @@
 package errorx
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -56,6 +57,9 @@ func toFailureString(err error) string {
 
 	if errors.Is(err, modelx.ErrDNSBogon) {
 		return modelx.FailureDNSBogonError // not in MK
+	}
+	if errors.Is(err, context.Canceled) {
+		return modelx.FailureInterrupted
 	}
 
 	var x509HostnameError x509.HostnameError

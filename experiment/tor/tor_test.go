@@ -287,7 +287,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "context canceled") {
+	if !strings.HasSuffix(err.Error(), "interrupted") {
 		t.Fatal("not the error we expected")
 	}
 	if tk.HTTPRequests == nil {
