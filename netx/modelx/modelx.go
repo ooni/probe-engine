@@ -139,6 +139,10 @@ const (
 
 	// UnknownOperation is when we cannot determine the operation
 	UnknownOperation = "unknown"
+
+	// TopLevelOperation is used when the failure happens at top level. This
+	// happens for example with urlgetter with a cancelled context.
+	TopLevelOperation = "top_level"
 )
 
 // ErrWrapper is our error wrapper for Go errors. The key objective of

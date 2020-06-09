@@ -31,6 +31,9 @@ func TestGetterWithCancelledContextVanilla(t *testing.T) {
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
 	}
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
+	}
 	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
 		t.Fatal("not the Failure we expected")
 	}
@@ -89,6 +92,9 @@ func TestGetterWithCancelledContextAndMethod(t *testing.T) {
 	}
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
+	}
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
 	}
 	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
 		t.Fatal("not the Failure we expected")
@@ -151,6 +157,9 @@ func TestGetterWithCancelledContextNoFollowRedirects(t *testing.T) {
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
 	}
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
+	}
 	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
 		t.Fatal("not the Failure we expected")
 	}
@@ -211,7 +220,10 @@ func TestGetterWithCancelledContextCannotStartTunnel(t *testing.T) {
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
 	}
-	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "EOF") {
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
+	}
+	if tk.Failure == nil || *tk.Failure != "eof_error" {
 		t.Fatal("not the Failure we expected")
 	}
 	if len(tk.NetworkEvents) != 0 {
@@ -260,6 +272,9 @@ func TestGetterWithCancelledContextWithTunnel(t *testing.T) {
 	}
 	if tk.BootstrapTime != 10.0 {
 		t.Fatal("not the BootstrapTime we expected")
+	}
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
 	}
 	if tk.Failure == nil || !strings.HasSuffix(*tk.Failure, "context canceled") {
 		t.Fatal("not the Failure we expected")
@@ -313,7 +328,7 @@ func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
-	if err == nil || err.Error() != "unsupported resolver scheme" {
+	if err == nil || err.Error() != "unknown_failure: unsupported resolver scheme" {
 		t.Fatal("not the error we expected")
 	}
 	if tk.Agent != "redirect" {
@@ -321,6 +336,9 @@ func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
 	}
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
+	}
+	if tk.FailedOperation == nil || *tk.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the FailedOperation we expected")
 	}
 	if tk.Failure == nil || *tk.Failure != "unknown_failure: unsupported resolver scheme" {
 		t.Fatal("not the Failure we expected")
@@ -366,6 +384,9 @@ func TestGetterIntegration(t *testing.T) {
 	}
 	if tk.BootstrapTime != 0 {
 		t.Fatal("not the BootstrapTime we expected")
+	}
+	if tk.FailedOperation != nil {
+		t.Fatal("not the FailedOperation we expected")
 	}
 	if tk.Failure != nil {
 		t.Fatal("not the Failure we expected")
