@@ -49,14 +49,14 @@ func TestNewTCPConnectList(t *testing.T) {
 			}, {
 				Address:  "8.8.8.8:853",
 				Duration: 30 * time.Millisecond,
-				Name:     "connect",
+				Name:     modelx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
-				Name:     "connect",
+				Name:     modelx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(180 * time.Millisecond),
 			}},
@@ -250,14 +250,14 @@ func TestNewDNSQueriesList(t *testing.T) {
 			}, {
 				Address:  "8.8.8.8:853",
 				Duration: 30 * time.Millisecond,
-				Name:     "connect",
+				Name:     modelx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
-				Name:     "connect",
+				Name:     modelx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(180 * time.Millisecond),
 			}},
@@ -379,23 +379,23 @@ func TestNewNetworkEventsList(t *testing.T) {
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
-				Name:    "connect",
+				Name:    modelx.ConnectOperation,
 				Address: "8.8.8.8:853",
 				Err:     io.EOF,
 				Proto:   "tcp",
 				Time:    begin.Add(7 * time.Millisecond),
 			}, {
-				Name:     "read",
+				Name:     modelx.ReadOperation,
 				Err:      context.Canceled,
 				NumBytes: 7117,
 				Time:     begin.Add(11 * time.Millisecond),
 			}, {
-				Name:     "write",
+				Name:     modelx.WriteOperation,
 				Err:      websocket.ErrBadHandshake,
 				NumBytes: 4114,
 				Time:     begin.Add(14 * time.Millisecond),
 			}, {
-				Name: "close",
+				Name: modelx.CloseOperation,
 				Err:  websocket.ErrReadLimit,
 				Time: begin.Add(17 * time.Millisecond),
 			}},
@@ -403,22 +403,22 @@ func TestNewNetworkEventsList(t *testing.T) {
 		want: []archival.NetworkEvent{{
 			Address:   "8.8.8.8:853",
 			Failure:   archival.NewFailure(io.EOF),
-			Operation: "connect",
+			Operation: modelx.ConnectOperation,
 			Proto:     "tcp",
 			T:         0.007,
 		}, {
 			Failure:   archival.NewFailure(context.Canceled),
 			NumBytes:  7117,
-			Operation: "read",
+			Operation: modelx.ReadOperation,
 			T:         0.011,
 		}, {
 			Failure:   archival.NewFailure(websocket.ErrBadHandshake),
 			NumBytes:  4114,
-			Operation: "write",
+			Operation: modelx.WriteOperation,
 			T:         0.014,
 		}, {
 			Failure:   archival.NewFailure(websocket.ErrReadLimit),
-			Operation: "close",
+			Operation: modelx.CloseOperation,
 			T:         0.017,
 		}},
 	}}
@@ -453,7 +453,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
-				Name: "close",
+				Name: modelx.CloseOperation,
 				Err:  websocket.ErrReadLimit,
 				Time: begin.Add(17 * time.Millisecond),
 			}, {

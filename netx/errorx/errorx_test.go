@@ -149,32 +149,32 @@ func TestUnitToOperationString(t *testing.T) {
 	t.Run("for connect", func(t *testing.T) {
 		// You're doing HTTP and connect fails. You want to know
 		// that connect failed not that HTTP failed.
-		err := &modelx.ErrWrapper{Operation: "connect"}
-		if toOperationString(err, "http_round_trip") != "connect" {
+		err := &modelx.ErrWrapper{Operation: modelx.ConnectOperation}
+		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.ConnectOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for http_round_trip", func(t *testing.T) {
 		// You're doing DoH and something fails inside HTTP. You want
 		// to know about the internal HTTP error, not resolve.
-		err := &modelx.ErrWrapper{Operation: "http_round_trip"}
-		if toOperationString(err, "resolve") != "http_round_trip" {
+		err := &modelx.ErrWrapper{Operation: modelx.HTTPRoundTripOperation}
+		if toOperationString(err, modelx.ResolveOperation) != modelx.HTTPRoundTripOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for resolve", func(t *testing.T) {
 		// You're doing HTTP and the DNS fails. You want to
 		// know that resolve failed.
-		err := &modelx.ErrWrapper{Operation: "resolve"}
-		if toOperationString(err, "http_round_trip") != "resolve" {
+		err := &modelx.ErrWrapper{Operation: modelx.ResolveOperation}
+		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.ResolveOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for tls_handshake", func(t *testing.T) {
 		// You're doing HTTP and the TLS handshake fails. You want
 		// to know about a TLS handshake error.
-		err := &modelx.ErrWrapper{Operation: "tls_handshake"}
-		if toOperationString(err, "http_round_trip") != "tls_handshake" {
+		err := &modelx.ErrWrapper{Operation: modelx.TLSHandshakeOperation}
+		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.TLSHandshakeOperation {
 			t.Fatal("unexpected result")
 		}
 	})
@@ -182,8 +182,8 @@ func TestUnitToOperationString(t *testing.T) {
 		// You just noticed that TLS handshake failed and you
 		// have a child error telling you that read failed. Here
 		// you want to know about a TLS handshake error.
-		err := &modelx.ErrWrapper{Operation: "read"}
-		if toOperationString(err, "tls_handshake") != "tls_handshake" {
+		err := &modelx.ErrWrapper{Operation: modelx.ReadOperation}
+		if toOperationString(err, modelx.TLSHandshakeOperation) != modelx.TLSHandshakeOperation {
 			t.Fatal("unexpected result")
 		}
 	})

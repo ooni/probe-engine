@@ -18,7 +18,7 @@ func TestErrorWrapperFailure(t *testing.T) {
 	if conn != nil {
 		t.Fatal("expected a nil conn here")
 	}
-	errorWrapperCheckErr(t, err, "connect")
+	errorWrapperCheckErr(t, err, modelx.ConnectOperation)
 }
 
 func errorWrapperCheckErr(t *testing.T, err error, op string) {
@@ -51,11 +51,11 @@ func TestErrorWrapperSuccess(t *testing.T) {
 		t.Fatal("expected non-nil conn here")
 	}
 	count, err := conn.Read(nil)
-	errorWrapperCheckIOResult(t, count, err, "read")
+	errorWrapperCheckIOResult(t, count, err, modelx.ReadOperation)
 	count, err = conn.Write(nil)
-	errorWrapperCheckIOResult(t, count, err, "write")
+	errorWrapperCheckIOResult(t, count, err, modelx.WriteOperation)
 	err = conn.Close()
-	errorWrapperCheckErr(t, err, "close")
+	errorWrapperCheckErr(t, err, modelx.CloseOperation)
 }
 
 func errorWrapperCheckIOResult(t *testing.T, count int, err error, op string) {

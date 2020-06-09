@@ -114,7 +114,7 @@ func TestUnitErrorWrapperTLSHandshakerFailure(t *testing.T) {
 	if errWrapper.Failure != modelx.FailureEOFError {
 		t.Fatal("unexpected Failure")
 	}
-	if errWrapper.Operation != "tls_handshake" {
+	if errWrapper.Operation != modelx.TLSHandshakeOperation {
 		t.Fatal("unexpected Operation")
 	}
 }
