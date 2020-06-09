@@ -115,6 +115,21 @@ func NewFailure(err error) *string {
 	return &s
 }
 
+// NewFailedOperation creates a failed operation string from the given error.
+func NewFailedOperation(err error) *string {
+	if err == nil {
+		return nil
+	}
+	var (
+		errWrapper *modelx.ErrWrapper
+		s          = modelx.UnknownOperation
+	)
+	if errors.As(err, &errWrapper) && errWrapper.Operation != "" {
+		s = errWrapper.Operation
+	}
+	return &s
+}
+
 // HTTPTor contains Tor information
 type HTTPTor struct {
 	ExitIP   *string `json:"exit_ip"`
