@@ -40,6 +40,9 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	tk.Requests = append(
 		tk.Requests, archival.NewRequestList(begin, events)...,
 	)
+	tk.TCPConnect = append(
+		tk.TCPConnect, archival.NewTCPConnectList(begin, events)...,
+	)
 	tk.TLSHandshakes = append(
 		tk.TLSHandshakes, archival.NewTLSHandshakesList(begin, events)...,
 	)
