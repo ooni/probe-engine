@@ -104,6 +104,9 @@ const (
 	// FailureGenericTimeoutError means we got some timer has expired.
 	FailureGenericTimeoutError = "generic_timeout_error"
 
+	// FailureInterrupted means that the user interrupted us.
+	FailureInterrupted = "interrupted"
+
 	// FailureSSLInvalidHostname means we got certificate is not valid for SNI.
 	FailureSSLInvalidHostname = "ssl_invalid_hostname"
 

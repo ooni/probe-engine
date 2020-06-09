@@ -54,6 +54,11 @@ func TestToFailureString(t *testing.T) {
 			t.Fatal("unexpected result")
 		}
 	})
+	t.Run("for context.Canceled", func(t *testing.T) {
+		if toFailureString(context.Canceled) != modelx.FailureInterrupted {
+			t.Fatal("unexpected result")
+		}
+	})
 	t.Run("for x509.HostnameError", func(t *testing.T) {
 		var err x509.HostnameError
 		if toFailureString(err) != modelx.FailureSSLInvalidHostname {
