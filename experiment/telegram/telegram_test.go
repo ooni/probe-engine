@@ -37,48 +37,48 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testkeys := measurement.TestKeys.(*telegram.TestKeys)
-	if testkeys.Agent != "redirect" {
+	tk := measurement.TestKeys.(*telegram.TestKeys)
+	if tk.Agent != "redirect" {
 		t.Fatal("unexpected Agent")
 	}
-	if testkeys.FailedOperation != nil {
+	if tk.FailedOperation != nil {
 		t.Fatal("unexpected FailedOperation")
 	}
-	if testkeys.Failure != nil {
+	if tk.Failure != nil {
 		t.Fatal("unexpected Failure")
 	}
-	if len(testkeys.NetworkEvents) <= 0 {
+	if len(tk.NetworkEvents) <= 0 {
 		t.Fatal("no NetworkEvents?!")
 	}
-	if len(testkeys.Queries) <= 0 {
+	if len(tk.Queries) <= 0 {
 		t.Fatal("no Queries?!")
 	}
-	if len(testkeys.Requests) <= 0 {
+	if len(tk.Requests) <= 0 {
 		t.Fatal("no Requests?!")
 	}
-	if len(testkeys.TCPConnect) <= 0 {
+	if len(tk.TCPConnect) <= 0 {
 		t.Fatal("no TCPConnect?!")
 	}
-	if len(testkeys.TLSHandshakes) <= 0 {
+	if len(tk.TLSHandshakes) <= 0 {
 		t.Fatal("no TLSHandshakes?!")
 	}
-	if testkeys.TelegramHTTPBlocking != false {
+	if tk.TelegramHTTPBlocking != false {
 		t.Fatal("unexpected TelegramHTTPBlocking")
 	}
-	if testkeys.TelegramTCPBlocking != false {
+	if tk.TelegramTCPBlocking != false {
 		t.Fatal("unexpected TelegramTCPBlocking")
 	}
-	if testkeys.TelegramWebFailure != nil {
+	if tk.TelegramWebFailure != nil {
 		t.Fatal("unexpected TelegramWebFailure")
 	}
-	if testkeys.TelegramWebStatus != "ok" {
+	if tk.TelegramWebStatus != "ok" {
 		t.Fatal("unexpected TelegramWebStatus")
 	}
 }
 
 func TestUpdateWithNoAccessPointsBlocking(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50/",
@@ -90,7 +90,7 @@ func TestUpdateWithNoAccessPointsBlocking(t *testing.T) {
 			})(),
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50:443/",
@@ -99,17 +99,17 @@ func TestUpdateWithNoAccessPointsBlocking(t *testing.T) {
 			Failure: nil, // this should be enough to declare success
 		},
 	})
-	if testkeys.TelegramHTTPBlocking == true {
+	if tk.TelegramHTTPBlocking == true {
 		t.Fatal("there should be no TelegramHTTPBlocking")
 	}
-	if testkeys.TelegramTCPBlocking == true {
+	if tk.TelegramTCPBlocking == true {
 		t.Fatal("there should be no TelegramTCPBlocking")
 	}
 }
 
 func TestUpdateWithNilFailedOperation(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50/",
@@ -121,7 +121,7 @@ func TestUpdateWithNilFailedOperation(t *testing.T) {
 			})(),
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50:443/",
@@ -133,17 +133,17 @@ func TestUpdateWithNilFailedOperation(t *testing.T) {
 			})(),
 		},
 	})
-	if testkeys.TelegramHTTPBlocking == false {
+	if tk.TelegramHTTPBlocking == false {
 		t.Fatal("there should be TelegramHTTPBlocking")
 	}
-	if testkeys.TelegramTCPBlocking == true {
+	if tk.TelegramTCPBlocking == true {
 		t.Fatal("there should be no TelegramTCPBlocking")
 	}
 }
 
 func TestUpdateWithNonConnectFailedOperation(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50/",
@@ -159,7 +159,7 @@ func TestUpdateWithNonConnectFailedOperation(t *testing.T) {
 			})(),
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50:443/",
@@ -175,17 +175,17 @@ func TestUpdateWithNonConnectFailedOperation(t *testing.T) {
 			})(),
 		},
 	})
-	if testkeys.TelegramHTTPBlocking == false {
+	if tk.TelegramHTTPBlocking == false {
 		t.Fatal("there should be TelegramHTTPBlocking")
 	}
-	if testkeys.TelegramTCPBlocking == true {
+	if tk.TelegramTCPBlocking == true {
 		t.Fatal("there should be no TelegramTCPBlocking")
 	}
 }
 
 func TestUpdateWithAllConnectsFailed(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50/",
@@ -201,7 +201,7 @@ func TestUpdateWithAllConnectsFailed(t *testing.T) {
 			})(),
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "POST"},
 			Target: "http://149.154.175.50:443/",
@@ -217,17 +217,17 @@ func TestUpdateWithAllConnectsFailed(t *testing.T) {
 			})(),
 		},
 	})
-	if testkeys.TelegramHTTPBlocking == false {
+	if tk.TelegramHTTPBlocking == false {
 		t.Fatal("there should be TelegramHTTPBlocking")
 	}
-	if testkeys.TelegramTCPBlocking == false {
+	if tk.TelegramTCPBlocking == false {
 		t.Fatal("there should be TelegramTCPBlocking")
 	}
 }
 
 func TestUpdateWebWithMixedResults(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -243,7 +243,7 @@ func TestUpdateWebWithMixedResults(t *testing.T) {
 			})(),
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "https://web.telegram.org/",
@@ -253,17 +253,17 @@ func TestUpdateWebWithMixedResults(t *testing.T) {
 			HTTPResponseStatus: 200,
 		},
 	})
-	if testkeys.TelegramWebStatus != "blocked" {
+	if tk.TelegramWebStatus != "blocked" {
 		t.Fatal("TelegramWebStatus should be blocked")
 	}
-	if *testkeys.TelegramWebFailure != modelx.FailureEOFError {
+	if *tk.TelegramWebFailure != modelx.FailureEOFError {
 		t.Fatal("invalid TelegramWebFailure")
 	}
 }
 
 func TestUpdateWithBadRequest(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -272,7 +272,7 @@ func TestUpdateWithBadRequest(t *testing.T) {
 			HTTPResponseStatus: 400,
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "https://web.telegram.org/",
@@ -282,17 +282,17 @@ func TestUpdateWithBadRequest(t *testing.T) {
 			HTTPResponseStatus: 200,
 		},
 	})
-	if testkeys.TelegramWebStatus != "blocked" {
+	if tk.TelegramWebStatus != "blocked" {
 		t.Fatal("TelegramWebStatus should be blocked")
 	}
-	if *testkeys.TelegramWebFailure != "http_request_failed" {
+	if *tk.TelegramWebFailure != "http_request_failed" {
 		t.Fatal("invalid TelegramWebFailure")
 	}
 }
 
 func TestUpdateWithMissingTitle(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -302,7 +302,7 @@ func TestUpdateWithMissingTitle(t *testing.T) {
 			HTTPResponseBody:   "<HTML><title>Telegram Web</title></HTML>",
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -312,17 +312,17 @@ func TestUpdateWithMissingTitle(t *testing.T) {
 			HTTPResponseBody:   "<HTML><title>Antani Web</title></HTML>",
 		},
 	})
-	if testkeys.TelegramWebStatus != "blocked" {
+	if tk.TelegramWebStatus != "blocked" {
 		t.Fatal("TelegramWebStatus should be blocked")
 	}
-	if *testkeys.TelegramWebFailure != "telegram_missing_title_error" {
+	if *tk.TelegramWebFailure != "telegram_missing_title_error" {
 		t.Fatal("invalid TelegramWebFailure")
 	}
 }
 
 func TestUpdateWithAllGood(t *testing.T) {
-	testkeys := telegram.NewTestKeys()
-	testkeys.Update(urlgetter.MultiOutput{
+	tk := telegram.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -332,7 +332,7 @@ func TestUpdateWithAllGood(t *testing.T) {
 			HTTPResponseBody:   "<HTML><title>Telegram Web</title></HTML>",
 		},
 	})
-	testkeys.Update(urlgetter.MultiOutput{
+	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "http://web.telegram.org/",
@@ -342,10 +342,10 @@ func TestUpdateWithAllGood(t *testing.T) {
 			HTTPResponseBody:   "<HTML><title>Telegram Web</title></HTML>",
 		},
 	})
-	if testkeys.TelegramWebStatus != "ok" {
+	if tk.TelegramWebStatus != "ok" {
 		t.Fatal("TelegramWebStatus should be ok")
 	}
-	if testkeys.TelegramWebFailure != nil {
+	if tk.TelegramWebFailure != nil {
 		t.Fatal("invalid TelegramWebFailure")
 	}
 }
