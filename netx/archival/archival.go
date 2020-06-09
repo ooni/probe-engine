@@ -304,7 +304,7 @@ func addheaders(
 
 // NewRequestList returns the list for "requests"
 func NewRequestList(begin time.Time, events []trace.Event) []RequestEntry {
-	// OONI wants the least request to appear first
+	// OONI wants the last request to appear first
 	var out []RequestEntry
 	tmp := newRequestList(begin, events)
 	for i := len(tmp) - 1; i >= 0; i-- {

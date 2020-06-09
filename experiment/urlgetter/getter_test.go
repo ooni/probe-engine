@@ -73,6 +73,12 @@ func TestGetterWithCancelledContextVanilla(t *testing.T) {
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
 	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
+	}
 }
 
 func TestGetterWithCancelledContextAndMethod(t *testing.T) {
@@ -134,6 +140,12 @@ func TestGetterWithCancelledContextAndMethod(t *testing.T) {
 	}
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
+	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
 	}
 }
 
@@ -199,6 +211,12 @@ func TestGetterWithCancelledContextNoFollowRedirects(t *testing.T) {
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
 	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
+	}
 }
 
 func TestGetterWithCancelledContextCannotStartTunnel(t *testing.T) {
@@ -246,6 +264,12 @@ func TestGetterWithCancelledContextCannotStartTunnel(t *testing.T) {
 	}
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
+	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
 	}
 }
 
@@ -315,6 +339,12 @@ func TestGetterWithCancelledContextWithTunnel(t *testing.T) {
 	if tk.Tunnel != "psiphon" {
 		t.Fatal("not the Tunnel we expected")
 	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
+	}
 }
 
 func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
@@ -364,9 +394,15 @@ func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
 	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
+	}
 }
 
-func TestGetterIntegration(t *testing.T) {
+func TestGetterIntegrationHTTPS(t *testing.T) {
 	ctx := context.Background()
 	g := urlgetter.Getter{
 		Config: urlgetter.Config{
@@ -476,5 +512,124 @@ func TestGetterIntegration(t *testing.T) {
 	}
 	if tk.Tunnel != "" {
 		t.Fatal("not the Tunnel we expected")
+	}
+	if tk.HTTPResponseStatus != 200 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if len(tk.HTTPResponseBody) <= 0 {
+		t.Fatal("not the HTTPResponseBody we expected")
+	}
+}
+
+func TestGetterIntegrationTLSHandshake(t *testing.T) {
+	ctx := context.Background()
+	g := urlgetter.Getter{
+		Config: urlgetter.Config{
+			NoFollowRedirects: true, // reduce number of events
+		},
+		Session: &mockable.ExperimentSession{},
+		Target:  "tlshandshake://www.google.com:443",
+	}
+	tk, err := g.Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tk.Agent != "agent" {
+		t.Fatal("not the Agent we expected")
+	}
+	if tk.BootstrapTime != 0 {
+		t.Fatal("not the BootstrapTime we expected")
+	}
+	if tk.FailedOperation != nil {
+		t.Fatal("not the FailedOperation we expected")
+	}
+	if tk.Failure != nil {
+		t.Fatal("not the Failure we expected")
+	}
+	var (
+		httpTransactionStart     bool
+		httpRequestMetadata      bool
+		resolveStart             bool
+		resolveDone              bool
+		connect                  bool
+		tlsHandshakeStart        bool
+		tlsHandshakeDone         bool
+		httpWroteHeaders         bool
+		httpWroteRequest         bool
+		httpFirstResponseByte    bool
+		httpResponseMetadata     bool
+		httpResponseBodySnapshot bool
+		httpTransactionDone      bool
+	)
+	for _, ev := range tk.NetworkEvents {
+		switch ev.Operation {
+		case "http_transaction_start":
+			httpTransactionStart = true
+		case "http_request_metadata":
+			httpRequestMetadata = true
+		case "resolve_start":
+			resolveStart = true
+		case "resolve_done":
+			resolveDone = true
+		case modelx.ConnectOperation:
+			connect = true
+		case "tls_handshake_start":
+			tlsHandshakeStart = true
+		case "tls_handshake_done":
+			tlsHandshakeDone = true
+		case "http_wrote_headers":
+			httpWroteHeaders = true
+		case "http_wrote_request":
+			httpWroteRequest = true
+		case "http_first_response_byte":
+			httpFirstResponseByte = true
+		case "http_response_metadata":
+			httpResponseMetadata = true
+		case "http_response_body_snapshot":
+			httpResponseBodySnapshot = true
+		case "http_transaction_done":
+			httpTransactionDone = true
+		}
+	}
+	ok := true
+	ok = ok && !httpTransactionStart
+	ok = ok && !httpRequestMetadata
+	ok = ok && resolveStart
+	ok = ok && resolveDone
+	ok = ok && connect
+	ok = ok && tlsHandshakeStart
+	ok = ok && tlsHandshakeDone
+	ok = ok && !httpWroteHeaders
+	ok = ok && !httpWroteRequest
+	ok = ok && !httpFirstResponseByte
+	ok = ok && !httpResponseMetadata
+	ok = ok && !httpResponseBodySnapshot
+	ok = ok && !httpTransactionDone
+	if !ok {
+		t.Fatal("not the NetworkEvents we expected")
+	}
+	if len(tk.Queries) != 2 {
+		t.Fatal("not the Queries we expected")
+	}
+	if len(tk.TCPConnect) != 1 {
+		t.Fatal("not the TCPConnect we expected")
+	}
+	if len(tk.Requests) != 0 {
+		t.Fatal("not the Requests we expected")
+	}
+	if tk.SOCKSProxy != "" {
+		t.Fatal("not the SOCKSProxy we expected")
+	}
+	if len(tk.TLSHandshakes) != 1 {
+		t.Fatal("not the TLSHandshakes we expected")
+	}
+	if tk.Tunnel != "" {
+		t.Fatal("not the Tunnel we expected")
+	}
+	if tk.HTTPResponseStatus != 0 {
+		t.Fatal("not the HTTPResponseStatus we expected")
+	}
+	if tk.HTTPResponseBody != "" {
+		t.Fatal("not the HTTPResponseBody we expected")
 	}
 }

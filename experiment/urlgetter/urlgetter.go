@@ -31,6 +31,7 @@ type Config struct {
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
+	// The following fields are part of the typical JSON emitted by OONI.
 	Agent           string                     `json:"agent"`
 	BootstrapTime   float64                    `json:"bootstrap_time,omitempty"`
 	DNSCache        []string                   `json:"dns_cache,omitempty"`
@@ -43,6 +44,11 @@ type TestKeys struct {
 	SOCKSProxy      string                     `json:"socksproxy,omitempty"`
 	TLSHandshakes   []archival.TLSHandshake    `json:"tls_handshakes"`
 	Tunnel          string                     `json:"tunnel,omitempty"`
+
+	// The following fields are not serialised but are useful to simplify
+	// analysing the measurements in telegram, etc.
+	HTTPResponseStatus int64  `json:"-"`
+	HTTPResponseBody   string `json:"-"`
 }
 
 // RegisterExtensions registers the extensions used by the urlgetter
