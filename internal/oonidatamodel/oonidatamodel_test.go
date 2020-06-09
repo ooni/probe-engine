@@ -24,10 +24,10 @@ func TestUnitNewTCPConnectListEmpty(t *testing.T) {
 func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
-			&modelx.ConnectEvent{
+			{
 				RemoteAddress: "8.8.8.8:53",
 			},
-			&modelx.ConnectEvent{
+			{
 				RemoteAddress: "8.8.4.4:853",
 			},
 		},
@@ -64,7 +64,7 @@ func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 func TestUnitNewTCPConnectListFailure(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
-			&modelx.ConnectEvent{
+			{
 				RemoteAddress: "8.8.8.8:53",
 				Error:         errors.New(modelx.FailureConnectionReset),
 			},
@@ -90,7 +90,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
-			&modelx.ConnectEvent{
+			{
 				RemoteAddress: "8.8.8.8",
 				Error:         errors.New(modelx.FailureConnectionReset),
 			},
@@ -124,7 +124,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	out := NewRequestList(oonitemplates.Results{
 		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 			// need two requests to test that order is inverted
-			&modelx.HTTPRoundTripDoneEvent{
+			{
 				RequestBodySnap: []byte("abcdefx"),
 				RequestHeaders: http.Header{
 					"Content-Type": []string{
@@ -153,7 +153,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 				ResponseStatusCode: 451,
 				MaxBodySnapSize:    10,
 			},
-			&modelx.HTTPRoundTripDoneEvent{
+			{
 				Error: errors.New("antani"),
 			},
 		},
@@ -328,7 +328,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 func TestUnitNewRequestsSnaps(t *testing.T) {
 	out := NewRequestList(oonitemplates.Results{
 		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
-			&modelx.HTTPRoundTripDoneEvent{
+			{
 				RequestBodySnap:  []byte("abcd"),
 				MaxBodySnapSize:  4,
 				ResponseBodySnap: []byte("defg"),
@@ -640,14 +640,14 @@ func TestUnitNewDNSQueriesListEmpty(t *testing.T) {
 func TestUnitNewDNSQueriesListSuccess(t *testing.T) {
 	out := NewDNSQueriesList(oonitemplates.Results{
 		Resolves: []*modelx.ResolveDoneEvent{
-			&modelx.ResolveDoneEvent{
+			{
 				Addresses: []string{
 					"8.8.4.4", "2001:4860:4860::8888",
 				},
 				Hostname:         "dns.google",
 				TransportNetwork: "system",
 			},
-			&modelx.ResolveDoneEvent{
+			{
 				Error:            errors.New(modelx.FailureDNSNXDOMAINError),
 				Hostname:         "dns.googlex",
 				TransportNetwork: "system",
@@ -807,9 +807,9 @@ func TestUnitNewNetworkEventsListEmpty(t *testing.T) {
 func TestUnitNewNetworkEventsListNoSuitableEvents(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
-			&modelx.Measurement{},
-			&modelx.Measurement{},
-			&modelx.Measurement{},
+			{},
+			{},
+			{},
 		},
 	})
 	if len(out) != 0 {
@@ -820,7 +820,7 @@ func TestUnitNewNetworkEventsListNoSuitableEvents(t *testing.T) {
 func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
-			&modelx.Measurement{
+			{
 				Connect: &modelx.ConnectEvent{
 					ConnID:                 555,
 					DurationSinceBeginning: 10 * time.Millisecond,
@@ -828,14 +828,14 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 					RemoteAddress:          "1.1.1.1:443",
 				},
 			},
-			&modelx.Measurement{
+			{
 				Read: &modelx.ReadEvent{
 					ConnID:                 555,
 					DurationSinceBeginning: 20 * time.Millisecond,
 					NumBytes:               1789,
 				},
 			},
-			&modelx.Measurement{
+			{
 				Write: &modelx.WriteEvent{
 					ConnID:                 555,
 					DurationSinceBeginning: 30 * time.Millisecond,
@@ -863,7 +863,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[0].NumBytes != 0 {
 		t.Fatal("wrong out[0].NumBytes")
 	}
-	if out[0].Operation != "connect" {
+	if out[0].Operation != modelx.ConnectOperation {
 		t.Fatal("wrong out[0].Operation")
 	}
 	if out[0].Proto != "tcp" {
@@ -888,7 +888,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[1].NumBytes != 1789 {
 		t.Fatal("wrong out[1].NumBytes")
 	}
-	if out[1].Operation != "read" {
+	if out[1].Operation != modelx.ReadOperation {
 		t.Fatal("wrong out[1].Operation")
 	}
 	if out[1].Proto != "tcp" {
@@ -913,7 +913,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[2].NumBytes != 17714 {
 		t.Fatal("wrong out[2].NumBytes")
 	}
-	if out[2].Operation != "write" {
+	if out[2].Operation != modelx.WriteOperation {
 		t.Fatal("wrong out[2].Operation")
 	}
 	if out[2].Proto != "tcp" {
@@ -927,7 +927,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
-			&modelx.Measurement{
+			{
 				Connect: &modelx.ConnectEvent{
 					ConnID:                 -555,
 					DurationSinceBeginning: 10 * time.Millisecond,
@@ -936,7 +936,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 					RemoteAddress:          "1.1.1.1:443",
 				},
 			},
-			&modelx.Measurement{
+			{
 				Read: &modelx.ReadEvent{
 					ConnID:                 -555,
 					DurationSinceBeginning: 20 * time.Millisecond,
@@ -944,7 +944,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 					NumBytes:               1789,
 				},
 			},
-			&modelx.Measurement{
+			{
 				Write: &modelx.WriteEvent{
 					ConnID:                 -555,
 					DurationSinceBeginning: 30 * time.Millisecond,
@@ -973,7 +973,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[0].NumBytes != 0 {
 		t.Fatal("wrong out[0].NumBytes")
 	}
-	if out[0].Operation != "connect" {
+	if out[0].Operation != modelx.ConnectOperation {
 		t.Fatal("wrong out[0].Operation")
 	}
 	if out[0].Proto != "udp" {
@@ -998,7 +998,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[1].NumBytes != 1789 {
 		t.Fatal("wrong out[1].NumBytes")
 	}
-	if out[1].Operation != "read" {
+	if out[1].Operation != modelx.ReadOperation {
 		t.Fatal("wrong out[1].Operation")
 	}
 	if out[1].Proto != "udp" {
@@ -1023,7 +1023,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[2].NumBytes != 17714 {
 		t.Fatal("wrong out[2].NumBytes")
 	}
-	if out[2].Operation != "write" {
+	if out[2].Operation != modelx.WriteOperation {
 		t.Fatal("wrong out[2].Operation")
 	}
 	if out[2].Proto != "udp" {
@@ -1049,20 +1049,20 @@ func TestUnitNewTLSHandshakesListEmpty(t *testing.T) {
 func TestUnitNewTLSHandshakesListSuccess(t *testing.T) {
 	out := NewTLSHandshakesList(oonitemplates.Results{
 		TLSHandshakes: []*modelx.TLSHandshakeDoneEvent{
-			&modelx.TLSHandshakeDoneEvent{},
-			&modelx.TLSHandshakeDoneEvent{
+			{},
+			{
 				ConnID: 12345,
 				Error:  errors.New("mocked error"),
 			},
-			&modelx.TLSHandshakeDoneEvent{
+			{
 				ConnectionState: modelx.TLSConnectionState{
 					CipherSuite:        tls.TLS_AES_128_GCM_SHA256,
 					NegotiatedProtocol: "h2",
 					PeerCertificates: []modelx.X509Certificate{
-						modelx.X509Certificate{
+						{
 							Data: []byte("deadbeef"),
 						},
-						modelx.X509Certificate{
+						{
 							Data: []byte("abad1dea"),
 						},
 					},

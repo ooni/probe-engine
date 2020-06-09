@@ -11,6 +11,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestGetterWithCancelledContextVanilla(t *testing.T) {
@@ -394,7 +395,7 @@ func TestGetterIntegration(t *testing.T) {
 			resolveStart = true
 		case "resolve_done":
 			resolveDone = true
-		case "connect":
+		case modelx.ConnectOperation:
 			connect = true
 		case "tls_handshake_start":
 			tlsHandshakeStart = true

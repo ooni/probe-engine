@@ -67,7 +67,7 @@ func (h ErrorWrapperTLSHandshaker) Handshake(
 	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    connID,
 		Error:     err,
-		Operation: "tls_handshake",
+		Operation: modelx.TLSHandshakeOperation,
 	}.MaybeBuild()
 	return tlsconn, state, err
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -182,7 +183,7 @@ func (r runner) measure(
 		// of the latest connect time. We should have one sample in most
 		// cases, because the connection should be persistent.
 		for _, ev := range r.saver.Read() {
-			if ev.Name == "connect" {
+			if ev.Name == modelx.ConnectOperation {
 				connectTime = ev.Duration.Seconds()
 			}
 		}

@@ -16,6 +16,7 @@ import (
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 const (
@@ -66,7 +67,7 @@ func (tr *TargetResults) fillSummary() {
 	if len(tr.TCPConnect) < 1 {
 		return
 	}
-	tr.Summary["connect"] = Summary{
+	tr.Summary[modelx.ConnectOperation] = Summary{
 		Failure: tr.TCPConnect[0].Status.Failure,
 	}
 	switch tr.TargetProtocol {

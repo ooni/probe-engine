@@ -115,6 +115,29 @@ const (
 	FailureSSLInvalidCertificate = "ssl_invalid_certificate"
 )
 
+const (
+	// ResolveOperation is the operation where we resolve a domain name
+	ResolveOperation = "resolve"
+
+	// ConnectOperation is the operation where we do a TCP connect
+	ConnectOperation = "connect"
+
+	// TLSHandshakeOperation is the TLS handshake
+	TLSHandshakeOperation = "tls_handshake"
+
+	// HTTPRoundTripOperation is the HTTP round trip
+	HTTPRoundTripOperation = "http_round_trip"
+
+	// CloseOperation is when we close a socket
+	CloseOperation = "close"
+
+	// ReadOperation is when we read from a socket
+	ReadOperation = "read"
+
+	// WriteOperation is when we write to a socket
+	WriteOperation = "write"
+)
+
 // ErrWrapper is our error wrapper for Go errors. The key objective of
 // this structure is to properly set Failure, which is also returned by
 // the Error() method, so be one of the OONI defined strings.
@@ -136,18 +159,18 @@ type ErrWrapper struct {
 	// Operation is the operation that failed. If possible, it
 	// SHOULD be a _major_ operation. Major operations are:
 	//
-	// - `resolve`: resolving a domain name failed
-	// - `connect`: connecting to an IP failed
-	// - `tls_handshake`: TLS handshaking failed
-	// - `http_round_trip`: other errors during round trip
+	// - ResolveOperation: resolving a domain name failed
+	// - ConnectOperation: connecting to an IP failed
+	// - TLSHandshakeOperation: TLS handshaking failed
+	// - HTTPRoundTripOperation: other errors during round trip
 	//
 	// Because a network connection doesn't necessarily know
 	// what is the current major operation we also have the
 	// following _minor_ operations:
 	//
-	// - `close`: CLOSE failed
-	// - `read`: READ failed
-	// - `write`: WRITE failed
+	// - CloseOperation: CLOSE failed
+	// - ReadOperation: READ failed
+	// - WriteOperation: WRITE failed
 	//
 	// If an ErrWrapper referring to a major operation is wrapping
 	// another ErrWrapper and such ErrWrapper already refers to
