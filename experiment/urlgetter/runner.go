@@ -43,7 +43,8 @@ func (r Runner) Run(ctx context.Context) error {
 }
 
 func (r Runner) httpGet(ctx context.Context, url string) error {
-	req, err := http.NewRequest("GET", url, nil)
+	// Implementation note: empty Method implies using the GET method
+	req, err := http.NewRequest(r.Config.Method, url, nil)
 	runtimex.PanicOnError(err, "http.NewRequest failed")
 	req = req.WithContext(ctx)
 	req.Header.Set("Accept", httpheader.RandomAccept())

@@ -19,6 +19,7 @@ const (
 type Config struct {
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
+	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
 	NoTLSVerify       bool   `ooni:"Disable TLS verification"`
 	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`
