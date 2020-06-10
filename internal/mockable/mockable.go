@@ -60,6 +60,11 @@ func (sess *ExperimentSession) DefaultHTTPClient() *http.Client {
 	return sess.MockableHTTPClient
 }
 
+// KeyValueStore returns the configured key-value store.
+func (sess *ExperimentSession) KeyValueStore() model.KeyValueStore {
+	return kvstore.NewMemoryKeyValueStore()
+}
+
 // Logger implements ExperimentSession.Logger
 func (sess *ExperimentSession) Logger() model.Logger {
 	return sess.MockableLogger

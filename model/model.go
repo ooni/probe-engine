@@ -362,6 +362,7 @@ type ExperimentSession interface {
 	Logger() Logger
 	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
+	KeyValueStore() KeyValueStore
 	ProbeASNString() string
 	ProbeCC() string
 	ProbeIP() string

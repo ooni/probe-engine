@@ -178,6 +178,11 @@ func (s *Session) DefaultHTTPClient() *http.Client {
 	return &http.Client{Transport: s.httpDefaultTransport}
 }
 
+// KeyValueStore returns the configured key-value store.
+func (s *Session) KeyValueStore() model.KeyValueStore {
+	return s.kvStore
+}
+
 // Logger returns the logger used by the session.
 func (s *Session) Logger() model.Logger {
 	return s.logger
