@@ -1,4 +1,4 @@
-package orchestra
+package orchestra_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
@@ -77,7 +78,7 @@ func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}
-	if clnt.registerCalls != 1 {
+	if clnt.RegisterCalls.Load() != 1 {
 		t.Fatal("called register API too many times")
 	}
 }
@@ -140,7 +141,7 @@ func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
 	if err := clnt.MaybeLogin(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if clnt.loginCalls != 1 {
+	if clnt.LoginCalls.Load() != 1 {
 		t.Fatal("called login API too many times")
 	}
 }
@@ -278,8 +279,8 @@ func TestUnitFetchTorTargetsNotRegistered(t *testing.T) {
 	}
 }
 
-func newclient() *Client {
-	clnt := NewClient(
+func newclient() *orchestra.Client {
+	clnt := orchestra.NewClient(
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",

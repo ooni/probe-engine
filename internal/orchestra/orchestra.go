@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/register"
@@ -25,12 +26,12 @@ import (
 type Client struct {
 	HTTPClient         *http.Client
 	Logger             model.Logger
+	LoginCalls         *atomicx.Int64
 	OrchestrateBaseURL string
+	RegisterCalls      *atomicx.Int64
 	RegistryBaseURL    string
 	StateFile          *statefile.StateFile
 	UserAgent          string
-	registerCalls      int
-	loginCalls         int
 }
 
 // NewClient creates a new client.
@@ -41,7 +42,9 @@ func NewClient(
 	return &Client{
 		HTTPClient:         httpClient,
 		Logger:             logger,
+		LoginCalls:         atomicx.NewInt64(),
 		OrchestrateBaseURL: "https://ps.ooni.io",
+		RegisterCalls:      atomicx.NewInt64(),
 		RegistryBaseURL:    "https://ps.ooni.io",
 		StateFile:          stateFile,
 		UserAgent:          userAgent,
@@ -65,7 +68,7 @@ func (c *Client) MaybeRegister(
 	if state.Credentials() != nil {
 		return nil // we're already good
 	}
-	c.registerCalls++
+	c.RegisterCalls.Add(1)
 	pwd := randomPassword(64)
 	result, err := register.Do(ctx, register.Config{
 		BaseURL:    c.RegistryBaseURL,
@@ -93,7 +96,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	if creds == nil {
 		return errNotRegistered
 	}
-	c.loginCalls++
+	c.LoginCalls.Add(1)
 	auth, err := login.Do(ctx, login.Config{
 		BaseURL:     c.RegistryBaseURL,
 		Credentials: *creds,
