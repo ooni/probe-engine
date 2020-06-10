@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/apex/log"
@@ -290,6 +292,20 @@ func TestIntegrationSessionLocationLookup(t *testing.T) {
 	}
 	if sess.KibiBytesReceived() <= 0 {
 		t.Fatal("unexpected KibiBytesReceived")
+	}
+}
+
+func TestIntegrationSessionCloseCancelsTempDir(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	tempDir := sess.TempDir()
+	if _, err := os.Stat(tempDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := sess.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(tempDir); !errors.Is(err, syscall.ENOENT) {
+		t.Fatal("not the error we expected")
 	}
 }
 
