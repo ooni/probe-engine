@@ -153,6 +153,9 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	if r.settings.OutputFilepath != "" && r.settings.Options.NoFileReport == false {
 		sadly("OutputFilepath && !NoFileReport: not supported")
 	}
+	if r.settings.TempDir != "" {
+		sadly("TempDir no longer supported, please use TempBaseDir")
+	}
 	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
 	// return a failure if such variable is true.
 	return
@@ -174,7 +177,7 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 		},
 		SoftwareName:    r.settings.Options.SoftwareName,
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
-		TempDir:         r.settings.TempDir,
+		TempBaseDir:     r.settings.TempBaseDir,
 	}
 	if r.settings.Options.ProbeServicesBaseURL != "" {
 		config.AvailableProbeServices = []model.Service{{

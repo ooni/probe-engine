@@ -119,7 +119,6 @@ func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
 			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../testdata/oonimkall/state",
-		TempDir:  "../testdata/oonimkall/tmp",
 	}
 	seench := make(chan int64)
 	go func() {
@@ -168,7 +167,6 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 			SoftwareVersion:      "0.1.0",
 		},
 		StateDir: "../testdata/oonimkall/state",
-		TempDir:  "../testdata/oonimkall/tmp",
 	}
 	seench := make(chan int64)
 	go func() {
@@ -218,7 +216,6 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 			SoftwareVersion:      "0.1.0",
 		},
 		StateDir: "../testdata/oonimkall/state",
-		TempDir:  "../testdata/oonimkall/tmp",
 	}
 	seench := make(chan int64)
 	go func() {

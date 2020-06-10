@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -41,7 +43,7 @@ type SessionConfig struct {
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
-	TempDir                string
+	TempBaseDir            string
 	TorArgs                []string
 	TorBinary              string
 }
@@ -85,11 +87,14 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.SoftwareVersion == "" {
 		return nil, errors.New("SoftwareVersion is empty")
 	}
-	if config.TempDir == "" {
-		return nil, errors.New("TempDir is empty")
-	}
 	if config.KVStore == nil {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
+	}
+	// Implementation note: if config.TempBaseDir is empty, then Go will
+	// use the temporary directory on the current system
+	tempDir, err := ioutil.TempDir(config.TempBaseDir, "ooniengine")
+	if err != nil {
+		return nil, err
 	}
 	sess := &Session{
 		assetsDir:               config.AssetsDir,
@@ -102,7 +107,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		queryProbeServicesCount: atomicx.NewInt64(),
 		softwareName:            config.SoftwareName,
 		softwareVersion:         config.SoftwareVersion,
-		tempDir:                 config.TempDir,
+		tempDir:                 tempDir,
 		torArgs:                 config.TorArgs,
 		torBinary:               config.TorBinary,
 	}
@@ -141,15 +146,17 @@ func (s *Session) CABundlePath() string {
 }
 
 // Close ensures that we close all the idle connections that the HTTP clients
-// we are currently using may have created. Not calling this function may likely
-// cause memory leaks in your application because of open idle connections.
+// we are currently using may have created. It will also remove the temp dir
+// that contains data from this session. Not calling this function may likely
+// cause memory leaks in your application because of open idle connections,
+// as well as excessive usage of disk space.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
 	s.resolver.CloseIdleConnections()
 	if s.tunnel != nil {
 		s.tunnel.Stop()
 	}
-	return nil
+	return os.RemoveAll(s.tempDir)
 }
 
 // CountryDatabasePath is like ASNDatabasePath but for the country DB path.
