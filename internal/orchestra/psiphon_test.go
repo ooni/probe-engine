@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestPsiphonSuccess(t *testing.T) {
 	clientID, err := testorchestra.Register()
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitAuthNil(t *testing.T) {
+func TestPsiphonAuthNil(t *testing.T) {
 	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
 		Auth:       nil,
 		BaseURL:    "https://ps-test.ooni.io",

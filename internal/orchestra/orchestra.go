@@ -15,7 +15,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -165,7 +164,7 @@ func (c *Client) FetchTorTargets(ctx context.Context) (map[string]model.TorTarge
 	if err != nil {
 		return nil, err
 	}
-	return tor.Query(ctx, tor.Config{
+	return TorQuery(ctx, TorConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,
