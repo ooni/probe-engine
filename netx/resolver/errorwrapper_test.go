@@ -52,7 +52,7 @@ func TestUnitErrorWrapperFailure(t *testing.T) {
 	if errWrapper.TransactionID == 0 {
 		t.Fatal("unexpected TransactionID")
 	}
-	if errWrapper.Operation != "resolve" {
+	if errWrapper.Operation != modelx.ResolveOperation {
 		t.Fatal("unexpected Operation")
 	}
 }

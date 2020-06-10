@@ -2,6 +2,7 @@
 package errorx
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -56,6 +57,9 @@ func toFailureString(err error) string {
 
 	if errors.Is(err, modelx.ErrDNSBogon) {
 		return modelx.FailureDNSBogonError // not in MK
+	}
+	if errors.Is(err, context.Canceled) {
+		return modelx.FailureInterrupted
 	}
 
 	var x509HostnameError x509.HostnameError
@@ -113,16 +117,16 @@ func toOperationString(err error, operation string) string {
 	if errors.As(err, &errwrapper) {
 		// Basically, as explained in modelx.ErrWrapper docs, let's
 		// keep the child major operation, if any.
-		if errwrapper.Operation == "connect" {
+		if errwrapper.Operation == modelx.ConnectOperation {
 			return errwrapper.Operation
 		}
-		if errwrapper.Operation == "http_round_trip" {
+		if errwrapper.Operation == modelx.HTTPRoundTripOperation {
 			return errwrapper.Operation
 		}
-		if errwrapper.Operation == "resolve" {
+		if errwrapper.Operation == modelx.ResolveOperation {
 			return errwrapper.Operation
 		}
-		if errwrapper.Operation == "tls_handshake" {
+		if errwrapper.Operation == modelx.TLSHandshakeOperation {
 			return errwrapper.Operation
 		}
 		// FALLTHROUGH

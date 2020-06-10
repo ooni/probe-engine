@@ -19,6 +19,7 @@ const (
 type Config struct {
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
+	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
 	NoTLSVerify       bool   `ooni:"Disable TLS verification"`
 	RejectDNSBogons   bool   `ooni:"Fail DNS lookup if response contains bogons"`
@@ -30,16 +31,24 @@ type Config struct {
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
-	Agent         string                   `json:"agent"`
-	BootstrapTime float64                  `json:"bootstrap_time,omitempty"`
-	DNSCache      []string                 `json:"dns_cache,omitempty"`
-	Failure       *string                  `json:"failure"`
-	NetworkEvents []archival.NetworkEvent  `json:"network_events"`
-	Queries       []archival.DNSQueryEntry `json:"queries"`
-	Requests      []archival.RequestEntry  `json:"requests"`
-	SOCKSProxy    string                   `json:"socksproxy,omitempty"`
-	TLSHandshakes []archival.TLSHandshake  `json:"tls_handshakes"`
-	Tunnel        string                   `json:"tunnel,omitempty"`
+	// The following fields are part of the typical JSON emitted by OONI.
+	Agent           string                     `json:"agent"`
+	BootstrapTime   float64                    `json:"bootstrap_time,omitempty"`
+	DNSCache        []string                   `json:"dns_cache,omitempty"`
+	FailedOperation *string                    `json:"failed_operation"`
+	Failure         *string                    `json:"failure"`
+	NetworkEvents   []archival.NetworkEvent    `json:"network_events"`
+	Queries         []archival.DNSQueryEntry   `json:"queries"`
+	Requests        []archival.RequestEntry    `json:"requests"`
+	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
+	SOCKSProxy      string                     `json:"socksproxy,omitempty"`
+	TLSHandshakes   []archival.TLSHandshake    `json:"tls_handshakes"`
+	Tunnel          string                     `json:"tunnel,omitempty"`
+
+	// The following fields are not serialised but are useful to simplify
+	// analysing the measurements in telegram, etc.
+	HTTPResponseStatus int64  `json:"-"`
+	HTTPResponseBody   string `json:"-"`
 }
 
 // RegisterExtensions registers the extensions used by the urlgetter

@@ -88,7 +88,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	var (
 		err              error
-		majorOp          = "http_round_trip"
+		majorOp          = modelx.HTTPRoundTripOperation
 		majorOpMu        sync.Mutex
 		requestBody      []byte
 		requestHeaders   = http.Header{}
@@ -108,7 +108,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	tracer := &httptrace.ClientTrace{
 		TLSHandshakeStart: func() {
 			majorOpMu.Lock()
-			majorOp = "tls_handshake"
+			majorOp = modelx.TLSHandshakeOperation
 			majorOpMu.Unlock()
 			// Event emitted by net/http when DialTLS is not
 			// configured in the http.Transport
@@ -124,7 +124,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 			// less confusing to users to see the wrapped name
 			err = errorx.SafeErrWrapperBuilder{
 				Error:         err,
-				Operation:     "tls_handshake",
+				Operation:     modelx.TLSHandshakeOperation,
 				TransactionID: tid,
 			}.MaybeBuild()
 			durationSinceBeginning := time.Now().Sub(root.Beginning)
@@ -141,7 +141,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		},
 		GotConn: func(info httptrace.GotConnInfo) {
 			majorOpMu.Lock()
-			majorOp = "http_round_trip"
+			majorOp = modelx.HTTPRoundTripOperation
 			majorOpMu.Unlock()
 			root.Handler.OnMeasurement(modelx.Measurement{
 				HTTPConnectionReady: &modelx.HTTPConnectionReadyEvent{
@@ -188,7 +188,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 			// less confusing to users to see the wrapped name
 			err := errorx.SafeErrWrapperBuilder{
 				Error:         info.Err,
-				Operation:     "http_round_trip",
+				Operation:     modelx.HTTPRoundTripOperation,
 				TransactionID: tid,
 			}.MaybeBuild()
 			root.Handler.OnMeasurement(modelx.Measurement{

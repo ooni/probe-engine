@@ -79,7 +79,7 @@ type TCPConnectEntry struct {
 func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry {
 	var out []TCPConnectEntry
 	for _, event := range events {
-		if event.Name != "connect" {
+		if event.Name != modelx.ConnectOperation {
 			continue
 		}
 		// We assume Go is passing us legit data structures
@@ -112,6 +112,21 @@ func NewFailure(err error) *string {
 		return &s
 	}
 	s := fmt.Sprintf("unknown_failure: %s", errorx.Scrub(err.Error()))
+	return &s
+}
+
+// NewFailedOperation creates a failed operation string from the given error.
+func NewFailedOperation(err error) *string {
+	if err == nil {
+		return nil
+	}
+	var (
+		errWrapper *modelx.ErrWrapper
+		s          = modelx.UnknownOperation
+	)
+	if errors.As(err, &errWrapper) && errWrapper.Operation != "" {
+		s = errWrapper.Operation
+	}
 	return &s
 }
 
@@ -289,7 +304,7 @@ func addheaders(
 
 // NewRequestList returns the list for "requests"
 func NewRequestList(begin time.Time, events []trace.Event) []RequestEntry {
-	// OONI wants the least request to appear first
+	// OONI wants the last request to appear first
 	var out []RequestEntry
 	tmp := newRequestList(begin, events)
 	for i := len(tmp) - 1; i >= 0; i-- {
@@ -445,7 +460,7 @@ type NetworkEvent struct {
 func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent {
 	var out []NetworkEvent
 	for _, ev := range events {
-		if ev.Name == "connect" {
+		if ev.Name == modelx.ConnectOperation {
 			out = append(out, NetworkEvent{
 				Address:   ev.Address,
 				Failure:   NewFailure(ev.Err),
@@ -455,7 +470,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 			})
 			continue
 		}
-		if ev.Name == "read" {
+		if ev.Name == modelx.ReadOperation {
 			out = append(out, NetworkEvent{
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
@@ -464,7 +479,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 			})
 			continue
 		}
-		if ev.Name == "write" {
+		if ev.Name == modelx.WriteOperation {
 			out = append(out, NetworkEvent{
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,

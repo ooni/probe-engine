@@ -13,6 +13,7 @@ import (
 	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestUnitNewExperimentMeasurer(t *testing.T) {
@@ -128,25 +129,25 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 }
 
 var staticTestingTargets = []model.TorTarget{
-	model.TorTarget{
+	{
 		Address: "192.95.36.142:443",
 		Params: map[string][]string{
-			"cert": []string{
+			"cert": {
 				"qUVQ0srL1JI/vO6V6m/24anYXiJD3QP2HgzUKQtQ7GRqqUvs7P+tG43RtAqdhLOALP7DJQ",
 			},
-			"iat-mode": []string{"1"},
+			"iat-mode": {"1"},
 		},
 		Protocol: "obfs4",
 	},
-	model.TorTarget{
+	{
 		Address:  "66.111.2.131:9030",
 		Protocol: "dir_port",
 	},
-	model.TorTarget{
+	{
 		Address:  "66.111.2.131:9001",
 		Protocol: "or_port",
 	},
-	model.TorTarget{
+	{
 		Address:  "1.1.1.1:80",
 		Protocol: "tcp",
 	},
@@ -286,7 +287,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "context canceled") {
+	if !strings.HasSuffix(err.Error(), "interrupted") {
 		t.Fatal("not the error we expected")
 	}
 	if tk.HTTPRequests == nil {
@@ -398,7 +399,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 1 {
 			t.Fatal("cannot find expected entry")
 		}
-		if *tr.Summary["connect"].Failure != failure {
+		if *tr.Summary[modelx.ConnectOperation].Failure != failure {
 			t.Fatal("invalid failure")
 		}
 	})
@@ -417,7 +418,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 2 {
 			t.Fatal("cannot find expected entry")
 		}
-		if tr.Summary["connect"].Failure != nil {
+		if tr.Summary[modelx.ConnectOperation].Failure != nil {
 			t.Fatal("invalid failure")
 		}
 		if *tr.Summary["handshake"].Failure != failure {
@@ -441,7 +442,7 @@ func TestUnitSummary(t *testing.T) {
 			if len(tr.Summary) < 1 {
 				t.Fatal("cannot find expected entry")
 			}
-			if tr.Summary["connect"].Failure != nil {
+			if tr.Summary[modelx.ConnectOperation].Failure != nil {
 				t.Fatal("invalid failure")
 			}
 			if handshake == nil {

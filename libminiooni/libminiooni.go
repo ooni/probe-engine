@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -252,9 +251,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
 	log.Infof("miniooni state directory: %s", miniooniDir)
-	tempDir, err := ioutil.TempDir("", "miniooni")
-	fatalOnError(err, "cannot get a temporary directory")
-	log.Infof("miniooni temporary directory: %s", tempDir)
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
@@ -276,7 +272,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
-		TempDir:         tempDir,
 		TorArgs:         currentOptions.TorArgs,
 		TorBinary:       currentOptions.TorBinary,
 	}
@@ -296,6 +291,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
+	log.Infof("miniooni temporary directory: %s", sess.TempDir())
 
 	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
 	fatalOnError(err, "cannot start session tunnel")

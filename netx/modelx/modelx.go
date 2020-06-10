@@ -104,6 +104,9 @@ const (
 	// FailureGenericTimeoutError means we got some timer has expired.
 	FailureGenericTimeoutError = "generic_timeout_error"
 
+	// FailureInterrupted means that the user interrupted us.
+	FailureInterrupted = "interrupted"
+
 	// FailureSSLInvalidHostname means we got certificate is not valid for SNI.
 	FailureSSLInvalidHostname = "ssl_invalid_hostname"
 
@@ -113,6 +116,36 @@ const (
 	// FailureSSLInvalidCertificate means certificate experired or other
 	// sort of errors causing it to be invalid.
 	FailureSSLInvalidCertificate = "ssl_invalid_certificate"
+)
+
+const (
+	// ResolveOperation is the operation where we resolve a domain name
+	ResolveOperation = "resolve"
+
+	// ConnectOperation is the operation where we do a TCP connect
+	ConnectOperation = "connect"
+
+	// TLSHandshakeOperation is the TLS handshake
+	TLSHandshakeOperation = "tls_handshake"
+
+	// HTTPRoundTripOperation is the HTTP round trip
+	HTTPRoundTripOperation = "http_round_trip"
+
+	// CloseOperation is when we close a socket
+	CloseOperation = "close"
+
+	// ReadOperation is when we read from a socket
+	ReadOperation = "read"
+
+	// WriteOperation is when we write to a socket
+	WriteOperation = "write"
+
+	// UnknownOperation is when we cannot determine the operation
+	UnknownOperation = "unknown"
+
+	// TopLevelOperation is used when the failure happens at top level. This
+	// happens for example with urlgetter with a cancelled context.
+	TopLevelOperation = "top_level"
 )
 
 // ErrWrapper is our error wrapper for Go errors. The key objective of
@@ -136,18 +169,18 @@ type ErrWrapper struct {
 	// Operation is the operation that failed. If possible, it
 	// SHOULD be a _major_ operation. Major operations are:
 	//
-	// - `resolve`: resolving a domain name failed
-	// - `connect`: connecting to an IP failed
-	// - `tls_handshake`: TLS handshaking failed
-	// - `http_round_trip`: other errors during round trip
+	// - ResolveOperation: resolving a domain name failed
+	// - ConnectOperation: connecting to an IP failed
+	// - TLSHandshakeOperation: TLS handshaking failed
+	// - HTTPRoundTripOperation: other errors during round trip
 	//
 	// Because a network connection doesn't necessarily know
 	// what is the current major operation we also have the
 	// following _minor_ operations:
 	//
-	// - `close`: CLOSE failed
-	// - `read`: READ failed
-	// - `write`: WRITE failed
+	// - CloseOperation: CLOSE failed
+	// - ReadOperation: READ failed
+	// - WriteOperation: WRITE failed
 	//
 	// If an ErrWrapper referring to a major operation is wrapping
 	// another ErrWrapper and such ErrWrapper already refers to

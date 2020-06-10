@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/apex/log"
@@ -42,12 +44,13 @@ func TestNewSessionBuilderChecks(t *testing.T) {
 			SoftwareName: "ooniprobe-engine",
 		})
 	})
-	t.Run("with also software version", func(t *testing.T) {
+	t.Run("with software version and wrong tempdir", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir:       "testdata",
 			Logger:          log.Log,
 			SoftwareName:    "ooniprobe-engine",
 			SoftwareVersion: "0.0.1",
+			TempDir:         "./nonexistent",
 		})
 	})
 }
@@ -81,7 +84,6 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 		},
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "tempdir",
 		TorArgs:         []string{"antani1", "antani2", "antani3"},
 		TorBinary:       "mascetti",
 	})
@@ -106,10 +108,6 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 }
 
 func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Session {
-	tempdir, err := ioutil.TempDir("testdata", "enginetests")
-	if err != nil {
-		t.Fatal(err)
-	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
@@ -125,7 +123,6 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         tempdir,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -298,8 +295,22 @@ func TestIntegrationSessionLocationLookup(t *testing.T) {
 	}
 }
 
+func TestIntegrationSessionCloseCancelsTempDir(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	tempDir := sess.TempDir()
+	if _, err := os.Stat(tempDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := sess.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(tempDir); !errors.Is(err, syscall.ENOENT) {
+		t.Fatal("not the error we expected")
+	}
+}
+
 func TestIntegrationSessionDownloadResources(t *testing.T) {
-	tmpdir, err := ioutil.TempDir("testdata", "test-download-resources-idempotent")
+	tmpdir, err := ioutil.TempDir("", "test-download-resources-idempotent")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +343,6 @@ func TestUnitGetAvailableProbeServices(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "testdata",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -351,7 +361,6 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "testdata",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -371,7 +380,6 @@ func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "testdata",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -395,7 +403,6 @@ func TestUnitAllProbeServicesUnsupported(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "testdata",
 	})
 	if err != nil {
 		t.Fatal(err)

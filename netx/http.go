@@ -79,12 +79,12 @@ func (t *HTTPTransport) RoundTrip(
 	ctx := maybeWithMeasurementRoot(req.Context(), t.Beginning, t.Handler)
 	req = req.WithContext(ctx)
 	resp, err = t.roundTripper.RoundTrip(req)
-	// For safety wrap the error as "http_round_trip" but this
+	// For safety wrap the error as modelx.HTTPRoundTripOperation but this
 	// will only be used if the error chain does not contain any
 	// other major operation failure. See modelx.ErrWrapper.
 	err = errorx.SafeErrWrapperBuilder{
 		Error:     err,
-		Operation: "http_round_trip",
+		Operation: modelx.HTTPRoundTripOperation,
 	}.MaybeBuild()
 	return resp, err
 }

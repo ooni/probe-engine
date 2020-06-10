@@ -434,7 +434,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 				ConnID:        in.Connect.ConnID,
 				DialID:        in.Connect.DialID,
 				Failure:       makeFailure(in.Connect.Error),
-				Operation:     "connect",
+				Operation:     modelx.ConnectOperation,
 				Proto:         protocolName[in.Connect.ConnID >= 0],
 				T:             in.Connect.DurationSinceBeginning.Seconds(),
 				TransactionID: in.Connect.TransactionID,
@@ -445,7 +445,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 			out = append(out, &NetworkEvent{
 				ConnID:    in.Read.ConnID,
 				Failure:   makeFailure(in.Read.Error),
-				Operation: "read",
+				Operation: modelx.ReadOperation,
 				NumBytes:  in.Read.NumBytes,
 				Proto:     protocolName[in.Read.ConnID >= 0],
 				T:         in.Read.DurationSinceBeginning.Seconds(),
@@ -456,7 +456,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 			out = append(out, &NetworkEvent{
 				ConnID:    in.Write.ConnID,
 				Failure:   makeFailure(in.Write.Error),
-				Operation: "write",
+				Operation: modelx.WriteOperation,
 				NumBytes:  in.Write.NumBytes,
 				Proto:     protocolName[in.Write.ConnID >= 0],
 				T:         in.Write.DurationSinceBeginning.Seconds(),

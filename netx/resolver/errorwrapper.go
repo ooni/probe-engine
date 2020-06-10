@@ -6,6 +6,7 @@ import (
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/internal/transactionid"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // ErrorWrapperResolver is a Resolver that knows about wrapping errors.
@@ -21,7 +22,7 @@ func (r ErrorWrapperResolver) LookupHost(ctx context.Context, hostname string) (
 	err = errorx.SafeErrWrapperBuilder{
 		DialID:        dialID,
 		Error:         err,
-		Operation:     "resolve",
+		Operation:     modelx.ResolveOperation,
 		TransactionID: txID,
 	}.MaybeBuild()
 	return addrs, err

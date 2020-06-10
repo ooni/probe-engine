@@ -6,6 +6,8 @@ import (
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
+	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -26,9 +28,14 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	begin := time.Now()
 	saver := new(trace.Saver)
 	tk, err := g.get(ctx, saver)
-	if err != nil {
-		tk.Failure = archival.NewFailure(err)
-	}
+	// Make sure we have an operation in cases where we fail before
+	// hitting our httptransport that does error wrapping.
+	err = errorx.SafeErrWrapperBuilder{
+		Error:     err,
+		Operation: modelx.TopLevelOperation,
+	}.MaybeBuild()
+	tk.FailedOperation = archival.NewFailedOperation(err)
+	tk.Failure = archival.NewFailure(err)
 	events := saver.Read()
 	tk.Queries = append(
 		tk.Queries, archival.NewDNSQueriesList(
@@ -39,6 +46,14 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	)
 	tk.Requests = append(
 		tk.Requests, archival.NewRequestList(begin, events)...,
+	)
+	if len(tk.Requests) > 0 {
+		// OONI's convention is that the last request appears first
+		tk.HTTPResponseStatus = tk.Requests[0].Response.Code
+		tk.HTTPResponseBody = tk.Requests[0].Response.Body.Value
+	}
+	tk.TCPConnect = append(
+		tk.TCPConnect, archival.NewTCPConnectList(begin, events)...,
 	)
 	tk.TLSHandshakes = append(
 		tk.TLSHandshakes, archival.NewTLSHandshakesList(begin, events)...,
