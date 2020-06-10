@@ -49,7 +49,9 @@ type settingsRecord struct {
 
 	// TempDir is the temporary directory. This field is an extension of MK's
 	// specification. If this field is empty, we will pick the tempdir that
-	// ioutil.TempDir uses by default, which may not work on mobile.
+	// ioutil.TempDir uses by default, which may not work on mobile. According
+	// to our experiments as of 2020-06-10, leaving the TempDir empty works
+	// for iOS and does not work for Android.
 	TempDir string `json:"temp_dir"`
 }
 
