@@ -374,6 +374,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
+		measurement.Options = currentOptions.ExtraOptions
 		if !currentOptions.NoCollector {
 			log.Infof("submitting measurement to OONI collector; please be patient...")
 			err := experiment.SubmitAndUpdateMeasurement(measurement)
