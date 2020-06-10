@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ooni/probe-engine/internal/orchestra/testlists/urls"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -52,7 +52,7 @@ func (s *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsR
 	if conf.BaseURL != "" {
 		baseURL = conf.BaseURL
 	}
-	result, err := urls.Query(context.Background(), urls.Config{
+	result, err := orchestra.URLsQuery(context.Background(), orchestra.URLsConfig{
 		BaseURL:           baseURL,
 		CountryCode:       s.ProbeCC(),
 		EnabledCategories: conf.Categories,
