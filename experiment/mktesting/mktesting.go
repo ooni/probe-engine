@@ -25,7 +25,6 @@ func Run(input string, factory func() model.ExperimentMeasurer) error {
 		Logger:          log.Log,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
-		TempDir:         "../../testdata",
 	}
 	sess, err := engine.NewSession(config)
 	if err != nil {

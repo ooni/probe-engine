@@ -21,7 +21,6 @@ func TestStartWithCancelledContext(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "../../testdata",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +40,6 @@ func TestIntegrationStartStop(t *testing.T) {
 		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
-		TempDir:         "../../testdata",
 	})
 	if err != nil {
 		t.Fatal(err)
