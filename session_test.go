@@ -48,7 +48,7 @@ func TestNewSessionBuilderChecks(t *testing.T) {
 			Logger:          log.Log,
 			SoftwareName:    "ooniprobe-engine",
 			SoftwareVersion: "0.0.1",
-			TempBaseDir:     "./nonexistent",
+			TempDir:         "./nonexistent",
 		})
 	})
 }

@@ -47,14 +47,10 @@ type settingsRecord struct {
 	// this field is empty, the task won't start.
 	StateDir string `json:"state_dir"`
 
-	// TempBaseDir is the base dir in which to create a temporary directory
-	// for running this specific experiment. This field is an extension of MK's
-	// specification. If this field is empty, we try to use the `/tmp` dir of
-	// the current system; see ioutil.TempDir docs for more info.
-	TempBaseDir string `json:"temp_base_dir"`
-
-	// TempDir is a deprecated option. Passing this option causes the
-	// experiment to fail with an explanatory message.
+	// TempDir is the temporary directory. This
+	// field is an extension of MK's specification. If
+	// this field is empty, we will pick the tempdir
+	// that ioutil.TempDir uses by default.
 	TempDir string `json:"temp_dir"`
 }
 

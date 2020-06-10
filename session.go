@@ -43,7 +43,7 @@ type SessionConfig struct {
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
-	TempBaseDir            string
+	TempDir                string
 	TorArgs                []string
 	TorBinary              string
 }
@@ -90,9 +90,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.KVStore == nil {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
-	// Implementation note: if config.TempBaseDir is empty, then Go will
+	// Implementation note: if config.TempDir is empty, then Go will
 	// use the temporary directory on the current system
-	tempDir, err := ioutil.TempDir(config.TempBaseDir, "ooniengine")
+	tempDir, err := ioutil.TempDir(config.TempDir, "ooniengine")
 	if err != nil {
 		return nil, err
 	}

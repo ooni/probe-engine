@@ -26,8 +26,7 @@ func TestIntegrationGood(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -70,8 +69,7 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -97,8 +95,7 @@ func TestIntegrationWithMeasurementFailure(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -134,8 +131,7 @@ func TestIntegrationUnsupportedSetting(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -165,8 +161,7 @@ func TestIntegrationEmptyStateDir(t *testing.T) {
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
-		},
-		"temp_dir": "../testdata/oonimkall/tmp"
+		}
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -196,8 +191,7 @@ func TestIntegrationEmptyAssetsDir(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -228,8 +222,7 @@ func TestIntegrationUnknownExperiment(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -262,8 +255,7 @@ func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -294,8 +286,7 @@ func TestIntegrationInputIsRequired(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -328,8 +319,7 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -371,8 +361,7 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -424,8 +413,7 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -475,8 +463,7 @@ func TestIntegrationCountBytesForExample(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -514,8 +501,7 @@ func TestIntegrationPrivacySettings(t *testing.T) {
 				"software_name": "oonimkall-test",
 				"software_version": "0.1.0"
 			},
-			"state_dir": "../testdata/oonimkall/state",
-			"temp_dir": "../testdata/oonimkall/tmp"
+			"state_dir": "../testdata/oonimkall/state"
 		}`, saveASN, saveCC, saveIP))
 		if err != nil {
 			t.Fatal(err)
@@ -579,8 +565,7 @@ func TestIntegrationNonblock(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state",
-		"temp_dir": "../testdata/oonimkall/tmp"
+		"state_dir": "../testdata/oonimkall/state"
 	}`)
 	if err != nil {
 		t.Fatal(err)
