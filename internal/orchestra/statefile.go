@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -18,14 +17,14 @@ type State struct {
 
 // Auth returns an authentication structure, if possible, otherwise
 // it returns nil, meaning that you should login again.
-func (s State) Auth() *login.Auth {
+func (s State) Auth() *LoginAuth {
 	if s.Token == "" {
 		return nil
 	}
 	if time.Now().Add(30 * time.Second).After(s.Expire) {
 		return nil
 	}
-	return &login.Auth{
+	return &LoginAuth{
 		Expire: s.Expire,
 		Token:  s.Token,
 	}
@@ -33,14 +32,14 @@ func (s State) Auth() *login.Auth {
 
 // Credentials returns login credentials, if possible, otherwise it
 // returns nil, meaning that you should create an account.
-func (s State) Credentials() *login.Credentials {
+func (s State) Credentials() *LoginCredentials {
 	if s.ClientID == "" {
 		return nil
 	}
 	if s.Password == "" {
 		return nil
 	}
-	return &login.Credentials{
+	return &LoginCredentials{
 		ClientID: s.ClientID,
 		Password: s.Password,
 	}

@@ -7,7 +7,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 )
 
@@ -32,10 +31,10 @@ func Register() (string, error) {
 
 // Login performs a login and returns the authentication token
 // information on success, and an error on failure.
-func Login(clientID string) (*login.Auth, error) {
-	return login.Do(context.Background(), login.Config{
+func Login(clientID string) (*orchestra.LoginAuth, error) {
+	return orchestra.Login(context.Background(), orchestra.LoginConfig{
 		BaseURL: "https://ps-test.ooni.io",
-		Credentials: login.Credentials{
+		Credentials: orchestra.LoginCredentials{
 			ClientID: clientID,
 			Password: password,
 		},
@@ -46,7 +45,7 @@ func Login(clientID string) (*login.Auth, error) {
 }
 
 // Update updates information about a probe
-func Update(auth *login.Auth, clientID string) error {
+func Update(auth *orchestra.LoginAuth, clientID string) error {
 	return orchestra.Update(context.Background(), orchestra.UpdateConfig{
 		Auth:       auth,
 		BaseURL:    "https://ps-test.ooni.io",

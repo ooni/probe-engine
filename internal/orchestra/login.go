@@ -1,5 +1,4 @@
-// Package login contains code to login with OONI orchestra.
-package login
+package orchestra
 
 import (
 	"context"
@@ -10,30 +9,30 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for logging in with the OONI orchestra.
-type Config struct {
+// LoginConfig contains configs for logging in with the OONI orchestra.
+type LoginConfig struct {
 	BaseURL     string
-	Credentials Credentials
+	Credentials LoginCredentials
 	HTTPClient  *http.Client
 	Logger      model.Logger
 	UserAgent   string
 }
 
-// Credentials contains the login credentials
-type Credentials struct {
+// LoginCredentials contains the login credentials
+type LoginCredentials struct {
 	ClientID string `json:"username"`
 	Password string `json:"password"`
 }
 
-// Auth contains authentication info
-type Auth struct {
+// LoginAuth contains authentication info
+type LoginAuth struct {
 	Expire time.Time `json:"expire"`
 	Token  string    `json:"token"`
 }
 
-// Do logs this probe in with OONI orchestra
-func Do(ctx context.Context, config Config) (*Auth, error) {
-	var resp Auth
+// Login logs this probe in with OONI orchestra
+func Login(ctx context.Context, config LoginConfig) (*LoginAuth, error) {
+	var resp LoginAuth
 	err := (&jsonapi.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,

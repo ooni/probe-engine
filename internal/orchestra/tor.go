@@ -7,13 +7,12 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/model"
 )
 
 // TorConfig contains settings.
 type TorConfig struct {
-	Auth       *login.Auth
+	Auth       *LoginAuth
 	BaseURL    string
 	HTTPClient *http.Client
 	Logger     model.Logger

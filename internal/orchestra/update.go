@@ -7,14 +7,13 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
 
 // UpdateConfig contains configs for calling the Update API.
 type UpdateConfig struct {
-	Auth       *login.Auth
+	Auth       *LoginAuth
 	BaseURL    string
 	ClientID   string
 	HTTPClient *http.Client

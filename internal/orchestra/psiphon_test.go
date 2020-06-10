@@ -8,7 +8,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
@@ -56,7 +55,7 @@ func TestPsiphonAuthNil(t *testing.T) {
 func TestUnitConfigInvalidURL(t *testing.T) {
 	orchestrateURL := "\t\t\t"
 	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
-		Auth:       new(login.Auth),
+		Auth:       new(orchestra.LoginAuth),
 		BaseURL:    orchestrateURL,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

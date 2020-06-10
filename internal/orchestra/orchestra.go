@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
@@ -92,7 +91,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 		return errNotRegistered
 	}
 	c.LoginCalls.Add(1)
-	auth, err := login.Do(ctx, login.Config{
+	auth, err := Login(ctx, LoginConfig{
 		BaseURL:     c.RegistryBaseURL,
 		Credentials: *creds,
 		HTTPClient:  c.HTTPClient,
@@ -107,7 +106,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	return c.StateFile.Set(state)
 }
 
-func (c *Client) getCredsAndAuth() (*login.Credentials, *login.Auth, error) {
+func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	state := c.StateFile.Get()
 	creds := state.Credentials()
 	if creds == nil {

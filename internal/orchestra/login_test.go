@@ -1,4 +1,4 @@
-package login_test
+package orchestra_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestLoginSuccess(t *testing.T) {
 	clientID, err := testorchestra.Register()
 	if err != nil {
 		t.Fatal(err)
@@ -30,9 +30,9 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestLoginFailure(t *testing.T) {
 	// This should fail because the username/password is wrong
-	result, err := login.Do(context.Background(), login.Config{
+	result, err := orchestra.Login(context.Background(), orchestra.LoginConfig{
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
