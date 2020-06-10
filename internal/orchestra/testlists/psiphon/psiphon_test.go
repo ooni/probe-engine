@@ -1,4 +1,4 @@
-package psiphon
+package psiphon_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
+	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
@@ -20,7 +21,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := Query(context.Background(), Config{
+	data, err := psiphon.Query(context.Background(), psiphon.Config{
 		Auth:       auth,
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
@@ -37,7 +38,7 @@ func TestIntegrationSuccess(t *testing.T) {
 }
 
 func TestUnitAuthNil(t *testing.T) {
-	data, err := Query(context.Background(), Config{
+	data, err := psiphon.Query(context.Background(), psiphon.Config{
 		Auth:       nil,
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
@@ -54,7 +55,7 @@ func TestUnitAuthNil(t *testing.T) {
 
 func TestUnitConfigInvalidURL(t *testing.T) {
 	orchestrateURL := "\t\t\t"
-	data, err := Query(context.Background(), Config{
+	data, err := psiphon.Query(context.Background(), psiphon.Config{
 		Auth:       new(login.Auth),
 		BaseURL:    orchestrateURL,
 		HTTPClient: http.DefaultClient,

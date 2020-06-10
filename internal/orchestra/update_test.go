@@ -1,4 +1,4 @@
-package update_test
+package orchestra_test
 
 import (
 	"testing"

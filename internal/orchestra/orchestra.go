@@ -18,7 +18,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
-	"github.com/ooni/probe-engine/internal/orchestra/update"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -136,7 +135,7 @@ func (c *Client) Update(
 	if err != nil {
 		return err
 	}
-	return update.Do(context.Background(), update.Config{
+	return Update(context.Background(), UpdateConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		ClientID:   creds.ClientID,

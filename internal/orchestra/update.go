@@ -1,5 +1,4 @@
-// Package update contains code to update the probe state with orchestra
-package update
+package orchestra
 
 import (
 	"context"
@@ -13,8 +12,8 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for calling the update API.
-type Config struct {
+// UpdateConfig contains configs for calling the Update API.
+type UpdateConfig struct {
 	Auth       *login.Auth
 	BaseURL    string
 	ClientID   string
@@ -28,8 +27,8 @@ type request struct {
 	metadata.Metadata
 }
 
-// Do registers this probe with OONI orchestra
-func Do(ctx context.Context, config Config) error {
+// Update updates OONI orchestra view of this probe
+func Update(ctx context.Context, config UpdateConfig) error {
 	if config.Auth == nil {
 		return errors.New("config.Auth is nil")
 	}

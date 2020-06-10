@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/register"
-	"github.com/ooni/probe-engine/internal/orchestra/update"
 )
 
 const password = "xx"
@@ -48,7 +48,7 @@ func Login(clientID string) (*login.Auth, error) {
 
 // Update updates information about a probe
 func Update(auth *login.Auth, clientID string) error {
-	return update.Do(context.Background(), update.Config{
+	return orchestra.Update(context.Background(), orchestra.UpdateConfig{
 		Auth:       auth,
 		BaseURL:    "https://ps-test.ooni.io",
 		ClientID:   clientID,
