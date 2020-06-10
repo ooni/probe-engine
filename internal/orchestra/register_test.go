@@ -1,4 +1,4 @@
-package register_test
+package orchestra_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/register"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestRegisterSuccess(t *testing.T) {
 	clientID, err := testorchestra.Register()
 	if err != nil {
 		t.Fatal(err)
@@ -20,11 +20,11 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestRegisterFailure(t *testing.T) {
 	// The successful integration test contains the minimal amount
 	// of fields expected by the orchestra. Any less amount of fields,
 	// such as we do here, results in the API returning error.
-	result, err := register.Do(context.Background(), register.Config{
+	result, err := orchestra.Register(context.Background(), orchestra.RegisterConfig{
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

@@ -9,15 +9,14 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/register"
 )
 
 const password = "xx"
 
-// Register register a fictional probe and returns the clientID
+// Register registers a fictional probe and returns the clientID
 // on success and an error on failure.
 func Register() (string, error) {
-	result, err := register.Do(context.Background(), register.Config{
+	result, err := orchestra.Register(context.Background(), orchestra.RegisterConfig{
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestUpdateSuccess(t *testing.T) {
 	clientID, err := testorchestra.Register()
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestUpdateFailure(t *testing.T) {
 	if err := testorchestra.Update(nil, "xx"); err == nil {
 		t.Fatal("expected an error here")
 	}

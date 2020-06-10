@@ -23,7 +23,7 @@ type UpdateConfig struct {
 	UserAgent  string
 }
 
-type request struct {
+type updateRequest struct {
 	metadata.Metadata
 }
 
@@ -33,7 +33,7 @@ func Update(ctx context.Context, config UpdateConfig) error {
 		return errors.New("config.Auth is nil")
 	}
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	req := &request{Metadata: config.Metadata}
+	req := &updateRequest{Metadata: config.Metadata}
 	var resp struct{}
 	urlpath := fmt.Sprintf("/api/v1/update/%s", config.ClientID)
 	return (&jsonapi.Client{

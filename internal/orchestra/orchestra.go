@@ -14,7 +14,6 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/register"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
@@ -69,7 +68,7 @@ func (c *Client) MaybeRegister(
 	}
 	c.RegisterCalls.Add(1)
 	pwd := randomPassword(64)
-	result, err := register.Do(ctx, register.Config{
+	result, err := Register(ctx, RegisterConfig{
 		BaseURL:    c.RegistryBaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
