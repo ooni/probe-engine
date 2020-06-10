@@ -7,7 +7,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 )
 
 const password = "xx"
@@ -58,8 +57,8 @@ func Update(auth *orchestra.LoginAuth, clientID string) error {
 }
 
 // MetadataFixture returns a valid metadata struct
-func MetadataFixture() metadata.Metadata {
-	return metadata.Metadata{
+func MetadataFixture() orchestra.Metadata {
+	return orchestra.Metadata{
 		Platform:        "linux",
 		ProbeASN:        "AS15169",
 		ProbeCC:         "US",

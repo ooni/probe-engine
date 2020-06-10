@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -53,7 +52,7 @@ var (
 
 // MaybeRegister registers this client if not already registered
 func (c *Client) MaybeRegister(
-	ctx context.Context, metadata metadata.Metadata,
+	ctx context.Context, metadata Metadata,
 ) error {
 	if !metadata.Valid() {
 		return errInvalidMetadata
@@ -121,7 +120,7 @@ func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 
 // Update updates the state of a probe
 func (c *Client) Update(
-	ctx context.Context, metadata metadata.Metadata,
+	ctx context.Context, metadata Metadata,
 ) error {
 	if !metadata.Valid() {
 		return errInvalidMetadata

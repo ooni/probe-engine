@@ -10,7 +10,6 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
@@ -36,7 +35,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 	t.Run("when metadata is not valid", func(t *testing.T) {
 		clnt := newclient()
 		ctx := context.Background()
-		var metadata metadata.Metadata
+		var metadata orchestra.Metadata
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -149,7 +148,7 @@ func TestUnitUpdate(t *testing.T) {
 	t.Run("when metadata is not valid", func(t *testing.T) {
 		clnt := newclient()
 		ctx := context.Background()
-		var metadata metadata.Metadata
+		var metadata orchestra.Metadata
 		if err := clnt.Update(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}

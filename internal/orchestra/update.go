@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -18,12 +17,12 @@ type UpdateConfig struct {
 	ClientID   string
 	HTTPClient *http.Client
 	Logger     model.Logger
-	Metadata   metadata.Metadata
+	Metadata   Metadata
 	UserAgent  string
 }
 
 type updateRequest struct {
-	metadata.Metadata
+	Metadata
 }
 
 // Update updates OONI orchestra view of this probe

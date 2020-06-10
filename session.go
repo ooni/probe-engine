@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -433,7 +432,7 @@ func (s *Session) initOrchestraClient(
 	// is currently only used to fetch inputs. For this purpose, we don't
 	// need to communicate any specific information. The code that will
 	// perform an update should be responsible of doing that.
-	meta := metadata.Metadata{
+	meta := orchestra.Metadata{
 		Platform:        "miniooni",
 		ProbeASN:        "AS0",
 		ProbeCC:         "ZZ",
