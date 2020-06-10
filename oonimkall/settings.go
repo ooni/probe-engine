@@ -47,10 +47,9 @@ type settingsRecord struct {
 	// this field is empty, the task won't start.
 	StateDir string `json:"state_dir"`
 
-	// TempDir is the temporary directory. This
-	// field is an extension of MK's specification. If
-	// this field is empty, we will pick the tempdir
-	// that ioutil.TempDir uses by default.
+	// TempDir is the temporary directory. This field is an extension of MK's
+	// specification. If this field is empty, we will pick the tempdir that
+	// ioutil.TempDir uses by default, which may not work on mobile.
 	TempDir string `json:"temp_dir"`
 }
 
