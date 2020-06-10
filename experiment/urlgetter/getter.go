@@ -63,9 +63,11 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 
 func (g Getter) get(ctx context.Context, saver *trace.Saver) (TestKeys, error) {
 	tk := TestKeys{
-		Agent:    "redirect",
-		DNSCache: []string{g.Config.DNSCache},
-		Tunnel:   g.Config.Tunnel,
+		Agent:  "redirect",
+		Tunnel: g.Config.Tunnel,
+	}
+	if g.Config.DNSCache != "" {
+		tk.DNSCache = []string{g.Config.DNSCache}
 	}
 	if g.Config.NoFollowRedirects {
 		tk.Agent = "agent"

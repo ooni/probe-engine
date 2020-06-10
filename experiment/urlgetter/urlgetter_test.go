@@ -34,6 +34,10 @@ func TestMeasurer(t *testing.T) {
 	if len(measurement.Extensions) != 5 {
 		t.Fatal("not the expected number of extensions")
 	}
+	tk := measurement.TestKeys.(urlgetter.TestKeys)
+	if len(tk.DNSCache) != 0 {
+		t.Fatal("not the DNSCache value we expected")
+	}
 }
 
 func TestMeasurerDNSCache(t *testing.T) {
