@@ -15,7 +15,6 @@ import (
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
 	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
 	"github.com/ooni/probe-engine/model"
 )
@@ -151,7 +150,7 @@ func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return psiphon.Query(ctx, psiphon.Config{
+	return PsiphonQuery(ctx, PsiphonConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,

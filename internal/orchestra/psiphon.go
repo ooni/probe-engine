@@ -1,5 +1,4 @@
-// Package psiphon implements fetching psiphon config using orchestra
-package psiphon
+package orchestra
 
 import (
 	"context"
@@ -14,8 +13,8 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for fetching psiphon config
-type Config struct {
+// PsiphonConfig contains configs for fetching psiphon config
+type PsiphonConfig struct {
 	Auth       *login.Auth
 	BaseURL    string
 	HTTPClient *http.Client
@@ -23,8 +22,8 @@ type Config struct {
 	UserAgent  string
 }
 
-// Query retrieves the psiphon config
-func Query(ctx context.Context, config Config) ([]byte, error) {
+// PsiphonQuery retrieves the psiphon config
+func PsiphonQuery(ctx context.Context, config PsiphonConfig) ([]byte, error) {
 	if config.Auth == nil {
 		return nil, errors.New("config.Auth is nil")
 	}
