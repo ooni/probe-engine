@@ -10,7 +10,6 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
 )
@@ -87,7 +86,7 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
+		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
 	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"

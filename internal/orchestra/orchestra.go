@@ -14,7 +14,6 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -26,14 +25,14 @@ type Client struct {
 	OrchestrateBaseURL string
 	RegisterCalls      *atomicx.Int64
 	RegistryBaseURL    string
-	StateFile          *statefile.StateFile
+	StateFile          *StateFile
 	UserAgent          string
 }
 
 // NewClient creates a new client.
 func NewClient(
 	httpClient *http.Client, logger model.Logger,
-	userAgent string, stateFile *statefile.StateFile,
+	userAgent string, stateFile *StateFile,
 ) *Client {
 	return &Client{
 		HTTPClient:         httpClient,

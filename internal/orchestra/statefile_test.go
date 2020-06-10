@@ -1,4 +1,4 @@
-package statefile
+package orchestra_test
 
 import (
 	"encoding/json"
@@ -7,17 +7,18 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestUnitStateAuth(t *testing.T) {
+func TestStateAuth(t *testing.T) {
 	t.Run("with no Token", func(t *testing.T) {
-		state := State{Expire: time.Now().Add(10 * time.Hour)}
+		state := orchestra.State{Expire: time.Now().Add(10 * time.Hour)}
 		if state.Auth() != nil {
 			t.Fatal("expected nil here")
 		}
 	})
 	t.Run("with expired Token", func(t *testing.T) {
-		state := State{
+		state := orchestra.State{
 			Expire: time.Now().Add(-1 * time.Hour),
 			Token:  "xx-x-xxx-xx",
 		}
@@ -26,7 +27,7 @@ func TestUnitStateAuth(t *testing.T) {
 		}
 	})
 	t.Run("with good Token", func(t *testing.T) {
-		state := State{
+		state := orchestra.State{
 			Expire: time.Now().Add(10 * time.Hour),
 			Token:  "xx-x-xxx-xx",
 		}
@@ -36,15 +37,15 @@ func TestUnitStateAuth(t *testing.T) {
 	})
 }
 
-func TestUnitStateCredentials(t *testing.T) {
+func TestStateCredentials(t *testing.T) {
 	t.Run("with no ClientID", func(t *testing.T) {
-		state := State{}
+		state := orchestra.State{}
 		if state.Credentials() != nil {
 			t.Fatal("expected nil here")
 		}
 	})
 	t.Run("with no Password", func(t *testing.T) {
-		state := State{
+		state := orchestra.State{
 			ClientID: "xx-x-xxx-xx",
 		}
 		if state.Credentials() != nil {
@@ -52,7 +53,7 @@ func TestUnitStateCredentials(t *testing.T) {
 		}
 	})
 	t.Run("with all good", func(t *testing.T) {
-		state := State{
+		state := orchestra.State{
 			ClientID: "xx-x-xxx-xx",
 			Password: "xx",
 		}
@@ -62,12 +63,12 @@ func TestUnitStateCredentials(t *testing.T) {
 	})
 }
 
-func TestIntegrationStateFileMemory(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore())
+func TestStateFileMemoryIntegration(t *testing.T) {
+	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	s := State{
+	s := orchestra.State{
 		Expire:   time.Now(),
 		Password: "xy",
 		Token:    "abc",
@@ -91,12 +92,12 @@ func TestIntegrationStateFileMemory(t *testing.T) {
 	}
 }
 
-func TestUnitStateFileSetMarshalError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore())
+func TestStateFileSetMarshalError(t *testing.T) {
+	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	s := State{
+	s := orchestra.State{
 		Expire:   time.Now(),
 		Password: "xy",
 		Token:    "abc",
@@ -106,13 +107,13 @@ func TestUnitStateFileSetMarshalError(t *testing.T) {
 	failingfunc := func(v interface{}) ([]byte, error) {
 		return nil, expected
 	}
-	if err := sf.set(s, failingfunc); !errors.Is(err, expected) {
+	if err := sf.SetMockable(s, failingfunc); !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
 }
 
-func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore())
+func TestStateFileGetKVStoreGetError(t *testing.T) {
+	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
@@ -120,7 +121,7 @@ func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
 	failingfunc := func(string) ([]byte, error) {
 		return nil, expected
 	}
-	s, err := sf.get(failingfunc, json.Unmarshal)
+	s, err := sf.GetMockable(failingfunc, json.Unmarshal)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
@@ -138,19 +139,19 @@ func TestUnitStateFileGetKVStoreGetError(t *testing.T) {
 	}
 }
 
-func TestUnitStateFileGetUnmarshalError(t *testing.T) {
-	sf := New(kvstore.NewMemoryKeyValueStore())
+func TestStateFileGetUnmarshalError(t *testing.T) {
+	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	if err := sf.Set(State{}); err != nil {
+	if err := sf.Set(orchestra.State{}); err != nil {
 		t.Fatal(err)
 	}
 	expected := errors.New("mocked error")
 	failingfunc := func([]byte, interface{}) error {
 		return expected
 	}
-	s, err := sf.get(sf.store.Get, failingfunc)
+	s, err := sf.GetMockable(sf.Store.Get, failingfunc)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}

@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
+	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for the OONI probe services API.
 type Client struct {
 	jsonapi.Client
-	StateFile *statefile.StateFile
+	StateFile *orchestra.StateFile
 }
 
 var (
@@ -38,7 +38,7 @@ func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, e
 			ProxyURL:   sess.ProxyURL(),
 			UserAgent:  sess.UserAgent(),
 		},
-		StateFile: statefile.New(sess.KeyValueStore()),
+		StateFile: orchestra.NewStateFile(sess.KeyValueStore()),
 	}
 	switch endpoint.Type {
 	case "https":

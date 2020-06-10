@@ -16,7 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/version"
@@ -181,7 +180,7 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 		sess.DefaultHTTPClient(),
 		sess.Logger(),
 		sess.UserAgent(),
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
+		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
 	outclnt, err := sess.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
@@ -202,7 +201,7 @@ func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 		sess.DefaultHTTPClient(),
 		sess.Logger(),
 		sess.UserAgent(),
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
+		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
 	expected := errors.New("mocked error")
 	outclnt, err := sess.initOrchestraClient(
