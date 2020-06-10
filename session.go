@@ -91,7 +91,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
 	// Implementation note: if config.TempDir is empty, then Go will
-	// use the temporary directory on the current system
+	// use the temporary directory on the current system. This should
+	// work on Desktop. We tested that it did also work on iOS, but
+	// we have also seen on 2020-06-10 that it does not work on Android.
 	tempDir, err := ioutil.TempDir(config.TempDir, "ooniengine")
 	if err != nil {
 		return nil, err
