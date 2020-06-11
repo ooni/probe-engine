@@ -76,7 +76,7 @@ func (c *Client) EnsureForSingleResource(
 	} else {
 		c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
 	}
-	data, err = (&httpx.Client{
+	data, err = (httpx.Client{
 		BaseURL:    BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,

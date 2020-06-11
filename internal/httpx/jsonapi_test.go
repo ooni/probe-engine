@@ -274,8 +274,8 @@ func TestUnitReadJSONFailure(t *testing.T) {
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
 	err := client.ReadJSON(context.Background(), "/headers", &headers)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -284,8 +284,8 @@ func TestUnitCreateJSONFailure(t *testing.T) {
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
 	err := client.CreateJSON(context.Background(), "/headers", &headers, &headers)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -294,7 +294,7 @@ func TestUnitUpdateJSONFailure(t *testing.T) {
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
 	err := client.UpdateJSON(context.Background(), "/headers", &headers, &headers)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 }

@@ -40,7 +40,7 @@ func URLsQuery(ctx context.Context, config URLsConfig) (*URLsResult, error) {
 		query.Set("category_codes", strings.Join(config.EnabledCategories, ","))
 	}
 	var response URLsResult
-	err := (&httpx.Client{
+	err := (httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
