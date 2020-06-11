@@ -16,13 +16,13 @@ import (
 // GetCollectors queries the bouncer for collectors. Returns a list of
 // entries on success; an error on failure.
 func (c Client) GetCollectors(ctx context.Context) (output []model.Service, err error) {
-	err = c.Client.Read(ctx, "/api/v1/collectors", &output)
+	err = c.Client.ReadJSON(ctx, "/api/v1/collectors", &output)
 	return
 }
 
 // GetTestHelpers is like GetCollectors but for test helpers.
 func (c Client) GetTestHelpers(
 	ctx context.Context) (output map[string][]model.Service, err error) {
-	err = c.Client.Read(ctx, "/api/v1/test-helpers", &output)
+	err = c.Client.ReadJSON(ctx, "/api/v1/test-helpers", &output)
 	return
 }

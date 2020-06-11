@@ -1,4 +1,4 @@
-package jsonapi
+package httpx
 
 import (
 	"io/ioutil"

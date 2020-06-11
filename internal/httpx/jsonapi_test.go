@@ -1,4 +1,4 @@
-package jsonapi_test
+package httpx_test
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func newClient() jsonapi.Client {
-	return jsonapi.Client{
+func newClient() httpx.Client {
+	return httpx.Client{
 		BaseURL:    "https://httpbin.org",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -152,60 +152,60 @@ func TestNewRequestTunnelingIsPossible(t *testing.T) {
 	}
 }
 
-func TestClientDoClientDoFailure(t *testing.T) {
+func TestClientDoClientDoJSONFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	client := newClient()
-	client.HTTPClient = &http.Client{Transport: jsonapi.FakeTransport{
+	client.HTTPClient = &http.Client{Transport: httpx.FakeTransport{
 		Err: expected,
 	}}
-	err := client.Do(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
+	err := client.DoJSON(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
 }
 
-func TestClientDoResponseNotSuccessful(t *testing.T) {
+func TestClientDoJSONResponseNotSuccessful(t *testing.T) {
 	client := newClient()
-	client.HTTPClient = &http.Client{Transport: jsonapi.FakeTransport{
+	client.HTTPClient = &http.Client{Transport: httpx.FakeTransport{
 		Resp: &http.Response{
 			StatusCode: 401,
-			Body:       jsonapi.FakeBody{},
+			Body:       httpx.FakeBody{},
 		},
 	}}
-	err := client.Do(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
-	if err == nil || !strings.HasPrefix(err.Error(), "jsonapi: request failed") {
+	err := client.DoJSON(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
+	if err == nil || !strings.HasPrefix(err.Error(), "httpx: request failed") {
 		t.Fatal("not the error we expected")
 	}
 }
 
-func TestClientDoResponseReadingBodyError(t *testing.T) {
+func TestClientDoJSONResponseReadingBodyError(t *testing.T) {
 	expected := errors.New("mocked error")
 	client := newClient()
-	client.HTTPClient = &http.Client{Transport: jsonapi.FakeTransport{
+	client.HTTPClient = &http.Client{Transport: httpx.FakeTransport{
 		Resp: &http.Response{
 			StatusCode: 200,
-			Body: jsonapi.FakeBody{
+			Body: httpx.FakeBody{
 				Err: expected,
 			},
 		},
 	}}
-	err := client.Do(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
+	err := client.DoJSON(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
 }
 
-func TestClientDoResponseIsNotJSON(t *testing.T) {
+func TestClientDoJSONResponseIsNotJSON(t *testing.T) {
 	client := newClient()
-	client.HTTPClient = &http.Client{Transport: jsonapi.FakeTransport{
+	client.HTTPClient = &http.Client{Transport: httpx.FakeTransport{
 		Resp: &http.Response{
 			StatusCode: 200,
-			Body: jsonapi.FakeBody{
+			Body: httpx.FakeBody{
 				Err: io.EOF,
 			},
 		},
 	}}
-	err := client.Do(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
+	err := client.DoJSON(&http.Request{URL: &url.URL{Scheme: "https", Host: "x.org"}}, nil)
 	if err == nil || err.Error() != "unexpected end of JSON input" {
 		t.Fatal("not the error we expected")
 	}
@@ -215,9 +215,9 @@ type httpbinheaders struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func TestIntegrationReadSuccess(t *testing.T) {
+func TestIntegrationReadJSONSuccess(t *testing.T) {
 	var headers httpbinheaders
-	err := newClient().Read(context.Background(), "/headers", &headers)
+	err := newClient().ReadJSON(context.Background(), "/headers", &headers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,14 +233,14 @@ type httpbinpost struct {
 	Data string `json:"data"`
 }
 
-func TestIntegrationCreateSuccess(t *testing.T) {
+func TestIntegrationCreateJSONSuccess(t *testing.T) {
 	headers := httpbinheaders{
 		Headers: map[string]string{
 			"Foo": "bar",
 		},
 	}
 	var response httpbinpost
-	err := newClient().Create(context.Background(), "/post", &headers, &response)
+	err := newClient().CreateJSON(context.Background(), "/post", &headers, &response)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,14 +253,14 @@ type httpbinput struct {
 	Data string `json:"data"`
 }
 
-func TestIntegrationUpdateSuccess(t *testing.T) {
+func TestIntegrationUpdateJSONSuccess(t *testing.T) {
 	headers := httpbinheaders{
 		Headers: map[string]string{
 			"Foo": "bar",
 		},
 	}
 	var response httpbinpost
-	err := newClient().Update(context.Background(), "/put", &headers, &response)
+	err := newClient().UpdateJSON(context.Background(), "/put", &headers, &response)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,31 +269,31 @@ func TestIntegrationUpdateSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitReadFailure(t *testing.T) {
+func TestUnitReadJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.Read(context.Background(), "/headers", &headers)
+	err := client.ReadJSON(context.Background(), "/headers", &headers)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
 }
 
-func TestUnitCreateFailure(t *testing.T) {
+func TestUnitCreateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.Create(context.Background(), "/headers", &headers, &headers)
+	err := client.CreateJSON(context.Background(), "/headers", &headers, &headers)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
 }
 
-func TestUnitUpdateFailure(t *testing.T) {
+func TestUnitUpdateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.Update(context.Background(), "/headers", &headers, &headers)
+	err := client.UpdateJSON(context.Background(), "/headers", &headers, &headers)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

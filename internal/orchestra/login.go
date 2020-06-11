@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -33,12 +33,12 @@ type LoginAuth struct {
 // Login logs this probe in with OONI orchestra
 func Login(ctx context.Context, config LoginConfig) (*LoginAuth, error) {
 	var resp LoginAuth
-	err := (&jsonapi.Client{
+	err := (&httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
-	}).Create(ctx, "/api/v1/login", config.Credentials, &resp)
+	}).CreateJSON(ctx, "/api/v1/login", config.Credentials, &resp)
 	if err != nil {
 		return nil, err
 	}

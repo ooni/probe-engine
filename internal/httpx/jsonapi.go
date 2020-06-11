@@ -1,6 +1,5 @@
-// Package jsonapi interacts with HTTP JSON APIs. In OONI we use
-// this code when accessing API like, e.g., the OONI collector.
-package jsonapi
+// Package httpx contains http extensions.
+package httpx
 
 import (
 	"bytes"
@@ -16,7 +15,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-// Client is a client for a JSON API.
+// Client is an extended client.
 type Client struct {
 	// Authorization contains the authorization header.
 	Authorization string
@@ -24,7 +23,7 @@ type Client struct {
 	// BaseURL is the base URL of the API.
 	BaseURL string
 
-	// HTTPClient is the http client to use.
+	// HTTPClient is the real http client to use.
 	HTTPClient *http.Client
 
 	// Host allows to set a specific host header. This is useful
@@ -50,7 +49,7 @@ func (c Client) NewRequest(
 	if err != nil {
 		return nil, err
 	}
-	c.Logger.Debugf("jsonapi: request body: %d bytes", len(data))
+	c.Logger.Debugf("httpx: request body: %d bytes", len(data))
 	return c.newRequestWithSerializedJSONBody(
 		ctx, method, resourcePath, query, bytes.NewReader(data))
 }
@@ -66,8 +65,8 @@ func (c Client) newRequestWithSerializedJSONBody(
 	if query != nil {
 		URL.RawQuery = query.Encode()
 	}
-	c.Logger.Debugf("jsonapi: method: %s", method)
-	c.Logger.Debugf("jsonapi: URL: %s", URL.String())
+	c.Logger.Debugf("httpx: method: %s", method)
+	c.Logger.Debugf("httpx: URL: %s", URL.String())
 	request, err := http.NewRequest(method, URL.String(), body)
 	if err != nil {
 		return nil, err
@@ -88,63 +87,63 @@ func (c Client) newRequestWithSerializedJSONBody(
 	return request.WithContext(ctx), nil
 }
 
-// Do performs the provided request and unmarshals the JSON response body
+// DoJSON performs the provided request and unmarshals the JSON response body
 // into the provided output variable.
-func (c Client) Do(request *http.Request, output interface{}) error {
+func (c Client) DoJSON(request *http.Request, output interface{}) error {
 	response, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return err
 	}
 	defer response.Body.Close()
 	if response.StatusCode >= 400 {
-		return fmt.Errorf("jsonapi: request failed: %s", response.Status)
+		return fmt.Errorf("httpx: request failed: %s", response.Status)
 	}
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
-	c.Logger.Debugf("jsonapi: response body: %d bytes", len(data))
+	c.Logger.Debugf("httpx: response body: %d bytes", len(data))
 	return json.Unmarshal(data, output)
 }
 
-// Read reads the JSON resource at resourcePath and unmarshals the
+// ReadJSON reads the JSON resource at resourcePath and unmarshals the
 // results into output. The request is bounded by the lifetime of the
 // context passed as argument. Returns the error that occurred.
-func (c Client) Read(ctx context.Context, resourcePath string, output interface{}) error {
-	return c.ReadWithQuery(ctx, resourcePath, nil, output)
+func (c Client) ReadJSON(ctx context.Context, resourcePath string, output interface{}) error {
+	return c.ReadJSONWithQuery(ctx, resourcePath, nil, output)
 }
 
-// ReadWithQuery is like Read but also has a query.
-func (c Client) ReadWithQuery(
+// ReadJSONWithQuery is like Read but also has a query.
+func (c Client) ReadJSONWithQuery(
 	ctx context.Context, resourcePath string,
 	query url.Values, output interface{}) error {
 	request, err := c.newRequestWithSerializedJSONBody(ctx, "GET", resourcePath, query, nil)
 	if err != nil {
 		return err
 	}
-	return c.Do(request, output)
+	return c.DoJSON(request, output)
 }
 
-// Create creates a JSON subresource of the resource at resourcePath
+// CreateJSON creates a JSON subresource of the resource at resourcePath
 // using the JSON document at input and returning the result into the
 // JSON document at output. The request is bounded by the context's
 // lifetime. Returns the error that occurred.
-func (c Client) Create(
+func (c Client) CreateJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.NewRequest(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
-	return c.Do(request, output)
+	return c.DoJSON(request, output)
 }
 
-// Update updates a JSON resource at a specific path and returns
+// UpdateJSON updates a JSON resource at a specific path and returns
 // the error that occurred and possibly an output document
-func (c Client) Update(
+func (c Client) UpdateJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.NewRequest(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
-	return c.Do(request, output)
+	return c.DoJSON(request, output)
 }
