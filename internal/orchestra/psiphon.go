@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 
-	"github.com/ooni/probe-engine/internal/fetch"
-	"github.com/ooni/probe-engine/internal/urlpath"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -26,16 +24,12 @@ func PsiphonQuery(ctx context.Context, config PsiphonConfig) ([]byte, error) {
 	if config.Auth == nil {
 		return nil, errors.New("config.Auth is nil")
 	}
-	url, err := url.Parse(config.BaseURL)
-	if err != nil {
-		return nil, err
-	}
-	url.Path = urlpath.Append(url.Path, "/api/v1/test-list/psiphon-config")
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	return (&fetch.Client{
+	return (&httpx.Client{
 		Authorization: authorization,
+		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,
 		Logger:        config.Logger,
 		UserAgent:     config.UserAgent,
-	}).Fetch(ctx, url.String())
+	}).FetchResource(ctx, "/api/v1/test-list/psiphon-config")
 }

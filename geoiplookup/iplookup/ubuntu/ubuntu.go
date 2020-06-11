@@ -6,7 +6,7 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/fetch"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -22,11 +22,12 @@ func Do(
 	logger model.Logger,
 	userAgent string,
 ) (string, error) {
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "https://geoip.ubuntu.com/",
 		HTTPClient: httpClient,
 		Logger:     logger,
 		UserAgent:  userAgent,
-	}).Fetch(ctx, "https://geoip.ubuntu.com/lookup")
+	}).FetchResource(ctx, "/lookup")
 	if err != nil {
 		return model.DefaultProbeIP, err
 	}

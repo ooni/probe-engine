@@ -41,8 +41,8 @@ type Client struct {
 	UserAgent string
 }
 
-// NewRequest creates a new request with a JSON body
-func (c Client) NewRequest(
+// NewRequestWithJSONBody creates a new request with a JSON body
+func (c Client) NewRequestWithJSONBody(
 	ctx context.Context, method, resourcePath string,
 	query url.Values, body interface{}) (*http.Request, error) {
 	data, err := json.Marshal(body)
@@ -50,12 +50,19 @@ func (c Client) NewRequest(
 		return nil, err
 	}
 	c.Logger.Debugf("httpx: request body: %d bytes", len(data))
-	return c.newRequestWithSerializedJSONBody(
+	request, err := c.NewRequest(
 		ctx, method, resourcePath, query, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
+	return request, nil
 }
 
-func (c Client) newRequestWithSerializedJSONBody(
-	ctx context.Context, method, resourcePath string,
+// NewRequest creates a new request.
+func (c Client) NewRequest(ctx context.Context, method, resourcePath string,
 	query url.Values, body io.Reader) (*http.Request, error) {
 	URL, err := url.Parse(c.BaseURL)
 	if err != nil {
@@ -72,9 +79,6 @@ func (c Client) newRequestWithSerializedJSONBody(
 		return nil, err
 	}
 	request.Host = c.Host // allow cloudfronting
-	if body != nil {
-		request.Header.Set("Content-Type", "application/json")
-	}
 	if c.Authorization != "" {
 		request.Header.Set("Authorization", c.Authorization)
 	}
@@ -87,18 +91,23 @@ func (c Client) newRequestWithSerializedJSONBody(
 	return request.WithContext(ctx), nil
 }
 
-// DoJSON performs the provided request and unmarshals the JSON response body
-// into the provided output variable.
-func (c Client) DoJSON(request *http.Request, output interface{}) error {
+// Do performs the provided request and returns the response body or an error.
+func (c Client) Do(request *http.Request) ([]byte, error) {
 	response, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer response.Body.Close()
 	if response.StatusCode >= 400 {
-		return fmt.Errorf("httpx: request failed: %s", response.Status)
+		return nil, fmt.Errorf("httpx: request failed: %s", response.Status)
 	}
-	data, err := ioutil.ReadAll(response.Body)
+	return ioutil.ReadAll(response.Body)
+}
+
+// DoJSON performs the provided request and unmarshals the JSON response body
+// into the provided output variable.
+func (c Client) DoJSON(request *http.Request, output interface{}) error {
+	data, err := c.Do(request)
 	if err != nil {
 		return err
 	}
@@ -117,7 +126,7 @@ func (c Client) ReadJSON(ctx context.Context, resourcePath string, output interf
 func (c Client) ReadJSONWithQuery(
 	ctx context.Context, resourcePath string,
 	query url.Values, output interface{}) error {
-	request, err := c.newRequestWithSerializedJSONBody(ctx, "GET", resourcePath, query, nil)
+	request, err := c.NewRequest(ctx, "GET", resourcePath, query, nil)
 	if err != nil {
 		return err
 	}
@@ -130,7 +139,7 @@ func (c Client) ReadJSONWithQuery(
 // lifetime. Returns the error that occurred.
 func (c Client) CreateJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
-	request, err := c.NewRequest(ctx, "POST", resourcePath, nil, input)
+	request, err := c.NewRequestWithJSONBody(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}
@@ -141,7 +150,7 @@ func (c Client) CreateJSON(
 // the error that occurred and possibly an output document
 func (c Client) UpdateJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
-	request, err := c.NewRequest(ctx, "PUT", resourcePath, nil, input)
+	request, err := c.NewRequestWithJSONBody(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {
 		return err
 	}

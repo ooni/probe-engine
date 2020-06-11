@@ -26,7 +26,7 @@ func newClient() httpx.Client {
 
 func TestNewRequestWithJSONBodyJSONMarshalFailure(t *testing.T) {
 	client := newClient()
-	req, err := client.NewRequest(
+	req, err := client.NewRequestWithJSONBody(
 		context.Background(), "GET", "/", nil, make(chan interface{}),
 	)
 	if err == nil || !strings.HasPrefix(err.Error(), "json: unsupported type") {
@@ -40,7 +40,7 @@ func TestNewRequestWithJSONBodyJSONMarshalFailure(t *testing.T) {
 func TestNewRequestWithJSONBodyNewRequestFailure(t *testing.T) {
 	client := newClient()
 	client.BaseURL = "\t\t\t" // cause URL parse error
-	req, err := client.NewRequest(
+	req, err := client.NewRequestWithJSONBody(
 		context.Background(), "GET", "/", nil, nil,
 	)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
@@ -99,7 +99,7 @@ func TestNewRequestCloudfronting(t *testing.T) {
 
 func TestNewRequestContentTypeIsSet(t *testing.T) {
 	client := newClient()
-	req, err := client.NewRequest(
+	req, err := client.NewRequestWithJSONBody(
 		context.Background(), "GET", "/", nil, []string{},
 	)
 	if err != nil {
@@ -152,7 +152,7 @@ func TestNewRequestTunnelingIsPossible(t *testing.T) {
 	}
 }
 
-func TestClientDoClientDoJSONFailure(t *testing.T) {
+func TestClientDoJSONClientDoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	client := newClient()
 	client.HTTPClient = &http.Client{Transport: httpx.FakeTransport{
