@@ -2,8 +2,10 @@ package httpx_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -37,8 +39,8 @@ func TestFetchResourceExpiredContext(t *testing.T) {
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchResource(ctx, "/robots.txt")
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
 	}
 	if len(data) != 0 {
 		t.Fatal("expected an empty resource")
@@ -75,8 +77,8 @@ func TestFetchResourceInvalidURL(t *testing.T) {
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchResource(ctx, "/robots.txt")
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 	if len(data) != 0 {
 		t.Fatal("expected an empty resource")
@@ -99,8 +101,8 @@ func TestFetchResource400(t *testing.T) {
 		Logger:        log.Log,
 		UserAgent:     "ooniprobe-engine/0.1.0",
 	}).FetchResource(ctx, "")
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "400 Bad Request") {
+		t.Fatal("not the error we expected")
 	}
 	if len(data) != 0 {
 		t.Fatal("expected an empty resource")
@@ -122,8 +124,8 @@ func TestFetchResourceAndVerify400(t *testing.T) {
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).FetchResourceAndVerify(ctx, "", "abcde")
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "400 Bad Request") {
+		t.Fatal("not the error we expected")
 	}
 	if len(data) != 0 {
 		t.Fatal("expected an empty resource")
@@ -143,8 +145,8 @@ func TestFetchResourceAndVerifyInvalidSHA256(t *testing.T) {
 		"/measurement-kit/generic-assets/releases/download/20190426155936/generic-assets-20190426155936.tar.gz",
 		"34d8a9ceeb30c242469482dc280be832d8a06b4400f8927604dd361bf979b795",
 	)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasPrefix(err.Error(), "httpx: SHA256 mismatch:") {
+		t.Fatal("not the error we expected")
 	}
 	if len(data) != 0 {
 		t.Fatal("expected an empty resource")
