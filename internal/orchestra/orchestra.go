@@ -17,14 +17,13 @@ import (
 
 // Client is a client for OONI orchestra
 type Client struct {
-	HTTPClient         *http.Client
-	Logger             model.Logger
-	LoginCalls         *atomicx.Int64
-	OrchestrateBaseURL string
-	RegisterCalls      *atomicx.Int64
-	RegistryBaseURL    string
-	StateFile          *StateFile
-	UserAgent          string
+	BaseURL       string
+	HTTPClient    *http.Client
+	Logger        model.Logger
+	LoginCalls    *atomicx.Int64
+	RegisterCalls *atomicx.Int64
+	StateFile     *StateFile
+	UserAgent     string
 }
 
 // NewClient creates a new client.
@@ -33,14 +32,13 @@ func NewClient(
 	userAgent string, stateFile *StateFile,
 ) *Client {
 	return &Client{
-		HTTPClient:         httpClient,
-		Logger:             logger,
-		LoginCalls:         atomicx.NewInt64(),
-		OrchestrateBaseURL: "https://ps.ooni.io",
-		RegisterCalls:      atomicx.NewInt64(),
-		RegistryBaseURL:    "https://ps.ooni.io",
-		StateFile:          stateFile,
-		UserAgent:          userAgent,
+		BaseURL:       "https://ps.ooni.io",
+		HTTPClient:    httpClient,
+		Logger:        logger,
+		LoginCalls:    atomicx.NewInt64(),
+		RegisterCalls: atomicx.NewInt64(),
+		StateFile:     stateFile,
+		UserAgent:     userAgent,
 	}
 }
 
@@ -64,7 +62,7 @@ func (c *Client) MaybeRegister(
 	c.RegisterCalls.Add(1)
 	pwd := randomPassword(64)
 	result, err := Register(ctx, RegisterConfig{
-		BaseURL:    c.RegistryBaseURL,
+		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		Metadata:   metadata,
@@ -91,7 +89,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	}
 	c.LoginCalls.Add(1)
 	auth, err := Login(ctx, LoginConfig{
-		BaseURL:     c.RegistryBaseURL,
+		BaseURL:     c.BaseURL,
 		Credentials: *creds,
 		HTTPClient:  c.HTTPClient,
 		Logger:      c.Logger,
@@ -131,7 +129,7 @@ func (c *Client) Update(
 	}
 	return Update(context.Background(), UpdateConfig{
 		Auth:       auth,
-		BaseURL:    c.OrchestrateBaseURL,
+		BaseURL:    c.BaseURL,
 		ClientID:   creds.ClientID,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
@@ -148,7 +146,7 @@ func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 	}
 	return PsiphonQuery(ctx, PsiphonConfig{
 		Auth:       auth,
-		BaseURL:    c.OrchestrateBaseURL,
+		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,
@@ -163,7 +161,7 @@ func (c *Client) FetchTorTargets(ctx context.Context) (map[string]model.TorTarge
 	}
 	return TorQuery(ctx, TorConfig{
 		Auth:       auth,
-		BaseURL:    c.OrchestrateBaseURL,
+		BaseURL:    c.BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,

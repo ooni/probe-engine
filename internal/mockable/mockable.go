@@ -101,8 +101,7 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 		"miniooni/0.1.0-dev",
 		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
-	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
-	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	clnt.BaseURL = "https://ps-test.ooni.io"
 	meta := OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
