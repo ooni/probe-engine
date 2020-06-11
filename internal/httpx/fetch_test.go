@@ -1,4 +1,4 @@
-package fetch_test
+package httpx_test
 
 import (
 	"context"
@@ -7,17 +7,18 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/fetch"
+	"github.com/ooni/probe-engine/internal/httpx"
 )
 
-func TestFetchIntegration(t *testing.T) {
+func TestFetchResourceIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "http://facebook.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).Fetch(ctx, "http://facebook.com/robots.txt")
+	}).FetchResource(ctx, "/robots.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,15 +27,16 @@ func TestFetchIntegration(t *testing.T) {
 	}
 }
 
-func TestFetchExpiredContext(t *testing.T) {
+func TestFetchResourceExpiredContext(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "http://facebook.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).Fetch(ctx, "http://facebook.com/robots.txt")
+	}).FetchResource(ctx, "/robots.txt")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -43,16 +45,17 @@ func TestFetchExpiredContext(t *testing.T) {
 	}
 }
 
-func TestFetchAndVerifyIntegration(t *testing.T) {
+func TestFetchResourceAndVerifyIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "https://github.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).FetchAndVerify(
+	}).FetchResourceAndVerify(
 		ctx,
-		"https://github.com/measurement-kit/generic-assets/releases/download/20190426155936/generic-assets-20190426155936.tar.gz",
+		"/measurement-kit/generic-assets/releases/download/20190426155936/generic-assets-20190426155936.tar.gz",
 		"34d8a9c8ab30c242469482dc280be832d8a06b4400f8927604dd361bf979b795",
 	)
 	if err != nil {
@@ -63,14 +66,15 @@ func TestFetchAndVerifyIntegration(t *testing.T) {
 	}
 }
 
-func TestFetchInvalidURL(t *testing.T) {
+func TestFetchResourceInvalidURL(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "http://\t/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).Fetch(ctx, "http://\t/robots.txt")
+	}).FetchResource(ctx, "/robots.txt")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -79,7 +83,7 @@ func TestFetchInvalidURL(t *testing.T) {
 	}
 }
 
-func TestFetch400(t *testing.T) {
+func TestFetchResource400(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(400)
@@ -88,12 +92,13 @@ func TestFetch400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
 		Authorization: "foobar",
+		BaseURL:       server.URL,
 		HTTPClient:    http.DefaultClient,
 		Logger:        log.Log,
 		UserAgent:     "ooniprobe-engine/0.1.0",
-	}).Fetch(ctx, server.URL)
+	}).FetchResource(ctx, "")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -102,7 +107,7 @@ func TestFetch400(t *testing.T) {
 	}
 }
 
-func TestFetchAndVerify400(t *testing.T) {
+func TestFetchResourceAndVerify400(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(400)
@@ -111,11 +116,12 @@ func TestFetchAndVerify400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    server.URL,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).FetchAndVerify(ctx, server.URL, "abcde")
+	}).FetchResourceAndVerify(ctx, "", "abcde")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -124,16 +130,17 @@ func TestFetchAndVerify400(t *testing.T) {
 	}
 }
 
-func TestFetchAndVerifyInvalidSHA256(t *testing.T) {
+func TestFetchResourceAndVerifyInvalidSHA256(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&fetch.Client{
+	data, err := (&httpx.Client{
+		BaseURL:    "https://github.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).FetchAndVerify(
+	}).FetchResourceAndVerify(
 		ctx,
-		"https://github.com/measurement-kit/generic-assets/releases/download/20190426155936/generic-assets-20190426155936.tar.gz",
+		"/measurement-kit/generic-assets/releases/download/20190426155936/generic-assets-20190426155936.tar.gz",
 		"34d8a9ceeb30c242469482dc280be832d8a06b4400f8927604dd361bf979b795",
 	)
 	if err == nil {
