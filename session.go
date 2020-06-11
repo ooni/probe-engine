@@ -18,7 +18,6 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -258,11 +257,11 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	clnt, err := orchestra.NewClient(s, model.Service{
+	clnt, err := probeservices.NewClient(s, model.Service{
 		Address: "https://ps.ooni.io/",
 		Type:    "https",
 	})
-	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
+	runtimex.PanicOnError(err, "probeservices.NewClient should not fail here")
 	return s.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
 	)
@@ -422,16 +421,16 @@ func (s *Session) getAvailableProbeServices() []model.Service {
 }
 
 func (s *Session) initOrchestraClient(
-	ctx context.Context, clnt *orchestra.Client,
+	ctx context.Context, clnt *probeservices.Client,
 	maybeLogin func(ctx context.Context) error,
-) (*orchestra.Client, error) {
+) (*probeservices.Client, error) {
 	// The original implementation has as its only use case that we
 	// were registering and logging in for sending an update regarding
 	// the probe whereabouts. Yet here in probe-engine, the orchestra
 	// is currently only used to fetch inputs. For this purpose, we don't
 	// need to communicate any specific information. The code that will
 	// perform an update should be responsible of doing that.
-	meta := orchestra.Metadata{
+	meta := probeservices.Metadata{
 		Platform:        "miniooni",
 		ProbeASN:        "AS0",
 		ProbeCC:         "ZZ",

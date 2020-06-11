@@ -1,4 +1,4 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"encoding/json"
@@ -7,18 +7,18 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestStateAuth(t *testing.T) {
 	t.Run("with no Token", func(t *testing.T) {
-		state := orchestra.State{Expire: time.Now().Add(10 * time.Hour)}
+		state := probeservices.State{Expire: time.Now().Add(10 * time.Hour)}
 		if state.Auth() != nil {
 			t.Fatal("expected nil here")
 		}
 	})
 	t.Run("with expired Token", func(t *testing.T) {
-		state := orchestra.State{
+		state := probeservices.State{
 			Expire: time.Now().Add(-1 * time.Hour),
 			Token:  "xx-x-xxx-xx",
 		}
@@ -27,7 +27,7 @@ func TestStateAuth(t *testing.T) {
 		}
 	})
 	t.Run("with good Token", func(t *testing.T) {
-		state := orchestra.State{
+		state := probeservices.State{
 			Expire: time.Now().Add(10 * time.Hour),
 			Token:  "xx-x-xxx-xx",
 		}
@@ -39,13 +39,13 @@ func TestStateAuth(t *testing.T) {
 
 func TestStateCredentials(t *testing.T) {
 	t.Run("with no ClientID", func(t *testing.T) {
-		state := orchestra.State{}
+		state := probeservices.State{}
 		if state.Credentials() != nil {
 			t.Fatal("expected nil here")
 		}
 	})
 	t.Run("with no Password", func(t *testing.T) {
-		state := orchestra.State{
+		state := probeservices.State{
 			ClientID: "xx-x-xxx-xx",
 		}
 		if state.Credentials() != nil {
@@ -53,7 +53,7 @@ func TestStateCredentials(t *testing.T) {
 		}
 	})
 	t.Run("with all good", func(t *testing.T) {
-		state := orchestra.State{
+		state := probeservices.State{
 			ClientID: "xx-x-xxx-xx",
 			Password: "xx",
 		}
@@ -64,11 +64,11 @@ func TestStateCredentials(t *testing.T) {
 }
 
 func TestStateFileMemoryIntegration(t *testing.T) {
-	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
+	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	s := orchestra.State{
+	s := probeservices.State{
 		Expire:   time.Now(),
 		Password: "xy",
 		Token:    "abc",
@@ -93,11 +93,11 @@ func TestStateFileMemoryIntegration(t *testing.T) {
 }
 
 func TestStateFileSetMarshalError(t *testing.T) {
-	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
+	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	s := orchestra.State{
+	s := probeservices.State{
 		Expire:   time.Now(),
 		Password: "xy",
 		Token:    "abc",
@@ -113,7 +113,7 @@ func TestStateFileSetMarshalError(t *testing.T) {
 }
 
 func TestStateFileGetKVStoreGetError(t *testing.T) {
-	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
+	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
@@ -140,11 +140,11 @@ func TestStateFileGetKVStoreGetError(t *testing.T) {
 }
 
 func TestStateFileGetUnmarshalError(t *testing.T) {
-	sf := orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore())
+	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	if sf == nil {
 		t.Fatal("expected non nil pointer here")
 	}
-	if err := sf.Set(orchestra.State{}); err != nil {
+	if err := sf.Set(probeservices.State{}); err != nil {
 		t.Fatal(err)
 	}
 	expected := errors.New("mocked error")

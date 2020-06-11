@@ -1,4 +1,4 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"net/http"
@@ -7,11 +7,11 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
-func newclient() *orchestra.Client {
-	client := &orchestra.Client{
+func newclient() *probeservices.Client {
+	client := &probeservices.Client{
 		Client: httpx.Client{
 			BaseURL:    "https://ps-test.ooni.io/",
 			HTTPClient: http.DefaultClient,
@@ -20,7 +20,7 @@ func newclient() *orchestra.Client {
 		},
 		LoginCalls:    atomicx.NewInt64(),
 		RegisterCalls: atomicx.NewInt64(),
-		StateFile:     orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
+		StateFile:     probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	}
 	return client
 }

@@ -8,24 +8,10 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
-
-// OrchestraMetadataFixture returns a valid metadata struct
-func OrchestraMetadataFixture() orchestra.Metadata {
-	return orchestra.Metadata{
-		Platform:        "linux",
-		ProbeASN:        "AS15169",
-		ProbeCC:         "US",
-		SoftwareName:    "miniooni",
-		SoftwareVersion: "0.1.0-dev",
-		SupportedTests: []string{
-			"web_connectivity",
-		},
-	}
-}
 
 // ExperimentSession is a mockable ExperimentSession.
 type ExperimentSession struct {
@@ -95,12 +81,12 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 	if sess.MockableOrchestraClientError != nil {
 		return nil, sess.MockableOrchestraClientError
 	}
-	clnt, err := orchestra.NewClient(sess, model.Service{
+	clnt, err := probeservices.NewClient(sess, model.Service{
 		Address: "https://ps-test.ooni.io/",
 		Type:    "https",
 	})
 	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
-	meta := OrchestraMetadataFixture()
+	meta := probeservices.OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
 	}

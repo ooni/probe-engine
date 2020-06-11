@@ -1,4 +1,4 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestURLsSuccess(t *testing.T) {
-	config := orchestra.URLsConfig{
+	config := probeservices.URLsConfig{
 		BaseURL:           "https://ps.ooni.io",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
@@ -20,7 +20,7 @@ func TestURLsSuccess(t *testing.T) {
 		UserAgent:         "ooniprobe-engine/v0.1.0-dev",
 	}
 	ctx := context.Background()
-	result, err := orchestra.URLsQuery(ctx, config)
+	result, err := probeservices.URLsQuery(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestURLsSuccess(t *testing.T) {
 }
 
 func TestURLsFailure(t *testing.T) {
-	config := orchestra.URLsConfig{
+	config := probeservices.URLsConfig{
 		BaseURL:           "\t\t\t",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
@@ -40,7 +40,7 @@ func TestURLsFailure(t *testing.T) {
 		UserAgent:         "ooniprobe-engine/v0.1.0-dev",
 	}
 	ctx := context.Background()
-	result, err := orchestra.URLsQuery(ctx, config)
+	result, err := probeservices.URLsQuery(ctx, config)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

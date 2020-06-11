@@ -12,9 +12,9 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestUnitNewExperimentMeasurer(t *testing.T) {
@@ -50,7 +50,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
-		return new(orchestra.Client), nil
+		return new(probeservices.Client), nil
 	}
 	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, expected
@@ -71,7 +71,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
-		return new(orchestra.Client), nil
+		return new(probeservices.Client), nil
 	}
 	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, nil
@@ -97,7 +97,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	measurer := newMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
-		return new(orchestra.Client), nil
+		return new(probeservices.Client), nil
 	}
 	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
 		return nil, nil

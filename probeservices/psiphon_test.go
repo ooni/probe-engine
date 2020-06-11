@@ -1,19 +1,18 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(
 		context.Background(),
-		mockable.OrchestraMetadataFixture(),
+		probeservices.OrchestraMetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +31,7 @@ func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 
 func TestUnitFetchPsiphonConfigNotRegistered(t *testing.T) {
 	clnt := newclient()
-	state := orchestra.State{
+	state := probeservices.State{
 		// Explicitly empty so the test is more clear
 	}
 	if err := clnt.StateFile.Set(state); err != nil {
