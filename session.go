@@ -258,12 +258,11 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	clnt := orchestra.NewClient(
-		s.DefaultHTTPClient(),
-		s.logger,
-		s.UserAgent(),
-		orchestra.NewStateFile(s.kvStore),
-	)
+	clnt, err := orchestra.NewClient(s, model.Service{
+		Address: "https://ps.ooni.io/",
+		Type:    "https",
+	})
+	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
 	return s.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
 	)
