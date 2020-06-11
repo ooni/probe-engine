@@ -33,7 +33,7 @@ type LoginAuth struct {
 // Login logs this probe in with OONI orchestra
 func Login(ctx context.Context, config LoginConfig) (*LoginAuth, error) {
 	var resp LoginAuth
-	err := (&httpx.Client{
+	err := (httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,

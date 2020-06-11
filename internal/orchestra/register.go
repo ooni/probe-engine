@@ -35,7 +35,7 @@ func Register(ctx context.Context, config RegisterConfig) (*RegisterResult, erro
 		Password: config.Password,
 	}
 	var resp RegisterResult
-	err := (&httpx.Client{
+	err := (httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,

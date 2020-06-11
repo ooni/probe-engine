@@ -21,7 +21,7 @@ func Do(
 	userAgent string,
 ) (string, error) {
 	var v response
-	err := (&httpx.Client{
+	err := (httpx.Client{
 		BaseURL:    "https://ip-info.ff.avast.com",
 		HTTPClient: httpClient,
 		Logger:     logger,

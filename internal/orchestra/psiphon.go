@@ -25,7 +25,7 @@ func PsiphonQuery(ctx context.Context, config PsiphonConfig) ([]byte, error) {
 		return nil, errors.New("config.Auth is nil")
 	}
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	return (&httpx.Client{
+	return (httpx.Client{
 		Authorization: authorization,
 		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,

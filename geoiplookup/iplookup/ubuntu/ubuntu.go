@@ -22,7 +22,7 @@ func Do(
 	logger model.Logger,
 	userAgent string,
 ) (string, error) {
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "https://geoip.ubuntu.com/",
 		HTTPClient: httpClient,
 		Logger:     logger,

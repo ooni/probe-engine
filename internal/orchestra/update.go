@@ -34,7 +34,7 @@ func Update(ctx context.Context, config UpdateConfig) error {
 	req := &updateRequest{Metadata: config.Metadata}
 	var resp struct{}
 	urlpath := fmt.Sprintf("/api/v1/update/%s", config.ClientID)
-	return (&httpx.Client{
+	return (httpx.Client{
 		Authorization: authorization,
 		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,

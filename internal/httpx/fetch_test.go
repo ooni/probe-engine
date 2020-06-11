@@ -13,7 +13,7 @@ import (
 func TestFetchResourceIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "http://facebook.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -31,7 +31,7 @@ func TestFetchResourceExpiredContext(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "http://facebook.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -48,7 +48,7 @@ func TestFetchResourceExpiredContext(t *testing.T) {
 func TestFetchResourceAndVerifyIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "https://github.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -69,7 +69,7 @@ func TestFetchResourceAndVerifyIntegration(t *testing.T) {
 func TestFetchResourceInvalidURL(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "http://\t/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -92,7 +92,7 @@ func TestFetchResource400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		Authorization: "foobar",
 		BaseURL:       server.URL,
 		HTTPClient:    http.DefaultClient,
@@ -116,7 +116,7 @@ func TestFetchResourceAndVerify400(t *testing.T) {
 	defer server.Close()
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    server.URL,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -133,7 +133,7 @@ func TestFetchResourceAndVerify400(t *testing.T) {
 func TestFetchResourceAndVerifyInvalidSHA256(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
-	data, err := (&httpx.Client{
+	data, err := (httpx.Client{
 		BaseURL:    "https://github.com/",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

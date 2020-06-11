@@ -25,7 +25,7 @@ func TorQuery(ctx context.Context, config TorConfig) (result map[string]model.To
 		return nil, errors.New("config.Auth is nil")
 	}
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	err = (&httpx.Client{
+	err = (httpx.Client{
 		Authorization: authorization,
 		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,
