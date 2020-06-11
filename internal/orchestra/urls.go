@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -40,12 +40,12 @@ func URLsQuery(ctx context.Context, config URLsConfig) (*URLsResult, error) {
 		query.Set("category_codes", strings.Join(config.EnabledCategories, ","))
 	}
 	var response URLsResult
-	err := (&jsonapi.Client{
+	err := (&httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
-	}).ReadWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
+	}).ReadJSONWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
 	if err != nil {
 		return nil, err
 	}

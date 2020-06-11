@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -34,11 +34,11 @@ func Update(ctx context.Context, config UpdateConfig) error {
 	req := &updateRequest{Metadata: config.Metadata}
 	var resp struct{}
 	urlpath := fmt.Sprintf("/api/v1/update/%s", config.ClientID)
-	return (&jsonapi.Client{
+	return (&httpx.Client{
 		Authorization: authorization,
 		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,
 		Logger:        config.Logger,
 		UserAgent:     config.UserAgent,
-	}).Update(ctx, urlpath, req, &resp)
+	}).UpdateJSON(ctx, urlpath, req, &resp)
 }

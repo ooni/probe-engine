@@ -6,14 +6,14 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for the OONI probe services API.
 type Client struct {
-	jsonapi.Client
+	httpx.Client
 	StateFile *orchestra.StateFile
 }
 
@@ -31,7 +31,7 @@ var (
 // NewClient creates a new client for the specified probe services endpoint.
 func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, error) {
 	client := &Client{
-		Client: jsonapi.Client{
+		Client: httpx.Client{
 			BaseURL:    endpoint.Address,
 			HTTPClient: sess.DefaultHTTPClient(),
 			Logger:     sess.Logger(),

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -25,12 +25,12 @@ func TorQuery(ctx context.Context, config TorConfig) (result map[string]model.To
 		return nil, errors.New("config.Auth is nil")
 	}
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	err = (&jsonapi.Client{
+	err = (&httpx.Client{
 		Authorization: authorization,
 		BaseURL:       config.BaseURL,
 		HTTPClient:    config.HTTPClient,
 		Logger:        config.Logger,
 		UserAgent:     config.UserAgent,
-	}).Read(ctx, "/api/v1/test-list/tor-targets", &result)
+	}).ReadJSON(ctx, "/api/v1/test-list/tor-targets", &result)
 	return
 }

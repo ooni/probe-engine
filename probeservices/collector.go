@@ -71,7 +71,7 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 		return nil, errors.New("Unsupported format")
 	}
 	var or openResponse
-	err := c.Client.Create(ctx, "/report", rt, &or)
+	err := c.Client.CreateJSON(ctx, "/report", rt, &or)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ type updateResponse struct {
 func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse updateResponse
 	m.ReportID = r.ID
-	err := r.client.Client.Create(
+	err := r.client.Client.CreateJSON(
 		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
 			Format:  "json",
 			Content: m,
@@ -118,7 +118,7 @@ func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) err
 // Close closes the report. Returns nil on success; an error on failure.
 func (r Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	err := r.client.Client.Create(
+	err := r.client.Client.CreateJSON(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
 	// Implementation note: the server is not compliant with

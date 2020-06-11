@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -35,12 +35,12 @@ func Register(ctx context.Context, config RegisterConfig) (*RegisterResult, erro
 		Password: config.Password,
 	}
 	var resp RegisterResult
-	err := (&jsonapi.Client{
+	err := (&httpx.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
-	}).Create(ctx, "/api/v1/register", req, &resp)
+	}).CreateJSON(ctx, "/api/v1/register", req, &resp)
 	if err != nil {
 		return nil, err
 	}
