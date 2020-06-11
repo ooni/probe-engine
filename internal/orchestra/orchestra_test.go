@@ -57,7 +57,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 	})
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
-		clnt.RegistryBaseURL = "\t\t\t"
+		clnt.BaseURL = "\t\t\t"
 		ctx := context.Background()
 		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
@@ -111,7 +111,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 	})
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
-		clnt.RegistryBaseURL = "\t\t\t"
+		clnt.BaseURL = "\t\t\t"
 		state := orchestra.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
@@ -184,7 +184,7 @@ func TestUnitUpdate(t *testing.T) {
 	})
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
-		clnt.RegistryBaseURL = "\t\t\t"
+		clnt.BaseURL = "\t\t\t"
 		state := orchestra.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Expire:   time.Now().Add(time.Hour),
@@ -284,7 +284,6 @@ func newclient() *orchestra.Client {
 		"miniooni/0.1.0-dev",
 		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
-	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
-	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	clnt.BaseURL = "https://ps-test.ooni.io"
 	return clnt
 }
