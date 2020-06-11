@@ -7,7 +7,6 @@ package orchestra
 import (
 	"errors"
 	"math/rand"
-	"net/http"
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
@@ -24,20 +23,23 @@ type Client struct {
 }
 
 // NewClient creates a new client.
-func NewClient(
-	httpClient *http.Client, logger model.Logger,
-	userAgent string, stateFile *StateFile,
-) *Client {
-	return &Client{
+func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, error) {
+	client := &Client{
 		Client: httpx.Client{
-			BaseURL:    "https://ps.ooni.io",
-			HTTPClient: httpClient,
-			Logger:     logger,
-			UserAgent:  userAgent,
+			BaseURL:    endpoint.Address,
+			HTTPClient: sess.DefaultHTTPClient(),
+			Logger:     sess.Logger(),
+			UserAgent:  sess.UserAgent(),
 		},
 		LoginCalls:    atomicx.NewInt64(),
 		RegisterCalls: atomicx.NewInt64(),
-		StateFile:     stateFile,
+		StateFile:     NewStateFile(sess.KeyValueStore()),
+	}
+	switch endpoint.Type {
+	case "https":
+		return client, nil
+	default:
+		return nil, errors.New("unsupported endpoint type")
 	}
 }
 

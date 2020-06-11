@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -95,13 +95,11 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 	if sess.MockableOrchestraClientError != nil {
 		return nil, sess.MockableOrchestraClientError
 	}
-	clnt := orchestra.NewClient(
-		http.DefaultClient,
-		log.Log,
-		"miniooni/0.1.0-dev",
-		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
-	)
-	clnt.BaseURL = "https://ps-test.ooni.io"
+	clnt, err := orchestra.NewClient(sess, model.Service{
+		Address: "https://ps-test.ooni.io/",
+		Type:    "https",
+	})
+	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
 	meta := OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err

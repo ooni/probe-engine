@@ -3,6 +3,7 @@ package tor
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -476,5 +477,8 @@ func TestUnitFillToplevelKeys(t *testing.T) {
 }
 
 func newsession() model.ExperimentSession {
-	return &mockable.ExperimentSession{MockableLogger: log.Log}
+	return &mockable.ExperimentSession{
+		MockableLogger:     log.Log,
+		MockableHTTPClient: http.DefaultClient,
+	}
 }

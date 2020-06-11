@@ -14,7 +14,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
@@ -176,12 +175,13 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	cancel() // so we fail immediately
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	clnt := orchestra.NewClient(
-		sess.DefaultHTTPClient(),
-		sess.Logger(),
-		sess.UserAgent(),
-		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
-	)
+	clnt, err := orchestra.NewClient(sess, model.Service{
+		Address: "https://ps-test.ooni.io/",
+		Type:    "https",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	outclnt, err := sess.initOrchestraClient(
 		ctx, clnt, clnt.MaybeLogin,
 	)
@@ -197,12 +197,13 @@ func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 	ctx := context.Background()
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	clnt := orchestra.NewClient(
-		sess.DefaultHTTPClient(),
-		sess.Logger(),
-		sess.UserAgent(),
-		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
-	)
+	clnt, err := orchestra.NewClient(sess, model.Service{
+		Address: "https://ps-test.ooni.io/",
+		Type:    "https",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	expected := errors.New("mocked error")
 	outclnt, err := sess.initOrchestraClient(
 		ctx, clnt, func(context.Context) error {
