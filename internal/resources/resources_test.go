@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -70,8 +71,8 @@ func TestEnsureFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	err = client.Ensure(ctx)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -113,8 +114,8 @@ func TestEnsureFailAllComparisons(t *testing.T) {
 		},
 		gzip.NewReader, ioutil.ReadAll,
 	)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "sha256 mismatch") {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -130,6 +131,7 @@ func TestEnsureFailGzipNewReader(t *testing.T) {
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
 	}
+	expected := errors.New("mocked error")
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
 			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
@@ -139,12 +141,12 @@ func TestEnsureFailGzipNewReader(t *testing.T) {
 			return left == right
 		},
 		func(r io.Reader) (*gzip.Reader, error) {
-			return nil, errors.New("mocked error")
+			return nil, expected
 		},
 		ioutil.ReadAll,
 	)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -160,6 +162,7 @@ func TestEnsureFailIoUtilReadAll(t *testing.T) {
 		UserAgent:  "ooniprobe-engine/0.1.0",
 		WorkDir:    tempdir,
 	}
+	expected := errors.New("mocked error")
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
 			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
@@ -169,10 +172,10 @@ func TestEnsureFailIoUtilReadAll(t *testing.T) {
 			return left == right
 		},
 		gzip.NewReader, func(r io.Reader) ([]byte, error) {
-			return nil, errors.New("mocked error")
+			return nil, expected
 		},
 	)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
