@@ -3,29 +3,24 @@ package orchestra_test
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 
-	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestPsiphonSuccess(t *testing.T) {
-	clientID, err := Register()
-	if err != nil {
+func TestIntegrationFetchPsiphonConfig(t *testing.T) {
+	clnt := newclient()
+	if err := clnt.MaybeRegister(
+		context.Background(),
+		mockable.OrchestraMetadataFixture(),
+	); err != nil {
 		t.Fatal(err)
 	}
-	auth, err := Login(clientID)
-	if err != nil {
+	if err := clnt.MaybeLogin(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
-		Auth:       auth,
-		BaseURL:    "https://ps-test.ooni.io",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
+	data, err := clnt.FetchPsiphonConfig(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,35 +30,19 @@ func TestPsiphonSuccess(t *testing.T) {
 	}
 }
 
-func TestPsiphonAuthNil(t *testing.T) {
-	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
-		Auth:       nil,
-		BaseURL:    "https://ps-test.ooni.io",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
+func TestUnitFetchPsiphonConfigNotRegistered(t *testing.T) {
+	clnt := newclient()
+	state := orchestra.State{
+		// Explicitly empty so the test is more clear
+	}
+	if err := clnt.StateFile.Set(state); err != nil {
+		t.Fatal(err)
+	}
+	data, err := clnt.FetchPsiphonConfig(context.Background())
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {
-		t.Fatal("expected no data here")
-	}
-}
-
-func TestUnitConfigInvalidURL(t *testing.T) {
-	orchestrateURL := "\t\t\t"
-	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
-		Auth:       new(orchestra.LoginAuth),
-		BaseURL:    orchestrateURL,
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if data != nil {
-		t.Fatal("expected no data here")
+		t.Fatal("expected nil data here")
 	}
 }

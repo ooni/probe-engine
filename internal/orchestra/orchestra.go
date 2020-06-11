@@ -5,7 +5,6 @@
 package orchestra
 
 import (
-	"context"
 	"errors"
 	"math/rand"
 	"net/http"
@@ -48,61 +47,6 @@ var (
 	errNotRegistered   = errors.New("not registered")
 )
 
-// MaybeRegister registers this client if not already registered
-func (c *Client) MaybeRegister(
-	ctx context.Context, metadata Metadata,
-) error {
-	if !metadata.Valid() {
-		return errInvalidMetadata
-	}
-	state := c.StateFile.Get()
-	if state.Credentials() != nil {
-		return nil // we're already good
-	}
-	c.RegisterCalls.Add(1)
-	pwd := randomPassword(64)
-	result, err := Register(ctx, RegisterConfig{
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		Metadata:   metadata,
-		Password:   pwd,
-		UserAgent:  c.UserAgent,
-	})
-	if err != nil {
-		return err
-	}
-	state.ClientID = result.ClientID
-	state.Password = pwd
-	return c.StateFile.Set(state)
-}
-
-// MaybeLogin performs login if necessary
-func (c *Client) MaybeLogin(ctx context.Context) error {
-	state := c.StateFile.Get()
-	if state.Auth() != nil {
-		return nil // we're already good
-	}
-	creds := state.Credentials()
-	if creds == nil {
-		return errNotRegistered
-	}
-	c.LoginCalls.Add(1)
-	auth, err := Login(ctx, LoginConfig{
-		BaseURL:     c.BaseURL,
-		Credentials: *creds,
-		HTTPClient:  c.HTTPClient,
-		Logger:      c.Logger,
-		UserAgent:   c.UserAgent,
-	})
-	if err != nil {
-		return err
-	}
-	state.Expire = auth.Expire
-	state.Token = auth.Token
-	return c.StateFile.Set(state)
-}
-
 func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	state := c.StateFile.Get()
 	creds := state.Credentials()
@@ -114,58 +58,6 @@ func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 		return nil, nil, errNotLoggedIn
 	}
 	return creds, auth, nil
-}
-
-// Update updates the state of a probe
-func (c *Client) Update(
-	ctx context.Context, metadata Metadata,
-) error {
-	if !metadata.Valid() {
-		return errInvalidMetadata
-	}
-	creds, auth, err := c.getCredsAndAuth()
-	if err != nil {
-		return err
-	}
-	return Update(context.Background(), UpdateConfig{
-		Auth:       auth,
-		BaseURL:    c.BaseURL,
-		ClientID:   creds.ClientID,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		Metadata:   metadata,
-		UserAgent:  c.UserAgent,
-	})
-}
-
-// FetchPsiphonConfig fetches psiphon config from authenticated OONI orchestra.
-func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
-	_, auth, err := c.getCredsAndAuth()
-	if err != nil {
-		return nil, err
-	}
-	return PsiphonQuery(ctx, PsiphonConfig{
-		Auth:       auth,
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		UserAgent:  c.UserAgent,
-	})
-}
-
-// FetchTorTargets returns the targets for the tor experiment.
-func (c *Client) FetchTorTargets(ctx context.Context) (map[string]model.TorTarget, error) {
-	_, auth, err := c.getCredsAndAuth()
-	if err != nil {
-		return nil, err
-	}
-	return TorQuery(ctx, TorConfig{
-		Auth:       auth,
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		UserAgent:  c.UserAgent,
-	})
 }
 
 func randomPassword(n int) string {

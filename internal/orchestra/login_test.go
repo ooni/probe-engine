@@ -2,45 +2,72 @@ package orchestra_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
+	"time"
 
-	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestLoginSuccess(t *testing.T) {
-	clientID, err := Register()
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Login(clientID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result == nil {
-		t.Fatal("result should not be nil here")
-	}
-	if result.Expire.IsZero() {
-		t.Fatal("Expire should not be zero")
-	}
-	if result.Token == "" {
-		t.Fatal("Token should not be empty")
-	}
+func TestUnitMaybeLogin(t *testing.T) {
+	t.Run("when we already have a token", func(t *testing.T) {
+		clnt := newclient()
+		state := orchestra.State{
+			Expire: time.Now().Add(time.Hour),
+			Token:  "xx-xxx-x-xxxx",
+		}
+		if err := clnt.StateFile.Set(state); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		if err := clnt.MaybeLogin(ctx); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("when we have already registered", func(t *testing.T) {
+		clnt := newclient()
+		state := orchestra.State{
+			// Explicitly empty to clarify what this test does
+		}
+		if err := clnt.StateFile.Set(state); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		if err := clnt.MaybeLogin(ctx); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
+	t.Run("when the API call fails", func(t *testing.T) {
+		clnt := newclient()
+		clnt.BaseURL = "\t\t\t"
+		state := orchestra.State{
+			ClientID: "xx-xxx-x-xxxx",
+			Password: "xx",
+		}
+		if err := clnt.StateFile.Set(state); err != nil {
+			t.Fatal(err)
+		}
+		ctx := context.Background()
+		if err := clnt.MaybeLogin(ctx); err == nil {
+			t.Fatal("expected an error here")
+		}
+	})
 }
 
-func TestLoginFailure(t *testing.T) {
-	// This should fail because the username/password is wrong
-	result, err := orchestra.Login(context.Background(), orchestra.LoginConfig{
-		BaseURL:    "https://ps-test.ooni.io",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
-	if err == nil {
-		t.Fatal("expected an error here")
+func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
+	clnt := newclient()
+	ctx := context.Background()
+	metadata := mockable.OrchestraMetadataFixture()
+	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
+		t.Fatal(err)
 	}
-	if result != nil {
-		t.Fatal("result should be nil here")
+	if err := clnt.MaybeLogin(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := clnt.MaybeLogin(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if clnt.LoginCalls.Load() != 1 {
+		t.Fatal("called login API too many times")
 	}
 }
