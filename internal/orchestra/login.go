@@ -3,8 +3,6 @@ package orchestra
 import (
 	"context"
 	"time"
-
-	"github.com/ooni/probe-engine/internal/httpx"
 )
 
 // LoginCredentials contains the login credentials
@@ -31,12 +29,7 @@ func (c Client) MaybeLogin(ctx context.Context) error {
 	}
 	c.LoginCalls.Add(1)
 	var auth LoginAuth
-	err := (httpx.Client{
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		UserAgent:  c.UserAgent,
-	}).CreateJSON(ctx, "/api/v1/login", *creds, &auth)
+	err := c.Client.CreateJSON(ctx, "/api/v1/login", *creds, &auth)
 	if err != nil {
 		return err
 	}
