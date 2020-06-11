@@ -1,18 +1,17 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestUnitMaybeLogin(t *testing.T) {
 	t.Run("when we already have a token", func(t *testing.T) {
 		clnt := newclient()
-		state := orchestra.State{
+		state := probeservices.State{
 			Expire: time.Now().Add(time.Hour),
 			Token:  "xx-xxx-x-xxxx",
 		}
@@ -26,7 +25,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 	})
 	t.Run("when we have already registered", func(t *testing.T) {
 		clnt := newclient()
-		state := orchestra.State{
+		state := probeservices.State{
 			// Explicitly empty to clarify what this test does
 		}
 		if err := clnt.StateFile.Set(state); err != nil {
@@ -40,7 +39,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
 		clnt.BaseURL = "\t\t\t"
-		state := orchestra.State{
+		state := probeservices.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
 		}
@@ -57,7 +56,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := mockable.OrchestraMetadataFixture()
+	metadata := probeservices.OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}

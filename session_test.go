@@ -14,7 +14,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/version"
@@ -175,7 +174,7 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	cancel() // so we fail immediately
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	clnt, err := orchestra.NewClient(sess, model.Service{
+	clnt, err := probeservices.NewClient(sess, model.Service{
 		Address: "https://ps-test.ooni.io/",
 		Type:    "https",
 	})
@@ -197,7 +196,7 @@ func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 	ctx := context.Background()
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	clnt, err := orchestra.NewClient(sess, model.Service{
+	clnt, err := probeservices.NewClient(sess, model.Service{
 		Address: "https://ps-test.ooni.io/",
 		Type:    "https",
 	})

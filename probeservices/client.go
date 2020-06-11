@@ -6,15 +6,17 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for the OONI probe services API.
 type Client struct {
 	httpx.Client
-	StateFile *orchestra.StateFile
+	LoginCalls    *atomicx.Int64
+	RegisterCalls *atomicx.Int64
+	StateFile     *StateFile
 }
 
 var (
@@ -38,7 +40,9 @@ func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, e
 			ProxyURL:   sess.ProxyURL(),
 			UserAgent:  sess.UserAgent(),
 		},
-		StateFile: orchestra.NewStateFile(sess.KeyValueStore()),
+		LoginCalls:    atomicx.NewInt64(),
+		RegisterCalls: atomicx.NewInt64(),
+		StateFile:     NewStateFile(sess.KeyValueStore()),
 	}
 	switch endpoint.Type {
 	case "https":

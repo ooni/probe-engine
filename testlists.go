@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ooni/probe-engine/internal/orchestra"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 // TODO(bassosimone): this API can probably be deprecated in
@@ -52,7 +52,7 @@ func (s *Session) QueryTestListsURLs(conf *TestListsURLsConfig) (*TestListsURLsR
 	if conf.BaseURL != "" {
 		baseURL = conf.BaseURL
 	}
-	result, err := orchestra.URLsQuery(context.Background(), orchestra.URLsConfig{
+	result, err := probeservices.URLsQuery(context.Background(), probeservices.URLsConfig{
 		BaseURL:           baseURL,
 		CountryCode:       s.ProbeCC(),
 		EnabledCategories: conf.Categories,

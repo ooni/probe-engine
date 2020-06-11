@@ -1,4 +1,4 @@
-package orchestra
+package probeservices
 
 import (
 	"encoding/json"

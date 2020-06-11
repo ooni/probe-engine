@@ -1,25 +1,24 @@
-package orchestra_test
+package probeservices_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/orchestra"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 func TestUnitMaybeRegister(t *testing.T) {
 	t.Run("when metadata is not valid", func(t *testing.T) {
 		clnt := newclient()
 		ctx := context.Background()
-		var metadata orchestra.Metadata
+		var metadata probeservices.Metadata
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
 	})
 	t.Run("when we have already registered", func(t *testing.T) {
 		clnt := newclient()
-		state := orchestra.State{
+		state := probeservices.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",
 		}
@@ -27,7 +26,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := mockable.OrchestraMetadataFixture()
+		metadata := probeservices.OrchestraMetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 			t.Fatal(err)
 		}
@@ -36,7 +35,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 		clnt := newclient()
 		clnt.BaseURL = "\t\t\t"
 		ctx := context.Background()
-		metadata := mockable.OrchestraMetadataFixture()
+		metadata := probeservices.OrchestraMetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -46,7 +45,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := mockable.OrchestraMetadataFixture()
+	metadata := probeservices.OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}

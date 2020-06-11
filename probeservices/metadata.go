@@ -1,4 +1,4 @@
-package orchestra
+package probeservices
 
 // Metadata contains metadata about a probe. This message is
 // included into a bunch of messages sent to orchestra.
