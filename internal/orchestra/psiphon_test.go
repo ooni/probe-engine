@@ -1,4 +1,4 @@
-package psiphon
+package orchestra_test
 
 import (
 	"context"
@@ -7,20 +7,19 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
+	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
-	clientID, err := testorchestra.Register()
+func TestPsiphonSuccess(t *testing.T) {
+	clientID, err := Register()
 	if err != nil {
 		t.Fatal(err)
 	}
-	auth, err := testorchestra.Login(clientID)
+	auth, err := Login(clientID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := Query(context.Background(), Config{
+	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
 		Auth:       auth,
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
@@ -36,8 +35,8 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitAuthNil(t *testing.T) {
-	data, err := Query(context.Background(), Config{
+func TestPsiphonAuthNil(t *testing.T) {
+	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
 		Auth:       nil,
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
@@ -54,8 +53,8 @@ func TestUnitAuthNil(t *testing.T) {
 
 func TestUnitConfigInvalidURL(t *testing.T) {
 	orchestrateURL := "\t\t\t"
-	data, err := Query(context.Background(), Config{
-		Auth:       new(login.Auth),
+	data, err := orchestra.PsiphonQuery(context.Background(), orchestra.PsiphonConfig{
+		Auth:       new(orchestra.LoginAuth),
 		BaseURL:    orchestrateURL,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,

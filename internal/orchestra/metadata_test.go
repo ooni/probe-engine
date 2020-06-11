@@ -1,16 +1,20 @@
-package metadata
+package orchestra_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ooni/probe-engine/internal/orchestra"
+)
 
 func TestUnitValid(t *testing.T) {
 	t.Run("fail on probe_cc", func(t *testing.T) {
-		var m Metadata
+		var m orchestra.Metadata
 		if m.Valid() != false {
 			t.Fatal("expected false here")
 		}
 	})
 	t.Run("fail on probe_asn", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC: "IT",
 		}
 		if m.Valid() != false {
@@ -18,7 +22,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("fail on platform", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:  "IT",
 			ProbeASN: "AS1234",
 		}
@@ -27,7 +31,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("fail on software_name", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:  "IT",
 			ProbeASN: "AS1234",
 			Platform: "linux",
@@ -37,7 +41,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("fail on software_version", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:      "IT",
 			ProbeASN:     "AS1234",
 			Platform:     "linux",
@@ -48,7 +52,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("fail on supported_tests", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:         "IT",
 			ProbeASN:        "AS1234",
 			Platform:        "linux",
@@ -60,7 +64,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("fail on missing device_token", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:         "IT",
 			ProbeASN:        "AS1234",
 			Platform:        "ios",
@@ -75,7 +79,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("success for desktop", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			ProbeCC:         "IT",
 			ProbeASN:        "AS1234",
 			Platform:        "linux",
@@ -90,7 +94,7 @@ func TestUnitValid(t *testing.T) {
 		}
 	})
 	t.Run("success for mobile", func(t *testing.T) {
-		m := Metadata{
+		m := orchestra.Metadata{
 			DeviceToken:     "xx-xxx-xx-xxxx",
 			ProbeCC:         "IT",
 			ProbeASN:        "AS1234",

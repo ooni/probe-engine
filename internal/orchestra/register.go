@@ -1,42 +1,40 @@
-// Package register contains code to register to the OONI orchestra.
-package register
+package orchestra
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for registering to OONI orchestra.
-type Config struct {
+// RegisterConfig contains configs for registering to OONI orchestra.
+type RegisterConfig struct {
 	BaseURL    string
 	HTTPClient *http.Client
 	Logger     model.Logger
-	Metadata   metadata.Metadata
+	Metadata   Metadata
 	Password   string
 	UserAgent  string
 }
 
-type request struct {
-	metadata.Metadata
+type registerRequest struct {
+	Metadata
 	Password string `json:"password"`
 }
 
-// Result contains the result of logging in.
-type Result struct {
+// RegisterResult contains the result of logging in.
+type RegisterResult struct {
 	ClientID string `json:"client_id"`
 }
 
-// Do registers this probe with OONI orchestra
-func Do(ctx context.Context, config Config) (*Result, error) {
-	req := &request{
+// Register registers this probe with OONI orchestra
+func Register(ctx context.Context, config RegisterConfig) (*RegisterResult, error) {
+	req := &registerRequest{
 		Metadata: config.Metadata,
 		Password: config.Password,
 	}
-	var resp Result
+	var resp RegisterResult
 	err := (&jsonapi.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,

@@ -1,11 +1,9 @@
-// Package statefile defines the state file
-package statefile
+package orchestra
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -19,14 +17,14 @@ type State struct {
 
 // Auth returns an authentication structure, if possible, otherwise
 // it returns nil, meaning that you should login again.
-func (s State) Auth() *login.Auth {
+func (s State) Auth() *LoginAuth {
 	if s.Token == "" {
 		return nil
 	}
 	if time.Now().Add(30 * time.Second).After(s.Expire) {
 		return nil
 	}
-	return &login.Auth{
+	return &LoginAuth{
 		Expire: s.Expire,
 		Token:  s.Token,
 	}
@@ -34,14 +32,14 @@ func (s State) Auth() *login.Auth {
 
 // Credentials returns login credentials, if possible, otherwise it
 // returns nil, meaning that you should create an account.
-func (s State) Credentials() *login.Credentials {
+func (s State) Credentials() *LoginCredentials {
 	if s.ClientID == "" {
 		return nil
 	}
 	if s.Password == "" {
 		return nil
 	}
-	return &login.Credentials{
+	return &LoginCredentials{
 		ClientID: s.ClientID,
 		Password: s.Password,
 	}
@@ -50,32 +48,34 @@ func (s State) Credentials() *login.Credentials {
 // StateFile is the orchestra state file. It is backed by
 // a generic key-value store configured by the user.
 type StateFile struct {
+	Store model.KeyValueStore
 	key   string
-	store model.KeyValueStore
 }
 
-// New creates a new state file backed by a key-value store
-func New(kvstore model.KeyValueStore) *StateFile {
+// NewStateFile creates a new state file backed by a key-value store
+func NewStateFile(kvstore model.KeyValueStore) *StateFile {
 	return &StateFile{
 		key:   "orchestra.state",
-		store: kvstore,
+		Store: kvstore,
 	}
 }
 
-func (sf *StateFile) set(s State, mf func(interface{}) ([]byte, error)) error {
+// SetMockable is a mockable version of Set
+func (sf *StateFile) SetMockable(s State, mf func(interface{}) ([]byte, error)) error {
 	data, err := mf(s)
 	if err != nil {
 		return err
 	}
-	return sf.store.Set(sf.key, data)
+	return sf.Store.Set(sf.key, data)
 }
 
 // Set saves the current state on the key-value store.
 func (sf *StateFile) Set(s State) error {
-	return sf.set(s, json.Marshal)
+	return sf.SetMockable(s, json.Marshal)
 }
 
-func (sf *StateFile) get(
+// GetMockable is a mockable version of Get
+func (sf *StateFile) GetMockable(
 	sfget func(string) ([]byte, error),
 	unmarshal func([]byte, interface{}) error,
 ) (State, error) {
@@ -93,6 +93,6 @@ func (sf *StateFile) get(
 // Get returns the current state. In case of any error with the
 // underlying key-value store, we return an empty state.
 func (sf *StateFile) Get() (state State) {
-	state, _ = sf.get(sf.store.Get, json.Unmarshal)
+	state, _ = sf.GetMockable(sf.Store.Get, json.Unmarshal)
 	return
 }

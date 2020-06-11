@@ -1,4 +1,4 @@
-package urls
+package orchestra_test
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
-	config := Config{
+func TestURLsSuccess(t *testing.T) {
+	config := orchestra.URLsConfig{
 		BaseURL:           "https://ps.ooni.io",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
@@ -19,7 +20,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		UserAgent:         "ooniprobe-engine/v0.1.0-dev",
 	}
 	ctx := context.Background()
-	result, err := Query(ctx, config)
+	result, err := orchestra.URLsQuery(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,8 +29,8 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
-	config := Config{
+func TestURLsFailure(t *testing.T) {
+	config := orchestra.URLsConfig{
 		BaseURL:           "\t\t\t",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
@@ -39,7 +40,7 @@ func TestIntegrationFailure(t *testing.T) {
 		UserAgent:         "ooniprobe-engine/v0.1.0-dev",
 	}
 	ctx := context.Background()
-	result, err := Query(ctx, config)
+	result, err := orchestra.URLsQuery(ctx, config)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

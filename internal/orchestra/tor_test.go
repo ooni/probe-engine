@@ -1,4 +1,4 @@
-package tor
+package orchestra_test
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
+	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
-	clientID, err := testorchestra.Register()
+func TestTorSuccess(t *testing.T) {
+	clientID, err := Register()
 	if err != nil {
 		t.Fatal(err)
 	}
-	auth, err := testorchestra.Login(clientID)
+	auth, err := Login(clientID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	targets, err := Query(context.Background(), Config{
+	targets, err := orchestra.TorQuery(context.Background(), orchestra.TorConfig{
 		Auth:       auth,
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
@@ -33,8 +33,8 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitAuthNil(t *testing.T) {
-	targets, err := Query(context.Background(), Config{})
+func TestTorAuthNil(t *testing.T) {
+	targets, err := orchestra.TorQuery(context.Background(), orchestra.TorConfig{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

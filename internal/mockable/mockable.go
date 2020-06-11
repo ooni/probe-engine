@@ -10,10 +10,22 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 	"github.com/ooni/probe-engine/model"
 )
+
+// OrchestraMetadataFixture returns a valid metadata struct
+func OrchestraMetadataFixture() orchestra.Metadata {
+	return orchestra.Metadata{
+		Platform:        "linux",
+		ProbeASN:        "AS15169",
+		ProbeCC:         "US",
+		SoftwareName:    "miniooni",
+		SoftwareVersion: "0.1.0-dev",
+		SupportedTests: []string{
+			"web_connectivity",
+		},
+	}
+}
 
 // ExperimentSession is a mockable ExperimentSession.
 type ExperimentSession struct {
@@ -60,6 +72,11 @@ func (sess *ExperimentSession) DefaultHTTPClient() *http.Client {
 	return sess.MockableHTTPClient
 }
 
+// KeyValueStore returns the configured key-value store.
+func (sess *ExperimentSession) KeyValueStore() model.KeyValueStore {
+	return kvstore.NewMemoryKeyValueStore()
+}
+
 // Logger implements ExperimentSession.Logger
 func (sess *ExperimentSession) Logger() model.Logger {
 	return sess.MockableLogger
@@ -82,11 +99,11 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 		http.DefaultClient,
 		log.Log,
 		"miniooni/0.1.0-dev",
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
+		orchestra.NewStateFile(kvstore.NewMemoryKeyValueStore()),
 	)
 	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
 	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
-	meta := testorchestra.MetadataFixture()
+	meta := OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
 	}

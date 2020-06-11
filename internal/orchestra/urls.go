@@ -1,5 +1,4 @@
-// Package urls queries orchestra test-lists/urls API
-package urls
+package orchestra
 
 import (
 	"context"
@@ -12,8 +11,8 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for querying tests-lists/urls
-type Config struct {
+// URLsConfig contains configs for querying tests-lists/urls
+type URLsConfig struct {
 	BaseURL           string
 	CountryCode       string
 	EnabledCategories []string
@@ -23,13 +22,13 @@ type Config struct {
 	UserAgent         string
 }
 
-// Result contains the result returned by tests-lists/urls
-type Result struct {
+// URLsResult contains the result returned by tests-lists/urls
+type URLsResult struct {
 	Results []model.URLInfo `json:"results"`
 }
 
-// Query retrieves the test list for the specified country.
-func Query(ctx context.Context, config Config) (*Result, error) {
+// URLsQuery retrieves the test list for the specified country.
+func URLsQuery(ctx context.Context, config URLsConfig) (*URLsResult, error) {
 	query := url.Values{}
 	if config.CountryCode != "" {
 		query.Set("probe_cc", config.CountryCode)
@@ -40,7 +39,7 @@ func Query(ctx context.Context, config Config) (*Result, error) {
 	if len(config.EnabledCategories) > 0 {
 		query.Set("category_codes", strings.Join(config.EnabledCategories, ","))
 	}
-	var response Result
+	var response URLsResult
 	err := (&jsonapi.Client{
 		BaseURL:    config.BaseURL,
 		HTTPClient: config.HTTPClient,

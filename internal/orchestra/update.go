@@ -1,5 +1,4 @@
-// Package update contains code to update the probe state with orchestra
-package update
+package orchestra
 
 import (
 	"context"
@@ -8,33 +7,31 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains configs for calling the update API.
-type Config struct {
-	Auth       *login.Auth
+// UpdateConfig contains configs for calling the Update API.
+type UpdateConfig struct {
+	Auth       *LoginAuth
 	BaseURL    string
 	ClientID   string
 	HTTPClient *http.Client
 	Logger     model.Logger
-	Metadata   metadata.Metadata
+	Metadata   Metadata
 	UserAgent  string
 }
 
-type request struct {
-	metadata.Metadata
+type updateRequest struct {
+	Metadata
 }
 
-// Do registers this probe with OONI orchestra
-func Do(ctx context.Context, config Config) error {
+// Update updates OONI orchestra view of this probe
+func Update(ctx context.Context, config UpdateConfig) error {
 	if config.Auth == nil {
 		return errors.New("config.Auth is nil")
 	}
 	authorization := fmt.Sprintf("Bearer %s", config.Auth.Token)
-	req := &request{Metadata: config.Metadata}
+	req := &updateRequest{Metadata: config.Metadata}
 	var resp struct{}
 	urlpath := fmt.Sprintf("/api/v1/update/%s", config.ClientID)
 	return (&jsonapi.Client{

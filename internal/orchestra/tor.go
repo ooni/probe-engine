@@ -1,5 +1,4 @@
-// Package tor contains code to fetch targets for the tor experiment.
-package tor
+package orchestra
 
 import (
 	"context"
@@ -8,21 +7,20 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/jsonapi"
-	"github.com/ooni/probe-engine/internal/orchestra/login"
 	"github.com/ooni/probe-engine/model"
 )
 
-// Config contains settings.
-type Config struct {
-	Auth       *login.Auth
+// TorConfig contains settings.
+type TorConfig struct {
+	Auth       *LoginAuth
 	BaseURL    string
 	HTTPClient *http.Client
 	Logger     model.Logger
 	UserAgent  string
 }
 
-// Query retrieves the tor experiment targets.
-func Query(ctx context.Context, config Config) (result map[string]model.TorTarget, err error) {
+// TorQuery retrieves the tor experiment targets.
+func TorQuery(ctx context.Context, config TorConfig) (result map[string]model.TorTarget, err error) {
 	if config.Auth == nil {
 		return nil, errors.New("config.Auth is nil")
 	}

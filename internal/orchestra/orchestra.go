@@ -11,13 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/orchestra/login"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/register"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testlists/psiphon"
-	"github.com/ooni/probe-engine/internal/orchestra/testlists/tor"
-	"github.com/ooni/probe-engine/internal/orchestra/update"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -25,23 +19,25 @@ import (
 type Client struct {
 	HTTPClient         *http.Client
 	Logger             model.Logger
+	LoginCalls         *atomicx.Int64
 	OrchestrateBaseURL string
+	RegisterCalls      *atomicx.Int64
 	RegistryBaseURL    string
-	StateFile          *statefile.StateFile
+	StateFile          *StateFile
 	UserAgent          string
-	registerCalls      int
-	loginCalls         int
 }
 
 // NewClient creates a new client.
 func NewClient(
 	httpClient *http.Client, logger model.Logger,
-	userAgent string, stateFile *statefile.StateFile,
+	userAgent string, stateFile *StateFile,
 ) *Client {
 	return &Client{
 		HTTPClient:         httpClient,
 		Logger:             logger,
+		LoginCalls:         atomicx.NewInt64(),
 		OrchestrateBaseURL: "https://ps.ooni.io",
+		RegisterCalls:      atomicx.NewInt64(),
 		RegistryBaseURL:    "https://ps.ooni.io",
 		StateFile:          stateFile,
 		UserAgent:          userAgent,
@@ -56,7 +52,7 @@ var (
 
 // MaybeRegister registers this client if not already registered
 func (c *Client) MaybeRegister(
-	ctx context.Context, metadata metadata.Metadata,
+	ctx context.Context, metadata Metadata,
 ) error {
 	if !metadata.Valid() {
 		return errInvalidMetadata
@@ -65,9 +61,9 @@ func (c *Client) MaybeRegister(
 	if state.Credentials() != nil {
 		return nil // we're already good
 	}
-	c.registerCalls++
+	c.RegisterCalls.Add(1)
 	pwd := randomPassword(64)
-	result, err := register.Do(ctx, register.Config{
+	result, err := Register(ctx, RegisterConfig{
 		BaseURL:    c.RegistryBaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
@@ -93,8 +89,8 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	if creds == nil {
 		return errNotRegistered
 	}
-	c.loginCalls++
-	auth, err := login.Do(ctx, login.Config{
+	c.LoginCalls.Add(1)
+	auth, err := Login(ctx, LoginConfig{
 		BaseURL:     c.RegistryBaseURL,
 		Credentials: *creds,
 		HTTPClient:  c.HTTPClient,
@@ -109,7 +105,7 @@ func (c *Client) MaybeLogin(ctx context.Context) error {
 	return c.StateFile.Set(state)
 }
 
-func (c *Client) getCredsAndAuth() (*login.Credentials, *login.Auth, error) {
+func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	state := c.StateFile.Get()
 	creds := state.Credentials()
 	if creds == nil {
@@ -124,7 +120,7 @@ func (c *Client) getCredsAndAuth() (*login.Credentials, *login.Auth, error) {
 
 // Update updates the state of a probe
 func (c *Client) Update(
-	ctx context.Context, metadata metadata.Metadata,
+	ctx context.Context, metadata Metadata,
 ) error {
 	if !metadata.Valid() {
 		return errInvalidMetadata
@@ -133,7 +129,7 @@ func (c *Client) Update(
 	if err != nil {
 		return err
 	}
-	return update.Do(context.Background(), update.Config{
+	return Update(context.Background(), UpdateConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		ClientID:   creds.ClientID,
@@ -150,7 +146,7 @@ func (c *Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return psiphon.Query(ctx, psiphon.Config{
+	return PsiphonQuery(ctx, PsiphonConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,
@@ -165,7 +161,7 @@ func (c *Client) FetchTorTargets(ctx context.Context) (map[string]model.TorTarge
 	if err != nil {
 		return nil, err
 	}
-	return tor.Query(ctx, tor.Config{
+	return TorQuery(ctx, TorConfig{
 		Auth:       auth,
 		BaseURL:    c.OrchestrateBaseURL,
 		HTTPClient: c.HTTPClient,
