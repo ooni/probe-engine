@@ -1,11 +1,11 @@
-// Package testorchestra contains code to simplify testing
-package testorchestra
+package orchestra_test
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
@@ -18,7 +18,7 @@ func Register() (string, error) {
 		BaseURL:    "https://ps-test.ooni.io",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		Metadata:   MetadataFixture(),
+		Metadata:   mockable.OrchestraMetadataFixture(),
 		Password:   password,
 		UserAgent:  "miniooni/0.1.0-dev",
 	})
@@ -51,21 +51,7 @@ func Update(auth *orchestra.LoginAuth, clientID string) error {
 		ClientID:   clientID,
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		Metadata:   MetadataFixture(),
+		Metadata:   mockable.OrchestraMetadataFixture(),
 		UserAgent:  "miniooni/0.1.0-dev",
 	})
-}
-
-// MetadataFixture returns a valid metadata struct
-func MetadataFixture() orchestra.Metadata {
-	return orchestra.Metadata{
-		Platform:        "linux",
-		ProbeASN:        "AS15169",
-		ProbeCC:         "US",
-		SoftwareName:    "miniooni",
-		SoftwareVersion: "0.1.0-dev",
-		SupportedTests: []string{
-			"web_connectivity",
-		},
-	}
 }

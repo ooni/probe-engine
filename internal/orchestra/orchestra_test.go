@@ -9,15 +9,15 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
 func TestIntegrationUpdate(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(
 		context.Background(),
-		testorchestra.MetadataFixture(),
+		mockable.OrchestraMetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestIntegrationUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := clnt.Update(
-		context.Background(), testorchestra.MetadataFixture(),
+		context.Background(), mockable.OrchestraMetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
+		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +59,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 		clnt := newclient()
 		clnt.RegistryBaseURL = "\t\t\t"
 		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
+		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -69,7 +69,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := testorchestra.MetadataFixture()
+	metadata := mockable.OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := testorchestra.MetadataFixture()
+	metadata := mockable.OrchestraMetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +162,7 @@ func TestUnitUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
+		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.Update(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -177,7 +177,7 @@ func TestUnitUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
+		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.Update(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -195,7 +195,7 @@ func TestUnitUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := testorchestra.MetadataFixture()
+		metadata := mockable.OrchestraMetadataFixture()
 		if err := clnt.Update(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -206,7 +206,7 @@ func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(
 		context.Background(),
-		testorchestra.MetadataFixture(),
+		mockable.OrchestraMetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +244,7 @@ func TestIntegrationFetchTorTargets(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(
 		context.Background(),
-		testorchestra.MetadataFixture(),
+		mockable.OrchestraMetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}

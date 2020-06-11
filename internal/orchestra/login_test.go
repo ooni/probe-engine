@@ -7,15 +7,14 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
 func TestLoginSuccess(t *testing.T) {
-	clientID, err := testorchestra.Register()
+	clientID, err := Register()
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := testorchestra.Login(clientID)
+	result, err := Login(clientID)
 	if err != nil {
 		t.Fatal(err)
 	}

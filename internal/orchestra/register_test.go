@@ -7,11 +7,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
 )
 
 func TestRegisterSuccess(t *testing.T) {
-	clientID, err := testorchestra.Register()
+	clientID, err := Register()
 	if err != nil {
 		t.Fatal(err)
 	}
