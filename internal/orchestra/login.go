@@ -2,21 +2,10 @@ package orchestra
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
-
-// LoginConfig contains configs for logging in with the OONI orchestra.
-type LoginConfig struct {
-	BaseURL     string
-	Credentials LoginCredentials
-	HTTPClient  *http.Client
-	Logger      model.Logger
-	UserAgent   string
-}
 
 // LoginCredentials contains the login credentials
 type LoginCredentials struct {
@@ -30,19 +19,28 @@ type LoginAuth struct {
 	Token  string    `json:"token"`
 }
 
-// Login logs this probe in with OONI orchestra
-func Login(ctx context.Context, config LoginConfig) (*LoginAuth, error) {
-	var resp LoginAuth
-	err := (httpx.Client{
-		BaseURL:    config.BaseURL,
-		HTTPClient: config.HTTPClient,
-		Logger:     config.Logger,
-		UserAgent:  config.UserAgent,
-	}).CreateJSON(ctx, "/api/v1/login", config.Credentials, &resp)
-	if err != nil {
-		return nil, err
+// MaybeLogin performs login if necessary
+func (c Client) MaybeLogin(ctx context.Context) error {
+	state := c.StateFile.Get()
+	if state.Auth() != nil {
+		return nil // we're already good
 	}
-	// Implementation note: the API does not return 200 unless there
-	// is success, so we don't bother with reading the error field
-	return &resp, nil
+	creds := state.Credentials()
+	if creds == nil {
+		return errNotRegistered
+	}
+	c.LoginCalls.Add(1)
+	var auth LoginAuth
+	err := (httpx.Client{
+		BaseURL:    c.BaseURL,
+		HTTPClient: c.HTTPClient,
+		Logger:     c.Logger,
+		UserAgent:  c.UserAgent,
+	}).CreateJSON(ctx, "/api/v1/login", *creds, &auth)
+	if err != nil {
+		return err
+	}
+	state.Expire = auth.Expire
+	state.Token = auth.Token
+	return c.StateFile.Set(state)
 }

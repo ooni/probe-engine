@@ -23,7 +23,7 @@ type Metadata struct {
 // for sure mandatory. The "device_token" field is mandatory only if the
 // platform is "ios" or "android", because there's currently no device
 // token that we know of for desktop devices.
-func (m *Metadata) Valid() bool {
+func (m Metadata) Valid() bool {
 	if m.ProbeCC == "" {
 		return false
 	}

@@ -2,43 +2,45 @@ package orchestra_test
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
-	"github.com/apex/log"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/internal/orchestra"
 )
 
-func TestTorSuccess(t *testing.T) {
-	clientID, err := Register()
+func TestIntegrationFetchTorTargets(t *testing.T) {
+	clnt := newclient()
+	if err := clnt.MaybeRegister(
+		context.Background(),
+		mockable.OrchestraMetadataFixture(),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := clnt.MaybeLogin(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	data, err := clnt.FetchTorTargets(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	auth, err := Login(clientID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	targets, err := orchestra.TorQuery(context.Background(), orchestra.TorConfig{
-		Auth:       auth,
-		BaseURL:    "https://ps-test.ooni.io",
-		HTTPClient: http.DefaultClient,
-		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if targets == nil {
-		t.Fatal("expected non-nil targets here")
+	if data == nil || len(data) <= 0 {
+		t.Fatal("invalid data")
 	}
 }
 
-func TestTorAuthNil(t *testing.T) {
-	targets, err := orchestra.TorQuery(context.Background(), orchestra.TorConfig{})
+func TestUnitFetchTorTargetsNotRegistered(t *testing.T) {
+	clnt := newclient()
+	state := orchestra.State{
+		// Explicitly empty so the test is more clear
+	}
+	if err := clnt.StateFile.Set(state); err != nil {
+		t.Fatal(err)
+	}
+	data, err := clnt.FetchTorTargets(context.Background())
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if targets != nil {
-		t.Fatal("expected no targets here")
+	if data != nil {
+		t.Fatal("expected nil data here")
 	}
 }
