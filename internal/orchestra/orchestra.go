@@ -11,18 +11,16 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for OONI orchestra
 type Client struct {
-	BaseURL       string
-	HTTPClient    *http.Client
-	Logger        model.Logger
+	httpx.Client
 	LoginCalls    *atomicx.Int64
 	RegisterCalls *atomicx.Int64
 	StateFile     *StateFile
-	UserAgent     string
 }
 
 // NewClient creates a new client.
@@ -31,13 +29,15 @@ func NewClient(
 	userAgent string, stateFile *StateFile,
 ) *Client {
 	return &Client{
-		BaseURL:       "https://ps.ooni.io",
-		HTTPClient:    httpClient,
-		Logger:        logger,
+		Client: httpx.Client{
+			BaseURL:    "https://ps.ooni.io",
+			HTTPClient: httpClient,
+			Logger:     logger,
+			UserAgent:  userAgent,
+		},
 		LoginCalls:    atomicx.NewInt64(),
 		RegisterCalls: atomicx.NewInt64(),
 		StateFile:     stateFile,
-		UserAgent:     userAgent,
 	}
 }
 
@@ -47,7 +47,7 @@ var (
 	errNotRegistered   = errors.New("not registered")
 )
 
-func (c *Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
+func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	state := c.StateFile.Get()
 	creds := state.Credentials()
 	if creds == nil {

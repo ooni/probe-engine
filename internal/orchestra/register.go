@@ -2,8 +2,6 @@ package orchestra
 
 import (
 	"context"
-
-	"github.com/ooni/probe-engine/internal/httpx"
 )
 
 type registerRequest struct {
@@ -31,12 +29,7 @@ func (c Client) MaybeRegister(ctx context.Context, metadata Metadata) error {
 		Password: pwd,
 	}
 	var resp registerResult
-	err := (httpx.Client{
-		BaseURL:    c.BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		UserAgent:  c.UserAgent,
-	}).CreateJSON(ctx, "/api/v1/register", req, &resp)
+	err := c.Client.CreateJSON(ctx, "/api/v1/register", req, &resp)
 	if err != nil {
 		return err
 	}
