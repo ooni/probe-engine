@@ -29,7 +29,7 @@ func (c Client) MaybeLogin(ctx context.Context) error {
 	}
 	c.LoginCalls.Add(1)
 	var auth LoginAuth
-	err := c.Client.CreateJSON(ctx, "/api/v1/login", *creds, &auth)
+	err := c.Client.PostJSON(ctx, "/api/v1/login", *creds, &auth)
 	if err != nil {
 		return err
 	}

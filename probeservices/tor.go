@@ -16,6 +16,6 @@ func (c Client) FetchTorTargets(ctx context.Context) (result map[string]model.To
 	authorization := fmt.Sprintf("Bearer %s", auth.Token)
 	client := c.Client
 	client.Authorization = authorization
-	err = client.ReadJSON(ctx, "/api/v1/test-list/tor-targets", &result)
+	err = client.GetJSON(ctx, "/api/v1/test-list/tor-targets", &result)
 	return
 }

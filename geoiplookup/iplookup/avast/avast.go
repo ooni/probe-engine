@@ -26,7 +26,7 @@ func Do(
 		HTTPClient: httpClient,
 		Logger:     logger,
 		UserAgent:  userAgent,
-	}).ReadJSON(ctx, "/v1/info", &v)
+	}).GetJSON(ctx, "/v1/info", &v)
 	if err != nil {
 		return model.DefaultProbeIP, err
 	}
