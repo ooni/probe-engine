@@ -115,15 +115,15 @@ func (c Client) DoJSON(request *http.Request, output interface{}) error {
 	return json.Unmarshal(data, output)
 }
 
-// ReadJSON reads the JSON resource at resourcePath and unmarshals the
+// GetJSON reads the JSON resource at resourcePath and unmarshals the
 // results into output. The request is bounded by the lifetime of the
 // context passed as argument. Returns the error that occurred.
-func (c Client) ReadJSON(ctx context.Context, resourcePath string, output interface{}) error {
-	return c.ReadJSONWithQuery(ctx, resourcePath, nil, output)
+func (c Client) GetJSON(ctx context.Context, resourcePath string, output interface{}) error {
+	return c.GetJSONWithQuery(ctx, resourcePath, nil, output)
 }
 
-// ReadJSONWithQuery is like Read but also has a query.
-func (c Client) ReadJSONWithQuery(
+// GetJSONWithQuery is like GetJSON but also has a query.
+func (c Client) GetJSONWithQuery(
 	ctx context.Context, resourcePath string,
 	query url.Values, output interface{}) error {
 	request, err := c.NewRequest(ctx, "GET", resourcePath, query, nil)
@@ -133,11 +133,11 @@ func (c Client) ReadJSONWithQuery(
 	return c.DoJSON(request, output)
 }
 
-// CreateJSON creates a JSON subresource of the resource at resourcePath
+// PostJSON creates a JSON subresource of the resource at resourcePath
 // using the JSON document at input and returning the result into the
 // JSON document at output. The request is bounded by the context's
 // lifetime. Returns the error that occurred.
-func (c Client) CreateJSON(
+func (c Client) PostJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.NewRequestWithJSONBody(ctx, "POST", resourcePath, nil, input)
 	if err != nil {
@@ -146,9 +146,9 @@ func (c Client) CreateJSON(
 	return c.DoJSON(request, output)
 }
 
-// UpdateJSON updates a JSON resource at a specific path and returns
+// PutJSON updates a JSON resource at a specific path and returns
 // the error that occurred and possibly an output document
-func (c Client) UpdateJSON(
+func (c Client) PutJSON(
 	ctx context.Context, resourcePath string, input, output interface{}) error {
 	request, err := c.NewRequestWithJSONBody(ctx, "PUT", resourcePath, nil, input)
 	if err != nil {

@@ -29,7 +29,7 @@ func (c Client) MaybeRegister(ctx context.Context, metadata Metadata) error {
 		Password: pwd,
 	}
 	var resp registerResult
-	err := c.Client.CreateJSON(ctx, "/api/v1/register", req, &resp)
+	err := c.Client.PostJSON(ctx, "/api/v1/register", req, &resp)
 	if err != nil {
 		return err
 	}

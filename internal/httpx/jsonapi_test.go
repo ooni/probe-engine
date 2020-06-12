@@ -217,7 +217,7 @@ type httpbinheaders struct {
 
 func TestIntegrationReadJSONSuccess(t *testing.T) {
 	var headers httpbinheaders
-	err := newClient().ReadJSON(context.Background(), "/headers", &headers)
+	err := newClient().GetJSON(context.Background(), "/headers", &headers)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestIntegrationCreateJSONSuccess(t *testing.T) {
 		},
 	}
 	var response httpbinpost
-	err := newClient().CreateJSON(context.Background(), "/post", &headers, &response)
+	err := newClient().PostJSON(context.Background(), "/post", &headers, &response)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestIntegrationUpdateJSONSuccess(t *testing.T) {
 		},
 	}
 	var response httpbinpost
-	err := newClient().UpdateJSON(context.Background(), "/put", &headers, &response)
+	err := newClient().PutJSON(context.Background(), "/put", &headers, &response)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestUnitReadJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.ReadJSON(context.Background(), "/headers", &headers)
+	err := client.GetJSON(context.Background(), "/headers", &headers)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}
@@ -283,7 +283,7 @@ func TestUnitCreateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.CreateJSON(context.Background(), "/headers", &headers, &headers)
+	err := client.PostJSON(context.Background(), "/headers", &headers, &headers)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}
@@ -293,7 +293,7 @@ func TestUnitUpdateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
-	err := client.UpdateJSON(context.Background(), "/headers", &headers, &headers)
+	err := client.PutJSON(context.Background(), "/headers", &headers, &headers)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}

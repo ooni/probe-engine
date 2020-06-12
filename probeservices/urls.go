@@ -30,7 +30,7 @@ func (c Client) FetchURLList(ctx context.Context, config model.URLListConfig) ([
 		query.Set("category_codes", strings.Join(config.Categories, ","))
 	}
 	var response urlListResult
-	err := c.Client.ReadJSONWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
+	err := c.Client.GetJSONWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func URLsQuery(ctx context.Context, config URLsConfig) (*URLsResult, error) {
 		HTTPClient: config.HTTPClient,
 		Logger:     config.Logger,
 		UserAgent:  config.UserAgent,
-	}).ReadJSONWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
+	}).GetJSONWithQuery(ctx, "/api/v1/test-list/urls", query, &response)
 	if err != nil {
 		return nil, err
 	}
