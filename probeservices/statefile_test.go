@@ -65,9 +65,6 @@ func TestStateCredentials(t *testing.T) {
 
 func TestStateFileMemoryIntegration(t *testing.T) {
 	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
-	if sf == nil {
-		t.Fatal("expected non nil pointer here")
-	}
 	s := probeservices.State{
 		Expire:   time.Now(),
 		Password: "xy",
@@ -94,9 +91,6 @@ func TestStateFileMemoryIntegration(t *testing.T) {
 
 func TestStateFileSetMarshalError(t *testing.T) {
 	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
-	if sf == nil {
-		t.Fatal("expected non nil pointer here")
-	}
 	s := probeservices.State{
 		Expire:   time.Now(),
 		Password: "xy",
@@ -114,9 +108,6 @@ func TestStateFileSetMarshalError(t *testing.T) {
 
 func TestStateFileGetKVStoreGetError(t *testing.T) {
 	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
-	if sf == nil {
-		t.Fatal("expected non nil pointer here")
-	}
 	expected := errors.New("mocked error")
 	failingfunc := func(string) ([]byte, error) {
 		return nil, expected
@@ -141,9 +132,6 @@ func TestStateFileGetKVStoreGetError(t *testing.T) {
 
 func TestStateFileGetUnmarshalError(t *testing.T) {
 	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
-	if sf == nil {
-		t.Fatal("expected non nil pointer here")
-	}
 	if err := sf.Set(probeservices.State{}); err != nil {
 		t.Fatal(err)
 	}

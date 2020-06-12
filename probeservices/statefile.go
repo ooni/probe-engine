@@ -47,15 +47,15 @@ type StateFile struct {
 }
 
 // NewStateFile creates a new state file backed by a key-value store
-func NewStateFile(kvstore model.KeyValueStore) *StateFile {
-	return &StateFile{
+func NewStateFile(kvstore model.KeyValueStore) StateFile {
+	return StateFile{
 		key:   "orchestra.state",
 		Store: kvstore,
 	}
 }
 
 // SetMockable is a mockable version of Set
-func (sf *StateFile) SetMockable(s State, mf func(interface{}) ([]byte, error)) error {
+func (sf StateFile) SetMockable(s State, mf func(interface{}) ([]byte, error)) error {
 	data, err := mf(s)
 	if err != nil {
 		return err
@@ -64,12 +64,12 @@ func (sf *StateFile) SetMockable(s State, mf func(interface{}) ([]byte, error)) 
 }
 
 // Set saves the current state on the key-value store.
-func (sf *StateFile) Set(s State) error {
+func (sf StateFile) Set(s State) error {
 	return sf.SetMockable(s, json.Marshal)
 }
 
 // GetMockable is a mockable version of Get
-func (sf *StateFile) GetMockable(
+func (sf StateFile) GetMockable(
 	sfget func(string) ([]byte, error),
 	unmarshal func([]byte, interface{}) error,
 ) (State, error) {
@@ -86,7 +86,7 @@ func (sf *StateFile) GetMockable(
 
 // Get returns the current state. In case of any error with the
 // underlying key-value store, we return an empty state.
-func (sf *StateFile) Get() (state State) {
+func (sf StateFile) Get() (state State) {
 	state, _ = sf.GetMockable(sf.Store.Get, json.Unmarshal)
 	return
 }
