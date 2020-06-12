@@ -11,14 +11,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Client is a client for the OONI probe services API.
-type Client struct {
-	httpx.Client
-	LoginCalls    *atomicx.Int64
-	RegisterCalls *atomicx.Int64
-	StateFile     *StateFile
-}
-
 var (
 	// ErrUnsupportedEndpoint indicates that we don't support this endpoint type.
 	ErrUnsupportedEndpoint = errors.New("probe services: unsupported endpoint type")
@@ -28,7 +20,32 @@ var (
 	ErrUnsupportedCloudFrontAddress = errors.New(
 		"probe services: unsupported cloud front address",
 	)
+
+	errInvalidMetadata = errors.New("invalid metadata")
+	errNotLoggedIn     = errors.New("not logged in")
+	errNotRegistered   = errors.New("not registered")
 )
+
+// Client is a client for the OONI probe services API.
+type Client struct {
+	httpx.Client
+	LoginCalls    *atomicx.Int64
+	RegisterCalls *atomicx.Int64
+	StateFile     *StateFile
+}
+
+func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
+	state := c.StateFile.Get()
+	creds := state.Credentials()
+	if creds == nil {
+		return nil, nil, errNotRegistered
+	}
+	auth := state.Auth()
+	if auth == nil {
+		return nil, nil, errNotLoggedIn
+	}
+	return creds, auth, nil
+}
 
 // NewClient creates a new client for the specified probe services endpoint.
 func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, error) {
