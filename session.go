@@ -257,14 +257,17 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	clnt, err := probeservices.NewClient(s, model.Service{
-		Address: "https://ps.ooni.io/",
-		Type:    "https",
-	})
-	runtimex.PanicOnError(err, "probeservices.NewClient should not fail here")
-	return s.initOrchestraClient(
-		ctx, clnt, clnt.MaybeLogin,
-	)
+	// TODO(bassosimone): we should have APIs that mediate access to structures
+	// like the selected probe service, rather than having control APIs after which
+	// it is safe to access the relevant internal structure.
+	if err := s.maybeLookupBackends(ctx); err != nil {
+		return nil, err
+	}
+	clnt, err := probeservices.NewClient(s, *s.selectedProbeService)
+	if err != nil {
+		return nil, err
+	}
+	return s.initOrchestraClient(ctx, clnt, clnt.MaybeLogin)
 }
 
 // Platform returns the current platform. The platform is one of:
