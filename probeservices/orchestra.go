@@ -2,8 +2,6 @@ package probeservices
 
 import (
 	"errors"
-	"math/rand"
-	"time"
 )
 
 var (
@@ -23,15 +21,4 @@ func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 		return nil, nil, errNotLoggedIn
 	}
 	return creds, auth, nil
-}
-
-func randomPassword(n int) string {
-	// See https://stackoverflow.com/questions/22892120
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rnd.Intn(len(letterBytes))]
-	}
-	return string(b)
 }
