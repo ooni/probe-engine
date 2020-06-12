@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 func TestUnitMaybeLogin(t *testing.T) {
