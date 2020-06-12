@@ -9,7 +9,7 @@ import (
 	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
-func TestUnitMaybeLogin(t *testing.T) {
+func TestMaybeLogin(t *testing.T) {
 	t.Run("when we already have a token", func(t *testing.T) {
 		clnt := newclient()
 		state := probeservices.State{
@@ -39,7 +39,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 	})
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
-		clnt.BaseURL = "\t\t\t"
+		clnt.BaseURL = "\t\t\t" // causes the code to fail
 		state := probeservices.State{
 			ClientID: "xx-xxx-x-xxxx",
 			Password: "xx",

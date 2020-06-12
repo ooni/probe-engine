@@ -13,9 +13,8 @@ func (c Client) FetchTorTargets(ctx context.Context) (result map[string]model.To
 	if err != nil {
 		return nil, err
 	}
-	authorization := fmt.Sprintf("Bearer %s", auth.Token)
 	client := c.Client
-	client.Authorization = authorization
+	client.Authorization = fmt.Sprintf("Bearer %s", auth.Token)
 	err = client.GetJSON(ctx, "/api/v1/test-list/tor-targets", &result)
 	return
 }

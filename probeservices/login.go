@@ -25,12 +25,12 @@ func (c Client) MaybeLogin(ctx context.Context) error {
 	}
 	creds := state.Credentials()
 	if creds == nil {
+		// TODO(bassosimone): we should move this error in this file
 		return errNotRegistered
 	}
 	c.LoginCalls.Add(1)
 	var auth LoginAuth
-	err := c.Client.PostJSON(ctx, "/api/v1/login", *creds, &auth)
-	if err != nil {
+	if err := c.Client.PostJSON(ctx, "/api/v1/login", *creds, &auth); err != nil {
 		return err
 	}
 	state.Expire = auth.Expire

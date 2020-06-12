@@ -11,8 +11,7 @@ func (c Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	authorization := fmt.Sprintf("Bearer %s", auth.Token)
 	client := c.Client
-	client.Authorization = authorization
+	client.Authorization = fmt.Sprintf("Bearer %s", auth.Token)
 	return client.FetchResource(ctx, "/api/v1/test-list/psiphon-config")
 }

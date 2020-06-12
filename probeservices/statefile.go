@@ -48,10 +48,7 @@ type StateFile struct {
 
 // NewStateFile creates a new state file backed by a key-value store
 func NewStateFile(kvstore model.KeyValueStore) StateFile {
-	return StateFile{
-		key:   "orchestra.state",
-		Store: kvstore,
-	}
+	return StateFile{key: "orchestra.state", Store: kvstore}
 }
 
 // SetMockable is a mockable version of Set
@@ -69,10 +66,8 @@ func (sf StateFile) Set(s State) error {
 }
 
 // GetMockable is a mockable version of Get
-func (sf StateFile) GetMockable(
-	sfget func(string) ([]byte, error),
-	unmarshal func([]byte, interface{}) error,
-) (State, error) {
+func (sf StateFile) GetMockable(sfget func(string) ([]byte, error),
+	unmarshal func([]byte, interface{}) error) (State, error) {
 	value, err := sfget(sf.key)
 	if err != nil {
 		return State{}, err
