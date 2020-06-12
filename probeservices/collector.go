@@ -19,6 +19,12 @@ const (
 	DefaultFormat = "json"
 )
 
+var (
+	errUnsupportedDataFormatVersion = errors.New("Unsupported data format version")
+	errUnsupportedFormat            = errors.New("Unsupported format")
+	errJSONFormatNotSupported       = errors.New("JSON format not supported")
+)
+
 // ReportTemplate is the template for opening a report
 type ReportTemplate struct {
 	// DataFormatVersion is unconditionally set to DefaultDataFormatVersion
@@ -48,7 +54,7 @@ type ReportTemplate struct {
 	TestVersion string `json:"test_version"`
 }
 
-type openResponse struct {
+type collectorOpenResponse struct {
 	ID               string   `json:"report_id"`
 	SupportedFormats []string `json:"supported_formats"`
 }
@@ -65,12 +71,12 @@ type Report struct {
 // OpenReport opens a new report.
 func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
-		return nil, errors.New("Unsupported data format version")
+		return nil, errUnsupportedDataFormatVersion
 	}
 	if rt.Format != DefaultFormat {
-		return nil, errors.New("Unsupported format")
+		return nil, errUnsupportedFormat
 	}
-	var or openResponse
+	var or collectorOpenResponse
 	err := c.Client.PostJSON(ctx, "/report", rt, &or)
 	if err != nil {
 		return nil, err
@@ -80,10 +86,10 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 			return &Report{ID: or.ID, client: c}, nil
 		}
 	}
-	return nil, errors.New("JSON format not supported")
+	return nil, errJSONFormatNotSupported
 }
 
-type updateRequest struct {
+type collectorUpdateRequest struct {
 	// Format is the data format
 	Format string `json:"format"`
 
@@ -91,7 +97,7 @@ type updateRequest struct {
 	Content interface{} `json:"content"`
 }
 
-type updateResponse struct {
+type collectorUpdateResponse struct {
 	// ID is the measurement ID
 	ID string `json:"measurement_id"`
 }
@@ -101,10 +107,10 @@ type updateResponse struct {
 // with the ReportID it should contain. If the collector supports sending
 // back to us a measurement ID, we also update the m.OOID field with it.
 func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
-	var updateResponse updateResponse
+	var updateResponse collectorUpdateResponse
 	m.ReportID = r.ID
 	err := r.client.Client.PostJSON(
-		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
+		ctx, fmt.Sprintf("/report/%s", r.ID), collectorUpdateRequest{
 			Format:  "json",
 			Content: m,
 		}, &updateResponse,
