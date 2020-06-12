@@ -346,11 +346,19 @@ type Logger interface {
 	Warnf(format string, v ...interface{})
 }
 
+// URLListConfig contains configuration for fetching the URL list.
+type URLListConfig struct {
+	Categories  []string // Categories to query for (empty means all)
+	CountryCode string   // CountryCode is the optional country code
+	Limit       int64    // Max number of URLs (<= 0 means no limit)
+}
+
 // ExperimentOrchestraClient is the experiment's view of
-// a client for querying the OONI orchestra.
+// a client for querying the OONI orchestra API.
 type ExperimentOrchestraClient interface {
 	FetchPsiphonConfig(ctx context.Context) ([]byte, error)
 	FetchTorTargets(ctx context.Context) (map[string]TorTarget, error)
+	FetchURLList(ctx context.Context, config URLListConfig) ([]URLInfo, error)
 }
 
 // ExperimentSession is the experiment's view of a session.

@@ -165,6 +165,8 @@ type ExperimentOrchestraClient struct {
 	MockableFetchPsiphonConfigErr    error
 	MockableFetchTorTargetsResult    map[string]model.TorTarget
 	MockableFetchTorTargetsErr       error
+	MockableFetchURLListResult       []model.URLInfo
+	MockableFetchURLListErr          error
 }
 
 // FetchPsiphonConfig implements ExperimentOrchestraClient.FetchPsiphonConfig
@@ -177,6 +179,12 @@ func (c ExperimentOrchestraClient) FetchPsiphonConfig(
 func (c ExperimentOrchestraClient) FetchTorTargets(
 	ctx context.Context) (map[string]model.TorTarget, error) {
 	return c.MockableFetchTorTargetsResult, c.MockableFetchTorTargetsErr
+}
+
+// FetchURLList implements ExperimentOrchestraClient.FetchURLList.
+func (c ExperimentOrchestraClient) FetchURLList(
+	ctx context.Context, config model.URLListConfig) ([]model.URLInfo, error) {
+	return c.MockableFetchURLListResult, c.MockableFetchURLListErr
 }
 
 var _ model.ExperimentOrchestraClient = ExperimentOrchestraClient{}
