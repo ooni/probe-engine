@@ -31,7 +31,7 @@ type Client struct {
 	httpx.Client
 	LoginCalls    *atomicx.Int64
 	RegisterCalls *atomicx.Int64
-	StateFile     *StateFile
+	StateFile     StateFile
 }
 
 func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
