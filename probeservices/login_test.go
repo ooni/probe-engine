@@ -56,7 +56,7 @@ func TestUnitMaybeLogin(t *testing.T) {
 func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := probeservices.OrchestraMetadataFixture()
+	metadata := testorchestra.MetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}
