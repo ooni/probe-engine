@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -15,12 +14,8 @@ func (c Client) FetchTorTargets(ctx context.Context) (result map[string]model.To
 		return nil, err
 	}
 	authorization := fmt.Sprintf("Bearer %s", auth.Token)
-	err = (httpx.Client{
-		Authorization: authorization,
-		BaseURL:       c.BaseURL,
-		HTTPClient:    c.HTTPClient,
-		Logger:        c.Logger,
-		UserAgent:     c.UserAgent,
-	}).ReadJSON(ctx, "/api/v1/test-list/tor-targets", &result)
+	client := c.Client
+	client.Authorization = authorization
+	err = client.ReadJSON(ctx, "/api/v1/test-list/tor-targets", &result)
 	return
 }
