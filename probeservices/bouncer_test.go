@@ -3,13 +3,10 @@ package probeservices_test
 import (
 	"context"
 	"testing"
-
-	"github.com/apex/log"
 )
 
 func TestGetTestHelpers(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	testhelpers, err := makeClient().GetTestHelpers(context.Background())
+	testhelpers, err := newclient().GetTestHelpers(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

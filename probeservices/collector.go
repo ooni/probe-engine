@@ -76,14 +76,13 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 	if rt.Format != DefaultFormat {
 		return nil, errUnsupportedFormat
 	}
-	var or collectorOpenResponse
-	err := c.Client.PostJSON(ctx, "/report", rt, &or)
-	if err != nil {
+	var cor collectorOpenResponse
+	if err := c.Client.PostJSON(ctx, "/report", rt, &cor); err != nil {
 		return nil, err
 	}
-	for _, format := range or.SupportedFormats {
+	for _, format := range cor.SupportedFormats {
 		if format == "json" {
-			return &Report{ID: or.ID, client: c}, nil
+			return &Report{ID: cor.ID, client: c}, nil
 		}
 	}
 	return nil, errJSONFormatNotSupported
@@ -134,7 +133,7 @@ func (r Report) Close(ctx context.Context) error {
 	// this error, and we ought be flexible.
 	if _, ok := err.(*json.SyntaxError); ok && err.Error() == "unexpected end of JSON input" {
 		r.client.Logger.Debug(
-			"collector.go: working around collector returning empty string bug",
+			"collector.go: working around collector-returning-empty-string bug",
 		)
 		err = nil
 	}

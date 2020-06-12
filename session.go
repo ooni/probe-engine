@@ -432,7 +432,8 @@ func (s *Session) initOrchestraClient(
 	// the probe whereabouts. Yet here in probe-engine, the orchestra
 	// is currently only used to fetch inputs. For this purpose, we don't
 	// need to communicate any specific information. The code that will
-	// perform an update should be responsible of doing that.
+	// perform an update used to be responsible of doing that. Now, we
+	// are not using orchestra for this purpose anymore.
 	meta := probeservices.Metadata{
 		Platform:        "miniooni",
 		ProbeASN:        "AS0",

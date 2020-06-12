@@ -34,9 +34,10 @@ func TestUnitMaybeRegister(t *testing.T) {
 	})
 	t.Run("when the API call fails", func(t *testing.T) {
 		clnt := newclient()
-		clnt.BaseURL = "\t\t\t"
+		clnt.BaseURL = "\t\t\t" // makes it fail
 		ctx := context.Background()
 		metadata := testorchestra.MetadataFixture()
+		// TODO(bassosimone): make this error more specific
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}

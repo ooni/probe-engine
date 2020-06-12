@@ -11,10 +11,7 @@ import (
 
 func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 	clnt := newclient()
-	if err := clnt.MaybeRegister(
-		context.Background(),
-		testorchestra.MetadataFixture(),
-	); err != nil {
+	if err := clnt.MaybeRegister(context.Background(), testorchestra.MetadataFixture()); err != nil {
 		t.Fatal(err)
 	}
 	if err := clnt.MaybeLogin(context.Background()); err != nil {
@@ -30,7 +27,7 @@ func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 	}
 }
 
-func TestUnitFetchPsiphonConfigNotRegistered(t *testing.T) {
+func TestFetchPsiphonConfigNotRegistered(t *testing.T) {
 	clnt := newclient()
 	state := probeservices.State{
 		// Explicitly empty so the test is more clear
@@ -39,6 +36,7 @@ func TestUnitFetchPsiphonConfigNotRegistered(t *testing.T) {
 		t.Fatal(err)
 	}
 	data, err := clnt.FetchPsiphonConfig(context.Background())
+	// TODO(basssosimone): we should make this check more specific
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

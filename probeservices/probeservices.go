@@ -42,12 +42,14 @@ func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	}
 	auth := state.Auth()
 	if auth == nil {
+		// TODO(bassosimone): this error condition is not tested
 		return nil, nil, errNotLoggedIn
 	}
 	return creds, auth, nil
 }
 
-// NewClient creates a new client for the specified probe services endpoint.
+// NewClient creates a new client for the specified probe services endpoint. This
+// function fails, e.g., we don't support the specified endpoint.
 func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, error) {
 	client := &Client{
 		Client: httpx.Client{

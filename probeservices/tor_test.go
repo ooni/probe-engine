@@ -10,10 +10,7 @@ import (
 
 func TestIntegrationFetchTorTargets(t *testing.T) {
 	clnt := newclient()
-	if err := clnt.MaybeRegister(
-		context.Background(),
-		testorchestra.MetadataFixture(),
-	); err != nil {
+	if err := clnt.MaybeRegister(context.Background(), testorchestra.MetadataFixture()); err != nil {
 		t.Fatal(err)
 	}
 	if err := clnt.MaybeLogin(context.Background()); err != nil {
@@ -28,7 +25,7 @@ func TestIntegrationFetchTorTargets(t *testing.T) {
 	}
 }
 
-func TestUnitFetchTorTargetsNotRegistered(t *testing.T) {
+func TestFetchTorTargetsNotRegistered(t *testing.T) {
 	clnt := newclient()
 	state := probeservices.State{
 		// Explicitly empty so the test is more clear
