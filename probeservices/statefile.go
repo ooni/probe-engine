@@ -24,10 +24,7 @@ func (s State) Auth() *LoginAuth {
 	if time.Now().Add(30 * time.Second).After(s.Expire) {
 		return nil
 	}
-	return &LoginAuth{
-		Expire: s.Expire,
-		Token:  s.Token,
-	}
+	return &LoginAuth{Expire: s.Expire, Token: s.Token}
 }
 
 // Credentials returns login credentials, if possible, otherwise it
@@ -39,10 +36,7 @@ func (s State) Credentials() *LoginCredentials {
 	if s.Password == "" {
 		return nil
 	}
-	return &LoginCredentials{
-		ClientID: s.ClientID,
-		Password: s.Password,
-	}
+	return &LoginCredentials{ClientID: s.ClientID, Password: s.Password}
 }
 
 // StateFile is the orchestra state file. It is backed by
