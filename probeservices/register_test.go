@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 func TestUnitMaybeRegister(t *testing.T) {
@@ -26,7 +27,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx := context.Background()
-		metadata := probeservices.OrchestraMetadataFixture()
+		metadata := testorchestra.MetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +36,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 		clnt := newclient()
 		clnt.BaseURL = "\t\t\t"
 		ctx := context.Background()
-		metadata := probeservices.OrchestraMetadataFixture()
+		metadata := testorchestra.MetadataFixture()
 		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
 			t.Fatal("expected an error here")
 		}
@@ -45,7 +46,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
-	metadata := probeservices.OrchestraMetadataFixture()
+	metadata := testorchestra.MetadataFixture()
 	if err := clnt.MaybeRegister(ctx, metadata); err != nil {
 		t.Fatal(err)
 	}

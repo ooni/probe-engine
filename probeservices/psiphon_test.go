@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 func TestIntegrationFetchPsiphonConfig(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(
 		context.Background(),
-		probeservices.OrchestraMetadataFixture(),
+		testorchestra.MetadataFixture(),
 	); err != nil {
 		t.Fatal(err)
 	}

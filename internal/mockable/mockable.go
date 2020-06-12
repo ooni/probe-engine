@@ -11,6 +11,7 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 // ExperimentSession is a mockable ExperimentSession.
@@ -86,7 +87,7 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 		Type:    "https",
 	})
 	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
-	meta := probeservices.OrchestraMetadataFixture()
+	meta := testorchestra.MetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
 	}
