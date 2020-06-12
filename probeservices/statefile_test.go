@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -64,6 +65,8 @@ func TestStateCredentials(t *testing.T) {
 }
 
 func TestStateFileMemoryIntegration(t *testing.T) {
+	// Does the StateFile have the property that we can write
+	// values into it and then read again the same files?
 	sf := probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore())
 	s := probeservices.State{
 		Expire:   time.Now(),
@@ -75,17 +78,9 @@ func TestStateFileMemoryIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	os := sf.Get()
-	if s.ClientID != os.ClientID {
-		t.Fatal("the ClientID field has changed")
-	}
-	if !s.Expire.Equal(os.Expire) {
-		t.Fatal("the Expire field has changed")
-	}
-	if s.Password != os.Password {
-		t.Fatal("the Password field has changed")
-	}
-	if s.Token != os.Token {
-		t.Fatal("the Token field has changed")
+	diff := cmp.Diff(s, os)
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
 
