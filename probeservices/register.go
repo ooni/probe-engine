@@ -18,7 +18,7 @@ type registerResult struct {
 // MaybeRegister registers this client if not already registered
 func (c Client) MaybeRegister(ctx context.Context, metadata Metadata) error {
 	if !metadata.Valid() {
-		return errInvalidMetadata
+		return ErrInvalidMetadata
 	}
 	state := c.StateFile.Get()
 	if state.Credentials() != nil {

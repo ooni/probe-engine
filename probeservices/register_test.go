@@ -2,6 +2,8 @@ package probeservices_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ooni/probe-engine/probeservices"
@@ -13,7 +15,8 @@ func TestUnitMaybeRegister(t *testing.T) {
 		clnt := newclient()
 		ctx := context.Background()
 		var metadata probeservices.Metadata
-		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
+		err := clnt.MaybeRegister(ctx, metadata)
+		if !errors.Is(err, probeservices.ErrInvalidMetadata) {
 			t.Fatal("expected an error here")
 		}
 	})
@@ -37,8 +40,8 @@ func TestUnitMaybeRegister(t *testing.T) {
 		clnt.BaseURL = "\t\t\t" // makes it fail
 		ctx := context.Background()
 		metadata := testorchestra.MetadataFixture()
-		// TODO(bassosimone): make this error more specific
-		if err := clnt.MaybeRegister(ctx, metadata); err == nil {
+		err := clnt.MaybeRegister(ctx, metadata)
+		if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 			t.Fatal("expected an error here")
 		}
 	})

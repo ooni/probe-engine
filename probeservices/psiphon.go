@@ -7,7 +7,7 @@ import (
 
 // FetchPsiphonConfig fetches psiphon config from authenticated OONI orchestra.
 func (c Client) FetchPsiphonConfig(ctx context.Context) ([]byte, error) {
-	_, auth, err := c.getCredsAndAuth()
+	_, auth, err := c.GetCredsAndAuth()
 	if err != nil {
 		return nil, err
 	}

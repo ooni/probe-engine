@@ -20,9 +20,16 @@ const (
 )
 
 var (
-	errUnsupportedDataFormatVersion = errors.New("Unsupported data format version")
-	errUnsupportedFormat            = errors.New("Unsupported format")
-	errJSONFormatNotSupported       = errors.New("JSON format not supported")
+	// ErrUnsupportedDataFormatVersion indicates that the user provided
+	// in input a data format version that we do not support.
+	ErrUnsupportedDataFormatVersion = errors.New("Unsupported data format version")
+
+	// ErrUnsupportedFormat indicates that the format is not supported.
+	ErrUnsupportedFormat = errors.New("Unsupported format")
+
+	// ErrJSONFormatNotSupported indicates that the collector we're using
+	// does not support the JSON report format.
+	ErrJSONFormatNotSupported = errors.New("JSON format not supported")
 )
 
 // ReportTemplate is the template for opening a report
@@ -71,10 +78,10 @@ type Report struct {
 // OpenReport opens a new report.
 func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
-		return nil, errUnsupportedDataFormatVersion
+		return nil, ErrUnsupportedDataFormatVersion
 	}
 	if rt.Format != DefaultFormat {
-		return nil, errUnsupportedFormat
+		return nil, ErrUnsupportedFormat
 	}
 	var cor collectorOpenResponse
 	if err := c.Client.PostJSON(ctx, "/report", rt, &cor); err != nil {
@@ -85,7 +92,7 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 			return &Report{ID: cor.ID, client: c}, nil
 		}
 	}
-	return nil, errJSONFormatNotSupported
+	return nil, ErrJSONFormatNotSupported
 }
 
 type collectorUpdateRequest struct {

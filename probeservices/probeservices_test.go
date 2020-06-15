@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 func newclient() *probeservices.Client {
@@ -603,5 +604,22 @@ func TestSelectBestSelectsTheFastest(t *testing.T) {
 	out := probeservices.SelectBest(in)
 	if diff := cmp.Diff(out, expected); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestGetCredsAndAuthNotLoggedIn(t *testing.T) {
+	clnt := newclient()
+	if err := clnt.MaybeRegister(context.Background(), testorchestra.MetadataFixture()); err != nil {
+		t.Fatal(err)
+	}
+	creds, auth, err := clnt.GetCredsAndAuth()
+	if !errors.Is(err, probeservices.ErrNotLoggedIn) {
+		t.Fatal("not the error we expected")
+	}
+	if creds != nil {
+		t.Fatal("expected nil creds here")
+	}
+	if auth != nil {
+		t.Fatal("expected nil auth here")
 	}
 }

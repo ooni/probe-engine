@@ -9,7 +9,7 @@ import (
 
 // FetchTorTargets returns the targets for the tor experiment.
 func (c Client) FetchTorTargets(ctx context.Context) (result map[string]model.TorTarget, err error) {
-	_, auth, err := c.getCredsAndAuth()
+	_, auth, err := c.GetCredsAndAuth()
 	if err != nil {
 		return nil, err
 	}
