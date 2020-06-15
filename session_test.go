@@ -530,3 +530,30 @@ func TestUserAgentNoProxy(t *testing.T) {
 		t.Fatal(diff)
 	}
 }
+
+func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // fail immediately
+	client, err := sess.NewOrchestraClient(ctx)
+	if err == nil || err.Error() != "all available probe services failed" {
+		t.Fatal("not the error we expected")
+	}
+	if client != nil {
+		t.Fatal("expected nil client here")
+	}
+}
+
+func TestNewOrchestraClientProbeServicesNewClientFailure(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	sess.selectedProbeServiceHook = func(svc *model.Service) {
+		svc.Type = "antani" // should really not be supported for a long time
+	}
+	client, err := sess.NewOrchestraClient(context.Background())
+	if !errors.Is(err, probeservices.ErrUnsupportedEndpoint) {
+		t.Fatal("not the error we expected")
+	}
+	if client != nil {
+		t.Fatal("expected nil client here")
+	}
+}
