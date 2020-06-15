@@ -47,27 +47,28 @@ type SessionConfig struct {
 
 // Session is a measurement session
 type Session struct {
-	assetsDir               string
-	availableProbeServices  []model.Service
-	availableTestHelpers    map[string][]model.Service
-	byteCounter             *bytecounter.Counter
-	httpDefaultTransport    httptransport.RoundTripper
-	kvStore                 model.KeyValueStore
-	privacySettings         model.PrivacySettings
-	location                *model.LocationInfo
-	logger                  model.Logger
-	proxyURL                *url.URL
-	queryProbeServicesCount *atomicx.Int64
-	resolver                *sessionresolver.Resolver
-	selectedProbeService    *model.Service
-	softwareName            string
-	softwareVersion         string
-	tempDir                 string
-	torArgs                 []string
-	torBinary               string
-	tunnelMu                sync.Mutex
-	tunnelName              string
-	tunnel                  sessiontunnel.Tunnel
+	assetsDir                string
+	availableProbeServices   []model.Service
+	availableTestHelpers     map[string][]model.Service
+	byteCounter              *bytecounter.Counter
+	httpDefaultTransport     httptransport.RoundTripper
+	kvStore                  model.KeyValueStore
+	privacySettings          model.PrivacySettings
+	location                 *model.LocationInfo
+	logger                   model.Logger
+	proxyURL                 *url.URL
+	queryProbeServicesCount  *atomicx.Int64
+	resolver                 *sessionresolver.Resolver
+	selectedProbeServiceHook func(*model.Service)
+	selectedProbeService     *model.Service
+	softwareName             string
+	softwareVersion          string
+	tempDir                  string
+	torArgs                  []string
+	torBinary                string
+	tunnelMu                 sync.Mutex
+	tunnelName               string
+	tunnel                   sessiontunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -262,6 +263,9 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrche
 	// it is safe to access the relevant internal structure.
 	if err := s.maybeLookupBackends(ctx); err != nil {
 		return nil, err
+	}
+	if s.selectedProbeServiceHook != nil {
+		s.selectedProbeServiceHook(s.selectedProbeService)
 	}
 	clnt, err := probeservices.NewClient(s, *s.selectedProbeService)
 	if err != nil {
