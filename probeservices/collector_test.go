@@ -3,9 +3,11 @@ package probeservices_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/ooni/probe-engine/model"
@@ -78,10 +80,8 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 	}
 	client := newclient()
 	report, err := client.OpenReport(ctx, template)
-	// TODO(bassosimone): here we should make sure the error is indeed
-	// the error we expected and not some other error
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, probeservices.ErrUnsupportedDataFormatVersion) {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -102,10 +102,8 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 	}
 	client := newclient()
 	report, err := client.OpenReport(ctx, template)
-	// TODO(bassosimone): here we should make sure the error is indeed
-	// the error we expected and not some other error
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, probeservices.ErrUnsupportedFormat) {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -127,10 +125,8 @@ func TestJSONAPIClientCreateFailure(t *testing.T) {
 	client := newclient()
 	client.BaseURL = "\t" // breaks the URL parser
 	report, err := client.OpenReport(ctx, template)
-	// TODO(bassosimone): here we should make sure the error is indeed
-	// the error we expected and not some other error
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -158,9 +154,7 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 	client := newclient()
 	client.BaseURL = server.URL
 	report, err := client.OpenReport(ctx, template)
-	// TODO(bassosimone): here we should make sure the error is indeed
-	// the error we expected and not some other error
-	if err == nil {
+	if !errors.Is(err, probeservices.ErrJSONFormatNotSupported) {
 		t.Fatal("expected an error here")
 	}
 	if report != nil {

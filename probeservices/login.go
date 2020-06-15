@@ -25,8 +25,7 @@ func (c Client) MaybeLogin(ctx context.Context) error {
 	}
 	creds := state.Credentials()
 	if creds == nil {
-		// TODO(bassosimone): we should move this error in this file
-		return errNotRegistered
+		return ErrNotRegistered
 	}
 	c.LoginCalls.Add(1)
 	var auth LoginAuth

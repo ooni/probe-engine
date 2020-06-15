@@ -3,6 +3,7 @@ package probeservices_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/ooni/probe-engine/probeservices"
@@ -36,8 +37,7 @@ func TestFetchPsiphonConfigNotRegistered(t *testing.T) {
 		t.Fatal(err)
 	}
 	data, err := clnt.FetchPsiphonConfig(context.Background())
-	// TODO(basssosimone): we should make this check more specific
-	if err == nil {
+	if !errors.Is(err, probeservices.ErrNotRegistered) {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {

@@ -21,9 +21,15 @@ var (
 		"probe services: unsupported cloud front address",
 	)
 
-	errInvalidMetadata = errors.New("invalid metadata")
-	errNotLoggedIn     = errors.New("not logged in")
-	errNotRegistered   = errors.New("not registered")
+	// ErrNotRegistered indicates that the probe is not registered
+	// with the OONI orchestra backend.
+	ErrNotRegistered = errors.New("not registered")
+
+	// ErrNotLoggedIn indicates that we are not logged in
+	ErrNotLoggedIn = errors.New("not logged in")
+
+	// ErrInvalidMetadata indicates that the metadata is not valid
+	ErrInvalidMetadata = errors.New("invalid metadata")
 )
 
 // Client is a client for the OONI probe services API.
@@ -34,16 +40,18 @@ type Client struct {
 	StateFile     StateFile
 }
 
-func (c Client) getCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
+// GetCredsAndAuth is an utility function that returns the credentials with
+// which we are registered and the token with which we're logged in. If we're
+// not registered or not logged in, an error is returned instead.
+func (c Client) GetCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 	state := c.StateFile.Get()
 	creds := state.Credentials()
 	if creds == nil {
-		return nil, nil, errNotRegistered
+		return nil, nil, ErrNotRegistered
 	}
 	auth := state.Auth()
 	if auth == nil {
-		// TODO(bassosimone): this error condition is not tested
-		return nil, nil, errNotLoggedIn
+		return nil, nil, ErrNotLoggedIn
 	}
 	return creds, auth, nil
 }
