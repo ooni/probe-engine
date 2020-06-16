@@ -319,7 +319,7 @@ func (rc *resultsCollector) measureSingleTarget(
 	))
 }
 
-// scrubbingLogger is a logger that scrubs endpoint from its output. We are using
+// scrubbingLogger is a logger that scrubs endpoints from its output. We are using
 // it only here, currently, since we pay some performance penalty in that we evaluate
 // the string to be logged regardless of the logging level.
 //
