@@ -5,6 +5,7 @@ package tor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"sync"
@@ -15,7 +16,9 @@ import (
 	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/internal/oonidatamodel"
 	"github.com/ooni/probe-engine/internal/oonitemplates"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -27,7 +30,7 @@ const (
 	testName = "tor"
 
 	// testVersion is th version of this experiment
-	testVersion = "0.1.0"
+	testVersion = "0.2.0"
 )
 
 // Config contains the experiment config.
@@ -193,14 +196,20 @@ type keytarget struct {
 	target model.TorTarget
 }
 
+// private returns whether a target is private. We consider private
+// every target coming from a non-empty data source.
 func (kt keytarget) private() bool {
-	// TODO(bassosimone): make this dependent on target's value
-	return false
+	return kt.target.Source != ""
 }
 
-func (kt keytarget) maybeTargetAddress() string {
-	// TODO(bassosimone): make this dependent on target's value
-	return kt.target.Address
+// maybeTargetAddress returns the target address if the target is
+// not private, otherwise it returns `"[scrubbed]""`.
+func (kt keytarget) maybeTargetAddress() (address string) {
+	address = "[scrubbed]"
+	if !kt.private() {
+		address = kt.target.Address
+	}
+	return
 }
 
 func (m *measurer) measureTargets(
@@ -260,9 +269,19 @@ func newResultsCollector(
 	return rc
 }
 
-func maybeSanitize(tr TargetResults, scrub bool) TargetResults {
-	// TODO(bassosimone): make this dependent on scrub param
-	return tr
+func maybeSanitize(input TargetResults, kt keytarget) TargetResults {
+	if !kt.private() {
+		return input
+	}
+	data, err := json.Marshal(input)
+	runtimex.PanicOnError(err, "json.Marshal should not fail here")
+	// Implementation note: here we are using a strict scrubbing policy where
+	// we remove all IP addresses, for additional safety.
+	data = []byte(errorx.Scrub(string(data)))
+	var out TargetResults
+	err = json.Unmarshal(data, &out)
+	runtimex.PanicOnError(err, "json.Unmarshal should not fail here")
+	return out
 }
 
 func (rc *resultsCollector) measureSingleTarget(
@@ -279,7 +298,7 @@ func (rc *resultsCollector) measureSingleTarget(
 		TLSHandshakes: oonidatamodel.NewTLSHandshakesList(tk),
 	}
 	tr.fillSummary()
-	tr = maybeSanitize(tr, kt.private())
+	tr = maybeSanitize(tr, kt)
 	rc.mu.Lock()
 	tr.TargetAddress = kt.maybeTargetAddress()
 	tr.TargetName = kt.target.Name
@@ -297,15 +316,50 @@ func (rc *resultsCollector) measureSingleTarget(
 	))
 }
 
-func maybeScrubbingLogger(logger model.Logger, scrub bool) model.Logger {
-	// TODO(bassosimone): make this dependent on scrub
-	return logger
+// scrubbingLogger is a logger that scrubs endpoint from its output. We are using
+// it only here, currently, since we pay some performance penalty in that we evaluate
+// the string to be logged regardless of the logging level.
+//
+// TODO(bassosimone): find a more efficient way of scrubbing logs.
+type scrubbingLogger struct {
+	model.Logger
+}
+
+func (sl scrubbingLogger) Debug(message string) {
+	sl.Logger.Debug(errorx.Scrub(message))
+}
+
+func (sl scrubbingLogger) Debugf(format string, v ...interface{}) {
+	sl.Debug(fmt.Sprintf(format, v...))
+}
+
+func (sl scrubbingLogger) Info(message string) {
+	sl.Logger.Info(errorx.Scrub(message))
+}
+
+func (sl scrubbingLogger) Infof(format string, v ...interface{}) {
+	sl.Info(fmt.Sprintf(format, v...))
+}
+
+func (sl scrubbingLogger) Warn(message string) {
+	sl.Logger.Warn(errorx.Scrub(message))
+}
+
+func (sl scrubbingLogger) Warnf(format string, v ...interface{}) {
+	sl.Warn(fmt.Sprintf(format, v...))
+}
+
+func maybeScrubbingLogger(input model.Logger, kt keytarget) model.Logger {
+	if !kt.private() {
+		return input
+	}
+	return scrubbingLogger{Logger: input}
 }
 
 func (rc *resultsCollector) defaultFlexibleConnect(
 	ctx context.Context, kt keytarget,
 ) (tk oonitemplates.Results, err error) {
-	logger := maybeScrubbingLogger(rc.sess.Logger(), kt.private())
+	logger := maybeScrubbingLogger(rc.sess.Logger(), kt)
 	switch kt.target.Protocol {
 	case "dir_port":
 		url := url.URL{
