@@ -48,6 +48,7 @@ type TargetResults struct {
 	NetworkEvents  oonidatamodel.NetworkEventsList `json:"network_events"`
 	Queries        oonidatamodel.DNSQueriesList    `json:"queries"`
 	Requests       oonidatamodel.RequestList       `json:"requests"`
+	Source         string                          `json:"source,omitempty"`
 	Summary        map[string]Summary              `json:"summary"`
 	TargetAddress  string                          `json:"target_address"`
 	TargetName     string                          `json:"target_name,omitempty"`
@@ -300,6 +301,7 @@ func (rc *resultsCollector) measureSingleTarget(
 	tr.fillSummary()
 	tr = maybeSanitize(tr, kt)
 	rc.mu.Lock()
+	tr.Source = kt.target.Source
 	tr.TargetAddress = kt.maybeTargetAddress()
 	tr.TargetName = kt.target.Name
 	tr.TargetProtocol = kt.target.Protocol
