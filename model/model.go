@@ -258,7 +258,7 @@ func (ps PrivacySettings) MaybeRewriteTestKeys(
 	if bytes.Count(data, bpip) <= 0 {
 		return nil
 	}
-	data = bytes.ReplaceAll(data, bpip, []byte(`[REDACTED]`))
+	data = bytes.ReplaceAll(data, bpip, []byte(`[scrubbed]`))
 	// We add an annotation such that hopefully later we can measure the
 	// number of cases where we failed to sanitize properly.
 	m.AddAnnotation("_probe_engine_sanitize_test_keys", "true")
@@ -322,6 +322,11 @@ type TorTarget struct {
 
 	// Protocol is the protocol to use with the target.
 	Protocol string `json:"protocol"`
+
+	// Source is the source from which we fetched this specific
+	// target. Whenever the source is non-empty, we will treat
+	// this specific target as a private target.
+	Source string `json:"source"`
 }
 
 // Logger defines the common interface that a logger should have. It is
