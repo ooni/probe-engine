@@ -200,6 +200,13 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	}
 }
 
+func wrapTestingTarget(tt model.TorTarget) keytarget {
+	return keytarget{
+		key:    "xx", // using an super simple key; should work anyway
+		target: tt,
+	}
+}
+
 func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.ExperimentSession{
@@ -208,14 +215,11 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
-	rc.flexibleConnect = func(context.Context, model.TorTarget) (oonitemplates.Results, error) {
+	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, nil
 	}
 	rc.measureSingleTarget(
-		context.Background(), keytarget{
-			key:    "xx", // using an super simple key; should work anyway
-			target: staticTestingTargets[0],
-		},
+		context.Background(), wrapTestingTarget(staticTestingTargets[0]),
 		len(staticTestingTargets),
 	)
 	if len(rc.targetresults) != 1 {
@@ -245,7 +249,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 		new(model.Measurement),
 		handler.NewPrinterCallbacks(log.Log),
 	)
-	rc.flexibleConnect = func(context.Context, model.TorTarget) (oonitemplates.Results, error) {
+	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, errors.New("mocked error")
 	}
 	rc.measureSingleTarget(
@@ -284,7 +288,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tk, err := rc.defaultFlexibleConnect(ctx, staticTestingTargets[1])
+	tk, err := rc.defaultFlexibleConnect(ctx, wrapTestingTarget(staticTestingTargets[1]))
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -306,7 +310,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tk, err := rc.defaultFlexibleConnect(ctx, staticTestingTargets[2])
+	tk, err := rc.defaultFlexibleConnect(ctx, wrapTestingTarget(staticTestingTargets[2]))
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -331,7 +335,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tk, err := rc.defaultFlexibleConnect(ctx, staticTestingTargets[0])
+	tk, err := rc.defaultFlexibleConnect(ctx, wrapTestingTarget(staticTestingTargets[0]))
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -356,7 +360,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tk, err := rc.defaultFlexibleConnect(ctx, staticTestingTargets[3])
+	tk, err := rc.defaultFlexibleConnect(ctx, wrapTestingTarget(staticTestingTargets[3]))
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

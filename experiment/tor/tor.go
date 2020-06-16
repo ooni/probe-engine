@@ -193,6 +193,16 @@ type keytarget struct {
 	target model.TorTarget
 }
 
+func (kt keytarget) private() bool {
+	// TODO(bassosimone): make this dependent on target's value
+	return false
+}
+
+func (kt keytarget) maybeTargetAddress() string {
+	// TODO(bassosimone): make this dependent on target's value
+	return kt.target.Address
+}
+
 func (m *measurer) measureTargets(
 	ctx context.Context,
 	sess model.ExperimentSession,
@@ -227,7 +237,7 @@ func (m *measurer) measureTargets(
 type resultsCollector struct {
 	callbacks       model.ExperimentCallbacks
 	completed       *atomicx.Int64
-	flexibleConnect func(context.Context, model.TorTarget) (oonitemplates.Results, error)
+	flexibleConnect func(context.Context, keytarget) (oonitemplates.Results, error)
 	measurement     *model.Measurement
 	mu              sync.Mutex
 	sess            model.ExperimentSession
@@ -250,24 +260,30 @@ func newResultsCollector(
 	return rc
 }
 
+func maybeSanitize(tr TargetResults, scrub bool) TargetResults {
+	// TODO(bassosimone): make this dependent on scrub param
+	return tr
+}
+
 func (rc *resultsCollector) measureSingleTarget(
 	ctx context.Context, kt keytarget, total int,
 ) {
-	tk, err := rc.flexibleConnect(ctx, kt.target)
-	rc.mu.Lock()
+	tk, err := rc.flexibleConnect(ctx, kt)
 	tr := TargetResults{
-		Agent:          "redirect",
-		Failure:        setFailure(err),
-		NetworkEvents:  oonidatamodel.NewNetworkEventsList(tk),
-		Queries:        oonidatamodel.NewDNSQueriesList(tk),
-		Requests:       oonidatamodel.NewRequestList(tk),
-		TargetAddress:  kt.target.Address,
-		TargetName:     kt.target.Name,
-		TargetProtocol: kt.target.Protocol,
-		TCPConnect:     oonidatamodel.NewTCPConnectList(tk),
-		TLSHandshakes:  oonidatamodel.NewTLSHandshakesList(tk),
+		Agent:         "redirect",
+		Failure:       setFailure(err),
+		NetworkEvents: oonidatamodel.NewNetworkEventsList(tk),
+		Queries:       oonidatamodel.NewDNSQueriesList(tk),
+		Requests:      oonidatamodel.NewRequestList(tk),
+		TCPConnect:    oonidatamodel.NewTCPConnectList(tk),
+		TLSHandshakes: oonidatamodel.NewTLSHandshakesList(tk),
 	}
 	tr.fillSummary()
+	tr = maybeSanitize(tr, kt.private())
+	rc.mu.Lock()
+	tr.TargetAddress = kt.maybeTargetAddress()
+	tr.TargetName = kt.target.Name
+	tr.TargetProtocol = kt.target.Protocol
 	rc.targetresults[kt.key] = tr
 	rc.mu.Unlock()
 	sofar := rc.completed.Add(1)
@@ -276,18 +292,24 @@ func (rc *resultsCollector) measureSingleTarget(
 		percentage = float64(sofar) / float64(total)
 	}
 	rc.callbacks.OnProgress(percentage, fmt.Sprintf(
-		"tor: access %s/%s: %s", kt.target.Address, kt.target.Protocol,
+		"tor: access %s/%s: %s", kt.maybeTargetAddress(), kt.target.Protocol,
 		errString(err),
 	))
 }
 
+func maybeScrubbingLogger(logger model.Logger, scrub bool) model.Logger {
+	// TODO(bassosimone): make this dependent on scrub
+	return logger
+}
+
 func (rc *resultsCollector) defaultFlexibleConnect(
-	ctx context.Context, target model.TorTarget,
+	ctx context.Context, kt keytarget,
 ) (tk oonitemplates.Results, err error) {
-	switch target.Protocol {
+	logger := maybeScrubbingLogger(rc.sess.Logger(), kt.private())
+	switch kt.target.Protocol {
 	case "dir_port":
 		url := url.URL{
-			Host:   target.Address,
+			Host:   kt.target.Address,
 			Path:   "/tor/status-vote/current/consensus.z",
 			Scheme: "http",
 		}
@@ -298,7 +320,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 			Beginning:               rc.measurement.MeasurementStartTimeSaved,
 			MaxEventsBodySnapSize:   snapshotsize,
 			MaxResponseBodySnapSize: snapshotsize,
-			Handler:                 netxlogger.NewHandler(rc.sess.Logger()),
+			Handler:                 netxlogger.NewHandler(logger),
 			Method:                  "GET",
 			URL:                     url.String(),
 			UserAgent:               httpheader.RandomUserAgent(),
@@ -306,26 +328,26 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 		tk, err = r.TestKeys, r.Error
 	case "or_port", "or_port_dirauth":
 		r := oonitemplates.TLSConnect(ctx, oonitemplates.TLSConnectConfig{
-			Address:            target.Address,
+			Address:            kt.target.Address,
 			Beginning:          rc.measurement.MeasurementStartTimeSaved,
 			InsecureSkipVerify: true,
-			Handler:            netxlogger.NewHandler(rc.sess.Logger()),
+			Handler:            netxlogger.NewHandler(logger),
 		})
 		tk, err = r.TestKeys, r.Error
 	case "obfs4":
 		r := oonitemplates.OBFS4Connect(ctx, oonitemplates.OBFS4ConnectConfig{
-			Address:      target.Address,
+			Address:      kt.target.Address,
 			Beginning:    rc.measurement.MeasurementStartTimeSaved,
-			Handler:      netxlogger.NewHandler(rc.sess.Logger()),
-			Params:       target.Params,
+			Handler:      netxlogger.NewHandler(logger),
+			Params:       kt.target.Params,
 			StateBaseDir: rc.sess.TempDir(),
 		})
 		tk, err = r.TestKeys, r.Error
 	default:
 		r := oonitemplates.TCPConnect(ctx, oonitemplates.TCPConnectConfig{
-			Address:   target.Address,
+			Address:   kt.target.Address,
 			Beginning: rc.measurement.MeasurementStartTimeSaved,
-			Handler:   netxlogger.NewHandler(rc.sess.Logger()),
+			Handler:   netxlogger.NewHandler(logger),
 		})
 		tk, err = r.TestKeys, r.Error
 	}
