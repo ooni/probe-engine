@@ -311,7 +311,7 @@ func TestNewDNSQueriesList(t *testing.T) {
 		want: []archival.DNSQueryEntry{{
 			Answers: []archival.DNSAnswerEntry{{
 				ASN:        15169,
-				ASOrgName:  "GOOGLE",
+				ASOrgName:  "Google LLC",
 				AnswerType: "AAAA",
 				IPv6:       "2001:4860:4860::8888",
 			}},
