@@ -76,7 +76,7 @@ func (c *Client) EnsureForSingleResource(
 	} else {
 		c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
 	}
-	URL := RepositoryURL + resource.URLPath
+	URL := BaseURL + resource.URLPath
 	c.Logger.Debugf("resources: fetch %s", URL)
 	data, err = (&fetch.Client{
 		HTTPClient: c.HTTPClient,
