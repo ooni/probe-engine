@@ -90,7 +90,7 @@ func TestEnsureFailAllComparisons(t *testing.T) {
 	// run once to download the resource once
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
-			URLPath:  "/releases/download/20190822135402/ca-bundle.pem.gz",
+			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
 			GzSHA256: "d5a6aa2290ee18b09cc4fb479e2577ed5ae66c253870ba09776803a5396ea3ab",
 			SHA256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
 		}, func(left, right string) bool {
@@ -105,7 +105,7 @@ func TestEnsureFailAllComparisons(t *testing.T) {
 	// first redownload and then fail for invalid SHA256.
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
-			URLPath:  "/releases/download/20190822135402/ca-bundle.pem.gz",
+			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
 			GzSHA256: "d5a6aa2290ee18b09cc4fb479e2577ed5ae66c253870ba09776803a5396ea3ab",
 			SHA256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
 		}, func(left, right string) bool {
@@ -132,7 +132,7 @@ func TestEnsureFailGzipNewReader(t *testing.T) {
 	}
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
-			URLPath:  "/releases/download/20190822135402/ca-bundle.pem.gz",
+			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
 			GzSHA256: "d5a6aa2290ee18b09cc4fb479e2577ed5ae66c253870ba09776803a5396ea3ab",
 			SHA256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
 		}, func(left, right string) bool {
@@ -162,7 +162,7 @@ func TestEnsureFailIoUtilReadAll(t *testing.T) {
 	}
 	err = client.EnsureForSingleResource(
 		context.Background(), "ca-bundle.pem", resources.ResourceInfo{
-			URLPath:  "/releases/download/20190822135402/ca-bundle.pem.gz",
+			URLPath:  "/ooni/probe-assets/releases/download/20190822135402/ca-bundle.pem.gz",
 			GzSHA256: "d5a6aa2290ee18b09cc4fb479e2577ed5ae66c253870ba09776803a5396ea3ab",
 			SHA256:   "cb2eca3fbfa232c9e3874e3852d43b33589f27face98eef10242a853d83a437a",
 		}, func(left, right string) bool {
