@@ -25,9 +25,9 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 		Options: settingsOptions{
 			AllEndpoints:          &falsebool,
 			Backend:               "foo",
-			BouncerBaseURL:        "https://ps.ooni.io/",
+			BouncerBaseURL:        "https://ps-nonexistent.ooni.io/",
 			CABundlePath:          "foo",
-			CollectorBaseURL:      "https://ps.ooni.io/",
+			CollectorBaseURL:      "https://ps-nonexistent.ooni.io/",
 			ConstantBitrate:       &falsebool,
 			DNSNameserver:         &emptystring,
 			DNSEngine:             &emptystring,

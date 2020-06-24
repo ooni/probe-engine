@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -231,27 +232,27 @@ func TestOnlyHTTPS(t *testing.T) {
 		Address: "httpo://jehhrikjjqrlpufu.onion",
 	}, {
 		Type:    "https",
-		Address: "https://ams-ps.ooni.io",
+		Address: "https://ams-ps-nonexistent.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://hkg-ps.ooni.io",
+		Address: "https://hkg-ps-nonexistent.ooni.io",
 	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
 	}, {
 		Type:    "https",
-		Address: "https://mia-ps.ooni.io",
+		Address: "https://mia-ps-nonexistent.ooni.io",
 	}}
 	expect := []model.Service{{
 		Type:    "https",
-		Address: "https://ams-ps.ooni.io",
+		Address: "https://ams-ps-nonexistent.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://hkg-ps.ooni.io",
+		Address: "https://hkg-ps-nonexistent.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://mia-ps.ooni.io",
+		Address: "https://mia-ps-nonexistent.ooni.io",
 	}}
 	out := probeservices.OnlyHTTPS(in)
 	diff := cmp.Diff(out, expect)
@@ -267,17 +268,17 @@ func TestOnlyFallbacks(t *testing.T) {
 		Address: "httpo://jehhrikjjqrlpufu.onion",
 	}, {
 		Type:    "https",
-		Address: "https://ams-ps.ooni.io",
+		Address: "https://ams-ps-nonexistent.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://hkg-ps.ooni.io",
+		Address: "https://hkg-ps-nonexistent.ooni.io",
 	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
 	}, {
 		Type:    "https",
-		Address: "https://mia-ps.ooni.io",
+		Address: "https://mia-ps-nonexistent.ooni.io",
 	}}
 	expect := []model.Service{{
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
@@ -301,17 +302,17 @@ func TestTryAllCanceledContext(t *testing.T) {
 		Address: "httpo://jehhrikjjqrlpufu.onion",
 	}, {
 		Type:    "https",
-		Address: "https://ams-ps.ooni.io",
+		Address: "https://ams-ps-nonexistent.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://hkg-ps.ooni.io",
+		Address: "https://hkg-ps-nonexistent.ooni.io",
 	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
 	}, {
 		Type:    "https",
-		Address: "https://mia-ps.ooni.io",
+		Address: "https://mia-ps-nonexistent.ooni.io",
 	}}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel and cause every attempt to fail
@@ -333,7 +334,7 @@ func TestTryAllCanceledContext(t *testing.T) {
 	if out[0].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[0].Endpoint.Address != "https://ams-ps.ooni.io" {
+	if out[0].Endpoint.Address != "https://ams-ps-nonexistent.ooni.io" {
 		t.Fatal("invalid endpoint type")
 	}
 	//
@@ -346,7 +347,7 @@ func TestTryAllCanceledContext(t *testing.T) {
 	if out[1].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[1].Endpoint.Address != "https://hkg-ps.ooni.io" {
+	if out[1].Endpoint.Address != "https://hkg-ps-nonexistent.ooni.io" {
 		t.Fatal("invalid endpoint type")
 	}
 	//
@@ -359,7 +360,7 @@ func TestTryAllCanceledContext(t *testing.T) {
 	if out[2].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[2].Endpoint.Address != "https://mia-ps.ooni.io" {
+	if out[2].Endpoint.Address != "https://mia-ps-nonexistent.ooni.io" {
 		t.Fatal("invalid endpoint type")
 	}
 	//
@@ -398,23 +399,24 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
+	const pattern = "^https://ps[1-4].ooni.io$"
 	// put onion first so we also verify that we sort the endpoints
 	in := []model.Service{{
 		Type:    "onion",
 		Address: "httpo://jehhrikjjqrlpufu.onion",
 	}, {
 		Type:    "https",
-		Address: "https://ps.ooni.io",
+		Address: "https://ps1.ooni.io",
 	}, {
 		Type:    "https",
-		Address: "https://hkg-ps.ooni.nu",
+		Address: "https://ps2.ooni.io",
 	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
 		Type:    "cloudfront",
 		Address: "https://dkyhjv0wpi2dk.cloudfront.net",
 	}, {
 		Type:    "https",
-		Address: "https://mia-ps2.ooni.nu",
+		Address: "https://ps3.ooni.io",
 	}}
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
@@ -434,7 +436,7 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 	if out[0].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[0].Endpoint.Address != "https://ps.ooni.io" {
+	if ok, _ := regexp.MatchString(pattern, out[0].Endpoint.Address); !ok {
 		t.Fatal("invalid endpoint type")
 	}
 	//
@@ -447,7 +449,7 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 	if out[1].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[1].Endpoint.Address != "https://hkg-ps.ooni.nu" {
+	if ok, _ := regexp.MatchString(pattern, out[1].Endpoint.Address); !ok {
 		t.Fatal("invalid endpoint type")
 	}
 	//
@@ -460,7 +462,7 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 	if out[2].Endpoint.Type != "https" {
 		t.Fatal("invalid endpoint type")
 	}
-	if out[2].Endpoint.Address != "https://mia-ps2.ooni.nu" {
+	if ok, _ := regexp.MatchString(pattern, out[2].Endpoint.Address); !ok {
 		t.Fatal("invalid endpoint type")
 	}
 }
