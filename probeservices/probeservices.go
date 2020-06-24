@@ -100,7 +100,10 @@ func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, e
 // Default returns the default probe services
 func Default() []model.Service {
 	return []model.Service{{
-		Address: "https://ps.ooni.io",
+		Address: "https://ps1.ooni.io",
+		Type:    "https",
+	}, {
+		Address: "https://ps2.ooni.io",
 		Type:    "https",
 	}, {
 		Front:   "dkyhjv0wpi2dk.cloudfront.net",
