@@ -13,7 +13,7 @@ import (
 
 func TestFetchURLListSuccess(t *testing.T) {
 	client := newclient()
-	client.BaseURL = "https://ps.ooni.io" // ps-test.ooni.io is broken
+	client.BaseURL = "https://ps1.ooni.io" // ps-test.ooni.io is broken
 	config := model.URLListConfig{
 		Categories:  []string{"NEWS", "CULTR"},
 		CountryCode: "IT",
@@ -54,7 +54,7 @@ func TestFetchURLListFailure(t *testing.T) {
 
 func TestURLsSuccess(t *testing.T) {
 	config := probeservices.URLsConfig{
-		BaseURL:           "https://ps.ooni.io",
+		BaseURL:           "https://ps1.ooni.io",
 		CountryCode:       "IT",
 		EnabledCategories: []string{"NEWS", "CULTR"},
 		HTTPClient:        http.DefaultClient,
