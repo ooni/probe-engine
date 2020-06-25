@@ -7,6 +7,7 @@ assignees: bassosimone
 
 ---
 
+- [ ] Update the version number
 - [ ] Update dependencies
 - [ ] Update internal/httpheader/useragent.go
 - [ ] Update version/version.go
