@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
@@ -16,7 +17,7 @@ func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
 	const invalidURL = "\t"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, invalidURL)
 	data, err := txp.RoundTrip(context.Background(), nil)
-	if err == nil {
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {
@@ -25,14 +26,15 @@ func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
 }
 
 func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
+	expected := errors.New("mocked error")
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
-			return nil, errors.New("mocked error")
+			return nil, expected
 		},
 		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
-	if err == nil {
+	if !errors.Is(err, expected) {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {
@@ -51,7 +53,7 @@ func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
 		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
-	if err == nil {
+	if err == nil || err.Error() != "doh: server returned error" {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {
@@ -70,7 +72,7 @@ func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
 		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
-	if err == nil {
+	if err == nil || err.Error() != "doh: invalid content-type" {
 		t.Fatal("expected an error here")
 	}
 	if data != nil {
@@ -112,5 +114,27 @@ func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
 	}
 	if txp.Address() != queryURL {
 		t.Fatal("invalid address")
+	}
+}
+
+func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
+	expected := errors.New("mocked error")
+	var correct bool
+	txp := resolver.DNSOverHTTPS{
+		Do: func(req *http.Request) (*http.Response, error) {
+			correct = req.Header.Get("User-Agent") == httpheader.RandomUserAgent()
+			return nil, expected
+		},
+		URL: "https://cloudflare-dns.com/dns-query",
+	}
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, expected) {
+		t.Fatal("expected an error here")
+	}
+	if data != nil {
+		t.Fatal("expected no response here")
+	}
+	if !correct {
+		t.Fatal("did not see correct user agent")
 	}
 }
