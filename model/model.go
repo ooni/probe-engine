@@ -362,7 +362,7 @@ type URLListConfig struct {
 // a client for querying the OONI orchestra API.
 type ExperimentOrchestraClient interface {
 	FetchPsiphonConfig(ctx context.Context) ([]byte, error)
-	FetchTorTargets(ctx context.Context) (map[string]TorTarget, error)
+	FetchTorTargets(ctx context.Context, cc string) (map[string]TorTarget, error)
 	FetchURLList(ctx context.Context, config URLListConfig) ([]URLInfo, error)
 }
 

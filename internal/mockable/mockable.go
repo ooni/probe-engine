@@ -178,7 +178,7 @@ func (c ExperimentOrchestraClient) FetchPsiphonConfig(
 
 // FetchTorTargets implements ExperimentOrchestraClient.TorTargets
 func (c ExperimentOrchestraClient) FetchTorTargets(
-	ctx context.Context) (map[string]model.TorTarget, error) {
+	ctx context.Context, cc string) (map[string]model.TorTarget, error) {
 	return c.MockableFetchTorTargetsResult, c.MockableFetchTorTargetsErr
 }
 

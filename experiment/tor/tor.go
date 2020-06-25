@@ -136,15 +136,15 @@ func (tk *TestKeys) fillToplevelKeys() {
 
 type measurer struct {
 	config             Config
-	fetchTorTargets    func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error)
+	fetchTorTargets    func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error)
 	newOrchestraClient func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error)
 }
 
 func newMeasurer(config Config) *measurer {
 	return &measurer{
 		config: config,
-		fetchTorTargets: func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
-			return clnt.FetchTorTargets(ctx)
+		fetchTorTargets: func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error) {
+			return clnt.FetchTorTargets(ctx, cc)
 		},
 		newOrchestraClient: func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 			return sess.NewOrchestraClient(ctx)
@@ -188,7 +188,7 @@ func (m *measurer) gimmeTargets(
 	if err != nil {
 		return nil, err
 	}
-	return m.fetchTorTargets(ctx, clnt)
+	return m.fetchTorTargets(ctx, clnt, sess.ProbeCC())
 }
 
 // keytarget contains a key and the related target
