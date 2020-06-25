@@ -6,7 +6,7 @@ require (
 	git.torproject.org/pluggable-transports/goptlib.git v1.1.0
 	github.com/AndreasBriese/bbloom v0.0.0-20170702084017-28f7e881ca57 // indirect
 	github.com/Psiphon-Inc/rotate-safe-writer v0.0.0-20170228160301-b276127301a9 // indirect
-	github.com/Psiphon-Labs/bolt v0.0.0-20200203172706-f3d58e369264 // indirect
+	github.com/Psiphon-Labs/bolt v0.0.0-20200624191537-23cedaef7ad7 // indirect
 	github.com/Psiphon-Labs/chacha20 v0.2.1-0.20200128191310-899a4be52863 // indirect
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20200406165125-c0e32a7a3464 // indirect
@@ -15,12 +15,11 @@ require (
 	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200306193310-474e74c89fab // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20200504183724-16ab4b2ea797 // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
-	github.com/apex/log v1.3.0
+	github.com/apex/log v1.4.0
 	github.com/aristanetworks/goarista v0.0.0-20200602234848-db8a79a18e4a // indirect
 	github.com/armon/go-proxyproto v0.0.0-20180202201750-5b7edb60ff5f // indirect
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 // indirect
 	github.com/bifurcation/mint v0.0.0-20180306135233-198357931e61 // indirect
-	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894
 	github.com/cognusion/go-cache-lru v0.0.0-20170419142635-f73e2280ecea // indirect
 	github.com/creack/goselect v0.1.1 // indirect
@@ -30,7 +29,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/elazarl/goproxy v0.0.0-20171101143503-a96fa3a31826 // indirect
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
-	github.com/google/go-cmp v0.4.1
+	github.com/google/go-cmp v0.5.0
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
@@ -41,6 +40,7 @@ require (
 	github.com/miekg/dns v1.1.30-0.20200428072418-d128d10d176b
 	github.com/montanaflynn/stats v0.6.3
 	github.com/oschwald/geoip2-golang v1.4.0
+	github.com/oschwald/maxminddb-golang v1.7.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
 	github.com/pion/stun v0.3.5
@@ -58,7 +58,6 @@ require (
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
-	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79 // indirect
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
-	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344
+	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4 // indirect
 )
