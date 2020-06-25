@@ -1,6 +1,7 @@
 package tor
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -121,7 +122,10 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationMeasurerMeasureGood(t *testing.T) {
+func TestMeasurerMeasureGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	measurer := newMeasurer(Config{})
 	sess := newsession()
 	err := measurer.Run(
@@ -132,6 +136,62 @@ func TestIntegrationMeasurerMeasureGood(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+var staticPrivateTestingTargetEndpoint = "192.95.36.142:443"
+
+var staticPrivateTestingTarget = model.TorTarget{
+	Address: staticPrivateTestingTargetEndpoint,
+	Params: map[string][]string{
+		"cert": {
+			"qUVQ0srL1JI/vO6V6m/24anYXiJD3QP2HgzUKQtQ7GRqqUvs7P+tG43RtAqdhLOALP7DJQ",
+		},
+		"iat-mode": {"1"},
+	},
+	Protocol: "obfs4",
+	Source:   "bridgedb",
+}
+
+func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	measurer := newMeasurer(Config{})
+	sess := newsession()
+	key := "xyz-xyz-xyz-theCh2ju-ahG4chei-Ai2eka0a"
+	sess.MockableOrchestraClient = &mockable.ExperimentOrchestraClient{
+		MockableFetchTorTargetsResult: map[string]model.TorTarget{
+			key: staticPrivateTestingTarget,
+		},
+	}
+	measurement := new(model.Measurement)
+	err := measurer.Run(
+		context.Background(),
+		sess,
+		measurement,
+		handler.NewPrinterCallbacks(log.Log),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := json.Marshal(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*TestKeys)
+	entry := tk.Targets[key]
+	if entry.Failure != nil {
+		t.Fatal("measurement failed unexpectedly")
+	}
+	if !bytes.Contains(data, []byte(key)) {
+		t.Fatal("cannot find expected key")
+	}
+	if bytes.Contains(data, []byte(staticPrivateTestingTargetEndpoint)) {
+		t.Fatal("endpoint found in serialized measurement")
+	}
+	if !bytes.Contains(data, []byte("[scrubbed]")) {
+		t.Fatal("[scrubbed] not found in serialized measurement")
 	}
 }
 
@@ -492,7 +552,7 @@ func TestUnitFillToplevelKeys(t *testing.T) {
 	}
 }
 
-func newsession() model.ExperimentSession {
+func newsession() *mockable.ExperimentSession {
 	return &mockable.ExperimentSession{
 		MockableLogger:     log.Log,
 		MockableHTTPClient: http.DefaultClient,
