@@ -11,10 +11,12 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/version"
 )
@@ -537,6 +539,40 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 	cancel() // fail immediately
 	client, err := sess.NewOrchestraClient(ctx)
 	if err == nil || err.Error() != "all available probe services failed" {
+		t.Fatal("not the error we expected")
+	}
+	if client != nil {
+		t.Fatal("expected nil client here")
+	}
+}
+
+type httpTransportThatSleeps struct {
+	txp httptransport.RoundTripper
+	st  time.Duration
+}
+
+func (txp httpTransportThatSleeps) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := txp.txp.RoundTrip(req)
+	time.Sleep(txp.st)
+	return resp, err
+}
+
+func (txp httpTransportThatSleeps) CloseIdleConnections() {
+	txp.txp.CloseIdleConnections()
+}
+
+func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
+	sess := newSessionForTestingNoLookups(t)
+	sess.httpDefaultTransport = httpTransportThatSleeps{
+		txp: sess.httpDefaultTransport,
+		st:  5 * time.Second,
+	}
+	// the transport sleeps for five seconds, so the context should be expired by
+	// the time in which we attempt at looking up the clocation
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+	client, err := sess.NewOrchestraClient(ctx)
+	if err == nil || err.Error() != "All IP lookuppers failed" {
 		t.Fatal("not the error we expected")
 	}
 	if client != nil {

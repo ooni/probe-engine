@@ -56,7 +56,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error) {
 		return nil, expected
 	}
 	err := measurer.Run(
@@ -77,7 +77,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
 	measurement := new(model.Measurement)
@@ -99,11 +99,13 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureGood(t *testing.T) {
+	// This test mocks orchestra to return a nil list of targets, so the code runs
+	// but we don't perform any actualy network actions.
 	measurer := newMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
-	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient) (map[string]model.TorTarget, error) {
+	measurer.fetchTorTargets = func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error) {
 		return nil, nil
 	}
 	err := measurer.Run(

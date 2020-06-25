@@ -264,6 +264,9 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrche
 	if err := s.maybeLookupBackends(ctx); err != nil {
 		return nil, err
 	}
+	if err := s.maybeLookupLocation(ctx); err != nil {
+		return nil, err
+	}
 	if s.selectedProbeServiceHook != nil {
 		s.selectedProbeServiceHook(s.selectedProbeService)
 	}
