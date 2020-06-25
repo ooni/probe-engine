@@ -5,7 +5,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/internal/jsonapi"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -21,12 +21,12 @@ func Do(
 	userAgent string,
 ) (string, error) {
 	var v response
-	err := (&jsonapi.Client{
+	err := (httpx.Client{
 		BaseURL:    "https://ip-info.ff.avast.com",
 		HTTPClient: httpClient,
 		Logger:     logger,
 		UserAgent:  userAgent,
-	}).Read(ctx, "/v1/info", &v)
+	}).GetJSON(ctx, "/v1/info", &v)
 	if err != nil {
 		return model.DefaultProbeIP, err
 	}

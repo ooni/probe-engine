@@ -19,6 +19,19 @@ const (
 	DefaultFormat = "json"
 )
 
+var (
+	// ErrUnsupportedDataFormatVersion indicates that the user provided
+	// in input a data format version that we do not support.
+	ErrUnsupportedDataFormatVersion = errors.New("Unsupported data format version")
+
+	// ErrUnsupportedFormat indicates that the format is not supported.
+	ErrUnsupportedFormat = errors.New("Unsupported format")
+
+	// ErrJSONFormatNotSupported indicates that the collector we're using
+	// does not support the JSON report format.
+	ErrJSONFormatNotSupported = errors.New("JSON format not supported")
+)
+
 // ReportTemplate is the template for opening a report
 type ReportTemplate struct {
 	// DataFormatVersion is unconditionally set to DefaultDataFormatVersion
@@ -48,7 +61,7 @@ type ReportTemplate struct {
 	TestVersion string `json:"test_version"`
 }
 
-type openResponse struct {
+type collectorOpenResponse struct {
 	ID               string   `json:"report_id"`
 	SupportedFormats []string `json:"supported_formats"`
 }
@@ -65,25 +78,24 @@ type Report struct {
 // OpenReport opens a new report.
 func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
-		return nil, errors.New("Unsupported data format version")
+		return nil, ErrUnsupportedDataFormatVersion
 	}
 	if rt.Format != DefaultFormat {
-		return nil, errors.New("Unsupported format")
+		return nil, ErrUnsupportedFormat
 	}
-	var or openResponse
-	err := c.Client.Create(ctx, "/report", rt, &or)
-	if err != nil {
+	var cor collectorOpenResponse
+	if err := c.Client.PostJSON(ctx, "/report", rt, &cor); err != nil {
 		return nil, err
 	}
-	for _, format := range or.SupportedFormats {
+	for _, format := range cor.SupportedFormats {
 		if format == "json" {
-			return &Report{ID: or.ID, client: c}, nil
+			return &Report{ID: cor.ID, client: c}, nil
 		}
 	}
-	return nil, errors.New("JSON format not supported")
+	return nil, ErrJSONFormatNotSupported
 }
 
-type updateRequest struct {
+type collectorUpdateRequest struct {
 	// Format is the data format
 	Format string `json:"format"`
 
@@ -91,7 +103,7 @@ type updateRequest struct {
 	Content interface{} `json:"content"`
 }
 
-type updateResponse struct {
+type collectorUpdateResponse struct {
 	// ID is the measurement ID
 	ID string `json:"measurement_id"`
 }
@@ -101,10 +113,10 @@ type updateResponse struct {
 // with the ReportID it should contain. If the collector supports sending
 // back to us a measurement ID, we also update the m.OOID field with it.
 func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
-	var updateResponse updateResponse
+	var updateResponse collectorUpdateResponse
 	m.ReportID = r.ID
-	err := r.client.Client.Create(
-		ctx, fmt.Sprintf("/report/%s", r.ID), updateRequest{
+	err := r.client.Client.PostJSON(
+		ctx, fmt.Sprintf("/report/%s", r.ID), collectorUpdateRequest{
 			Format:  "json",
 			Content: m,
 		}, &updateResponse,
@@ -118,7 +130,7 @@ func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) err
 // Close closes the report. Returns nil on success; an error on failure.
 func (r Report) Close(ctx context.Context) error {
 	var input, output struct{}
-	err := r.client.Client.Create(
+	err := r.client.Client.PostJSON(
 		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
 	)
 	// Implementation note: the server is not compliant with
@@ -128,7 +140,7 @@ func (r Report) Close(ctx context.Context) error {
 	// this error, and we ought be flexible.
 	if _, ok := err.(*json.SyntaxError); ok && err.Error() == "unexpected end of JSON input" {
 		r.client.Logger.Debug(
-			"collector.go: working around collector returning empty string bug",
+			"collector.go: working around collector-returning-empty-string bug",
 		)
 		err = nil
 	}

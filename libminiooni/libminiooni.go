@@ -321,11 +321,14 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	if builder.InputPolicy() == engine.InputRequired {
 		if len(currentOptions.Inputs) <= 0 {
 			log.Info("Fetching test lists")
-			list, err := sess.QueryTestListsURLs(&engine.TestListsURLsConfig{
-				Limit: 16,
+			client, err := sess.NewOrchestraClient(context.Background())
+			fatalOnError(err, "cannot create new orchestra client")
+			list, err := client.FetchURLList(context.Background(), model.URLListConfig{
+				CountryCode: sess.ProbeCC(),
+				Limit:       17,
 			})
 			fatalOnError(err, "cannot fetch test lists")
-			for _, entry := range list.Result {
+			for _, entry := range list {
 				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
 			}
 		}
@@ -374,6 +377,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
+		measurement.Options = currentOptions.ExtraOptions
 		if !currentOptions.NoCollector {
 			log.Infof("submitting measurement to OONI collector; please be patient...")
 			err := experiment.SubmitAndUpdateMeasurement(measurement)

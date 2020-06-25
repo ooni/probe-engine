@@ -18,9 +18,6 @@ import (
 	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/metadata"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -50,27 +47,28 @@ type SessionConfig struct {
 
 // Session is a measurement session
 type Session struct {
-	assetsDir               string
-	availableProbeServices  []model.Service
-	availableTestHelpers    map[string][]model.Service
-	byteCounter             *bytecounter.Counter
-	httpDefaultTransport    httptransport.RoundTripper
-	kvStore                 model.KeyValueStore
-	privacySettings         model.PrivacySettings
-	location                *model.LocationInfo
-	logger                  model.Logger
-	proxyURL                *url.URL
-	queryProbeServicesCount *atomicx.Int64
-	resolver                *sessionresolver.Resolver
-	selectedProbeService    *model.Service
-	softwareName            string
-	softwareVersion         string
-	tempDir                 string
-	torArgs                 []string
-	torBinary               string
-	tunnelMu                sync.Mutex
-	tunnelName              string
-	tunnel                  sessiontunnel.Tunnel
+	assetsDir                string
+	availableProbeServices   []model.Service
+	availableTestHelpers     map[string][]model.Service
+	byteCounter              *bytecounter.Counter
+	httpDefaultTransport     httptransport.RoundTripper
+	kvStore                  model.KeyValueStore
+	privacySettings          model.PrivacySettings
+	location                 *model.LocationInfo
+	logger                   model.Logger
+	proxyURL                 *url.URL
+	queryProbeServicesCount  *atomicx.Int64
+	resolver                 *sessionresolver.Resolver
+	selectedProbeServiceHook func(*model.Service)
+	selectedProbeService     *model.Service
+	softwareName             string
+	softwareVersion          string
+	tempDir                  string
+	torArgs                  []string
+	torBinary                string
+	tunnelMu                 sync.Mutex
+	tunnelName               string
+	tunnel                   sessiontunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -178,6 +176,11 @@ func (s *Session) DefaultHTTPClient() *http.Client {
 	return &http.Client{Transport: s.httpDefaultTransport}
 }
 
+// KeyValueStore returns the configured key-value store.
+func (s *Session) KeyValueStore() model.KeyValueStore {
+	return s.kvStore
+}
+
 // Logger returns the logger used by the session.
 func (s *Session) Logger() model.Logger {
 	return s.logger
@@ -255,15 +258,23 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	clnt := orchestra.NewClient(
-		s.DefaultHTTPClient(),
-		s.logger,
-		s.UserAgent(),
-		statefile.New(s.kvStore),
-	)
-	return s.initOrchestraClient(
-		ctx, clnt, clnt.MaybeLogin,
-	)
+	// TODO(bassosimone): we should have APIs that mediate access to structures
+	// like the selected probe service, rather than having control APIs after which
+	// it is safe to access the relevant internal structure.
+	if err := s.maybeLookupBackends(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.maybeLookupLocation(ctx); err != nil {
+		return nil, err
+	}
+	if s.selectedProbeServiceHook != nil {
+		s.selectedProbeServiceHook(s.selectedProbeService)
+	}
+	clnt, err := probeservices.NewClient(s, *s.selectedProbeService)
+	if err != nil {
+		return nil, err
+	}
+	return s.initOrchestraClient(ctx, clnt, clnt.MaybeLogin)
 }
 
 // Platform returns the current platform. The platform is one of:
@@ -420,16 +431,17 @@ func (s *Session) getAvailableProbeServices() []model.Service {
 }
 
 func (s *Session) initOrchestraClient(
-	ctx context.Context, clnt *orchestra.Client,
+	ctx context.Context, clnt *probeservices.Client,
 	maybeLogin func(ctx context.Context) error,
-) (*orchestra.Client, error) {
+) (*probeservices.Client, error) {
 	// The original implementation has as its only use case that we
 	// were registering and logging in for sending an update regarding
 	// the probe whereabouts. Yet here in probe-engine, the orchestra
 	// is currently only used to fetch inputs. For this purpose, we don't
 	// need to communicate any specific information. The code that will
-	// perform an update should be responsible of doing that.
-	meta := metadata.Metadata{
+	// perform an update used to be responsible of doing that. Now, we
+	// are not using orchestra for this purpose anymore.
+	meta := probeservices.Metadata{
 		Platform:        "miniooni",
 		ProbeASN:        "AS0",
 		ProbeCC:         "ZZ",

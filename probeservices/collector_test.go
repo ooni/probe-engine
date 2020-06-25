@@ -3,13 +3,13 @@ package probeservices_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/jsonapi"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -33,28 +33,14 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 		ResolverNetworkName:  "Google LLC",
 		SoftwareName:         rt.SoftwareName,
 		SoftwareVersion:      rt.SoftwareVersion,
-		TestKeys: fakeTestKeys{
-			Failure: nil,
-		},
-		TestName:      rt.TestName,
-		TestStartTime: "2018-11-01 15:33:17",
-		TestVersion:   rt.TestVersion,
-	}
-}
-
-func makeClient() probeservices.Client {
-	return probeservices.Client{
-		Client: jsonapi.Client{
-			BaseURL:    "https://ps-test.ooni.io/",
-			HTTPClient: http.DefaultClient,
-			Logger:     log.Log,
-			UserAgent:  "ooniprobe-engine/0.1.0",
-		},
+		TestKeys:             fakeTestKeys{Failure: nil},
+		TestName:             rt.TestName,
+		TestStartTime:        "2018-11-01 15:33:17",
+		TestVersion:          rt.TestVersion,
 	}
 }
 
 func TestReportLifecycle(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -66,24 +52,21 @@ func TestReportLifecycle(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	report, err := client.OpenReport(ctx, template)
 	if err != nil {
 		t.Fatal(err)
 	}
 	measurement := makeMeasurement(template, report.ID)
-	err = report.SubmitMeasurement(ctx, &measurement)
-	if err != nil {
+	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
-	err = report.Close(ctx)
-	if err != nil {
+	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: "0.1.0",
@@ -95,10 +78,10 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	report, err := client.OpenReport(ctx, template)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, probeservices.ErrUnsupportedDataFormatVersion) {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -106,7 +89,6 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 }
 
 func TestOpenReportInvalidFormat(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -118,10 +100,10 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	report, err := client.OpenReport(ctx, template)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, probeservices.ErrUnsupportedFormat) {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -129,7 +111,6 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 }
 
 func TestJSONAPIClientCreateFailure(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -141,11 +122,11 @@ func TestJSONAPIClientCreateFailure(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	client.BaseURL = "\t" // breaks the URL parser
 	report, err := client.OpenReport(ctx, template)
-	if err == nil {
-		t.Fatal("expected an error here")
+	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
+		t.Fatal("not the error we expected")
 	}
 	if report != nil {
 		t.Fatal("expected a nil report here")
@@ -159,7 +140,6 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 		}),
 	)
 	defer server.Close()
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -171,10 +151,10 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	client.BaseURL = server.URL
 	report, err := client.OpenReport(ctx, template)
-	if err == nil {
+	if !errors.Is(err, probeservices.ErrJSONFormatNotSupported) {
 		t.Fatal("expected an error here")
 	}
 	if report != nil {
@@ -212,7 +192,6 @@ func TestEndToEnd(t *testing.T) {
 		}),
 	)
 	defer server.Close()
-	log.SetLevel(log.DebugLevel)
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -224,19 +203,17 @@ func TestEndToEnd(t *testing.T) {
 		TestName:          "dummy",
 		TestVersion:       "0.1.0",
 	}
-	client := makeClient()
+	client := newclient()
 	client.BaseURL = server.URL
 	report, err := client.OpenReport(ctx, template)
 	if err != nil {
 		t.Fatal(err)
 	}
 	measurement := makeMeasurement(template, report.ID)
-	err = report.SubmitMeasurement(ctx, &measurement)
-	if err != nil {
+	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
-	err = report.Close(ctx)
-	if err != nil {
+	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 }

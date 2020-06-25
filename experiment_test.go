@@ -569,7 +569,7 @@ func TestOpenReportFailure(t *testing.T) {
 		Type:    "https",
 	}
 	err = exp.OpenReport()
-	if !strings.HasPrefix(err.Error(), "jsonapi: request failed") {
+	if !strings.HasPrefix(err.Error(), "httpx: request failed") {
 		t.Fatal("not the error we expected")
 	}
 }

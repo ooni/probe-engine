@@ -7,12 +7,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/internal/orchestra"
-	"github.com/ooni/probe-engine/internal/orchestra/statefile"
-	"github.com/ooni/probe-engine/internal/orchestra/testorchestra"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
 // ExperimentSession is a mockable ExperimentSession.
@@ -60,6 +59,11 @@ func (sess *ExperimentSession) DefaultHTTPClient() *http.Client {
 	return sess.MockableHTTPClient
 }
 
+// KeyValueStore returns the configured key-value store.
+func (sess *ExperimentSession) KeyValueStore() model.KeyValueStore {
+	return kvstore.NewMemoryKeyValueStore()
+}
+
 // Logger implements ExperimentSession.Logger
 func (sess *ExperimentSession) Logger() model.Logger {
 	return sess.MockableLogger
@@ -78,14 +82,11 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 	if sess.MockableOrchestraClientError != nil {
 		return nil, sess.MockableOrchestraClientError
 	}
-	clnt := orchestra.NewClient(
-		http.DefaultClient,
-		log.Log,
-		"miniooni/0.1.0-dev",
-		statefile.New(kvstore.NewMemoryKeyValueStore()),
-	)
-	clnt.OrchestrateBaseURL = "https://ps-test.ooni.io"
-	clnt.RegistryBaseURL = "https://ps-test.ooni.io"
+	clnt, err := probeservices.NewClient(sess, model.Service{
+		Address: "https://ps-test.ooni.io/",
+		Type:    "https",
+	})
+	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
 	meta := testorchestra.MetadataFixture()
 	if err := clnt.MaybeRegister(ctx, meta); err != nil {
 		return nil, err
@@ -165,6 +166,8 @@ type ExperimentOrchestraClient struct {
 	MockableFetchPsiphonConfigErr    error
 	MockableFetchTorTargetsResult    map[string]model.TorTarget
 	MockableFetchTorTargetsErr       error
+	MockableFetchURLListResult       []model.URLInfo
+	MockableFetchURLListErr          error
 }
 
 // FetchPsiphonConfig implements ExperimentOrchestraClient.FetchPsiphonConfig
@@ -175,8 +178,14 @@ func (c ExperimentOrchestraClient) FetchPsiphonConfig(
 
 // FetchTorTargets implements ExperimentOrchestraClient.TorTargets
 func (c ExperimentOrchestraClient) FetchTorTargets(
-	ctx context.Context) (map[string]model.TorTarget, error) {
+	ctx context.Context, cc string) (map[string]model.TorTarget, error) {
 	return c.MockableFetchTorTargetsResult, c.MockableFetchTorTargetsErr
+}
+
+// FetchURLList implements ExperimentOrchestraClient.FetchURLList.
+func (c ExperimentOrchestraClient) FetchURLList(
+	ctx context.Context, config model.URLListConfig) ([]model.URLInfo, error) {
+	return c.MockableFetchURLListResult, c.MockableFetchURLListErr
 }
 
 var _ model.ExperimentOrchestraClient = ExperimentOrchestraClient{}

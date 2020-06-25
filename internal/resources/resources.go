@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ooni/probe-engine/internal/fetch"
+	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -76,13 +76,12 @@ func (c *Client) EnsureForSingleResource(
 	} else {
 		c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
 	}
-	URL := BaseURL + resource.URLPath
-	c.Logger.Debugf("resources: fetch %s", URL)
-	data, err = (&fetch.Client{
+	data, err = (httpx.Client{
+		BaseURL:    BaseURL,
 		HTTPClient: c.HTTPClient,
 		Logger:     c.Logger,
 		UserAgent:  c.UserAgent,
-	}).FetchAndVerify(ctx, URL, resource.GzSHA256)
+	}).FetchResourceAndVerify(ctx, resource.URLPath, resource.GzSHA256)
 	if err != nil {
 		return err
 	}

@@ -258,7 +258,7 @@ func (ps PrivacySettings) MaybeRewriteTestKeys(
 	if bytes.Count(data, bpip) <= 0 {
 		return nil
 	}
-	data = bytes.ReplaceAll(data, bpip, []byte(`[REDACTED]`))
+	data = bytes.ReplaceAll(data, bpip, []byte(`[scrubbed]`))
 	// We add an annotation such that hopefully later we can measure the
 	// number of cases where we failed to sanitize properly.
 	m.AddAnnotation("_probe_engine_sanitize_test_keys", "true")
@@ -322,6 +322,11 @@ type TorTarget struct {
 
 	// Protocol is the protocol to use with the target.
 	Protocol string `json:"protocol"`
+
+	// Source is the source from which we fetched this specific
+	// target. Whenever the source is non-empty, we will treat
+	// this specific target as a private target.
+	Source string `json:"source"`
 }
 
 // Logger defines the common interface that a logger should have. It is
@@ -346,11 +351,19 @@ type Logger interface {
 	Warnf(format string, v ...interface{})
 }
 
+// URLListConfig contains configuration for fetching the URL list.
+type URLListConfig struct {
+	Categories  []string // Categories to query for (empty means all)
+	CountryCode string   // CountryCode is the optional country code
+	Limit       int64    // Max number of URLs (<= 0 means no limit)
+}
+
 // ExperimentOrchestraClient is the experiment's view of
-// a client for querying the OONI orchestra.
+// a client for querying the OONI orchestra API.
 type ExperimentOrchestraClient interface {
 	FetchPsiphonConfig(ctx context.Context) ([]byte, error)
-	FetchTorTargets(ctx context.Context) (map[string]TorTarget, error)
+	FetchTorTargets(ctx context.Context, cc string) (map[string]TorTarget, error)
+	FetchURLList(ctx context.Context, config URLListConfig) ([]URLInfo, error)
 }
 
 // ExperimentSession is the experiment's view of a session.
@@ -362,6 +375,7 @@ type ExperimentSession interface {
 	Logger() Logger
 	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
+	KeyValueStore() KeyValueStore
 	ProbeASNString() string
 	ProbeCC() string
 	ProbeIP() string
