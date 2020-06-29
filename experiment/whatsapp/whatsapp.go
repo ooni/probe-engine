@@ -1,6 +1,11 @@
 // Package whatsapp contains the WhatsApp network experiment.
 //
 // See https://github.com/ooni/spec/blob/master/nettests/ts-018-whatsapp.md.
+//
+// Bugs
+//
+// This implementation does not currently perform the CIDR check, which is
+// know to be broken. We shall fix this issue at the spec level first.
 package whatsapp
 
 import (
@@ -86,6 +91,7 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		}
 		return
 	}
+	// track result of accessing the web interface
 	switch v.Input.Target {
 	case webHTTPSURL:
 		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
