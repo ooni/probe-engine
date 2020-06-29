@@ -93,11 +93,11 @@ func TestCancelledContext(t *testing.T) {
 		measurement,
 		handler.NewPrinterCallbacks(log.Log),
 	)
-	if !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 	tk := measurement.TestKeys.(*stunreachability.TestKeys)
-	if !strings.HasPrefix(*tk.Failure, "unknown_failure") {
+	if *tk.Failure != "interrupted" {
 		t.Fatal("expected different failure here")
 	}
 	if tk.Endpoint != "stun.l.google.com:19302" {

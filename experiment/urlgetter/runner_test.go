@@ -34,7 +34,7 @@ func TestRunnerDNSLookupWithContextCanceled(t *testing.T) {
 	cancel()
 	r := urlgetter.Runner{Target: "dnslookup://www.google.com"}
 	err := r.Run(ctx)
-	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err == nil || err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 }
@@ -44,7 +44,7 @@ func TestRunnerTLSHandshakeWithContextCanceled(t *testing.T) {
 	cancel()
 	r := urlgetter.Runner{Target: "tlshandshake://www.google.com:443"}
 	err := r.Run(ctx)
-	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err == nil || err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 }
@@ -54,7 +54,7 @@ func TestRunnerTCPConnectWithContextCanceled(t *testing.T) {
 	cancel()
 	r := urlgetter.Runner{Target: "tcpconnect://www.google.com:443"}
 	err := r.Run(ctx)
-	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err == nil || err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 }
