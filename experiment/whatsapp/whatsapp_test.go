@@ -214,3 +214,132 @@ func TestTestKeysComputeWebStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestTestKeysOnlyEndpointsFailure(t *testing.T) {
+	failure := io.EOF.Error()
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{Failure: &failure},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 1 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "blocked" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if tk.WhatsappWebFailure != nil {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "ok" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestTestKeysOnlyRegistrationServerFailure(t *testing.T) {
+	failure := io.EOF.Error()
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{Failure: &failure},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.ComputeWebStatus()
+	if *tk.RegistrationServerFailure != failure {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "blocked" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if tk.WhatsappWebFailure != nil {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "ok" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestTestKeysOnlyWebFailure(t *testing.T) {
+	failure := io.EOF.Error()
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{Failure: &failure},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if *tk.WhatsappWebFailure != failure {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "blocked" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}

@@ -21,11 +21,17 @@ import (
 )
 
 const (
-	registrationServiceURL = "https://v.whatsapp.net/v2/register"
-	testName               = "whatsapp"
-	testVersion            = "0.7.0"
-	webHTTPURL             = "http://web.whatsapp.com"
-	webHTTPSURL            = "https://web.whatsapp.com"
+	// RegistrationServiceURL is the URL used by WhatsApp registration service
+	RegistrationServiceURL = "https://v.whatsapp.net/v2/register"
+
+	// WebHTTPURL is WhatsApp web's HTTP URL
+	WebHTTPURL = "http://web.whatsapp.com"
+
+	// WebHTTPSURL is WhatsApp web's HTTPS URL
+	WebHTTPSURL = "https://web.whatsapp.com"
+
+	testName    = "whatsapp"
+	testVersion = "0.7.0"
 )
 
 var endpointPattern = regexp.MustCompile("^tcpconnect://e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
@@ -84,7 +90,7 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		return
 	}
 	// set the status of the registration service
-	if v.Input.Target == registrationServiceURL {
+	if v.Input.Target == RegistrationServiceURL {
 		tk.RegistrationServerFailure = v.TestKeys.Failure
 		if v.TestKeys.Failure == nil {
 			tk.RegistrationServerStatus = "ok"
@@ -93,9 +99,9 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 	}
 	// track result of accessing the web interface
 	switch v.Input.Target {
-	case webHTTPSURL:
+	case WebHTTPSURL:
 		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
-	case webHTTPURL:
+	case WebHTTPURL:
 		tk.WhatsappHTTPFailure = v.TestKeys.Failure
 	}
 }
@@ -150,9 +156,9 @@ func (m measurer) Run(
 	if m.config.AllEndpoints == false {
 		inputs = inputs[0:1]
 	}
-	inputs = append(inputs, urlgetter.MultiInput{Target: registrationServiceURL})
-	inputs = append(inputs, urlgetter.MultiInput{Target: webHTTPSURL})
-	inputs = append(inputs, urlgetter.MultiInput{Target: webHTTPURL})
+	inputs = append(inputs, urlgetter.MultiInput{Target: RegistrationServiceURL})
+	inputs = append(inputs, urlgetter.MultiInput{Target: WebHTTPSURL})
+	inputs = append(inputs, urlgetter.MultiInput{Target: WebHTTPURL})
 	// measure in parallel
 	multi := urlgetter.Multi{Begin: time.Now(), Session: sess}
 	testkeys := NewTestKeys()
