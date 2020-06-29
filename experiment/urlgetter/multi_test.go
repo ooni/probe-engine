@@ -84,27 +84,35 @@ func TestMultiIntegrationWithBaseTime(t *testing.T) {
 	}}
 	outputs := multi.Collect(context.Background(), inputs, "integration-test",
 		handler.NewPrinterCallbacks(log.Log))
+	var count int
 	for result := range outputs {
 		for _, entry := range result.TestKeys.NetworkEvents {
 			if entry.T < 3600 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.Queries {
 			if entry.T < 3600 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.TCPConnect {
 			if entry.T < 3600 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.TLSHandshakes {
 			if entry.T < 3600 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
+	}
+	if count <= 0 {
+		t.Fatal("unexpected number of entries processed")
 	}
 }
 
@@ -121,27 +129,35 @@ func TestMultiIntegrationWithoutBaseTime(t *testing.T) {
 	}}
 	outputs := multi.Collect(context.Background(), inputs, "integration-test",
 		handler.NewPrinterCallbacks(log.Log))
+	var count int
 	for result := range outputs {
 		for _, entry := range result.TestKeys.NetworkEvents {
 			if entry.T > 60 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.Queries {
 			if entry.T > 60 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.TCPConnect {
 			if entry.T > 60 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
 		for _, entry := range result.TestKeys.TLSHandshakes {
 			if entry.T > 60 {
 				t.Fatal("base time not correctly set")
 			}
+			count++
 		}
+	}
+	if count <= 0 {
+		t.Fatal("unexpected number of entries processed")
 	}
 }
 
