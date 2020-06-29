@@ -91,6 +91,7 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 	}
 	// set the status of the registration service
 	if v.Input.Target == RegistrationServiceURL {
+		// TODO(bassosimone): here we should check the HTTP status code
 		tk.RegistrationServerFailure = v.TestKeys.Failure
 		if v.TestKeys.Failure == nil {
 			tk.RegistrationServerStatus = "ok"
@@ -98,6 +99,8 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		return
 	}
 	// track result of accessing the web interface
+	// TODO(bassosimone): here we should check the HTTP status code
+	// as well as the webpage contains "WhatsApp Web".
 	switch v.Input.Target {
 	case WebHTTPSURL:
 		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
