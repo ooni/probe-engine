@@ -354,7 +354,7 @@ func TestIntegrationOBFS4DialContextError(t *testing.T) {
 	cancel() // should cause DialContex to fail
 	config := obfs4config()
 	results := OBFS4Connect(ctx, config)
-	if !strings.HasSuffix(results.Error.Error(), "operation was canceled") {
+	if results.Error.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 }

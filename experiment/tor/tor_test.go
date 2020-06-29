@@ -261,7 +261,7 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 		t.Fatal("the target we expected is missing")
 	}
 	tgt := targets["xx"]
-	if !strings.HasSuffix(*tgt.Failure, "operation was canceled") {
+	if *tgt.Failure != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 }
@@ -380,7 +380,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 	if tk.Connects == nil {
@@ -405,7 +405,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "operation was canceled") {
+	if err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
 	}
 	if tk.Connects == nil {
@@ -430,8 +430,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if !strings.HasSuffix(err.Error(), "operation was canceled") &&
-		!strings.HasSuffix(err.Error(), "context canceled") {
+	if err.Error() != "interrupted" {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if tk.Connects == nil {

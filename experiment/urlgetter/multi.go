@@ -3,6 +3,7 @@ package urlgetter
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ooni/probe-engine/model"
 )
@@ -38,6 +39,10 @@ func defaultMultiGetter(ctx context.Context, g Getter) (TestKeys, error) {
 
 // Multi allows to run several urlgetters in paraller.
 type Multi struct {
+	// Begin is the time when the experiment begun. If you do not
+	// set this field, every target is measured independently.
+	Begin time.Time
+
 	// Getter is the Getter func to be used. If this is nil we use
 	// the default getter, which is what you typically want.
 	Getter MultiGetter
@@ -113,6 +118,7 @@ func (m Multi) source(inputs []MultiInput, inputch chan<- MultiInput) {
 func (m Multi) do(ctx context.Context, in <-chan MultiInput, out chan<- MultiOutput) {
 	for input := range in {
 		g := Getter{
+			Begin:   m.Begin,
 			Config:  input.Config,
 			Session: m.Session,
 			Target:  input.Target,

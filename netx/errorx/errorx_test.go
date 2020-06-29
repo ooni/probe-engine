@@ -77,6 +77,11 @@ func TestToFailureString(t *testing.T) {
 			t.Fatal("unexpected result")
 		}
 	})
+	t.Run("for operation was canceled error", func(t *testing.T) {
+		if toFailureString(errors.New("operation was canceled")) != modelx.FailureInterrupted {
+			t.Fatal("unexpected result")
+		}
+	})
 	t.Run("for EOF", func(t *testing.T) {
 		if toFailureString(io.EOF) != modelx.FailureEOFError {
 			t.Fatal("unexpected results")

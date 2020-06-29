@@ -15,7 +15,7 @@ import (
 
 const (
 	testName    = "telegram"
-	testVersion = "0.1.0"
+	testVersion = "0.1.1"
 )
 
 // Config contains the telegram experiment config.
@@ -99,7 +99,7 @@ func (m measurer) ExperimentVersion() string {
 
 func (m measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	urlgetter.RegisterExtensions(measurement)
 	inputs := []urlgetter.MultiInput{
@@ -118,7 +118,7 @@ func (m measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		{Target: "http://web.telegram.org/", Config: urlgetter.Config{Method: "GET"}},
 		{Target: "https://web.telegram.org/", Config: urlgetter.Config{Method: "GET"}},
 	}
-	multi := urlgetter.Multi{Session: sess}
+	multi := urlgetter.Multi{Begin: time.Now(), Session: sess}
 	testkeys := NewTestKeys()
 	testkeys.Agent = "redirect"
 	measurement.TestKeys = testkeys
