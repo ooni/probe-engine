@@ -80,6 +80,9 @@ func toFailureString(err error) string {
 	}
 
 	s := err.Error()
+	if strings.HasSuffix(s, "operation was canceled") {
+		return modelx.FailureInterrupted
+	}
 	if strings.HasSuffix(s, "EOF") {
 		return modelx.FailureEOFError
 	}
