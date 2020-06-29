@@ -17,15 +17,29 @@ import (
 // Other OONI experiment should use the Getter to factor code when
 // the Getter implements the operations they wanna perform.
 type Getter struct {
-	Config  Config
+	// Begin is the time when the experiment begun. If you do not
+	// set this field, every target is measured independently.
+	Begin time.Time
+
+	// Config contains settings for this run. If not set, then
+	// we will use the default config.
+	Config Config
+
+	// Session is the session for this run. This field must
+	// be set otherwise the code will panic.
 	Session model.ExperimentSession
-	Target  string
+
+	// Target is the thing to measure in this run. This field must
+	// be set otherwise the code won't know what to do.
+	Target string
 }
 
 // Get performs the action described by g using the given context
 // and returning the test keys and eventually an error
 func (g Getter) Get(ctx context.Context) (TestKeys, error) {
-	begin := time.Now()
+	if g.Begin.IsZero() {
+		g.Begin = time.Now()
+	}
 	saver := new(trace.Saver)
 	tk, err := g.get(ctx, saver)
 	// Make sure we have an operation in cases where we fail before
@@ -39,13 +53,13 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	events := saver.Read()
 	tk.Queries = append(
 		tk.Queries, archival.NewDNSQueriesList(
-			begin, events, g.Session.ASNDatabasePath())...,
+			g.Begin, events, g.Session.ASNDatabasePath())...,
 	)
 	tk.NetworkEvents = append(
-		tk.NetworkEvents, archival.NewNetworkEventsList(begin, events)...,
+		tk.NetworkEvents, archival.NewNetworkEventsList(g.Begin, events)...,
 	)
 	tk.Requests = append(
-		tk.Requests, archival.NewRequestList(begin, events)...,
+		tk.Requests, archival.NewRequestList(g.Begin, events)...,
 	)
 	if len(tk.Requests) > 0 {
 		// OONI's convention is that the last request appears first
@@ -53,10 +67,10 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 		tk.HTTPResponseBody = tk.Requests[0].Response.Body.Value
 	}
 	tk.TCPConnect = append(
-		tk.TCPConnect, archival.NewTCPConnectList(begin, events)...,
+		tk.TCPConnect, archival.NewTCPConnectList(g.Begin, events)...,
 	)
 	tk.TLSHandshakes = append(
-		tk.TLSHandshakes, archival.NewTLSHandshakesList(begin, events)...,
+		tk.TLSHandshakes, archival.NewTLSHandshakesList(g.Begin, events)...,
 	)
 	return tk, err
 }
