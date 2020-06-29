@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -17,7 +19,11 @@ const (
 	registrationServiceURL = "https://v.whatsapp.net/v2/register"
 	testName               = "whatsapp"
 	testVersion            = "0.7.0"
+	webHTTPURL             = "http://web.whatsapp.com"
+	webHTTPSURL            = "https://web.whatsapp.com"
 )
+
+var endpointPattern = regexp.MustCompile("^tcpconnect://e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
 
 // Config contains the experiment config.
 type Config struct {
@@ -27,11 +33,31 @@ type Config struct {
 // TestKeys contains the experiment results
 type TestKeys struct {
 	urlgetter.TestKeys
+	RegistrationServerFailure        *string  `json:"registration_server_failure"`
+	RegistrationServerStatus         string   `json:"registration_server_status"`
+	WhatsappEndpointsBlocked         []string `json:"whatsapp_endpoints_blocked"`
+	WhatsappEndpointsDNSInconsistent []string `json:"whatsapp_endpoints_dns_inconsistent"`
+	WhatsappEndpointsStatus          string   `json:"whatsapp_endpoints_status"`
+	WhatsappWebStatus                string   `json:"whatsapp_web_status"`
+	WhatsappWebFailure               *string  `json:"whatsapp_web_failure"`
+	WhatsappHTTPFailure              *string  `json:"-"`
+	WhatsappHTTPSFailure             *string  `json:"-"`
 }
 
 // NewTestKeys returns a new instance of the test keys.
 func NewTestKeys() *TestKeys {
-	return new(TestKeys)
+	failure := "unknown_failure"
+	return &TestKeys{
+		RegistrationServerFailure:        &failure,
+		RegistrationServerStatus:         "blocked",
+		WhatsappEndpointsBlocked:         []string{},
+		WhatsappEndpointsDNSInconsistent: []string{},
+		WhatsappEndpointsStatus:          "blocked",
+		WhatsappWebFailure:               &failure,
+		WhatsappWebStatus:                "blocked",
+		WhatsappHTTPFailure:              &failure,
+		WhatsappHTTPSFailure:             &failure,
+	}
 }
 
 // Update updates the TestKeys using the given MultiOutput result.
@@ -42,8 +68,45 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 	tk.Requests = append(tk.Requests, v.TestKeys.Requests...)
 	tk.TCPConnect = append(tk.TCPConnect, v.TestKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, v.TestKeys.TLSHandshakes...)
-	// TODO(bassosimone): here we need to fill in all the fields that
-	// are used by the WhatsApp expriment.
+	// set the status of WhatsApp endpoints
+	if endpointPattern.MatchString(v.Input.Target) {
+		if v.TestKeys.Failure != nil {
+			endpoint := strings.ReplaceAll(v.Input.Target, "tcpconnect://", "")
+			tk.WhatsappEndpointsBlocked = append(tk.WhatsappEndpointsBlocked, endpoint)
+			return
+		}
+		tk.WhatsappEndpointsStatus = "ok"
+		return
+	}
+	// set the status of the registration service
+	if v.Input.Target == registrationServiceURL {
+		tk.RegistrationServerFailure = v.TestKeys.Failure
+		if v.TestKeys.Failure == nil {
+			tk.RegistrationServerStatus = "ok"
+		}
+		return
+	}
+	switch v.Input.Target {
+	case webHTTPSURL:
+		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
+	case webHTTPURL:
+		tk.WhatsappHTTPFailure = v.TestKeys.Failure
+	}
+}
+
+// ComputeWebStatus sets the web status fields.
+func (tk *TestKeys) ComputeWebStatus() {
+	if tk.WhatsappHTTPFailure == nil && tk.WhatsappHTTPSFailure == nil {
+		tk.WhatsappWebFailure = nil
+		tk.WhatsappWebStatus = "ok"
+		return
+	}
+	tk.WhatsappWebStatus = "blocked" // must be here because of unit tests
+	if tk.WhatsappHTTPSFailure != nil {
+		tk.WhatsappWebFailure = tk.WhatsappHTTPSFailure
+		return
+	}
+	tk.WhatsappWebFailure = tk.WhatsappHTTPFailure
 }
 
 type measurer struct {
@@ -82,8 +145,8 @@ func (m measurer) Run(
 		inputs = inputs[0:1]
 	}
 	inputs = append(inputs, urlgetter.MultiInput{Target: registrationServiceURL})
-	inputs = append(inputs, urlgetter.MultiInput{Target: "https://web.whatsapp.com"})
-	inputs = append(inputs, urlgetter.MultiInput{Target: "http://web.whatsapp.com"})
+	inputs = append(inputs, urlgetter.MultiInput{Target: webHTTPSURL})
+	inputs = append(inputs, urlgetter.MultiInput{Target: webHTTPURL})
 	// measure in parallel
 	multi := urlgetter.Multi{Begin: time.Now(), Session: sess}
 	testkeys := NewTestKeys()
@@ -92,6 +155,7 @@ func (m measurer) Run(
 	for entry := range multi.Collect(ctx, inputs, "whatsapp", callbacks) {
 		testkeys.Update(entry)
 	}
+	testkeys.ComputeWebStatus()
 	return nil
 }
 
