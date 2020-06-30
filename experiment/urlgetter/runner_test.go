@@ -3,6 +3,7 @@ package urlgetter_test
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -156,5 +157,76 @@ func TestRunnerHTTPNoRedirect(t *testing.T) {
 	err := r.Run(context.Background())
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRunnerHTTPCannotReadBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hijacker, ok := w.(http.Hijacker)
+		if !ok {
+			panic("hijacking not supported by this server")
+		}
+		conn, _, _ := hijacker.Hijack()
+		conn.Write([]byte("HTTP/1.1 200 Ok\r\n"))
+		conn.Write([]byte("Content-Length: 1024\r\n"))
+		conn.Write([]byte("\r\n"))
+		conn.Write([]byte("123456789"))
+		conn.Close()
+	}))
+	defer server.Close()
+	r := urlgetter.Runner{
+		Config: urlgetter.Config{
+			NoFollowRedirects: true,
+		},
+		Target: server.URL,
+	}
+	err := r.Run(context.Background())
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestRunnerHTTPWeHandle400Correctly(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+	}))
+	defer server.Close()
+	r := urlgetter.Runner{
+		Config: urlgetter.Config{
+			FailOnHTTPError:   true,
+			NoFollowRedirects: true,
+		},
+		Target: server.URL,
+	}
+	err := r.Run(context.Background())
+	if !errors.Is(err, urlgetter.ErrHTTPRequestFailed) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestRunnerHTTPCannotReadBodyWinsOver400(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hijacker, ok := w.(http.Hijacker)
+		if !ok {
+			panic("hijacking not supported by this server")
+		}
+		conn, _, _ := hijacker.Hijack()
+		conn.Write([]byte("HTTP/1.1 400 Bad Request\r\n"))
+		conn.Write([]byte("Content-Length: 1024\r\n"))
+		conn.Write([]byte("\r\n"))
+		conn.Write([]byte("123456789"))
+		conn.Close()
+	}))
+	defer server.Close()
+	r := urlgetter.Runner{
+		Config: urlgetter.Config{
+			FailOnHTTPError:   true,
+			NoFollowRedirects: true,
+		},
+		Target: server.URL,
+	}
+	err := r.Run(context.Background())
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("not the error we expected")
 	}
 }

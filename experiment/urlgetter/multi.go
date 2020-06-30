@@ -32,8 +32,8 @@ type MultiOutput struct {
 // MultiGetter allows to override the behaviour of Multi for testing purposes.
 type MultiGetter func(ctx context.Context, g Getter) (TestKeys, error)
 
-// defaultMultiGetter is the default MultiGetter
-func defaultMultiGetter(ctx context.Context, g Getter) (TestKeys, error) {
+// DefaultMultiGetter is the default MultiGetter
+func DefaultMultiGetter(ctx context.Context, g Getter) (TestKeys, error) {
 	return g.Get(ctx)
 }
 
@@ -125,7 +125,7 @@ func (m Multi) do(ctx context.Context, in <-chan MultiInput, out chan<- MultiOut
 		}
 		fn := m.Getter
 		if fn == nil {
-			fn = defaultMultiGetter
+			fn = DefaultMultiGetter
 		}
 		tk, err := fn(ctx, g)
 		out <- MultiOutput{Input: input, Err: err, TestKeys: tk}
