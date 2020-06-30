@@ -6,6 +6,15 @@
 //
 // This implementation does not currently perform the CIDR check, which is
 // know to be broken. We shall fix this issue at the spec level first.
+//
+// This implemention currently triggers what looks like MITM blocking by
+// WhatsApp, where the combination of User-Agent header and TLS ClientHello
+// we use causes a `400 Bad Request` error. We have experimentally seen we
+// can avoid such error by using `miniooni/0.1.0-dev` as User-Agent. We may
+// want to find out a better implementation in the future. But doing that
+// is tricky as it may cause subsequent false positives down the line.
+//
+// See also https://github.com/ooni/probe-engine/pull/741.
 package whatsapp
 
 import (
@@ -73,13 +82,13 @@ func NewTestKeys() *TestKeys {
 
 // Update updates the TestKeys using the given MultiOutput result.
 func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
-	// update the easy to update entries first
+	// Update the easy to update entries first
 	tk.NetworkEvents = append(tk.NetworkEvents, v.TestKeys.NetworkEvents...)
 	tk.Queries = append(tk.Queries, v.TestKeys.Queries...)
 	tk.Requests = append(tk.Requests, v.TestKeys.Requests...)
 	tk.TCPConnect = append(tk.TCPConnect, v.TestKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, v.TestKeys.TLSHandshakes...)
-	// set the status of WhatsApp endpoints
+	// Set the status of WhatsApp endpoints
 	if endpointPattern.MatchString(v.Input.Target) {
 		if v.TestKeys.Failure != nil {
 			endpoint := strings.ReplaceAll(v.Input.Target, "tcpconnect://", "")
@@ -89,23 +98,29 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		tk.WhatsappEndpointsStatus = "ok"
 		return
 	}
-	// set the status of the registration service
+	// Set the status of the registration service
 	if v.Input.Target == RegistrationServiceURL {
-		// TODO(bassosimone): here we should check the HTTP status code
 		tk.RegistrationServerFailure = v.TestKeys.Failure
 		if v.TestKeys.Failure == nil {
 			tk.RegistrationServerStatus = "ok"
 		}
 		return
 	}
-	// track result of accessing the web interface
-	// TODO(bassosimone): here we should check the HTTP status code
-	// as well as the webpage contains "WhatsApp Web".
+	// Track result of accessing the web interface.
+	//
+	// We treat HTTPS differently. A comment above describing what looks
+	// like MITM detection should be enough to understand this code.
 	switch v.Input.Target {
 	case WebHTTPSURL:
 		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
 	case WebHTTPURL:
-		tk.WhatsappHTTPFailure = v.TestKeys.Failure
+		failure := v.TestKeys.Failure
+		title := `<title>WhatsApp Web</title>`
+		if failure == nil && strings.Contains(v.TestKeys.HTTPResponseBody, title) == false {
+			failureString := "whatsapp_missing_title_error"
+			failure = &failureString
+		}
+		tk.WhatsappHTTPFailure = failure
 	}
 }
 
@@ -124,19 +139,28 @@ func (tk *TestKeys) ComputeWebStatus() {
 	tk.WhatsappWebFailure = tk.WhatsappHTTPFailure
 }
 
-type measurer struct {
-	config Config
+// Measurer performs the measurement
+type Measurer struct {
+	// Config contains the experiment settings. If empty we
+	// will be using default settings.
+	Config Config
+
+	// Getter is an optional getter to be used for testing.
+	Getter urlgetter.MultiGetter
 }
 
-func (m measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperimentName
+func (m Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion
+func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m measurer) Run(
+// Run implements ExperimentMeasurer.Run
+func (m Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -156,14 +180,26 @@ func (m measurer) Run(
 	rnd.Shuffle(len(inputs), func(i, j int) {
 		inputs[i], inputs[j] = inputs[j], inputs[i]
 	})
-	if m.config.AllEndpoints == false {
+	if m.Config.AllEndpoints == false {
 		inputs = inputs[0:1]
 	}
-	inputs = append(inputs, urlgetter.MultiInput{Target: RegistrationServiceURL})
-	inputs = append(inputs, urlgetter.MultiInput{Target: WebHTTPSURL})
-	inputs = append(inputs, urlgetter.MultiInput{Target: WebHTTPURL})
+	inputs = append(inputs, urlgetter.MultiInput{
+		Config: urlgetter.Config{FailOnHTTPError: true},
+		Target: RegistrationServiceURL,
+	})
+	inputs = append(inputs, urlgetter.MultiInput{
+		// See the above comment regarding what seems MITM detection to
+		// understand why we're not forcing FailOnHTTPError here.
+		Target: WebHTTPSURL,
+	})
+	inputs = append(inputs, urlgetter.MultiInput{
+		// We may eventually start seeing HTTP 400 errors here. See the
+		// above comment on what seems MITM detection.
+		Config: urlgetter.Config{FailOnHTTPError: true},
+		Target: WebHTTPURL,
+	})
 	// measure in parallel
-	multi := urlgetter.Multi{Begin: time.Now(), Session: sess}
+	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
 	testkeys := NewTestKeys()
 	testkeys.Agent = "redirect"
 	measurement.TestKeys = testkeys
@@ -176,5 +212,5 @@ func (m measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return measurer{config: config}
+	return Measurer{Config: config}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
@@ -231,8 +232,10 @@ func TestTestKeysOnlyEndpointsFailure(t *testing.T) {
 		TestKeys: urlgetter.TestKeys{},
 	})
 	tk.Update(urlgetter.MultiOutput{
-		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
-		TestKeys: urlgetter.TestKeys{},
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseBody: "<title>WhatsApp Web</title>",
+		},
 	})
 	tk.ComputeWebStatus()
 	if tk.RegistrationServerFailure != nil {
@@ -274,8 +277,10 @@ func TestTestKeysOnlyRegistrationServerFailure(t *testing.T) {
 		TestKeys: urlgetter.TestKeys{},
 	})
 	tk.Update(urlgetter.MultiOutput{
-		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
-		TestKeys: urlgetter.TestKeys{},
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseBody: "<title>WhatsApp Web</title>",
+		},
 	})
 	tk.ComputeWebStatus()
 	if *tk.RegistrationServerFailure != failure {
@@ -341,5 +346,54 @@ func TestTestKeysOnlyWebFailure(t *testing.T) {
 	}
 	if tk.WhatsappWebStatus != "blocked" {
 		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
+	called := atomicx.NewInt64()
+	failOnErrorWebHTTPS := atomicx.NewInt64()
+	failOnErrorWebHTTP := atomicx.NewInt64()
+	failOnErrorRegistrationService := atomicx.NewInt64()
+	measurer := whatsapp.Measurer{
+		Config: whatsapp.Config{},
+		Getter: func(ctx context.Context, g urlgetter.Getter) (urlgetter.TestKeys, error) {
+			called.Add(1)
+			switch g.Target {
+			case whatsapp.WebHTTPSURL:
+				if g.Config.FailOnHTTPError {
+					failOnErrorWebHTTPS.Add(1)
+				}
+			case whatsapp.WebHTTPURL:
+				if g.Config.FailOnHTTPError {
+					failOnErrorWebHTTP.Add(1)
+				}
+			case whatsapp.RegistrationServiceURL:
+				if g.Config.FailOnHTTPError {
+					failOnErrorRegistrationService.Add(1)
+				}
+			}
+			return urlgetter.DefaultMultiGetter(ctx, g)
+		},
+	}
+	ctx := context.Background()
+	sess := &mockable.ExperimentSession{
+		MockableLogger: log.Log,
+	}
+	measurement := new(model.Measurement)
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
+		t.Fatal(err)
+	}
+	if called.Load() < 1 {
+		t.Fatal("not called")
+	}
+	if failOnErrorWebHTTPS.Load() != 0 {
+		t.Fatal("configured fail on error for Web HTTPS")
+	}
+	if failOnErrorWebHTTP.Load() != 1 {
+		t.Fatal("not configured fail on error for Web HTTP")
+	}
+	if failOnErrorRegistrationService.Load() != 1 {
+		t.Fatal("not configured fail on error for registragtion service")
 	}
 }
