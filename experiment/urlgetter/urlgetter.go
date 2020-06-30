@@ -28,6 +28,7 @@ type Config struct {
 	TLSServerName     string `ooni:"Force TLS to using a specific SNI in Client Hello"`
 	TLSVersion        string `ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 	Tunnel            string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+	UserAgent         string `ooni:"Use the specified User-Agent"`
 }
 
 // TestKeys contains the experiment's result.

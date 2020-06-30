@@ -375,7 +375,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		TestVersion:               e.testVersion,
 	}
 	m.AddAnnotation("assets_version", strconv.FormatInt(resources.Version, 10))
-	m.AddAnnotation("engine_name", "miniooni")
+	m.AddAnnotation("engine_name", "ooniprobe-engine")
 	m.AddAnnotation("engine_version", version.Version)
 	m.AddAnnotation("platform", platform.Name())
 	return &m
