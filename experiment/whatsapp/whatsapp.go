@@ -13,6 +13,8 @@
 // can avoid such error by using `miniooni/0.1.0-dev` as User-Agent. We may
 // want to find out a better implementation in the future. But doing that
 // is tricky as it may cause subsequent false positives down the line.
+//
+// See also https://github.com/ooni/probe-engine/pull/741.
 package whatsapp
 
 import (
