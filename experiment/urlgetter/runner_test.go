@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/httpheader"
 )
 
 func TestRunnerWithInvalidURLScheme(t *testing.T) {
@@ -228,5 +230,58 @@ func TestRunnerHTTPCannotReadBodyWinsOver400(t *testing.T) {
 	err := r.Run(context.Background())
 	if !errors.Is(err, io.EOF) {
 		t.Fatal("not the error we expected")
+	}
+}
+
+func TestRunnerWeCanForceUserAgent(t *testing.T) {
+	expected := "antani/1.23.4-dev"
+	found := atomicx.NewInt64()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("User-Agent") == expected {
+			found.Add(1)
+		}
+		w.WriteHeader(200)
+	}))
+	defer server.Close()
+	r := urlgetter.Runner{
+		Config: urlgetter.Config{
+			FailOnHTTPError:   true,
+			NoFollowRedirects: true,
+			UserAgent:         expected,
+		},
+		Target: server.URL,
+	}
+	err := r.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found.Load() != 1 {
+		t.Fatal("we didn't override the user agent")
+	}
+}
+
+func TestRunnerDefaultUserAgent(t *testing.T) {
+	expected := httpheader.RandomUserAgent()
+	found := atomicx.NewInt64()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("User-Agent") == expected {
+			found.Add(1)
+		}
+		w.WriteHeader(200)
+	}))
+	defer server.Close()
+	r := urlgetter.Runner{
+		Config: urlgetter.Config{
+			FailOnHTTPError:   true,
+			NoFollowRedirects: true,
+		},
+		Target: server.URL,
+	}
+	err := r.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found.Load() != 1 {
+		t.Fatal("we didn't override the user agent")
 	}
 }
