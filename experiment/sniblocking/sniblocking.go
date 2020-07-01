@@ -115,9 +115,11 @@ func (m *measurer) measureone(
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
 		s := modelx.FailureInterrupted
+		failedop := modelx.TopLevelOperation
 		return Subresult{
 			TestKeys: urlgetter.TestKeys{
-				Failure: &s,
+				FailedOperation: &failedop,
+				Failure:         &s,
 			},
 			THAddress: thaddr,
 			SNI:       sni,

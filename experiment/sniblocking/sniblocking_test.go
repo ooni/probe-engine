@@ -198,7 +198,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	if result.DNSCache != nil {
 		t.Fatal("not the expected DNSCache")
 	}
-	if result.FailedOperation != nil {
+	if result.FailedOperation == nil || *result.FailedOperation != modelx.TopLevelOperation {
 		t.Fatal("not the expected FailedOperation")
 	}
 	if result.Failure == nil || *result.Failure != modelx.FailureInterrupted {
