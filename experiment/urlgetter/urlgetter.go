@@ -42,8 +42,8 @@ type TestKeys struct {
 	NetworkEvents   []archival.NetworkEvent    `json:"network_events"`
 	Queries         []archival.DNSQueryEntry   `json:"queries"`
 	Requests        []archival.RequestEntry    `json:"requests"`
-	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
 	SOCKSProxy      string                     `json:"socksproxy,omitempty"`
+	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
 	TLSHandshakes   []archival.TLSHandshake    `json:"tls_handshakes"`
 	Tunnel          string                     `json:"tunnel,omitempty"`
 
