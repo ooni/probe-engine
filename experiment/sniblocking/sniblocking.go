@@ -119,7 +119,8 @@ func (m *measurer) measureone(
 			TestKeys: urlgetter.TestKeys{
 				Failure: &s,
 			},
-			SNI: sni,
+			THAddress: thaddr,
+			SNI:       sni,
 		}
 	}
 	// perform the measurement
