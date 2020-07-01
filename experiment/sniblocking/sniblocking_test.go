@@ -2,6 +2,7 @@ package sniblocking
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -188,9 +189,6 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 		"kernel.org",
 		"example.com:443",
 	)
-	if *result.Failure != modelx.FailureGenericTimeoutError {
-		t.Fatal("unexpected failure")
-	}
 	if result.Agent != "" {
 		t.Fatal("not the expected Agent")
 	}
@@ -231,6 +229,58 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 		t.Fatal("unexpected SNI")
 	}
 	if result.THAddress != "example.com:443" {
+		t.Fatal("unexpected THAddress")
+	}
+}
+
+func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
+	result := new(measurer).measureone(
+		context.Background(),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
+		time.Now(),
+		"kernel.org",
+		"example.com:443\t\t\t", // cause URL parse error
+	)
+	if result.Agent != "redirect" {
+		t.Fatal("not the expected Agent")
+	}
+	if result.BootstrapTime != 0.0 {
+		t.Fatal("not the expected BootstrapTime")
+	}
+	if result.DNSCache != nil {
+		t.Fatal("not the expected DNSCache")
+	}
+	if result.FailedOperation == nil || *result.FailedOperation != "top_level" {
+		t.Fatal("not the expected FailedOperation")
+	}
+	if result.Failure == nil || !strings.Contains(*result.Failure, "invalid target URL") {
+		t.Fatal("not the expected failure")
+	}
+	if result.NetworkEvents != nil {
+		t.Fatal("not the expected NetworkEvents")
+	}
+	if result.Queries != nil {
+		t.Fatal("not the expected Queries")
+	}
+	if result.Requests != nil {
+		t.Fatal("not the expected Requests")
+	}
+	if result.SOCKSProxy != "" {
+		t.Fatal("not the expected SOCKSProxy")
+	}
+	if result.TCPConnect != nil {
+		t.Fatal("not the expected TCPConnect")
+	}
+	if result.TLSHandshakes != nil {
+		t.Fatal("not the expected TLSHandshakes")
+	}
+	if result.Tunnel != "" {
+		t.Fatal("not the expected Tunnel")
+	}
+	if result.SNI != "kernel.org" {
+		t.Fatal("unexpected SNI")
+	}
+	if result.THAddress != "example.com:443\t\t\t" {
 		t.Fatal("unexpected THAddress")
 	}
 }

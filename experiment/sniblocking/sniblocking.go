@@ -130,6 +130,8 @@ func (m *measurer) measureone(
 		Session: sess,
 		Target:  fmt.Sprintf("tlshandshake://%s", thaddr),
 	}
+	// Ignoring the error because g.Get() sets the tk.Failure field
+	// to be the OONI equivalent of the error that occurred.
 	tk, _ := g.Get(ctx)
 	// assemble and publish the results
 	smk := Subresult{
