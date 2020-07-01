@@ -15,7 +15,6 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -36,16 +35,10 @@ type Config struct {
 // Subresult contains the keys of a single measurement
 // that targets either the target or the control.
 type Subresult struct {
-	Agent         string                     `json:"agent"`
-	Cached        bool                       `json:"-"`
-	Failure       *string                    `json:"failure"`
-	NetworkEvents []archival.NetworkEvent    `json:"network_events"`
-	Queries       []archival.DNSQueryEntry   `json:"queries"`
-	Requests      []archival.RequestEntry    `json:"requests"`
-	SNI           string                     `json:"sni"`
-	TCPConnect    []archival.TCPConnectEntry `json:"tcp_connect"`
-	THAddress     string                     `json:"th_address"`
-	TLSHandshakes []archival.TLSHandshake    `json:"tls_handshakes"`
+	urlgetter.TestKeys
+	Cached    bool   `json:"-"`
+	SNI       string `json:"sni"`
+	THAddress string `json:"th_address"`
 }
 
 // TestKeys contains sniblocking test keys.
@@ -123,8 +116,10 @@ func (m *measurer) measureone(
 	case <-ctx.Done():
 		s := modelx.FailureGenericTimeoutError
 		return Subresult{
-			Failure: &s,
-			SNI:     sni,
+			TestKeys: urlgetter.TestKeys{
+				Failure: &s,
+			},
+			SNI: sni,
 		}
 	}
 	// perform the measurement
@@ -137,15 +132,9 @@ func (m *measurer) measureone(
 	tk, _ := g.Get(ctx)
 	// assemble and publish the results
 	smk := Subresult{
-		Agent:         "redirect",
-		Failure:       tk.Failure,
-		NetworkEvents: tk.NetworkEvents,
-		Queries:       tk.Queries,
-		Requests:      tk.Requests,
-		SNI:           sni,
-		TCPConnect:    tk.TCPConnect,
-		THAddress:     thaddr,
-		TLSHandshakes: tk.TLSHandshakes,
+		SNI:       sni,
+		THAddress: thaddr,
+		TestKeys:  tk,
 	}
 	return smk
 }
