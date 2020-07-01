@@ -201,7 +201,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	if result.FailedOperation != nil {
 		t.Fatal("not the expected FailedOperation")
 	}
-	if result.Failure == nil || *result.Failure != modelx.FailureGenericTimeoutError {
+	if result.Failure == nil || *result.Failure != modelx.FailureInterrupted {
 		t.Fatal("not the expected failure")
 	}
 	if result.NetworkEvents != nil {

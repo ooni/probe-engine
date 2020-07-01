@@ -114,7 +114,7 @@ func (m *measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := modelx.FailureGenericTimeoutError
+		s := modelx.FailureInterrupted
 		return Subresult{
 			TestKeys: urlgetter.TestKeys{
 				Failure: &s,
