@@ -8,7 +8,6 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -106,7 +105,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.5" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -184,7 +183,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	cancel() // immediately cancel the context
 	result := new(measurer).measureone(
 		ctx,
-		netxlogger.NewHandler(log.Log),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
@@ -200,7 +199,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 func TestUnitMeasureoneSuccess(t *testing.T) {
 	result := new(measurer).measureone(
 		context.Background(),
-		netxlogger.NewHandler(log.Log),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
@@ -220,7 +219,7 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 		measurer.measureonewithcache(
 			context.Background(),
 			output,
-			netxlogger.NewHandler(log.Log),
+			&mockable.ExperimentSession{MockableLogger: log.Log},
 			time.Now(),
 			"kernel.org",
 			"example.com:443",
