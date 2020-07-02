@@ -29,7 +29,7 @@ const (
 	// testName is the name of this experiment
 	testName = "tor"
 
-	// testVersion is th version of this experiment
+	// testVersion is the version of this experiment
 	testVersion = "0.2.0"
 )
 
