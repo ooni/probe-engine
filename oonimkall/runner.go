@@ -58,7 +58,7 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 		sadly("InputFilepaths: not supported")
 	}
 	if r.settings.Options.AllEndpoints != nil {
-		sadly("Options.AllEndpoints: not supported")
+		logger.Warn("Options.AllEndpoints: not supported")
 	}
 	if r.settings.Options.Backend != "" {
 		sadly("Options.Backend: not supported")

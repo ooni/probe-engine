@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	engine "github.com/ooni/probe-engine"
 )
 
@@ -66,7 +67,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 			panic("expected to see unsupported settings")
 		}
 	}()
-	var seen []string
+	var fatal, warn []string
 	for ev := range out {
 		switch ev.Key {
 		case "failure.startup":
@@ -74,20 +75,61 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 			if strings.HasSuffix("not supported", evv.Failure) {
 				log.Fatalf("invalid value: %s", evv.Failure)
 			}
-			seen = append(seen, evv.Failure)
+			fatal = append(fatal, evv.Failure)
 		case "log":
 			evv := ev.Value.(eventLog)
 			if strings.HasSuffix("not supported", evv.Message) {
 				log.Fatalf("invalid value: %s", evv.Message)
 			}
-			seen = append(seen, evv.Message)
+			warn = append(warn, evv.Message)
 		default:
 			log.Fatalf("invalid key: %s", ev.Key)
 		}
 	}
-	const expected = 33
-	if len(seen) != expected {
-		t.Fatalf("expected: %d; seen %+v", expected, seen)
+	t.Log(fatal)
+	t.Log(warn)
+	expectedFatal := []string{
+		"InputFilepaths: not supported",
+		"Options.Backend: not supported",
+		"Options.BouncerBaseURL: not supported",
+		"Options.CollectorBaseURL: not supported",
+		"Options.Port: not supported",
+		"Options.RandomizeInput: not supported",
+		"Options.SaveRealResolverIP: not supported",
+		"Options.Server: not supported",
+		"Options.TestSuite: not supported",
+		"Options.Timeout: not supported",
+		"Options.UUID: not supported",
+		"OutputFilepath && !NoFileReport: not supported",
+	}
+	if diff := cmp.Diff(expectedFatal, fatal); diff != "" {
+		t.Fatal(diff)
+	}
+	expectedWarn := []string{
+		"Options.AllEndpoints: not supported",
+		"Options.CABundlePath: not supported",
+		"Options.ConstantBitrate: not supported",
+		"Options.DNSNameserver: not supported",
+		"Options.DNSEngine: not supported",
+		"Options.ExpectedBody: not supported",
+		"Options.GeoIPASNPath: not supported",
+		"Options.GeoIPCountryPath: not supported",
+		"Options.Hostname: not supported",
+		"Options.IgnoreBouncerError: not supported",
+		"Options.IgnoreOpenReportError: not supported",
+		"Options.MLabNSAddressFamily: not supported",
+		"Options.MLabNSBaseURL: not supported",
+		"Options.MLabNSCountry: not supported",
+		"Options.MLabNSMetro: not supported",
+		"Options.MLabNSPolicy: not supported",
+		"Options.MLabNSToolName: not supported",
+		"Options.ProbeASN: not supported",
+		"Options.ProbeCC: not supported",
+		"Options.ProbeIP: not supported",
+		"Options.ProbeNetworkName: not supported",
+	}
+	if diff := cmp.Diff(expectedWarn, warn); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
