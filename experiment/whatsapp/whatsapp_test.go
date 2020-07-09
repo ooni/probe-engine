@@ -542,21 +542,24 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 	measurer := whatsapp.Measurer{
 		Config: whatsapp.Config{},
 		Getter: func(ctx context.Context, g urlgetter.Getter) (urlgetter.TestKeys, error) {
-			called.Add(1)
 			switch g.Target {
 			case whatsapp.WebHTTPSURL:
+				called.Add(1)
 				if diff := cmp.Diff(g.Config, emptyConfig); diff != "" {
 					panic(diff)
 				}
 			case whatsapp.WebHTTPURL:
+				called.Add(2)
 				if diff := cmp.Diff(g.Config, configWithNoFollowRedirects); diff != "" {
 					panic(diff)
 				}
 			case whatsapp.RegistrationServiceURL:
+				called.Add(4)
 				if diff := cmp.Diff(g.Config, configWithFailOnHTTPError); diff != "" {
 					panic(diff)
 				}
 			default:
+				called.Add(8)
 				if diff := cmp.Diff(g.Config, emptyConfig); diff != "" {
 					panic(diff)
 				}
@@ -573,7 +576,7 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}
-	if called.Load() != 4 {
+	if called.Load() != 15 {
 		t.Fatal("not called four times")
 	}
 }
