@@ -521,6 +521,30 @@ func TestGetterIntegrationHTTPS(t *testing.T) {
 	}
 }
 
+func TestGetterIntegrationRedirect(t *testing.T) {
+	ctx := context.Background()
+	g := urlgetter.Getter{
+		Config: urlgetter.Config{
+			NoFollowRedirects: true, // reduce number of events
+		},
+		Session: &mockable.ExperimentSession{},
+		Target:  "http://web.whatsapp.com",
+	}
+	tk, err := g.Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tk.HTTPResponseStatus != 302 {
+		t.Fatal("unexpected status code")
+	}
+	if len(tk.HTTPResponseLocations) != 1 {
+		t.Fatal("missing redirect URL")
+	}
+	if tk.HTTPResponseLocations[0] != "https://web.whatsapp.com/" {
+		t.Fatal("invalid redirect URL")
+	}
+}
+
 func TestGetterIntegrationTLSHandshake(t *testing.T) {
 	ctx := context.Background()
 	g := urlgetter.Getter{

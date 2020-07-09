@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/experiment/internal/httpfailure"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/mockable"
@@ -21,7 +22,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "whatsapp" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.7.0" {
+	if measurer.ExperimentVersion() != "0.8.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -234,7 +235,8 @@ func TestTestKeysOnlyEndpointsFailure(t *testing.T) {
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
 		TestKeys: urlgetter.TestKeys{
-			HTTPResponseBody: "<title>WhatsApp Web</title>",
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{whatsapp.WebHTTPSURL},
 		},
 	})
 	tk.ComputeWebStatus()
@@ -279,7 +281,8 @@ func TestTestKeysOnlyRegistrationServerFailure(t *testing.T) {
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
 		TestKeys: urlgetter.TestKeys{
-			HTTPResponseBody: "<title>WhatsApp Web</title>",
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{whatsapp.WebHTTPSURL},
 		},
 	})
 	tk.ComputeWebStatus()
@@ -306,7 +309,7 @@ func TestTestKeysOnlyRegistrationServerFailure(t *testing.T) {
 	}
 }
 
-func TestTestKeysOnlyWebFailure(t *testing.T) {
+func TestTestKeysOnlyWebHTTPSFailure(t *testing.T) {
 	failure := io.EOF.Error()
 	tk := whatsapp.NewTestKeys()
 	tk.Update(urlgetter.MultiOutput{
@@ -322,8 +325,11 @@ func TestTestKeysOnlyWebFailure(t *testing.T) {
 		TestKeys: urlgetter.TestKeys{Failure: &failure},
 	})
 	tk.Update(urlgetter.MultiOutput{
-		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
-		TestKeys: urlgetter.TestKeys{},
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{whatsapp.WebHTTPSURL},
+		},
 	})
 	tk.ComputeWebStatus()
 	if tk.RegistrationServerFailure != nil {
@@ -349,27 +355,210 @@ func TestTestKeysOnlyWebFailure(t *testing.T) {
 	}
 }
 
-func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
+func TestTestKeysOnlyWebHTTPFailureNo302(t *testing.T) {
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus: 400,
+		},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if *tk.WhatsappWebFailure != httpfailure.UnexpectedStatusCode {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "blocked" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestTestKeysOnlyWebHTTPFailureNoLocations(t *testing.T) {
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: nil,
+		},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if *tk.WhatsappWebFailure != httpfailure.UnexpectedRedirectURL {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "blocked" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestTestKeysOnlyWebHTTPFailureNotExpectedURL(t *testing.T) {
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{"https://x.org/"},
+		},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if *tk.WhatsappWebFailure != httpfailure.UnexpectedRedirectURL {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "blocked" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestTestKeysOnlyWebHTTPFailureTooManyURLs(t *testing.T) {
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{whatsapp.WebHTTPSURL, "https://x.org/"},
+		},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if *tk.WhatsappWebFailure != httpfailure.UnexpectedRedirectURL {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "blocked" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
+func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 	called := atomicx.NewInt64()
-	failOnErrorWebHTTPS := atomicx.NewInt64()
-	failOnErrorWebHTTP := atomicx.NewInt64()
-	failOnErrorRegistrationService := atomicx.NewInt64()
+	emptyConfig := urlgetter.Config{}
+	configWithFailOnHTTPError := urlgetter.Config{FailOnHTTPError: true}
+	configWithNoFollowRedirects := urlgetter.Config{NoFollowRedirects: true}
 	measurer := whatsapp.Measurer{
 		Config: whatsapp.Config{},
 		Getter: func(ctx context.Context, g urlgetter.Getter) (urlgetter.TestKeys, error) {
 			called.Add(1)
 			switch g.Target {
 			case whatsapp.WebHTTPSURL:
-				if g.Config.FailOnHTTPError {
-					failOnErrorWebHTTPS.Add(1)
+				if diff := cmp.Diff(g.Config, emptyConfig); diff != "" {
+					panic(diff)
 				}
 			case whatsapp.WebHTTPURL:
-				if g.Config.FailOnHTTPError {
-					failOnErrorWebHTTP.Add(1)
+				if diff := cmp.Diff(g.Config, configWithNoFollowRedirects); diff != "" {
+					panic(diff)
 				}
 			case whatsapp.RegistrationServiceURL:
-				if g.Config.FailOnHTTPError {
-					failOnErrorRegistrationService.Add(1)
+				if diff := cmp.Diff(g.Config, configWithFailOnHTTPError); diff != "" {
+					panic(diff)
+				}
+			default:
+				if diff := cmp.Diff(g.Config, emptyConfig); diff != "" {
+					panic(diff)
 				}
 			}
 			return urlgetter.DefaultMultiGetter(ctx, g)
@@ -384,16 +573,7 @@ func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
 	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}
-	if called.Load() < 1 {
-		t.Fatal("not called")
-	}
-	if failOnErrorWebHTTPS.Load() != 0 {
-		t.Fatal("configured fail on error for Web HTTPS")
-	}
-	if failOnErrorWebHTTP.Load() != 1 {
-		t.Fatal("not configured fail on error for Web HTTP")
-	}
-	if failOnErrorRegistrationService.Load() != 1 {
-		t.Fatal("not configured fail on error for registragtion service")
+	if called.Load() != 4 {
+		t.Fatal("not called four times")
 	}
 }

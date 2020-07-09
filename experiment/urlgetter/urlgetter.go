@@ -48,9 +48,10 @@ type TestKeys struct {
 	Tunnel          string                     `json:"tunnel,omitempty"`
 
 	// The following fields are not serialised but are useful to simplify
-	// analysing the measurements in telegram, etc.
-	HTTPResponseStatus int64  `json:"-"`
-	HTTPResponseBody   string `json:"-"`
+	// analysing the measurements in telegram, whatsapp, etc.
+	HTTPResponseStatus    int64    `json:"-"`
+	HTTPResponseBody      string   `json:"-"`
+	HTTPResponseLocations []string `json:"-"`
 }
 
 // RegisterExtensions registers the extensions used by the urlgetter

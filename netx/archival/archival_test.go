@@ -196,6 +196,74 @@ func TestNewRequestList(t *testing.T) {
 				Headers: map[string]archival.MaybeBinaryValue{
 					"Server": {Value: "orchestra/0.1.0-dev"},
 				},
+				Locations: nil,
+			},
+			T: 0.01,
+		}},
+	}, {
+		name: "run with redirect",
+		args: args{
+			begin: begin,
+			events: []trace.Event{{
+				Name: "http_transaction_start",
+				Time: begin.Add(10 * time.Millisecond),
+			}, {
+				Name: "http_request_metadata",
+				HTTPHeaders: http.Header{
+					"User-Agent": []string{"miniooni/0.1.0-dev"},
+				},
+				HTTPMethod: "GET",
+				HTTPURL:    "https://www.example.com/",
+			}, {
+				Name: "http_response_metadata",
+				HTTPHeaders: http.Header{
+					"Server":   []string{"orchestra/0.1.0-dev"},
+					"Location": []string{"https://x.example.com", "https://y.example.com"},
+				},
+				HTTPStatusCode: 302,
+			}, {
+				Name: "http_transaction_done",
+			}},
+		},
+		want: []archival.RequestEntry{{
+			Request: archival.HTTPRequest{
+				HeadersList: []archival.HTTPHeader{{
+					Key: "User-Agent",
+					Value: archival.MaybeBinaryValue{
+						Value: "miniooni/0.1.0-dev",
+					},
+				}},
+				Headers: map[string]archival.MaybeBinaryValue{
+					"User-Agent": {Value: "miniooni/0.1.0-dev"},
+				},
+				Method: "GET",
+				URL:    "https://www.example.com/",
+			},
+			Response: archival.HTTPResponse{
+				Code: 302,
+				HeadersList: []archival.HTTPHeader{{
+					Key: "Server",
+					Value: archival.MaybeBinaryValue{
+						Value: "orchestra/0.1.0-dev",
+					},
+				}, {
+					Key: "Location",
+					Value: archival.MaybeBinaryValue{
+						Value: "https://x.example.com",
+					},
+				}, {
+					Key: "Location",
+					Value: archival.MaybeBinaryValue{
+						Value: "https://y.example.com",
+					},
+				}},
+				Headers: map[string]archival.MaybeBinaryValue{
+					"Server":   {Value: "orchestra/0.1.0-dev"},
+					"Location": {Value: "https://x.example.com"},
+				},
+				Locations: []string{
+					"https://x.example.com", "https://y.example.com",
+				},
 			},
 			T: 0.01,
 		}},
