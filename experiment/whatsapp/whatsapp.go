@@ -7,12 +7,13 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/internal/httpfailure"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -33,22 +34,21 @@ const (
 var endpointPattern = regexp.MustCompile("^tcpconnect://e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
 
 // Config contains the experiment config.
-type Config struct {
-	AllEndpoints bool `ooni:"Whether to test all WhatsApp endpoints"`
-}
+type Config struct{}
 
 // TestKeys contains the experiment results
 type TestKeys struct {
 	urlgetter.TestKeys
-	RegistrationServerFailure        *string  `json:"registration_server_failure"`
-	RegistrationServerStatus         string   `json:"registration_server_status"`
-	WhatsappEndpointsBlocked         []string `json:"whatsapp_endpoints_blocked"`
-	WhatsappEndpointsDNSInconsistent []string `json:"whatsapp_endpoints_dns_inconsistent"`
-	WhatsappEndpointsStatus          string   `json:"whatsapp_endpoints_status"`
-	WhatsappWebStatus                string   `json:"whatsapp_web_status"`
-	WhatsappWebFailure               *string  `json:"whatsapp_web_failure"`
-	WhatsappHTTPFailure              *string  `json:"-"`
-	WhatsappHTTPSFailure             *string  `json:"-"`
+	RegistrationServerFailure        *string        `json:"registration_server_failure"`
+	RegistrationServerStatus         string         `json:"registration_server_status"`
+	WhatsappEndpointsBlocked         []string       `json:"whatsapp_endpoints_blocked"`
+	WhatsappEndpointsDNSInconsistent []string       `json:"whatsapp_endpoints_dns_inconsistent"`
+	WhatsappEndpointsStatus          string         `json:"whatsapp_endpoints_status"`
+	WhatsappWebFailure               *string        `json:"whatsapp_web_failure"`
+	WhatsappWebStatus                string         `json:"whatsapp_web_status"`
+	WhatsappEndpointsCount           map[string]int `json:"-"`
+	WhatsappHTTPFailure              *string        `json:"-"`
+	WhatsappHTTPSFailure             *string        `json:"-"`
 }
 
 // NewTestKeys returns a new instance of the test keys.
@@ -62,6 +62,7 @@ func NewTestKeys() *TestKeys {
 		WhatsappEndpointsStatus:          "blocked",
 		WhatsappWebFailure:               &failure,
 		WhatsappWebStatus:                "blocked",
+		WhatsappEndpointsCount:           make(map[string]int),
 		WhatsappHTTPFailure:              &failure,
 		WhatsappHTTPSFailure:             &failure,
 	}
@@ -78,8 +79,13 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 	// Set the status of WhatsApp endpoints
 	if endpointPattern.MatchString(v.Input.Target) {
 		if v.TestKeys.Failure != nil {
-			endpoint := strings.ReplaceAll(v.Input.Target, "tcpconnect://", "")
-			tk.WhatsappEndpointsBlocked = append(tk.WhatsappEndpointsBlocked, endpoint)
+			parsed, err := url.Parse(v.Input.Target)
+			runtimex.PanicOnError(err, "url.Parse should not fail here")
+			hostname := parsed.Hostname()
+			tk.WhatsappEndpointsCount[hostname]++
+			if tk.WhatsappEndpointsCount[hostname] >= 2 {
+				tk.WhatsappEndpointsBlocked = append(tk.WhatsappEndpointsBlocked, hostname)
+			}
 			return
 		}
 		tk.WhatsappEndpointsStatus = "ok"
@@ -164,13 +170,6 @@ func (m Measurer) Run(
 			})
 		}
 	}
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	rnd.Shuffle(len(inputs), func(i, j int) {
-		inputs[i], inputs[j] = inputs[j], inputs[i]
-	})
-	if m.Config.AllEndpoints == false {
-		inputs = inputs[0:1]
-	}
 	inputs = append(inputs, urlgetter.MultiInput{
 		Config: urlgetter.Config{FailOnHTTPError: true},
 		Target: RegistrationServiceURL,
@@ -186,6 +185,10 @@ func (m Measurer) Run(
 		// for the HTTPS web interface. No need to follow redirects.
 		Config: urlgetter.Config{NoFollowRedirects: true},
 		Target: WebHTTPURL,
+	})
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rnd.Shuffle(len(inputs), func(i, j int) {
+		inputs[i], inputs[j] = inputs[j], inputs[i]
 	})
 	// measure in parallel
 	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
