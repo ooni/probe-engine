@@ -201,7 +201,9 @@ func TestNewRequestList(t *testing.T) {
 			T: 0.01,
 		}},
 	}, {
-		name: "run with redirect",
+		// for an example of why we need to sort headers, see
+		// https://github.com/ooni/probe-engine/pull/751/checks?check_run_id=853562310
+		name: "run with redirect and headers to sort",
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
@@ -242,11 +244,6 @@ func TestNewRequestList(t *testing.T) {
 			Response: archival.HTTPResponse{
 				Code: 302,
 				HeadersList: []archival.HTTPHeader{{
-					Key: "Server",
-					Value: archival.MaybeBinaryValue{
-						Value: "orchestra/0.1.0-dev",
-					},
-				}, {
 					Key: "Location",
 					Value: archival.MaybeBinaryValue{
 						Value: "https://x.example.com",
@@ -255,6 +252,11 @@ func TestNewRequestList(t *testing.T) {
 					Key: "Location",
 					Value: archival.MaybeBinaryValue{
 						Value: "https://y.example.com",
+					},
+				}, {
+					Key: "Server",
+					Value: archival.MaybeBinaryValue{
+						Value: "orchestra/0.1.0-dev",
 					},
 				}},
 				Headers: map[string]archival.MaybeBinaryValue{
