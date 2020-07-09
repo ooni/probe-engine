@@ -524,9 +524,7 @@ func TestGetterIntegrationHTTPS(t *testing.T) {
 func TestGetterIntegrationRedirect(t *testing.T) {
 	ctx := context.Background()
 	g := urlgetter.Getter{
-		Config: urlgetter.Config{
-			NoFollowRedirects: true, // reduce number of events
-		},
+		Config:  urlgetter.Config{NoFollowRedirects: true},
 		Session: &mockable.ExperimentSession{},
 		Target:  "http://web.whatsapp.com",
 	}
