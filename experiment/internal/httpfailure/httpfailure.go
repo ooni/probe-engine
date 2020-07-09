@@ -6,7 +6,7 @@ package httpfailure
 
 var (
 	// UnexpectedStatusCode indicates that we re not getting
-	// the expected HTTP status code(s).
+	// the expected (range of) HTTP status code(s).
 	UnexpectedStatusCode = "http_unexpected_status_code"
 
 	// UnexpectedRedirectURL indicates that the redirect URL
