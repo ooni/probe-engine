@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -304,6 +305,9 @@ func addheaders(
 			})
 		}
 	}
+	sort.Slice(*destList, func(i, j int) bool {
+		return (*destList)[i].Key < (*destList)[j].Key
+	})
 }
 
 // NewRequestList returns the list for "requests"
