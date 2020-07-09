@@ -184,6 +184,8 @@ func (m Measurer) Run(
 	for entry := range multi.Collect(ctx, inputs, "facebook_messenger", callbacks) {
 		testkeys.Update(entry)
 	}
+	// if we haven't yet determined the status of DNS blocking and TCP blocking
+	// then no blocking has been detected and we can set them
 	if testkeys.FacebookDNSBlocking == nil {
 		testkeys.FacebookDNSBlocking = &falseValue
 	}
