@@ -86,8 +86,6 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 			log.Fatalf("invalid key: %s", ev.Key)
 		}
 	}
-	t.Log(fatal)
-	t.Log(warn)
 	expectedFatal := []string{
 		"InputFilepaths: not supported",
 		"Options.Backend: not supported",
