@@ -61,7 +61,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestIntegrationFailureAllEndpoints(t *testing.T) {
 	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -79,51 +79,10 @@ func TestIntegrationFailure(t *testing.T) {
 	if tk.RegistrationServerStatus != "blocked" {
 		t.Fatal("invalid RegistrationServerStatus")
 	}
-	if len(tk.WhatsappEndpointsBlocked) != 1 {
+	if len(tk.WhatsappEndpointsBlocked) != 16 {
 		t.Fatal("invalid WhatsappEndpointsBlocked")
 	}
-	pattern := regexp.MustCompile("^e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
-	if !pattern.MatchString(tk.WhatsappEndpointsBlocked[0]) {
-		t.Fatal("invalid WhatsappEndpointsBlocked[0]")
-	}
-	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
-		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
-	}
-	if tk.WhatsappEndpointsStatus != "blocked" {
-		t.Fatal("invalid WhatsappEndpointsStatus")
-	}
-	if *tk.WhatsappWebFailure != "interrupted" {
-		t.Fatal("invalid WhatsappWebFailure")
-	}
-	if tk.WhatsappWebStatus != "blocked" {
-		t.Fatal("invalid WhatsappWebStatus")
-	}
-}
-
-func TestIntegrationFailureAllEndpoints(t *testing.T) {
-	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{
-		AllEndpoints: true,
-	})
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
-	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
-	err := measurer.Run(ctx, sess, measurement, callbacks)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tk := measurement.TestKeys.(*whatsapp.TestKeys)
-	if *tk.RegistrationServerFailure != "interrupted" {
-		t.Fatal("invalid RegistrationServerFailure")
-	}
-	if tk.RegistrationServerStatus != "blocked" {
-		t.Fatal("invalid RegistrationServerStatus")
-	}
-	if len(tk.WhatsappEndpointsBlocked) != 32 {
-		t.Fatal("invalid WhatsappEndpointsBlocked")
-	}
-	pattern := regexp.MustCompile("^e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
+	pattern := regexp.MustCompile("^e[0-9]{1,2}.whatsapp.net$")
 	for i := 0; i < len(tk.WhatsappEndpointsBlocked); i++ {
 		if !pattern.MatchString(tk.WhatsappEndpointsBlocked[i]) {
 			t.Fatalf("invalid WhatsappEndpointsBlocked[%d]", i)
@@ -217,11 +176,65 @@ func TestTestKeysComputeWebStatus(t *testing.T) {
 	}
 }
 
+func TestTestKeysMixedEndpointsFailure(t *testing.T) {
+	failure := io.EOF.Error()
+	tk := whatsapp.NewTestKeys()
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{Failure: &failure},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:5222"},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.RegistrationServiceURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: whatsapp.WebHTTPSURL},
+		TestKeys: urlgetter.TestKeys{},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input: urlgetter.MultiInput{Target: whatsapp.WebHTTPURL},
+		TestKeys: urlgetter.TestKeys{
+			HTTPResponseStatus:    302,
+			HTTPResponseLocations: []string{whatsapp.WebHTTPSURL},
+		},
+	})
+	tk.ComputeWebStatus()
+	if tk.RegistrationServerFailure != nil {
+		t.Fatal("invalid RegistrationServerFailure")
+	}
+	if tk.RegistrationServerStatus != "ok" {
+		t.Fatal("invalid RegistrationServerStatus")
+	}
+	if len(tk.WhatsappEndpointsBlocked) != 0 {
+		t.Fatal("invalid WhatsappEndpointsBlocked")
+	}
+	if len(tk.WhatsappEndpointsDNSInconsistent) != 0 {
+		t.Fatal("invalid WhatsappEndpointsDNSInconsistent")
+	}
+	if tk.WhatsappEndpointsStatus != "ok" {
+		t.Fatal("invalid WhatsappEndpointsStatus")
+	}
+	if tk.WhatsappWebFailure != nil {
+		t.Fatal("invalid WhatsappWebFailure")
+	}
+	if tk.WhatsappWebStatus != "ok" {
+		t.Fatal("invalid WhatsappWebStatus")
+	}
+}
+
 func TestTestKeysOnlyEndpointsFailure(t *testing.T) {
 	failure := io.EOF.Error()
 	tk := whatsapp.NewTestKeys()
 	tk.Update(urlgetter.MultiOutput{
 		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:443"},
+		TestKeys: urlgetter.TestKeys{Failure: &failure},
+	})
+	tk.Update(urlgetter.MultiOutput{
+		Input:    urlgetter.MultiInput{Target: "tcpconnect://e7.whatsapp.net:5222"},
 		TestKeys: urlgetter.TestKeys{Failure: &failure},
 	})
 	tk.Update(urlgetter.MultiOutput{
@@ -576,7 +589,7 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}
-	if called.Load() != 15 {
-		t.Fatal("not called four times")
+	if called.Load() != 263 {
+		t.Fatal("not called the expected number of times")
 	}
 }
