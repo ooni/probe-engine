@@ -1,20 +1,6 @@
 // Package whatsapp contains the WhatsApp network experiment.
 //
 // See https://github.com/ooni/spec/blob/master/nettests/ts-018-whatsapp.md.
-//
-// Bugs
-//
-// This implementation does not currently perform the CIDR check, which is
-// know to be broken. We shall fix this issue at the spec level first.
-//
-// This implemention currently triggers what looks like MITM blocking by
-// WhatsApp, where the combination of User-Agent header and TLS ClientHello
-// we use causes a `400 Bad Request` error. We have experimentally seen we
-// can avoid such error by using `miniooni/0.1.0-dev` as User-Agent. We may
-// want to find out a better implementation in the future. But doing that
-// is tricky as it may cause subsequent false positives down the line.
-//
-// See also https://github.com/ooni/probe-engine/pull/741.
 package whatsapp
 
 import (
@@ -25,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ooni/probe-engine/experiment/internal/httpfailure"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 )
@@ -34,13 +21,13 @@ const (
 	RegistrationServiceURL = "https://v.whatsapp.net/v2/register"
 
 	// WebHTTPURL is WhatsApp web's HTTP URL
-	WebHTTPURL = "http://web.whatsapp.com"
+	WebHTTPURL = "http://web.whatsapp.com/"
 
 	// WebHTTPSURL is WhatsApp web's HTTPS URL
-	WebHTTPSURL = "https://web.whatsapp.com"
+	WebHTTPSURL = "https://web.whatsapp.com/"
 
 	testName    = "whatsapp"
-	testVersion = "0.7.0"
+	testVersion = "0.8.0"
 )
 
 var endpointPattern = regexp.MustCompile("^tcpconnect://e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
@@ -107,18 +94,19 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		return
 	}
 	// Track result of accessing the web interface.
-	//
-	// We treat HTTPS differently. A comment above describing what looks
-	// like MITM detection should be enough to understand this code.
 	switch v.Input.Target {
 	case WebHTTPSURL:
 		tk.WhatsappHTTPSFailure = v.TestKeys.Failure
 	case WebHTTPURL:
 		failure := v.TestKeys.Failure
-		title := `<title>WhatsApp Web</title>`
-		if failure == nil && strings.Contains(v.TestKeys.HTTPResponseBody, title) == false {
-			failureString := "whatsapp_missing_title_error"
-			failure = &failureString
+		if failure != nil {
+			// nothing to do here
+		} else if v.TestKeys.HTTPResponseStatus != 302 {
+			failure = &httpfailure.UnexpectedStatusCode
+		} else if len(v.TestKeys.HTTPResponseLocations) != 1 {
+			failure = &httpfailure.UnexpectedRedirectURL
+		} else if v.TestKeys.HTTPResponseLocations[0] != WebHTTPSURL {
+			failure = &httpfailure.UnexpectedRedirectURL
 		}
 		tk.WhatsappHTTPFailure = failure
 	}
@@ -188,14 +176,15 @@ func (m Measurer) Run(
 		Target: RegistrationServiceURL,
 	})
 	inputs = append(inputs, urlgetter.MultiInput{
-		// See the above comment regarding what seems MITM detection to
-		// understand why we're not forcing FailOnHTTPError here.
+		// We consider this check successful if we can establish a TLS
+		// connection and we don't see any socket/TLS errors. Hence, we
+		// don't care about the HTTP response code.
 		Target: WebHTTPSURL,
 	})
 	inputs = append(inputs, urlgetter.MultiInput{
-		// We may eventually start seeing HTTP 400 errors here. See the
-		// above comment on what seems MITM detection.
-		Config: urlgetter.Config{FailOnHTTPError: true},
+		// We consider this check successful if we get a valid redirect
+		// for the HTTPS web interface. No need to follow redirects.
+		Config: urlgetter.Config{NoFollowRedirects: true},
 		Target: WebHTTPURL,
 	})
 	// measure in parallel

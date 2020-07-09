@@ -269,6 +269,10 @@ type HTTPResponse struct {
 	Code            int64                       `json:"code"`
 	HeadersList     []HTTPHeader                `json:"headers_list"`
 	Headers         map[string]MaybeBinaryValue `json:"headers"`
+
+	// The following fields are not serialised but are useful to simplify
+	// analysing the measurements in telegram, whatsapp, etc.
+	Locations []string `json:"-"`
 }
 
 // RequestEntry is one of the entries that are part of
@@ -337,6 +341,7 @@ func newRequestList(begin time.Time, events []trace.Event) []RequestEntry {
 			addheaders(
 				ev.HTTPHeaders, &entry.Response.HeadersList, &entry.Response.Headers)
 			entry.Response.Code = int64(ev.HTTPStatusCode)
+			entry.Response.Locations = ev.HTTPHeaders.Values("Location")
 		case "http_response_body_snapshot":
 			entry.Response.Body.Value = string(ev.Data)
 			entry.Response.BodyIsTruncated = ev.DataIsTruncated
