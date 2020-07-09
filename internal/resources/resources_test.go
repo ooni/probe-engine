@@ -34,7 +34,6 @@ func TestEnsureMkdirAllFailure(t *testing.T) {
 }
 
 func TestEnsure(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
 	tempdir, err := ioutil.TempDir("", "ooniprobe-engine-resources-test")
 	if err != nil {
 		t.Fatal(err)
