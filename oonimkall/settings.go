@@ -59,8 +59,8 @@ type settingsRecord struct {
 type settingsOptions struct {
 	// AllEndpoints is a WhatsApp specific option indicating that we
 	// should test all endpoints rather than a random susbet. This
-	// library does not support this setting and fails if you provide
-	// it as input.
+	// library does not support this setting and will emit a warning
+	// if you provide this option to a nettest.
 	AllEndpoints *bool `json:"all_endpoints,omitempty"`
 
 	// Backend is a test helper for a nettest. This
