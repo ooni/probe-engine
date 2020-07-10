@@ -29,7 +29,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestIntegrationSuccess(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
-	// we need a real session because we need the tcp-echo helper database
+	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
 	callbacks := handler.NewPrinterCallbacks(log.Log)
@@ -71,7 +71,7 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper database
+	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
 	callbacks := handler.NewPrinterCallbacks(log.Log)

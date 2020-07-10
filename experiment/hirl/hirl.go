@@ -100,8 +100,8 @@ func (m Measurer) Run(
 		tk.FailureList = append(tk.FailureList, failure)
 		tk.Received = append(tk.Received, result.Received)
 		tk.Sent = append(tk.Sent, result.Sent)
-		tk.Tampering = (tk.Tampering || result.Tampering)
 		tk.TamperingList = append(tk.TamperingList, result.Tampering)
+		tk.Tampering = (tk.Tampering || result.Tampering)
 		completed++
 		percentage := float64(completed) / float64(len(methods))
 		callbacks.OnProgress(percentage, fmt.Sprintf("%s... %+v", result.Name, result.Err))
