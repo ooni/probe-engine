@@ -13,6 +13,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -59,6 +60,56 @@ func TestIntegrationSuccess(t *testing.T) {
 	for _, entry := range tk.TamperingList {
 		if entry != false {
 			t.Fatal("found entry with tampering")
+		}
+	}
+	if tk.Tampering != false {
+		t.Fatal("overall there is tampering?!")
+	}
+}
+
+func TestIntegrationCancelledContext(t *testing.T) {
+	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	// we need a real session because we need the tcp-echo helper database
+	sess := newsession(t)
+	measurement := new(model.Measurement)
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*hirl.TestKeys)
+	if len(tk.FailureList) != 5 {
+		t.Fatal("unexpected FailureList length")
+	}
+	for _, failure := range tk.FailureList {
+		if *failure != modelx.FailureInterrupted {
+			t.Fatal("unexpected failure")
+		}
+	}
+	if len(tk.Received) != 5 {
+		t.Fatal("unexpected Received length")
+	}
+	for _, entry := range tk.Received {
+		if entry.Value != "" {
+			t.Fatal("unexpected received entry")
+		}
+	}
+	if len(tk.Sent) != 5 {
+		t.Fatal("unexpected Sent length")
+	}
+	for _, entry := range tk.Sent {
+		if entry != "" {
+			t.Fatal("unexpected sent entry")
+		}
+	}
+	if len(tk.TamperingList) != 5 {
+		t.Fatal("unexpected TamperingList length")
+	}
+	for _, entry := range tk.TamperingList {
+		if entry != false {
+			t.Fatal("unexpected tampering entry")
 		}
 	}
 	if tk.Tampering != false {
