@@ -89,7 +89,7 @@ func TestIntegrationNewResolverDoTDomainNoPort(t *testing.T) {
 }
 
 func TestIntegrationNewResolverDoH(t *testing.T) {
-	testresolverquick(t, "doh", "https://cloudflare-dns.com/dns-query")
+	testresolverquick(t, "doh", "https://doh.powerdns.org/")
 }
 
 func TestIntegrationNewResolverInvalid(t *testing.T) {

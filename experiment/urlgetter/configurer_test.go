@@ -70,6 +70,82 @@ func TestConfigurerNewConfigurationVanilla(t *testing.T) {
 	}
 }
 
+func TestConfigurerNewConfigurationResolverDNSOverHTTPSPowerdns(t *testing.T) {
+	saver := new(trace.Saver)
+	configurer := urlgetter.Configurer{
+		Config: urlgetter.Config{
+			ResolverURL: "doh://powerdns",
+		},
+		Logger: log.Log,
+		Saver:  saver,
+	}
+	configuration, err := configurer.NewConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer configuration.CloseIdleConnections()
+	if configuration.HTTPConfig.BogonIsError != false {
+		t.Fatal("not the BogonIsError we expected")
+	}
+	if configuration.HTTPConfig.CacheResolutions != true {
+		t.Fatal("not the CacheResolutions we expected")
+	}
+	if configuration.HTTPConfig.ContextByteCounting != true {
+		t.Fatal("not the ContextByteCounting we expected")
+	}
+	if configuration.HTTPConfig.DialSaver != saver {
+		t.Fatal("not the DialSaver we expected")
+	}
+	if configuration.HTTPConfig.HTTPSaver != saver {
+		t.Fatal("not the HTTPSaver we expected")
+	}
+	if configuration.HTTPConfig.Logger != log.Log {
+		t.Fatal("not the Logger we expected")
+	}
+	if configuration.HTTPConfig.ReadWriteSaver != saver {
+		t.Fatal("not the ReadWriteSaver we expected")
+	}
+	if configuration.HTTPConfig.ResolveSaver != saver {
+		t.Fatal("not the ResolveSaver we expected")
+	}
+	if configuration.HTTPConfig.TLSSaver != saver {
+		t.Fatal("not the TLSSaver we expected")
+	}
+	if configuration.HTTPConfig.BaseResolver == nil {
+		t.Fatal("not the BaseResolver we expected")
+	}
+	sr, ok := configuration.HTTPConfig.BaseResolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	stxp, ok := sr.Txp.(resolver.SaverDNSTransport)
+	if !ok {
+		t.Fatal("not the DNS transport we expected")
+	}
+	dohtxp, ok := stxp.RoundTripper.(resolver.DNSOverHTTPS)
+	if !ok {
+		t.Fatal("not the DNS transport we expected")
+	}
+	if dohtxp.URL != "https://doh.powerdns.org/" {
+		t.Fatal("not the DoH URL we expected")
+	}
+	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[0] != "h2" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.TLSConfig.NextProtos[1] != "http/1.1" {
+		t.Fatal("not the TLSConfig we expected")
+	}
+	if configuration.HTTPConfig.NoTLSVerify == true {
+		t.Fatal("not the NoTLSVerify we expected")
+	}
+	if configuration.HTTPConfig.ProxyURL != nil {
+		t.Fatal("not the ProxyURL we expected")
+	}
+}
+
 func TestConfigurerNewConfigurationResolverDNSOverHTTPSGoogle(t *testing.T) {
 	saver := new(trace.Saver)
 	configurer := urlgetter.Configurer{

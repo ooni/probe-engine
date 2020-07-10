@@ -883,6 +883,22 @@ func TestNewDNSClientEmpty(t *testing.T) {
 	dnsclient.CloseIdleConnections()
 }
 
+func TestNewDNSClientPowerdnsDoH(t *testing.T) {
+	dnsclient, err := httptransport.NewDNSClient(
+		httptransport.Config{}, "doh://powerdns")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, ok := dnsclient.Resolver.(resolver.SerialResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := r.Transport().(resolver.DNSOverHTTPS); !ok {
+		t.Fatal("not the transport we expected")
+	}
+	dnsclient.CloseIdleConnections()
+}
+
 func TestNewDNSClientGoogleDoH(t *testing.T) {
 	dnsclient, err := httptransport.NewDNSClient(
 		httptransport.Config{}, "doh://google")

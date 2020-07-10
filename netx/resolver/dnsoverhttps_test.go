@@ -31,7 +31,7 @@ func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
 		Do: func(*http.Request) (*http.Response, error) {
 			return nil, expected
 		},
-		URL: "https://cloudflare-dns.com/dns-query",
+		URL: "https://doh.powerdns.org/",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if !errors.Is(err, expected) {
@@ -50,7 +50,7 @@ func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
 				Body:       ioutil.NopCloser(strings.NewReader("")),
 			}, nil
 		},
-		URL: "https://cloudflare-dns.com/dns-query",
+		URL: "https://doh.powerdns.org/",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err == nil || err.Error() != "doh: server returned error" {
@@ -69,7 +69,7 @@ func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
 				Body:       ioutil.NopCloser(strings.NewReader("")),
 			}, nil
 		},
-		URL: "https://cloudflare-dns.com/dns-query",
+		URL: "https://doh.powerdns.org/",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err == nil || err.Error() != "doh: invalid content-type" {
@@ -92,7 +92,7 @@ func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
 				},
 			}, nil
 		},
-		URL: "https://cloudflare-dns.com/dns-query",
+		URL: "https://doh.powerdns.org/",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err != nil {
@@ -104,7 +104,7 @@ func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
 }
 
 func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
-	const queryURL = "https://cloudflare-dns.com/dns-query"
+	const queryURL = "https://doh.powerdns.org/"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, queryURL)
 	if txp.Network() != "doh" {
 		t.Fatal("invalid network")
@@ -125,7 +125,7 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 			correct = req.Header.Get("User-Agent") == httpheader.RandomUserAgent()
 			return nil, expected
 		},
-		URL: "https://cloudflare-dns.com/dns-query",
+		URL: "https://doh.powerdns.org/",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if !errors.Is(err, expected) {

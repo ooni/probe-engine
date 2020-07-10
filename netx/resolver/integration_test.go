@@ -73,5 +73,5 @@ func TestIntegrationNewResolverDoTDomain(t *testing.T) {
 
 func TestIntegrationNewResolverDoH(t *testing.T) {
 	testresolverquick(t, resolver.NewSerialResolver(
-		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://cloudflare-dns.com/dns-query")))
+		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://doh.powerdns.org/")))
 }
