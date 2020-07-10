@@ -12,6 +12,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/hirl"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -114,6 +115,101 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	}
 	if tk.Tampering != false {
 		t.Fatal("overall there is tampering?!")
+	}
+}
+
+type FakeMethodSuccessful struct{}
+
+func (FakeMethodSuccessful) Name() string {
+	return "success"
+}
+
+func (meth FakeMethodSuccessful) Run(ctx context.Context, config hirl.MethodConfig) {
+	config.Out <- hirl.MethodResult{
+		Name:      meth.Name(),
+		Received:  archival.MaybeBinaryValue{Value: "antani"},
+		Sent:      "antani",
+		Tampering: false,
+	}
+}
+
+type FakeMethodFailure struct{}
+
+func (FakeMethodFailure) Name() string {
+	return "failure"
+}
+
+func (meth FakeMethodFailure) Run(ctx context.Context, config hirl.MethodConfig) {
+	config.Out <- hirl.MethodResult{
+		Name:      meth.Name(),
+		Received:  archival.MaybeBinaryValue{Value: "antani"},
+		Sent:      "melandri",
+		Tampering: true,
+	}
+}
+
+func TestWithFakeMethods(t *testing.T) {
+	measurer := hirl.Measurer{
+		Config: hirl.Config{},
+		Methods: []hirl.Method{
+			FakeMethodSuccessful{},
+			FakeMethodFailure{},
+			FakeMethodSuccessful{},
+		},
+	}
+	ctx := context.Background()
+	sess := &mockable.ExperimentSession{
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": {{
+				Address: "127.0.0.1",
+				Type:    "legacy",
+			}},
+		},
+	}
+	measurement := new(model.Measurement)
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*hirl.TestKeys)
+	if len(tk.FailureList) != len(tk.Received) {
+		t.Fatal("FailureList and Received have different lengths")
+	}
+	if len(tk.Received) != len(tk.Sent) {
+		t.Fatal("Received and Sent have different lengths")
+	}
+	if len(tk.Sent) != len(tk.TamperingList) {
+		t.Fatal("Sent and TamperingList have different lengths")
+	}
+	for _, failure := range tk.FailureList {
+		if failure != nil {
+			t.Fatal(*failure)
+		}
+	}
+	for _, received := range tk.Received {
+		if received.Value != "antani" {
+			t.Fatal("unexpected received value")
+		}
+	}
+	for _, sent := range tk.Sent {
+		if sent != "antani" && sent != "melandri" {
+			t.Fatal("unexpected sent value")
+		}
+	}
+	var falses, trues int
+	for _, entry := range tk.TamperingList {
+		if entry {
+			trues++
+		} else {
+			falses++
+		}
+	}
+	if falses != 2 && trues != 1 {
+		t.Fatal("not the right values in tampering list")
+	}
+	if tk.Tampering != true {
+		t.Fatal("overall there is no tampering?!")
 	}
 }
 

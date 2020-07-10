@@ -35,12 +35,22 @@ type TestKeys struct {
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return Measurer{config: config}
+	return Measurer{
+		Config: config,
+		Methods: []Method{
+			randomInvalidMethod{},
+			randomInvalidFieldCount{},
+			randomBigRequestMethod{},
+			randomInvalidVersionNumber{},
+			squidCacheManager{},
+		},
+	}
 }
 
 // Measurer performs the measurement.
 type Measurer struct {
-	config Config
+	Config  Config
+	Methods []Method
 }
 
 // ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
@@ -78,14 +88,7 @@ func (m Measurer) Run(
 		return ErrInvalidHelperType
 	}
 	out := make(chan MethodResult)
-	methods := []Method{
-		randomInvalidMethod{},
-		randomInvalidFieldCount{},
-		randomBigRequestMethod{},
-		randomInvalidVersionNumber{},
-		squidCacheManager{},
-	}
-	for _, method := range methods {
+	for _, method := range m.Methods {
 		callbacks.OnProgress(0.0, fmt.Sprintf("%s...", method.Name()))
 		go method.Run(ctx, MethodConfig{
 			Address: helper.Address,
@@ -103,9 +106,9 @@ func (m Measurer) Run(
 		tk.TamperingList = append(tk.TamperingList, result.Tampering)
 		tk.Tampering = (tk.Tampering || result.Tampering)
 		completed++
-		percentage := float64(completed) / float64(len(methods))
+		percentage := float64(completed) / float64(len(m.Methods))
 		callbacks.OnProgress(percentage, fmt.Sprintf("%s... %+v", result.Name, result.Err))
-		if completed >= len(methods) {
+		if completed >= len(m.Methods) {
 			break
 		}
 	}
