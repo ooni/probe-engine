@@ -69,6 +69,9 @@ var (
 
 	// ErrInvalidHelperType is emitted when the helper type is invalid.
 	ErrInvalidHelperType = errors.New("invalid helper type")
+
+	// ErrNoMeasurementMethod is emitted when Measurer.Methods is empty.
+	ErrNoMeasurementMethod = errors.New("no configured measurement method")
 )
 
 // Run implements ExperimentMeasurer.Run.
@@ -78,6 +81,9 @@ func (m Measurer) Run(
 ) error {
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
+	if len(m.Methods) < 1 {
+		return ErrNoMeasurementMethod
+	}
 	const helperName = "tcp-echo"
 	helpers, ok := sess.GetTestHelpersByName(helperName)
 	if !ok || len(helpers) < 1 {

@@ -213,6 +213,44 @@ func TestWithFakeMethods(t *testing.T) {
 	}
 }
 
+func TestWithNoMethods(t *testing.T) {
+	measurer := hirl.Measurer{
+		Config:  hirl.Config{},
+		Methods: []hirl.Method{},
+	}
+	ctx := context.Background()
+	sess := &mockable.ExperimentSession{
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": {{
+				Address: "127.0.0.1",
+				Type:    "legacy",
+			}},
+		},
+	}
+	measurement := new(model.Measurement)
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
+	if !errors.Is(err, hirl.ErrNoMeasurementMethod) {
+		t.Fatal("not the error we expected")
+	}
+	tk := measurement.TestKeys.(*hirl.TestKeys)
+	if len(tk.FailureList) != 0 {
+		t.Fatal("unexpected FailureList length")
+	}
+	if len(tk.Received) != 0 {
+		t.Fatal("unexpected Received length")
+	}
+	if len(tk.Sent) != 0 {
+		t.Fatal("unexpected Sent length")
+	}
+	if len(tk.TamperingList) != 0 {
+		t.Fatal("unexpected TamperingList length")
+	}
+	if tk.Tampering != false {
+		t.Fatal("overall there is tampering?!")
+	}
+}
+
 func TestNoHelpers(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
