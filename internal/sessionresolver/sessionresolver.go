@@ -1,6 +1,6 @@
 // Package sessionresolver contains the resolver used by the session. This
-// resolver uses Cloudflare DoH by default and falls back on the system
-// provided resolver if Cloudflare DoH is not working.
+// resolver uses Powerdns DoH by default and falls back on the system
+// provided resolver if Powerdns DoH is not working.
 package sessionresolver
 
 import (
@@ -21,8 +21,8 @@ type Resolver struct {
 
 // New creates a new session resolver.
 func New(config httptransport.Config) *Resolver {
-	primary, err := httptransport.NewDNSClient(config, "doh://cloudflare")
-	runtimex.PanicOnError(err, "cannot create cloudflare resolver")
+	primary, err := httptransport.NewDNSClient(config, "doh://powerdns")
+	runtimex.PanicOnError(err, "cannot create powerdns resolver")
 	fallback, err := httptransport.NewDNSClient(config, "system:///")
 	runtimex.PanicOnError(err, "cannot create system resolver")
 	return &Resolver{

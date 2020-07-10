@@ -212,7 +212,7 @@ func (c DNSClient) CloseIdleConnections() {
 // create the underlying Dialer and/or HTTP transport, if needed. The URL
 // argument describes the kind of client that we want to make:
 //
-// - if the URL is `doh://google` or `doh://cloudflare` or the URL
+// - if the URL is `doh://powerdns`, `doh://google` or `doh://cloudflare` or the URL
 // starts with `https://`, then we create a DoH client.
 //
 // - if the URL is `` or `system:///`, then we create a system client,
@@ -229,6 +229,8 @@ func (c DNSClient) CloseIdleConnections() {
 func NewDNSClient(config Config, URL string) (DNSClient, error) {
 	var c DNSClient
 	switch URL {
+	case "doh://powerdns":
+		URL = "https://doh.powerdns.org/"
 	case "doh://google":
 		URL = "https://dns.google/dns-query"
 	case "doh://cloudflare":
