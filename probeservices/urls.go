@@ -21,7 +21,7 @@ type urlListResult struct {
 func (c Client) FetchURLList(ctx context.Context, config model.URLListConfig) ([]model.URLInfo, error) {
 	query := url.Values{}
 	if config.CountryCode != "" {
-		query.Set("probe_cc", config.CountryCode)
+		query.Set("country_code", config.CountryCode)
 	}
 	if config.Limit > 0 {
 		query.Set("limit", fmt.Sprintf("%d", config.Limit))
