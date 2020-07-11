@@ -149,7 +149,8 @@ func (r SystemResolver) Address() string {
 // not censor anything unless you call selfcensor.Enable().
 type SystemDialer struct{}
 
-// defaultNetDialer is the dialer we use by default
+// defaultNetDialer is the dialer we use by default. The values are the
+// same values used by golang's net/http DefaultTransport.
 var defaultNetDialer = &net.Dialer{
 	Timeout:   30 * time.Second,
 	KeepAlive: 30 * time.Second,
