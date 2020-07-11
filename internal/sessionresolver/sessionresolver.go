@@ -5,6 +5,7 @@ package sessionresolver
 
 import (
 	"context"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -41,7 +42,14 @@ func (r *Resolver) CloseIdleConnections() {
 
 // LookupHost implements Resolver.LookupHost
 func (r *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	addrs, err := r.Primary.LookupHost(ctx, hostname)
+	// We doing this like Firefox trr 2 mode. See here:
+	// https://wiki.mozilla.org/Trusted_Recursive_Resolver#DNS-over-HTTPS_Prefs_in_Firefox
+	// And here: network.trr.request_timeout_ms
+	// But we use a higher timeout than Firefox to be safe and use DoH more
+	// often if possible
+	trr2, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+	addrs, err := r.Primary.LookupHost(trr2, hostname)
 	if err != nil {
 		r.PrimaryFailure.Add(1)
 		addrs, err = r.Fallback.LookupHost(ctx, hostname)
