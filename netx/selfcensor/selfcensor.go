@@ -156,6 +156,10 @@ var defaultNetDialer = &net.Dialer{
 	KeepAlive: 30 * time.Second,
 }
 
+// DefaultDialer is the dialer you should use in code that wants
+// to take advantage of selfcensor capabilities.
+var DefaultDialer = SystemDialer{}
+
 // DialContext implements Dialer.DialContext
 func (d SystemDialer) DialContext(
 	ctx context.Context, network, address string) (net.Conn, error) {
