@@ -4,6 +4,7 @@ package randx
 import (
 	"math/rand"
 	"time"
+	"unicode"
 )
 
 const (
@@ -30,4 +31,20 @@ func Letters(n int) string {
 // LettersUppercase return a string composed of random uppercase letters
 func LettersUppercase(n int) string {
 	return lettersWithString(n, uppercase)
+}
+
+// ChangeCapitalization returns a new string where the capitalization
+// of each character is changed at random.
+func ChangeCapitalization(source string) (dest string) {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for _, chr := range source {
+		if unicode.IsLower(chr) && rnd.Float64() <= 0.5 {
+			dest += string(unicode.ToUpper(chr))
+		} else if unicode.IsUpper(chr) && rnd.Float64() <= 0.5 {
+			dest += string(unicode.ToLower(chr))
+		} else {
+			dest += string(chr)
+		}
+	}
+	return
 }

@@ -25,3 +25,10 @@ func TestLettersUppercase(t *testing.T) {
 		t.Fatal("invalid input char")
 	}
 }
+
+func TestChangeCapitalization(t *testing.T) {
+	str := randx.Letters(2048)
+	if randx.ChangeCapitalization(str) == str {
+		t.Fatal("capitalization not changed")
+	}
+}
