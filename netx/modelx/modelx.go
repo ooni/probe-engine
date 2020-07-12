@@ -116,6 +116,9 @@ const (
 	// FailureSSLInvalidCertificate means certificate experired or other
 	// sort of errors causing it to be invalid.
 	FailureSSLInvalidCertificate = "ssl_invalid_certificate"
+
+	// FailureJSONParseError indicates that we couldn't parse a JSON
+	FailureJSONParseError = "json_parse_error"
 )
 
 const (
