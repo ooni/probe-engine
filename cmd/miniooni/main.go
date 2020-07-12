@@ -2,15 +2,15 @@
 package main
 
 import (
-	"os"
+	"log"
 
 	"github.com/ooni/probe-engine/libminiooni"
 )
 
 func main() {
 	defer func() {
-		if recover() != nil {
-			os.Exit(1)
+		if s := recover(); s != nil {
+			log.Fatal(s)
 		}
 	}()
 	libminiooni.Main()
