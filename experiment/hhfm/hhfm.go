@@ -142,6 +142,7 @@ func (m Measurer) Run(
 	if txp == nil {
 		ht := http.DefaultTransport.(*http.Transport).Clone() // basically: use defaults
 		ht.DisableCompression = true                          // disable sending Accept: gzip
+		ht.ForceAttemptHTTP2 = false
 		ht.DialContext = Dialer{Headers: headers}.DialContext
 		txp = ht
 	}
