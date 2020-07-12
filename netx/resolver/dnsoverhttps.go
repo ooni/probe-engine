@@ -26,7 +26,7 @@ func NewDNSOverHTTPS(client *http.Client, URL string) DNSOverHTTPS {
 
 // RoundTrip implements RoundTripper.RoundTrip.
 func (t DNSOverHTTPS) RoundTrip(ctx context.Context, query []byte) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 	req, err := http.NewRequest("POST", t.URL, bytes.NewReader(query))
 	if err != nil {
