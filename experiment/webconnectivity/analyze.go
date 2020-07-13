@@ -162,7 +162,14 @@ func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
 	if control <= 0 {
 		return
 	}
-	measurement := int64(len(tk.HTTPResponseBody))
+	if len(tk.Requests) <= 0 {
+		return
+	}
+	response := tk.Requests[0].Response
+	if response.BodyIsTruncated {
+		return
+	}
+	measurement := int64(len(response.Body.Value))
 	if measurement <= 0 {
 		return
 	}
