@@ -26,7 +26,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestIntegrationSuccess(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx := context.Background()
-	// we need a real session because we need the tcp-echo helper
+	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
 	callbacks := handler.NewPrinterCallbacks(log.Log)
@@ -51,7 +51,7 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
+	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
 	callbacks := handler.NewPrinterCallbacks(log.Log)
@@ -76,7 +76,7 @@ func TestMeasureWithNoInput(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
+	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: ""}
 	callbacks := handler.NewPrinterCallbacks(log.Log)
@@ -101,7 +101,7 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
+	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "dnslookup://example.com"}
 	callbacks := handler.NewPrinterCallbacks(log.Log)
@@ -126,7 +126,7 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
+	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, false)
 	measurement := &model.Measurement{Input: "https://www.example.com"}
 	callbacks := handler.NewPrinterCallbacks(log.Log)
