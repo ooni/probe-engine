@@ -432,3 +432,106 @@ func TestBodyLengthChecks(t *testing.T) {
 		})
 	}
 }
+
+func TestStatusCodeMatch(t *testing.T) {
+	var (
+		trueValue  = true
+		falseValue = false
+	)
+	type args struct {
+		tk *webconnectivity.TestKeys
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantOut *bool
+	}{{
+		name: "with all zero",
+		args: args{
+			tk: &webconnectivity.TestKeys{},
+		},
+	}, {
+		name: "with equal status codes including 5xx",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseStatus: 501,
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 501,
+					},
+				},
+			},
+		},
+		wantOut: &trueValue,
+	}, {
+		name: "with different status codes and the control being 5xx",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseStatus: 407,
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 501,
+					},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "with different status codes and the control being not 5xx",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseStatus: 407,
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+					},
+				},
+			},
+		},
+		wantOut: &falseValue,
+	}, {
+		name: "with control failure",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseStatus: 407,
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 0,
+					},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "with measurement failure",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseStatus: 0,
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 301,
+					},
+				},
+			},
+		},
+		wantOut: nil,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut := webconnectivity.StatusCodeMatch(tt.args.tk)
+			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
