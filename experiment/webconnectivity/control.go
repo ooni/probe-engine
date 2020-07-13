@@ -20,18 +20,19 @@ type ControlRequest struct {
 	TCPConnect         []string            `json:"tcp_connect"`
 }
 
-// NewControlRequest creates a new control request from the result
-// obtained by measuring the target URL and the target URL.
+// NewControlRequest creates a new control request from the target
+// URL and the result obtained by measuring it.
 func NewControlRequest(
 	target model.MeasurementTarget, result urlgetter.TestKeys) (out ControlRequest) {
 	out.HTTPRequest = string(target)
 	out.HTTPRequestHeaders = make(map[string][]string)
-	if len(result.Requests) >= 1 {
+	if len(result.Requests) >= 1 { // defensive
 		// Only these headers are accepted by the control service. We use the
-		// canonical canonicalisation, which is what Go enforces.
+		// canonical header keys, which is what Go enforces.
 		for _, key := range []string{"User-Agent", "Accept", "Accept-Language"} {
 			// We never set multi line headers so using the map instead of the list
-			// is totally fine and saves us some extra lines of code.
+			// is totally fine and saves us some extra lines of code. Also, we never
+			// put binary values in headers, so we can just use value.Value.
 			if value, ok := result.Requests[0].Request.Headers[key]; ok {
 				out.HTTPRequestHeaders[key] = []string{value.Value}
 			}
@@ -102,7 +103,7 @@ func Control(
 // of the ControlDNSResult structure, we obtain the corresponding ASN.
 //
 // This is very useful to know what ASNs were the IP addresses returned by
-// the control according to the probe's database.
+// the control according to the probe's ASN database.
 func (dns *ControlDNSResult) FillASNs(sess model.ExperimentSession) {
 	for _, ip := range dns.Addrs {
 		// TODO(bassosimone): this would be more efficient if we'd open just

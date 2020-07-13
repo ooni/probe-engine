@@ -24,8 +24,13 @@ type Config struct{}
 
 // TestKeys contains webconnectivity test keys.
 type TestKeys struct {
+	// measurement
 	urlgetter.TestKeys
-	ClientResolver string          `json:"client_resolver"`
+
+	// contextual information
+	ClientResolver string `json:"client_resolver"`
+
+	// control
 	ControlFailure *string         `json:"control_failure"`
 	ControlRequest ControlRequest  `json:"x_control_request"` // not in the spec
 	Control        ControlResponse `json:"control"`
