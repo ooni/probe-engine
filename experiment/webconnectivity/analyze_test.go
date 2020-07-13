@@ -583,6 +583,7 @@ func TestHeadersMatch(t *testing.T) {
 							"Date":   "Mon Jul 13 21:05:43 CEST 2020",
 							"Antani": "Mascetti",
 						},
+						StatusCode: 200,
 					},
 				},
 			},
