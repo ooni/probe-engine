@@ -232,3 +232,93 @@ func TestDNSConsistency(t *testing.T) {
 		})
 	}
 }
+
+func TestBlockedEndpoints(t *testing.T) {
+	failure := io.EOF.Error()
+	anotherFailure := "unknown_error"
+	type args struct {
+		tk *webconnectivity.TestKeys
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{{
+		name: "with empty test keys",
+		args: args{
+			tk: &webconnectivity.TestKeys{},
+		},
+		want: []string{},
+	}, {
+		name: "with consistent failures",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					TCPConnect: []archival.TCPConnectEntry{{
+						IP:   "1.1.1.1",
+						Port: 853,
+						Status: archival.TCPConnectStatus{
+							Failure: &failure,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					TCPConnect: map[string]webconnectivity.ControlTCPConnectResult{
+						"1.1.1.1:853": {Failure: &anotherFailure},
+					},
+				},
+			},
+		},
+		want: []string{},
+	}, {
+		name: "with failure on the probe side",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					TCPConnect: []archival.TCPConnectEntry{{
+						IP:   "1.1.1.1",
+						Port: 853,
+						Status: archival.TCPConnectStatus{
+							Failure: &failure,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					TCPConnect: map[string]webconnectivity.ControlTCPConnectResult{
+						"1.1.1.1:853": {Failure: nil},
+					},
+				},
+			},
+		},
+		want: []string{"1.1.1.1:853"},
+	}, {
+		name: "with failure on the control side",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					TCPConnect: []archival.TCPConnectEntry{{
+						IP:   "1.1.1.1",
+						Port: 853,
+						Status: archival.TCPConnectStatus{
+							Failure: nil,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					TCPConnect: map[string]webconnectivity.ControlTCPConnectResult{
+						"1.1.1.1:853": {Failure: &anotherFailure},
+					},
+				},
+			},
+		},
+		want: []string{},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := webconnectivity.BlockedEndpoints(tt.args.tk)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
