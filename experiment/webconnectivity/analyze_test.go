@@ -535,3 +535,141 @@ func TestStatusCodeMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestHeadersMatch(t *testing.T) {
+	var (
+		trueValue  = true
+		falseValue = false
+	)
+	type args struct {
+		tk *webconnectivity.TestKeys
+	}
+	tests := []struct {
+		name string
+		args args
+		want *bool
+	}{{
+		name: "with no requests",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						Headers: map[string]string{
+							"Date":   "Mon Jul 13 21:05:43 CEST 2020",
+							"Antani": "Mascetti",
+						},
+					},
+				},
+			},
+		},
+		want: nil,
+	}, {
+		name: "with basically nothing",
+		args: args{
+			tk: &webconnectivity.TestKeys{},
+		},
+		want: nil,
+	}, {
+		name: "with request and no response status code",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						Headers: map[string]string{
+							"Date":   "Mon Jul 13 21:05:43 CEST 2020",
+							"Antani": "Mascetti",
+						},
+					},
+				},
+			},
+		},
+		want: nil,
+	}, {
+		name: "with no uncommon headers",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Headers: map[string]archival.MaybeBinaryValue{
+								"Date": {Value: "Mon Jul 13 21:10:08 CEST 2020"},
+							},
+							Code: 200,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						Headers: map[string]string{
+							"Date": "Mon Jul 13 21:05:43 CEST 2020",
+						},
+					},
+				},
+			},
+		},
+		want: &trueValue,
+	}, {
+		name: "with equal uncommon headers",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Headers: map[string]archival.MaybeBinaryValue{
+								"Date":   {Value: "Mon Jul 13 21:10:08 CEST 2020"},
+								"Antani": {Value: "MASCETTI"},
+							},
+							Code: 200,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						Headers: map[string]string{
+							"Date":   "Mon Jul 13 21:05:43 CEST 2020",
+							"Antani": "MELANDRI",
+						},
+					},
+				},
+			},
+		},
+		want: &trueValue,
+	}, {
+		name: "with different uncommon headers",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Headers: map[string]archival.MaybeBinaryValue{
+								"Date":   {Value: "Mon Jul 13 21:10:08 CEST 2020"},
+								"Antani": {Value: "MASCETTI"},
+							},
+							Code: 200,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						Headers: map[string]string{
+							"Date":     "Mon Jul 13 21:05:43 CEST 2020",
+							"Melandri": "MASCETTI",
+						},
+					},
+				},
+			},
+		},
+		want: &falseValue,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := webconnectivity.HeadersMatch(tt.args.tk)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -34,6 +35,7 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 	out.BlockedEndpoints = BlockedEndpoints(tk)
 	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
 	out.StatusCodeMatch = StatusCodeMatch(tk)
+	out.HeadersMatch = HeadersMatch(tk)
 	return
 }
 
@@ -202,4 +204,69 @@ func StatusCodeMatch(tk *TestKeys) (out *bool) {
 	}
 	out = &value
 	return
+}
+
+// HeadersMatch returns whether uncommon headers match between control and
+// measurement, or nil if check is not applicable.
+func HeadersMatch(tk *TestKeys) *bool {
+	control := tk.Control.HTTPRequest.Headers
+	if len(tk.Requests) <= 0 || tk.Requests[0].Response.Code == 0 {
+		return nil
+	}
+	// Implementation note: using map because we only care about the
+	// keys being different and we ignore the values.
+	measurement := tk.Requests[0].Response.Headers
+	// Rather than checking all headers first and then uncommon headers
+	// just check whether the uncommon headers are matching
+	const (
+		inMeasurement = 1 << 0
+		inControl     = 1 << 1
+		inBoth        = inMeasurement | inControl
+	)
+	commonHeaders := map[string]bool{
+		"date":                      true,
+		"content-type":              true,
+		"server":                    true,
+		"cache-control":             true,
+		"vary":                      true,
+		"set-cookie":                true,
+		"location":                  true,
+		"expires":                   true,
+		"x-powered-by":              true,
+		"content-encoding":          true,
+		"last-modified":             true,
+		"accept-ranges":             true,
+		"pragma":                    true,
+		"x-frame-options":           true,
+		"etag":                      true,
+		"x-content-type-options":    true,
+		"age":                       true,
+		"via":                       true,
+		"p3p":                       true,
+		"x-xss-protection":          true,
+		"content-language":          true,
+		"cf-ray":                    true,
+		"strict-transport-security": true,
+		"link":                      true,
+		"x-varnish":                 true,
+	}
+	matching := make(map[string]int)
+	for key := range measurement {
+		if _, ok := commonHeaders[key]; !ok {
+			matching[strings.ToLower(key)] |= inMeasurement
+		}
+	}
+	for key := range control {
+		if _, ok := commonHeaders[key]; !ok {
+			matching[strings.ToLower(key)] |= inControl
+		}
+	}
+	good := true
+	for _, value := range matching {
+		if (value & inBoth) != inBoth {
+			good = false
+			break
+		}
+	}
+	return &good
 }
