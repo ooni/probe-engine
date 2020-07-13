@@ -209,10 +209,16 @@ func StatusCodeMatch(tk *TestKeys) (out *bool) {
 // HeadersMatch returns whether uncommon headers match between control and
 // measurement, or nil if check is not applicable.
 func HeadersMatch(tk *TestKeys) *bool {
-	control := tk.Control.HTTPRequest.Headers
-	if len(tk.Requests) <= 0 || tk.Requests[0].Response.Code == 0 {
+	if len(tk.Requests) <= 0 {
 		return nil
 	}
+	if tk.Requests[0].Response.Code == 0 {
+		return nil
+	}
+	if tk.Control.HTTPRequest.StatusCode == 0 {
+		return nil
+	}
+	control := tk.Control.HTTPRequest.Headers
 	// Implementation note: using map because we only care about the
 	// keys being different and we ignore the values.
 	measurement := tk.Requests[0].Response.Headers

@@ -588,6 +588,24 @@ func TestHeadersMatch(t *testing.T) {
 		},
 		want: nil,
 	}, {
+		name: "with no control status code",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Headers: map[string]archival.MaybeBinaryValue{
+								"Date": {Value: "Mon Jul 13 21:10:08 CEST 2020"},
+							},
+							Code: 200,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{},
+			},
+		},
+		want: nil,
+	}, {
 		name: "with no uncommon headers",
 		args: args{
 			tk: &webconnectivity.TestKeys{
@@ -606,6 +624,7 @@ func TestHeadersMatch(t *testing.T) {
 						Headers: map[string]string{
 							"Date": "Mon Jul 13 21:05:43 CEST 2020",
 						},
+						StatusCode: 200,
 					},
 				},
 			},
@@ -632,6 +651,7 @@ func TestHeadersMatch(t *testing.T) {
 							"Date":   "Mon Jul 13 21:05:43 CEST 2020",
 							"Antani": "MELANDRI",
 						},
+						StatusCode: 200,
 					},
 				},
 			},
@@ -658,6 +678,7 @@ func TestHeadersMatch(t *testing.T) {
 							"Date":     "Mon Jul 13 21:05:43 CEST 2020",
 							"Melandri": "MASCETTI",
 						},
+						StatusCode: 200,
 					},
 				},
 			},
