@@ -756,3 +756,181 @@ func TestHeadersMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestTitleMatch(t *testing.T) {
+	var (
+		trueValue  = true
+		falseValue = false
+	)
+	type args struct {
+		tk *webconnectivity.TestKeys
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantOut *bool
+	}{{
+		name: "with all empty",
+		args: args{
+			tk: &webconnectivity.TestKeys{},
+		},
+		wantOut: nil,
+	}, {
+		name: "with a request and no response",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{}},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "with a response with truncated body",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code:            200,
+							BodyIsTruncated: true,
+						},
+					}},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "with a response with good body",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{Value: "<HTML/>"},
+						},
+					}},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "with all good but no titles",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{Value: "<HTML/>"},
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+						Title:      "",
+					},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "reasonably common case where it succeeds",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{
+								Value: "<HTML><TITLE>La community di MSN</TITLE></HTML>"},
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+						Title:      "MSN Community",
+					},
+				},
+			},
+		},
+		wantOut: &trueValue,
+	}, {
+		name: "reasonably common case where it fails",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{
+								Value: "<HTML><TITLE>La communità di MSN</TITLE></HTML>"},
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+						Title:      "MSN Community",
+					},
+				},
+			},
+		},
+		wantOut: &falseValue,
+	}, {
+		name: "when the title is too long",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{
+								Value: "<HTML><TITLE>" + randx.Letters(1024) + "</TITLE></HTML>"},
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+						Title:      "MSN Community",
+					},
+				},
+			},
+		},
+		wantOut: nil,
+	}, {
+		name: "reasonably common case where it succeeds with case variations",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+							Body: archival.MaybeBinaryValue{
+								Value: "<HTML><TiTLe>La commUNity di MSN</tITLE></HTML>"},
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						StatusCode: 200,
+						Title:      "MSN COmmunity",
+					},
+				},
+			},
+		},
+		wantOut: &trueValue,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut := webconnectivity.TitleMatch(tt.args.tk)
+			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
