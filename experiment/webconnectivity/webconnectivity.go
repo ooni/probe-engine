@@ -118,6 +118,6 @@ func (m Measurer) Run(
 	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
 	tk.ControlFailure = archival.NewFailure(err)
 	// 4. compare measurement to control
-	tk.AnalysisResult = Analyze(tk)
+	tk.AnalysisResult = Analyze(string(measurement.Input), tk)
 	return nil
 }
