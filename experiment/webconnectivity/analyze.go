@@ -33,6 +33,7 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 	out.DNSConsistency = DNSConsistency(URL, tk)
 	out.BlockedEndpoints = BlockedEndpoints(tk)
 	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
+	out.StatusCodeMatch = StatusCodeMatch(tk)
 	return
 }
 
@@ -173,5 +174,32 @@ func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
 	v := proportion > bodyProportionFactor
 	match = &v
 	percentage = &proportion
+	return
+}
+
+// StatusCodeMatch returns whether the status code of the measurement
+// matches the status code of the control, or nil if such comparison
+// is actually not applicable.
+func StatusCodeMatch(tk *TestKeys) (out *bool) {
+	control := tk.Control.HTTPRequest.StatusCode
+	measurement := tk.HTTPResponseStatus
+	if control == 0 || measurement == 0 {
+		return // no real status code
+	}
+	value := control == measurement
+	if value == true {
+		// if the status codes are equal, they clearly match
+		out = &value
+		return
+	}
+	// This fix is part of Web Connectivity in MK and in Python since
+	// basically forever; my recollection is that we want to work around
+	// cases where the test helper is failing(?!). Unlike previous
+	// implementations, this implementation avoids a false positive
+	// when both measurement and control statuses are 500.
+	if control/100 == 5 {
+		return
+	}
+	out = &value
 	return
 }
