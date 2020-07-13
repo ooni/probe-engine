@@ -3,6 +3,7 @@ package webconnectivity
 import (
 	"context"
 	"net"
+	"sort"
 	"strconv"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -39,6 +40,7 @@ func NewControlRequest(
 		}
 	}
 	// Just in case we have multiple endpoints/attempts, reduce them:
+	out.TCPConnect = []string{}
 	epnts := make(map[string]int)
 	for _, entry := range result.TCPConnect {
 		epnts[net.JoinHostPort(entry.IP, strconv.Itoa(entry.Port))]++
@@ -46,6 +48,9 @@ func NewControlRequest(
 	for key := range epnts {
 		out.TCPConnect = append(out.TCPConnect, key)
 	}
+	sort.Slice(out.TCPConnect, func(i, j int) bool { // stable output wrt map iteration
+		return out.TCPConnect[i] < out.TCPConnect[j]
+	})
 	return
 }
 
@@ -105,6 +110,7 @@ func Control(
 // This is very useful to know what ASNs were the IP addresses returned by
 // the control according to the probe's ASN database.
 func (dns *ControlDNSResult) FillASNs(sess model.ExperimentSession) {
+	dns.ASNs = []int64{}
 	for _, ip := range dns.Addrs {
 		// TODO(bassosimone): this would be more efficient if we'd open just
 		// once the database and then reuse it for every address.
