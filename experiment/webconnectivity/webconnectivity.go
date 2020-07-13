@@ -24,16 +24,22 @@ type Config struct{}
 
 // TestKeys contains webconnectivity test keys.
 type TestKeys struct {
-	// measurement
+	// measurement from urlgetter
 	urlgetter.TestKeys
 
-	// contextual information
-	ClientResolver string `json:"client_resolver"`
+	// other fields
+	ClientResolver        string  `json:"client_resolver"`
+	Retries               *int64  `json:"retries"` // unused
+	DNSExperimentFailure  *string `json:"dns_experiment_failure"`
+	HTTPExperimentFailure *string `json:"http_experiment_failure"`
 
 	// control
 	ControlFailure *string         `json:"control_failure"`
 	ControlRequest ControlRequest  `json:"x_control_request"` // not in the spec
 	Control        ControlResponse `json:"control"`
+
+	// analysis
+	AnalysisResult
 }
 
 // Measurer performs the measurement.
@@ -104,12 +110,14 @@ func (m Measurer) Run(
 	}
 	// 2. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
+	tk.DNSExperimentFailure = DNSExperimentFailure(tk)
+	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)
 	// 3. contact the control
 	tk.ControlRequest = NewControlRequest(measurement.Input, tk.TestKeys)
 	var err error
 	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
 	tk.ControlFailure = archival.NewFailure(err)
 	// 4. compare measurement to control
-	Analyze(tk)
+	tk.AnalysisResult = Analyze(tk)
 	return nil
 }
