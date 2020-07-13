@@ -14,6 +14,7 @@ type AnalysisResult struct {
 	DNSConsistency   string   `json:"dns_consistency"`
 	BlockedEndpoints []string `json:"x_blocked_endpoints"` // not in spec
 	BodyLengthMatch  *bool    `json:"body_length_match"`
+	BodyProportion   *float64 `json:"body_proportion"`
 	HeadersMatch     *bool    `json:"header_match"`
 	StatusCodeMatch  *bool    `json:"status_code_match"`
 	TitleMatch       *bool    `json:"title_match"`
@@ -31,6 +32,7 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 	}
 	out.DNSConsistency = DNSConsistency(URL, tk)
 	out.BlockedEndpoints = BlockedEndpoints(tk)
+	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
 	return
 }
 
@@ -146,4 +148,30 @@ func BlockedEndpoints(tk *TestKeys) []string {
 		}
 	}
 	return out
+}
+
+// BodyLengthChecks returns whether the measured body is reasonably
+// long as much as the control body as well as the proportion between
+// the two bodies. This check may return nil, nil when such a
+// comparison would actually not be applicable.
+func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
+	control := tk.Control.HTTPRequest.BodyLength
+	if control <= 0 {
+		return
+	}
+	measurement := int64(len(tk.HTTPResponseBody))
+	if measurement <= 0 {
+		return
+	}
+	const bodyProportionFactor = 0.7
+	var proportion float64
+	if measurement >= control {
+		proportion = float64(control) / float64(measurement)
+	} else {
+		proportion = float64(measurement) / float64(control)
+	}
+	v := proportion > bodyProportionFactor
+	match = &v
+	percentage = &proportion
+	return
 }

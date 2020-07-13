@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
+	"github.com/ooni/probe-engine/internal/randx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -317,6 +318,115 @@ func TestBlockedEndpoints(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := webconnectivity.BlockedEndpoints(tt.args.tk)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestBodyLengthChecks(t *testing.T) {
+	var (
+		trueValue  = true
+		falseValue = false
+	)
+	type args struct {
+		tk *webconnectivity.TestKeys
+	}
+	tests := []struct {
+		name        string
+		args        args
+		lengthMatch *bool
+		proportion  *float64
+	}{{
+		name: "both zero",
+		args: args{
+			tk: &webconnectivity.TestKeys{},
+		},
+		lengthMatch: nil,
+	}, {
+		name: "control length is nonzero",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 1024,
+					},
+				},
+			},
+		},
+		lengthMatch: nil,
+	}, {
+		name: "match with bigger control",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseBody: randx.Letters(768),
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 1024,
+					},
+				},
+			},
+		},
+		lengthMatch: &trueValue,
+		proportion:  (func() *float64 { v := 0.75; return &v })(),
+	}, {
+		name: "match with bigger measurement",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseBody: randx.Letters(1024),
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 768,
+					},
+				},
+			},
+		},
+		lengthMatch: &trueValue,
+		proportion:  (func() *float64 { v := 0.75; return &v })(),
+	}, {
+		name: "not match with bigger control",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseBody: randx.Letters(8),
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 16,
+					},
+				},
+			},
+		},
+		lengthMatch: &falseValue,
+		proportion:  (func() *float64 { v := 0.5; return &v })(),
+	}, {
+		name: "match with bigger measurement",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					HTTPResponseBody: randx.Letters(16),
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 8,
+					},
+				},
+			},
+		},
+		lengthMatch: &falseValue,
+		proportion:  (func() *float64 { v := 0.5; return &v })(),
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			match, proportion := webconnectivity.BodyLengthChecks(tt.args.tk)
+			if diff := cmp.Diff(tt.lengthMatch, match); diff != "" {
+				t.Fatal(diff)
+			}
+			if diff := cmp.Diff(tt.proportion, proportion); diff != "" {
 				t.Fatal(diff)
 			}
 		})
