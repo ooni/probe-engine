@@ -338,7 +338,7 @@ func TestBodyLengthChecks(t *testing.T) {
 		lengthMatch *bool
 		proportion  *float64
 	}{{
-		name: "both zero",
+		name: "nothing",
 		args: args{
 			tk: &webconnectivity.TestKeys{},
 		},
@@ -356,11 +356,53 @@ func TestBodyLengthChecks(t *testing.T) {
 		},
 		lengthMatch: nil,
 	}, {
+		name: "response body is truncated",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							BodyIsTruncated: true,
+						},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 1024,
+					},
+				},
+			},
+		},
+		lengthMatch: nil,
+	}, {
+		name: "response body length is zero",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{},
+					}},
+				},
+				Control: webconnectivity.ControlResponse{
+					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+						BodyLength: 1024,
+					},
+				},
+			},
+		},
+		lengthMatch: nil,
+	}, {
 		name: "match with bigger control",
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseBody: randx.Letters(768),
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Body: archival.MaybeBinaryValue{
+								Value: randx.Letters(768),
+							},
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -376,7 +418,13 @@ func TestBodyLengthChecks(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseBody: randx.Letters(1024),
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Body: archival.MaybeBinaryValue{
+								Value: randx.Letters(1024),
+							},
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -392,7 +440,13 @@ func TestBodyLengthChecks(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseBody: randx.Letters(8),
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Body: archival.MaybeBinaryValue{
+								Value: randx.Letters(8),
+							},
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -408,7 +462,13 @@ func TestBodyLengthChecks(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseBody: randx.Letters(16),
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Body: archival.MaybeBinaryValue{
+								Value: randx.Letters(16),
+							},
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
