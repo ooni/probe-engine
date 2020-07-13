@@ -3,6 +3,7 @@ package webconnectivity
 import (
 	"net"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -36,6 +37,7 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
 	out.StatusCodeMatch = StatusCodeMatch(tk)
 	out.HeadersMatch = HeadersMatch(tk)
+	out.TitleMatch = TitleMatch(tk)
 	return
 }
 
@@ -277,6 +279,63 @@ func HeadersMatch(tk *TestKeys) *bool {
 	good := true
 	for _, value := range matching {
 		if (value & inBoth) != inBoth {
+			good = false
+			break
+		}
+	}
+	return &good
+}
+
+// TitleMatch returns whether the measurement and the control titles
+// reasonably match, or nil if not applicable.
+func TitleMatch(tk *TestKeys) (out *bool) {
+	if len(tk.Requests) <= 0 {
+		return
+	}
+	response := tk.Requests[0].Response
+	if response.Code == 0 {
+		return
+	}
+	if response.BodyIsTruncated {
+		return
+	}
+	if tk.Control.HTTPRequest.StatusCode == 0 {
+		return
+	}
+	control := tk.Control.HTTPRequest.Title
+	measurementBody := response.Body.Value
+	re := regexp.MustCompile(`(?i)<title>([^<]{1,128})</title>`) // like MK
+	v := re.FindStringSubmatch(measurementBody)
+	if len(v) < 2 {
+		return
+	}
+	measurement := v[1]
+	const (
+		inMeasurement = 1 << 0
+		inControl     = 1 << 1
+		inBoth        = inMeasurement | inControl
+	)
+	words := make(map[string]int)
+	// We don't consider to match words that are shorter than 5
+	// characters (5 is the average word length for english)
+	//
+	// The original implementation considered the word order but
+	// considering different languages it seems we could have less
+	// false positives by ignoring the word order.
+	const minWordLength = 5
+	for _, word := range strings.Split(measurement, " ") {
+		if len(word) >= minWordLength {
+			words[strings.ToLower(word)] |= inMeasurement
+		}
+	}
+	for _, word := range strings.Split(control, " ") {
+		if len(word) >= minWordLength {
+			words[strings.ToLower(word)] |= inControl
+		}
+	}
+	good := true
+	for _, score := range words {
+		if (score & inBoth) != inBoth {
 			good = false
 			break
 		}
