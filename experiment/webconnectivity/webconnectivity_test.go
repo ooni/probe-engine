@@ -44,6 +44,12 @@ func TestIntegrationSuccess(t *testing.T) {
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
+	}
 	// TODO(bassosimone): write further checks here?
 }
 
@@ -68,6 +74,12 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	}
 	if *tk.ControlFailure != modelx.FailureInterrupted {
 		t.Fatal("unexpected control_failure")
+	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
 	}
 	// TODO(bassosimone): write further checks here?
 }
@@ -94,6 +106,12 @@ func TestMeasureWithNoInput(t *testing.T) {
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
+	}
 	// TODO(bassosimone): write further checks here?
 }
 
@@ -119,6 +137,12 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
+	}
 	// TODO(bassosimone): write further checks here?
 }
 
@@ -143,6 +167,12 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
+	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
 	}
 	// TODO(bassosimone): write further checks here?
 }
