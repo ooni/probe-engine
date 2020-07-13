@@ -46,7 +46,8 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 		inconsistent = "inconsistent"
 	)
 	out = inconsistent
-	// 1. flip to consistent if we're targeting an IP address
+	// 1. flip to consistent if we're targeting an IP address because the
+	// control will actually return dns_name_error in this case.
 	if net.ParseIP(URL.Hostname()) != nil {
 		out = consistent
 		return
@@ -86,12 +87,14 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 		asnmap[asn] |= inControl
 	}
 	for key, value := range asnmap {
+		// zero means that ASN lookup failed
 		if key != 0 && (value&inBoth) == inBoth {
 			out = consistent
 			return
 		}
 	}
-	// 4. when some returned IPs overlap
+	// 4. when ASN lookup failed (unlikely), check whether
+	// there is overlap in the returned IP addresses
 	ipmap := make(map[string]int)
 	for _, entry := range tk.Queries {
 		for _, answer := range entry.Answers {
