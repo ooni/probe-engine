@@ -6,6 +6,8 @@ package webconnectivity
 import (
 	"context"
 	"errors"
+	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,7 +119,26 @@ func (m Measurer) Run(
 	var err error
 	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
 	tk.ControlFailure = archival.NewFailure(err)
-	// 4. compare measurement to control
+	// 4. rewrite TCPConnect to include blocking information - it is very
+	// sad that we're storing analysis result inside the measurement
+	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
+	// 5. compare measurement to control
 	tk.AnalysisResult = Analyze(string(measurement.Input), tk)
 	return nil
+}
+
+// ComputeTCPBlocking will return a copy of the input TCPConnect structure
+// where we set the Blocking value depending on the control results.
+func ComputeTCPBlocking(measurement []archival.TCPConnectEntry,
+	control map[string]ControlTCPConnectResult) (out []archival.TCPConnectEntry) {
+	out = []archival.TCPConnectEntry{}
+	for _, me := range measurement {
+		epnt := net.JoinHostPort(me.IP, strconv.Itoa(me.Port))
+		if ce, ok := control[epnt]; ok {
+			v := ce.Failure == nil && me.Status.Failure != nil
+			me.Status.Blocked = &v
+		}
+		out = append(out, me)
+	}
+	return
 }
