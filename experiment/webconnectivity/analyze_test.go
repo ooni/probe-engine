@@ -64,7 +64,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "consistent",
+		wantOut: webconnectivity.AnalyzeDNSConsistent,
 	}, {
 		name: "when the failures are not compatible",
 		args: args{
@@ -80,7 +80,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "inconsistent",
+		wantOut: webconnectivity.AnalyzeDNSInconsistent,
 	}, {
 		name: "when the failures are compatible",
 		args: args{
@@ -96,7 +96,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "consistent",
+		wantOut: webconnectivity.AnalyzeDNSConsistent,
 	}, {
 		name: "when the ASNs are equal",
 		args: args{
@@ -120,7 +120,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "consistent",
+		wantOut: webconnectivity.AnalyzeDNSConsistent,
 	}, {
 		name: "when the ASNs overlap",
 		args: args{
@@ -144,7 +144,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "consistent",
+		wantOut: webconnectivity.AnalyzeDNSConsistent,
 	}, {
 		name: "when the ASNs do not overlap",
 		args: args{
@@ -168,7 +168,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "inconsistent",
+		wantOut: webconnectivity.AnalyzeDNSInconsistent,
 	}, {
 		name: "when ASNs lookup fails but IPs overlap",
 		args: args{
@@ -195,7 +195,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "consistent",
+		wantOut: webconnectivity.AnalyzeDNSConsistent,
 	}, {
 		name: "when ASNs lookup fails and IPs do not overlap",
 		args: args{
@@ -222,7 +222,7 @@ func TestDNSConsistency(t *testing.T) {
 				},
 			},
 		},
-		wantOut: "inconsistent",
+		wantOut: webconnectivity.AnalyzeDNSInconsistent,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
