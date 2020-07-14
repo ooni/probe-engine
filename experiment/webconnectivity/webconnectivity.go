@@ -140,6 +140,14 @@ func (m Measurer) Run(
 	// 4. analyze DNS results
 	tk.DNSAnalysisResult = DNSAnalysis(URL, dnsResult, tk.Control)
 	sess.Logger().Infof("DNS analysis result: %+v", tk.DNSAnalysisResult)
+	// 5. perform TCP/TLS connects
+	connectsResult := Connects(ctx, ConnectsConfig{
+		Session:       sess,
+		TargetURL:     URL,
+		URLGetterURLs: epnts.URLs(),
+	})
+	sess.Logger().Infof(
+		"TCP/TLS endpoints: %d/%d reachable", connectsResult.Successes, connectsResult.Total)
 	// 4. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
 	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)

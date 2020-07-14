@@ -195,3 +195,30 @@ func TestEndpointsList_Endpoints(t *testing.T) {
 		})
 	}
 }
+
+func TestEndpointsList_URLs(t *testing.T) {
+	tests := []struct {
+		name    string
+		el      webconnectivity.EndpointsList
+		wantOut []string
+	}{{
+		name:    "when empty",
+		wantOut: []string{},
+	}, {
+		name: "common case",
+		el: webconnectivity.EndpointsList{{
+			URLGetterURL: "tlshandshake://1.1.1.1:443",
+		}, {
+			URLGetterURL: "tcpconnect://8.8.8.8:80",
+		}},
+		wantOut: []string{"tlshandshake://1.1.1.1:443", "tcpconnect://8.8.8.8:80"},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut := tt.el.URLs()
+			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}

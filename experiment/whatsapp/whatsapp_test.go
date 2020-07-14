@@ -28,6 +28,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 }
 
 func TestIntegrationSuccess(t *testing.T) {
+	t.Skip() // See https://github.com/ooni/probe-engine/issues/799
 	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{})
 	ctx := context.Background()
 	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
