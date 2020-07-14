@@ -20,7 +20,7 @@ type AnalysisResult struct {
 // Analyze performs follow-up analysis on the webconnectivity measurement by
 // comparing the measurement (tk.TestKeys) and the control (tk.Control). This
 // function will return the results of the analysis.
-func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
+func Analyze(tk *TestKeys) (out AnalysisResult) {
 	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
 	out.StatusCodeMatch = StatusCodeMatch(tk)
 	out.HeadersMatch = HeadersMatch(tk)

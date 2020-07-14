@@ -147,7 +147,7 @@ func (m Measurer) Run(
 	// sad that we're storing analysis result inside the measurement
 	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
 	// 6. compare measurement to control
-	tk.AnalysisResult = Analyze(string(measurement.Input), tk)
+	tk.AnalysisResult = Analyze(tk)
 	return nil
 }
 

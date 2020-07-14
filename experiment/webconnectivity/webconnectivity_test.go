@@ -78,7 +78,7 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	if *tk.ControlFailure != modelx.FailureInterrupted {
 		t.Fatal("unexpected control_failure")
 	}
-	if tk.DNSExperimentFailure != nil {
+	if *tk.DNSExperimentFailure != modelx.FailureInterrupted {
 		t.Fatal("unexpected dns_experiment_failure")
 	}
 	if tk.HTTPExperimentFailure != nil {

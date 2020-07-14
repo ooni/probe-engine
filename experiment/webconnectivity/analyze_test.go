@@ -10,28 +10,6 @@ import (
 	"github.com/ooni/probe-engine/netx/archival"
 )
 
-func TestAnalyzeInvalidURL(t *testing.T) {
-	out := webconnectivity.Analyze("\t\t\t", nil)
-	if out.BodyLengthMatch != nil {
-		t.Fatal("unexpected BodyLengthMatch")
-	}
-	if out.HeadersMatch != nil {
-		t.Fatal("unexpected HeadersMatch")
-	}
-	if out.StatusCodeMatch != nil {
-		t.Fatal("unexpected StatusCodeMatch")
-	}
-	if out.TitleMatch != nil {
-		t.Fatal("unexpected TitleMatch")
-	}
-	if out.Accessible != nil {
-		t.Fatal("unexpected Accessible")
-	}
-	if out.Blocking != nil {
-		t.Fatal("unexpected Blocking")
-	}
-}
-
 func TestBodyLengthChecks(t *testing.T) {
 	var (
 		trueValue  = true
