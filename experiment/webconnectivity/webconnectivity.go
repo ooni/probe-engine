@@ -37,7 +37,7 @@ type TestKeys struct {
 
 	// control
 	ControlFailure *string         `json:"control_failure"`
-	ControlRequest ControlRequest  `json:"x_control_request"` // not in the spec
+	ControlRequest ControlRequest  `json:"-"`
 	Control        ControlResponse `json:"control"`
 
 	// analysis
