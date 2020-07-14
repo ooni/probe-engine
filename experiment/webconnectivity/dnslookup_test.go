@@ -2,6 +2,7 @@ package webconnectivity_test
 
 import (
 	"context"
+	"net"
 	"net/url"
 	"testing"
 
@@ -21,8 +22,8 @@ func TestDNSLookup(t *testing.T) {
 		t.Fatal("no addresses?!")
 	}
 	for addr, asn := range out.Addrs {
-		if addr == "" {
-			t.Fatal("empty addr")
+		if net.ParseIP(addr) == nil {
+			t.Fatal("invalid addr")
 		}
 		if asn != 15169 {
 			t.Fatal("invalid asn")
