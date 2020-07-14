@@ -119,7 +119,7 @@ func TestNewEndpoints(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantOut []webconnectivity.Endpoint
+		wantOut webconnectivity.EndpointsList
 	}{{
 		name: "with all empty",
 		args: args{
@@ -127,7 +127,7 @@ func TestNewEndpoints(t *testing.T) {
 				Scheme: "http",
 			},
 		},
-		wantOut: []webconnectivity.Endpoint{},
+		wantOut: webconnectivity.EndpointsList{},
 	}, {
 		name: "with some https endpoints",
 		args: args{
@@ -136,7 +136,7 @@ func TestNewEndpoints(t *testing.T) {
 			},
 			addrs: []string{"1.1.1.1", "8.8.8.8"},
 		},
-		wantOut: []webconnectivity.Endpoint{{
+		wantOut: webconnectivity.EndpointsList{{
 			URLGetterURL: "tlshandshake://1.1.1.1:443",
 			String:       "1.1.1.1:443",
 		}, {
@@ -151,7 +151,7 @@ func TestNewEndpoints(t *testing.T) {
 			},
 			addrs: []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
 		},
-		wantOut: []webconnectivity.Endpoint{{
+		wantOut: webconnectivity.EndpointsList{{
 			URLGetterURL: "tcpconnect://[2001:4860:4860::8888]:80",
 			String:       "[2001:4860:4860::8888]:80",
 		}, {
@@ -162,6 +162,33 @@ func TestNewEndpoints(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotOut := webconnectivity.NewEndpoints(tt.args.URL, tt.args.addrs)
+			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestEndpointsList_Endpoints(t *testing.T) {
+	tests := []struct {
+		name    string
+		el      webconnectivity.EndpointsList
+		wantOut []string
+	}{{
+		name:    "when empty",
+		wantOut: []string{},
+	}, {
+		name: "common case",
+		el: webconnectivity.EndpointsList{{
+			String: "1.1.1.1:443",
+		}, {
+			String: "8.8.8.8:80",
+		}},
+		wantOut: []string{"1.1.1.1:443", "8.8.8.8:80"},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut := tt.el.Endpoints()
 			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
 				t.Fatal(diff)
 			}
