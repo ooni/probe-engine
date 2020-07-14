@@ -32,7 +32,7 @@ func (t DNSOverHTTPS) RoundTrip(ctx context.Context, query []byte) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("user-agent", httpheader.RandomUserAgent())
+	req.Header.Set("user-agent", httpheader.UserAgent())
 	req.Header.Set("content-type", "application/dns-message")
 	var resp *http.Response
 	resp, err = t.Do(req.WithContext(ctx))

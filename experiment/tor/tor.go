@@ -372,15 +372,15 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 		}
 		const snapshotsize = 1 << 8 // no need to include all in report
 		r := oonitemplates.HTTPDo(ctx, oonitemplates.HTTPDoConfig{
-			Accept:                  httpheader.RandomAccept(),
-			AcceptLanguage:          httpheader.RandomAcceptLanguage(),
+			Accept:                  httpheader.Accept(),
+			AcceptLanguage:          httpheader.AcceptLanguage(),
 			Beginning:               rc.measurement.MeasurementStartTimeSaved,
 			MaxEventsBodySnapSize:   snapshotsize,
 			MaxResponseBodySnapSize: snapshotsize,
 			Handler:                 netxlogger.NewHandler(logger),
 			Method:                  "GET",
 			URL:                     url.String(),
-			UserAgent:               httpheader.RandomUserAgent(),
+			UserAgent:               httpheader.UserAgent(),
 		})
 		tk, err = r.TestKeys, r.Error
 	case "or_port", "or_port_dirauth":
