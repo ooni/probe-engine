@@ -116,18 +116,21 @@ func (m Measurer) Run(
 	measurement.TestHelpers = map[string]interface{}{
 		"backend": testhelper,
 	}
-	// 2. perform the measurement
+	// 2. perform the DNS lookup step
+	// TODO(bassosimone): further refactor and integrate this step
+	DNSLookup(ctx, DNSLookupConfig{Session: sess, URL: URL})
+	// 3. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
 	tk.DNSExperimentFailure = DNSExperimentFailure(tk)
 	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)
-	// 3. contact the control
+	// 4. contact the control
 	tk.ControlRequest = NewControlRequest(measurement.Input, tk.TestKeys)
 	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
 	tk.ControlFailure = archival.NewFailure(err)
-	// 4. rewrite TCPConnect to include blocking information - it is very
+	// 5. rewrite TCPConnect to include blocking information - it is very
 	// sad that we're storing analysis result inside the measurement
 	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
-	// 5. compare measurement to control
+	// 6. compare measurement to control
 	tk.AnalysisResult = Analyze(string(measurement.Input), tk)
 	return nil
 }
