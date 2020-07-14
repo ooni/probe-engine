@@ -38,9 +38,6 @@ func TestIntegrationSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.Failure != nil {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
@@ -69,9 +66,6 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if *tk.Failure != modelx.FailureInterrupted {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
@@ -100,9 +94,6 @@ func TestMeasureWithNoInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.Failure != nil {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
@@ -131,9 +122,6 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.Failure != nil {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
@@ -162,9 +150,6 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.Failure != nil {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
@@ -193,9 +178,6 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.Failure != nil {
-		t.Fatal("unexpected failure")
-	}
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
