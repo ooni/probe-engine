@@ -4,7 +4,6 @@ import (
 	"net"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -13,15 +12,14 @@ import (
 // AnalysisResult contains the results of the analysis performed on the
 // client. We obtain it by comparing the measurement and the control.
 type AnalysisResult struct {
-	DNSConsistency   string   `json:"dns_consistency"`
-	BlockedEndpoints []string `json:"x_blocked_endpoints"` // not in spec
-	BodyLengthMatch  *bool    `json:"body_length_match"`
-	BodyProportion   *float64 `json:"body_proportion"`
-	StatusCodeMatch  *bool    `json:"status_code_match"`
-	HeadersMatch     *bool    `json:"header_match"`
-	TitleMatch       *bool    `json:"title_match"`
-	Blocking         *string  `json:"blocking"`
-	Accessible       *bool    `json:"accessible"`
+	DNSConsistency  string   `json:"dns_consistency"`
+	BodyLengthMatch *bool    `json:"body_length_match"`
+	BodyProportion  *float64 `json:"body_proportion"`
+	StatusCodeMatch *bool    `json:"status_code_match"`
+	HeadersMatch    *bool    `json:"header_match"`
+	TitleMatch      *bool    `json:"title_match"`
+	Blocking        *string  `json:"blocking"`
+	Accessible      *bool    `json:"accessible"`
 }
 
 // Analyze performs follow-up analysis on the webconnectivity measurement by
@@ -33,7 +31,6 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 		return // should not happen in practice
 	}
 	out.DNSConsistency = DNSConsistency(URL, tk)
-	out.BlockedEndpoints = BlockedEndpoints(tk)
 	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
 	out.StatusCodeMatch = StatusCodeMatch(tk)
 	out.HeadersMatch = HeadersMatch(tk)
@@ -130,35 +127,6 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 	}
 	// 5. conclude that measurement and control are inconsistent
 	return
-}
-
-// BlockedEndpoints computes which endpoints are blocked by comparing
-// what the measurement and control found to be blocked.
-//
-// This is not done by the original implementations. They used to
-// record this information inside of the `tcp_connect` result in the
-// measurement as `blocked`. This implementation instead writes a
-// list of blocked TCP endpoints, because:
-//
-// 1. it is dirty to stuff the result of analysis inside of the
-// measurement and we agreed multiple times that we were going to
-// avoid mixing measurement and analysis
-//
-// 2. it is more practical to parse a toplevel array both when
-// parsing through a script and when doing it manually
-//
-// 3. it is complex to implement the original behavior in Go
-func BlockedEndpoints(tk *TestKeys) []string {
-	out := []string{}
-	for _, measurement := range tk.TCPConnect {
-		epnt := net.JoinHostPort(measurement.IP, strconv.Itoa(measurement.Port))
-		if control, ok := tk.Control.TCPConnect[epnt]; ok {
-			if control.Failure == nil && measurement.Status.Failure != nil {
-				out = append(out, epnt)
-			}
-		}
-	}
-	return out
 }
 
 // BodyLengthChecks returns whether the measured body is reasonably

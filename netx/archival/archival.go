@@ -59,7 +59,12 @@ var (
 )
 
 // TCPConnectStatus contains the TCP connect status.
+//
+// The Blocked field breaks the separation between measurement and analysis
+// we have been enforcing for quite some time now. It is a legacy from the
+// Web Connectivity experiment and it should be here because of that.
 type TCPConnectStatus struct {
+	Blocked *bool   `json:"blocked,omitempty"` // Web Connectivity only
 	Failure *string `json:"failure"`
 	Success bool    `json:"success"`
 }

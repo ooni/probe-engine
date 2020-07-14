@@ -3,13 +3,16 @@ package webconnectivity_test
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/google/go-cmp/cmp"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
@@ -205,4 +208,135 @@ func newsession(t *testing.T, lookupBackends bool) model.ExperimentSession {
 		t.Fatal(err)
 	}
 	return sess
+}
+
+func TestComputeTCPBlocking(t *testing.T) {
+	var (
+		falseValue = false
+		trueValue  = true
+	)
+	failure := io.EOF.Error()
+	anotherFailure := "unknown_error"
+	type args struct {
+		measurement []archival.TCPConnectEntry
+		control     map[string]webconnectivity.ControlTCPConnectResult
+	}
+	tests := []struct {
+		name string
+		args args
+		want []archival.TCPConnectEntry
+	}{{
+		name: "with all empty",
+		args: args{},
+		want: []archival.TCPConnectEntry{},
+	}, {
+		name: "with control failure",
+		args: args{
+			measurement: []archival.TCPConnectEntry{{
+				IP:   "1.1.1.1",
+				Port: 853,
+				Status: archival.TCPConnectStatus{
+					Failure: &failure,
+					Success: false,
+				},
+			}},
+		},
+		want: []archival.TCPConnectEntry{{
+			IP:   "1.1.1.1",
+			Port: 853,
+			Status: archival.TCPConnectStatus{
+				Failure: &failure,
+				Success: false,
+			},
+		}},
+	}, {
+		name: "with failures on both ends",
+		args: args{
+			measurement: []archival.TCPConnectEntry{{
+				IP:   "1.1.1.1",
+				Port: 853,
+				Status: archival.TCPConnectStatus{
+					Failure: &failure,
+					Success: false,
+				},
+			}},
+			control: map[string]webconnectivity.ControlTCPConnectResult{
+				"1.1.1.1:853": {
+					Failure: &anotherFailure,
+					Status:  false,
+				},
+			},
+		},
+		want: []archival.TCPConnectEntry{{
+			IP:   "1.1.1.1",
+			Port: 853,
+			Status: archival.TCPConnectStatus{
+				Blocked: &falseValue,
+				Failure: &failure,
+				Success: false,
+			},
+		}},
+	}, {
+		name: "with failure on the probe side",
+		args: args{
+			measurement: []archival.TCPConnectEntry{{
+				IP:   "1.1.1.1",
+				Port: 853,
+				Status: archival.TCPConnectStatus{
+					Failure: &failure,
+					Success: false,
+				},
+			}},
+			control: map[string]webconnectivity.ControlTCPConnectResult{
+				"1.1.1.1:853": {
+					Failure: nil,
+					Status:  true,
+				},
+			},
+		},
+		want: []archival.TCPConnectEntry{{
+			IP:   "1.1.1.1",
+			Port: 853,
+			Status: archival.TCPConnectStatus{
+				Blocked: &trueValue,
+				Failure: &failure,
+				Success: false,
+			},
+		}},
+	}, {
+		name: "with failure on the control side",
+		args: args{
+			measurement: []archival.TCPConnectEntry{{
+				IP:   "1.1.1.1",
+				Port: 853,
+				Status: archival.TCPConnectStatus{
+					Failure: nil,
+					Success: true,
+				},
+			}},
+			control: map[string]webconnectivity.ControlTCPConnectResult{
+				"1.1.1.1:853": {
+					Failure: &failure,
+					Status:  false,
+				},
+			},
+		},
+		want: []archival.TCPConnectEntry{{
+			IP:   "1.1.1.1",
+			Port: 853,
+			Status: archival.TCPConnectStatus{
+				Blocked: &falseValue,
+				Failure: nil,
+				Success: true,
+			},
+		}},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := webconnectivity.ComputeTCPBlocking(tt.args.measurement, tt.args.control)
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
 }
