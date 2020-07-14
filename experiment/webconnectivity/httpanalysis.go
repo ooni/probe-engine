@@ -1,10 +1,12 @@
 package webconnectivity
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/model"
 )
 
 // HTTPAnalysisResult contains the results of the analysis performed on the
@@ -15,6 +17,31 @@ type HTTPAnalysisResult struct {
 	StatusCodeMatch *bool    `json:"status_code_match"`
 	HeadersMatch    *bool    `json:"header_match"`
 	TitleMatch      *bool    `json:"title_match"`
+}
+
+func boolPointerToString(v *bool) (out string) {
+	out = "nil"
+	if v != nil {
+		out = fmt.Sprintf("%+v", *v)
+	}
+	return
+}
+
+func float64PointerToString(v *float64) (out string) {
+	out = "nil"
+	if v != nil {
+		out = fmt.Sprintf("%+v", *v)
+	}
+	return
+}
+
+// Log logs the results of the analysis
+func (har HTTPAnalysisResult) Log(logger model.Logger) {
+	logger.Infof("BodyLengthMatch: %+v", boolPointerToString(har.BodyLengthMatch))
+	logger.Infof("BodyProportion: %+v", float64PointerToString(har.BodyProportion))
+	logger.Infof("StatusCodeMatch: %+v", boolPointerToString(har.StatusCodeMatch))
+	logger.Infof("HeadersMatch: %+v", boolPointerToString(har.HeadersMatch))
+	logger.Infof("TitleMatch: %+v", boolPointerToString(har.TitleMatch))
 }
 
 // HTTPAnalysis performs follow-up analysis on the webconnectivity measurement by

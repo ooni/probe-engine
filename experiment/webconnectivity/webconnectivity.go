@@ -153,7 +153,10 @@ func (m Measurer) Run(
 	sess.Logger().Infof(
 		"TCP/TLS endpoints: %d/%d reachable", connectsResult.Successes, connectsResult.Total)
 	for _, tcpkeys := range connectsResult.AllKeys {
-		tk.TCPConnect = append(tk.TCPConnect, tcpkeys.TCPConnect...)
+		// rewrite TCPConnect to include blocking information - it is very
+		// sad that we're storing analysis result inside the measurement
+		tk.TCPConnect = append(tk.TCPConnect, ComputeTCPBlocking(
+			tcpkeys.TCPConnect, tk.Control.TCPConnect)...)
 	}
 	// 6. perform HTTP/HTTPS measurement
 	httpResult := HTTPGet(ctx, HTTPGetConfig{
@@ -163,11 +166,9 @@ func (m Measurer) Run(
 	})
 	tk.HTTPExperimentFailure = httpResult.Failure
 	tk.Requests = append(tk.Requests, httpResult.TestKeys.Requests...)
-	// 7. rewrite TCPConnect to include blocking information - it is very
-	// sad that we're storing analysis result inside the measurement
-	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
-	// 8. compare HTTP measurement to control
+	// 7. compare HTTP measurement to control
 	tk.HTTPAnalysisResult = HTTPAnalysis(httpResult.TestKeys, tk.Control)
+	tk.HTTPAnalysisResult.Log(sess.Logger())
 	return nil
 }
 
