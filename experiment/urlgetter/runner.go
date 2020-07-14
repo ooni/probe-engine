@@ -56,7 +56,7 @@ func (r Runner) Run(ctx context.Context) error {
 // returns httpheader.RandomUserAgent().
 func MaybeRandomUserAgent(ua string) string {
 	if ua == "" {
-		ua = httpheader.RandomUserAgent()
+		ua = httpheader.UserAgent()
 	}
 	return ua
 }
@@ -66,8 +66,8 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 	req, err := http.NewRequest(r.Config.Method, url, nil)
 	runtimex.PanicOnError(err, "http.NewRequest failed")
 	req = req.WithContext(ctx)
-	req.Header.Set("Accept", httpheader.RandomAccept())
-	req.Header.Set("Accept-Language", httpheader.RandomAcceptLanguage())
+	req.Header.Set("Accept", httpheader.Accept())
+	req.Header.Set("Accept-Language", httpheader.AcceptLanguage())
 	req.Header.Set("User-Agent", MaybeRandomUserAgent(r.Config.UserAgent))
 	if r.Config.HTTPHost != "" {
 		req.Host = r.Config.HTTPHost

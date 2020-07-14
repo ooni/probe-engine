@@ -261,7 +261,7 @@ func TestRunnerWeCanForceUserAgent(t *testing.T) {
 }
 
 func TestRunnerDefaultUserAgent(t *testing.T) {
-	expected := httpheader.RandomUserAgent()
+	expected := httpheader.UserAgent()
 	found := atomicx.NewInt64()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("User-Agent") == expected {

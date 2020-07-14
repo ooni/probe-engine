@@ -122,12 +122,12 @@ func (m Measurer) Run(
 		return err
 	}
 	headers := map[string]string{
-		randx.ChangeCapitalization("Accept"):          httpheader.RandomAccept(),
+		randx.ChangeCapitalization("Accept"):          httpheader.Accept(),
 		randx.ChangeCapitalization("Accept-Charset"):  "ISO-8859-1,utf-8;q=0.7,*;q=0.3",
 		randx.ChangeCapitalization("Accept-Encoding"): "gzip,deflate,sdch",
-		randx.ChangeCapitalization("Accept-Language"): httpheader.RandomAcceptLanguage(),
+		randx.ChangeCapitalization("Accept-Language"): httpheader.AcceptLanguage(),
 		randx.ChangeCapitalization("Host"):            randx.Letters(15) + ".com",
-		randx.ChangeCapitalization("User-Agent"):      httpheader.RandomUserAgent(),
+		randx.ChangeCapitalization("User-Agent"):      httpheader.UserAgent(),
 	}
 	for key, value := range headers {
 		// Implementation note: Golang will normalize the header names. We will use
