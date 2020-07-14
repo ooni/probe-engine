@@ -511,11 +511,24 @@ func TestStatusCodeMatch(t *testing.T) {
 			tk: &webconnectivity.TestKeys{},
 		},
 	}, {
+		name: "with a request but zero status codes",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				TestKeys: urlgetter.TestKeys{
+					Requests: []archival.RequestEntry{{}},
+				},
+			},
+		},
+	}, {
 		name: "with equal status codes including 5xx",
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseStatus: 501,
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 501,
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -530,7 +543,11 @@ func TestStatusCodeMatch(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseStatus: 407,
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 407,
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -545,7 +562,11 @@ func TestStatusCodeMatch(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseStatus: 407,
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 407,
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
@@ -556,35 +577,36 @@ func TestStatusCodeMatch(t *testing.T) {
 		},
 		wantOut: &falseValue,
 	}, {
-		name: "with control failure",
+		name: "with only response status code and no control status code",
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseStatus: 407,
-				},
-				Control: webconnectivity.ControlResponse{
-					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
-						StatusCode: 0,
-					},
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 200,
+						},
+					}},
 				},
 			},
 		},
-		wantOut: nil,
 	}, {
-		name: "with measurement failure",
+		name: "with only control status code and no response status code",
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				TestKeys: urlgetter.TestKeys{
-					HTTPResponseStatus: 0,
+					Requests: []archival.RequestEntry{{
+						Response: archival.HTTPResponse{
+							Code: 0,
+						},
+					}},
 				},
 				Control: webconnectivity.ControlResponse{
 					HTTPRequest: webconnectivity.ControlHTTPRequestResult{
-						StatusCode: 301,
+						StatusCode: 200,
 					},
 				},
 			},
 		},
-		wantOut: nil,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

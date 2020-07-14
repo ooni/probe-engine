@@ -199,8 +199,14 @@ func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
 // is actually not applicable.
 func StatusCodeMatch(tk *TestKeys) (out *bool) {
 	control := tk.Control.HTTPRequest.StatusCode
-	measurement := tk.HTTPResponseStatus
-	if control == 0 || measurement == 0 {
+	if len(tk.Requests) < 1 {
+		return // no real status code
+	}
+	measurement := tk.Requests[0].Response.Code
+	if control == 0 {
+		return // no real status code
+	}
+	if measurement == 0 {
 		return // no real status code
 	}
 	value := control == measurement
