@@ -25,6 +25,15 @@ func (el EndpointsList) Endpoints() (out []string) {
 	return
 }
 
+// URLs returns a list of URLs for TCP urlgetter
+func (el EndpointsList) URLs() (out []string) {
+	out = []string{}
+	for _, ei := range el {
+		out = append(out, ei.URLGetterURL)
+	}
+	return
+}
+
 // NewEndpoints creates a list of TCP/TLS endpoints to test from the
 // target URL and the list of resolved IP addresses.
 func NewEndpoints(URL *url.URL, addrs []string) (out EndpointsList) {
