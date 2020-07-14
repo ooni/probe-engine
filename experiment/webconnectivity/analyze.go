@@ -17,11 +17,11 @@ type AnalysisResult struct {
 	BlockedEndpoints []string `json:"x_blocked_endpoints"` // not in spec
 	BodyLengthMatch  *bool    `json:"body_length_match"`
 	BodyProportion   *float64 `json:"body_proportion"`
-	HeadersMatch     *bool    `json:"header_match"`
 	StatusCodeMatch  *bool    `json:"status_code_match"`
+	HeadersMatch     *bool    `json:"header_match"`
 	TitleMatch       *bool    `json:"title_match"`
-	Accessible       *bool    `json:"accessible"`
 	Blocking         *string  `json:"blocking"`
+	Accessible       *bool    `json:"accessible"`
 }
 
 // Analyze performs follow-up analysis on the webconnectivity measurement by
@@ -44,6 +44,16 @@ func Analyze(target string, tk *TestKeys) (out AnalysisResult) {
 // ControlDNSNameError is the error returned by the control on NXDOMAIN
 const ControlDNSNameError = "dns_name_error"
 
+var (
+	// AnalyzeDNSConsistent indicates that the measurement and the
+	// control have consistent DNS results.
+	AnalyzeDNSConsistent = "consistent"
+
+	// AnalyzeDNSInconsistent indicates that the measurement and the
+	// control have inconsistent DNS results.
+	AnalyzeDNSInconsistent = "inconsistent"
+)
+
 // DNSConsistency returns the value of the AnalysisResult.DNSConsistency
 // field that you should set into an AnalysisResult struct.
 //
@@ -51,15 +61,11 @@ const ControlDNSNameError = "dns_name_error"
 // the same check in Measurement Kit v0.10.11.
 func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 	// 0. start assuming it's not consistent
-	const (
-		consistent   = "consistent"
-		inconsistent = "inconsistent"
-	)
-	out = inconsistent
+	out = AnalyzeDNSInconsistent
 	// 1. flip to consistent if we're targeting an IP address because the
 	// control will actually return dns_name_error in this case.
 	if net.ParseIP(URL.Hostname()) != nil {
-		out = consistent
+		out = AnalyzeDNSConsistent
 		return
 	}
 	// 2. flip to consistent if the failures are compatible
@@ -68,7 +74,7 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 		case ControlDNSNameError: // the control returns this on NXDOMAIN error
 			switch *tk.DNSExperimentFailure {
 			case modelx.FailureDNSNXDOMAINError:
-				out = consistent
+				out = AnalyzeDNSConsistent
 			}
 		}
 		return
@@ -99,7 +105,7 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 	for key, value := range asnmap {
 		// zero means that ASN lookup failed
 		if key != 0 && (value&inBoth) == inBoth {
-			out = consistent
+			out = AnalyzeDNSConsistent
 			return
 		}
 	}
@@ -118,7 +124,7 @@ func DNSConsistency(URL *url.URL, tk *TestKeys) (out string) {
 	}
 	for key, value := range ipmap {
 		if key != "" && (value&inBoth) == inBoth {
-			out = consistent
+			out = AnalyzeDNSConsistent
 			return
 		}
 	}
