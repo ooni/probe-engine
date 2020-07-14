@@ -29,3 +29,21 @@ func TestConnectsSuccess(t *testing.T) {
 		t.Fatal("unexpected number of attempts")
 	}
 }
+
+func TestConnectsNoInput(t *testing.T) {
+	ctx := context.Background()
+	r := webconnectivity.Connects(ctx, webconnectivity.ConnectsConfig{
+		Session:       newsession(t, false),
+		TargetURL:     &url.URL{Scheme: "https", Host: "cloudflare-dns.com", Path: "/"},
+		URLGetterURLs: []string{},
+	})
+	if len(r.AllKeys) != 0 {
+		t.Fatal("unexpected number of TestKeys lists")
+	}
+	if r.Successes != 0 {
+		t.Fatal("successes?!")
+	}
+	if r.Total != 0 {
+		t.Fatal("unexpected number of attempts")
+	}
+}
