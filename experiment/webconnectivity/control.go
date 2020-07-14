@@ -76,7 +76,7 @@ type ControlHTTPRequestResult struct {
 type ControlDNSResult struct {
 	Failure *string  `json:"failure"`
 	Addrs   []string `json:"addrs"`
-	ASNs    []int64  `json:"x_asns"` // not in spec
+	ASNs    []int64  `json:"-"` // not visible from the JSON
 }
 
 // ControlResponse is the response from the control service.
@@ -95,11 +95,13 @@ func Control(
 		HTTPClient: sess.DefaultHTTPClient(),
 		Logger:     sess.Logger(),
 	}
+	sess.Logger().Infof("control %s...", creq.HTTPRequest)
 	// make sure error is wrapped
 	err = errorx.SafeErrWrapperBuilder{
 		Error:     clnt.PostJSON(ctx, "/", creq, &out),
 		Operation: modelx.TopLevelOperation,
 	}.MaybeBuild()
+	sess.Logger().Infof("control %s... %+v", creq.HTTPRequest, err)
 	(&out.DNS).FillASNs(sess)
 	return
 }

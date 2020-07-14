@@ -41,7 +41,7 @@ func DNSLookup(ctx context.Context, config DNSLookupConfig) (out DNSLookupResult
 		}
 	}
 	config.Session.Logger().Infof("%s... %+v", target, err)
-	out.Failure = result.FailedOperation
+	out.Failure = result.Failure
 	out.TestKeys = result
 	return
 }

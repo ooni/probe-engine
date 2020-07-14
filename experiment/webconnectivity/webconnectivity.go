@@ -30,10 +30,13 @@ type TestKeys struct {
 	// measurement from urlgetter
 	urlgetter.TestKeys
 
+	// DNS
+	DNSExperimentFailure *string `json:"dns_experiment_failure"`
+	DNSAnalysisResult
+
 	// other fields
 	ClientResolver        string  `json:"client_resolver"`
 	Retries               *int64  `json:"retries"` // unused
-	DNSExperimentFailure  *string `json:"dns_experiment_failure"`
 	HTTPExperimentFailure *string `json:"http_experiment_failure"`
 
 	// control
@@ -120,6 +123,7 @@ func (m Measurer) Run(
 	// 2. perform the DNS lookup step
 	// TODO(bassosimone): further refactor and integrate this step
 	dnsResult := DNSLookup(ctx, DNSLookupConfig{Session: sess, URL: URL})
+	tk.DNSExperimentFailure = dnsResult.Failure
 	epnts := NewEndpoints(URL, dnsResult.Addresses())
 	// 3. perform the control measurement
 	// TODO(bassosimone): further refactor and integrate this step
@@ -133,15 +137,17 @@ func (m Measurer) Run(
 		TCPConnect: epnts.Endpoints(),
 	})
 	tk.ControlFailure = archival.NewFailure(err)
+	// 4. analyze DNS results
+	tk.DNSAnalysisResult = DNSAnalysis(URL, dnsResult, tk.Control)
+	sess.Logger().Infof("DNS analysis result: %+v", tk.DNSAnalysisResult)
 	// 4. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
-	tk.DNSExperimentFailure = DNSExperimentFailure(tk)
 	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)
 	// 5. rewrite TCPConnect to include blocking information - it is very
 	// sad that we're storing analysis result inside the measurement
 	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
 	// 6. compare measurement to control
-	tk.AnalysisResult = Analyze(string(measurement.Input), tk)
+	tk.AnalysisResult = Analyze(tk)
 	return nil
 }
 
