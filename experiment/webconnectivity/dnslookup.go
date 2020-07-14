@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
@@ -25,7 +26,7 @@ type DNSLookupResult struct {
 // DNSLookup performs the DNS lookup part of Web Connectivity.
 func DNSLookup(ctx context.Context, config DNSLookupConfig) (out DNSLookupResult) {
 	target := fmt.Sprintf("dnslookup://%s", config.URL.Hostname())
-	config.Session.Logger().Infof("dnslookup %s...", target)
+	config.Session.Logger().Infof("%s...", target)
 	result, err := urlgetter.Getter{Session: config.Session, Target: target}.Get(ctx)
 	out.Addrs = make(map[string]int64)
 	for _, query := range result.Queries {
@@ -39,8 +40,20 @@ func DNSLookup(ctx context.Context, config DNSLookupConfig) (out DNSLookupResult
 			}
 		}
 	}
-	config.Session.Logger().Infof("dnslookup %s... %+v %+v", target, err, out.Addrs)
+	config.Session.Logger().Infof("%s... %+v", target, err)
 	out.Failure = result.FailedOperation
 	out.TestKeys = result
+	return
+}
+
+// Addresses returns the IP addresses in the DNSLookupResult
+func (r DNSLookupResult) Addresses() (out []string) {
+	out = []string{}
+	for addr := range r.Addrs {
+		out = append(out, addr)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i] < out[j]
+	})
 	return
 }

@@ -118,7 +118,9 @@ func (m Measurer) Run(
 	}
 	// 2. perform the DNS lookup step
 	// TODO(bassosimone): further refactor and integrate this step
-	DNSLookup(ctx, DNSLookupConfig{Session: sess, URL: URL})
+	dnsResult := DNSLookup(ctx, DNSLookupConfig{Session: sess, URL: URL})
+	epnts := NewEndpoints(URL, dnsResult.Addresses())
+	sess.Logger().Infof("endpoints to test: %+v", epnts)
 	// 3. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
 	tk.DNSExperimentFailure = DNSExperimentFailure(tk)

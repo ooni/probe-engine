@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 )
 
@@ -34,5 +36,41 @@ func TestDNSLookup(t *testing.T) {
 	}
 	if len(out.TestKeys.Queries) < 1 {
 		t.Fatal("no queries?!")
+	}
+}
+
+func TestDNSLookupResult_Addresses(t *testing.T) {
+	type fields struct {
+		Addrs    map[string]int64
+		Failure  *string
+		TestKeys urlgetter.TestKeys
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantOut []string
+	}{{
+		name:    "with no entries",
+		fields:  fields{},
+		wantOut: []string{},
+	}, {
+		name: "with some entries",
+		fields: fields{
+			Addrs: map[string]int64{"1.1.1.1": 1, "2001:4860:4860::8844": 2},
+		},
+		wantOut: []string{"1.1.1.1", "2001:4860:4860::8844"},
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := webconnectivity.DNSLookupResult{
+				Addrs:    tt.fields.Addrs,
+				Failure:  tt.fields.Failure,
+				TestKeys: tt.fields.TestKeys,
+			}
+			gotOut := r.Addresses()
+			if diff := cmp.Diff(tt.wantOut, gotOut); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
