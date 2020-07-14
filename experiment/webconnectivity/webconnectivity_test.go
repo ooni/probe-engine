@@ -118,6 +118,37 @@ func TestMeasureWithNoInput(t *testing.T) {
 	// TODO(bassosimone): write further checks here?
 }
 
+func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
+	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	// we need a real session because we need the web-connectivity helper
+	sess := newsession(t, true)
+	measurement := &model.Measurement{Input: "\t\t\t\t\t\t"}
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
+	if !errors.Is(err, webconnectivity.ErrInputIsNotAnURL) {
+		t.Fatal(err)
+	}
+	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
+	if tk.Failure != nil {
+		t.Fatal("unexpected failure")
+	}
+	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+		t.Fatal("unexpected client_resolver")
+	}
+	if tk.ControlFailure != nil {
+		t.Fatal("unexpected control_failure")
+	}
+	if tk.DNSExperimentFailure != nil {
+		t.Fatal("unexpected dns_experiment_failure")
+	}
+	if tk.HTTPExperimentFailure != nil {
+		t.Fatal("unexpected http_experiment_failure")
+	}
+	// TODO(bassosimone): write further checks here?
+}
+
 func TestMeasureWithUnsupportedInput(t *testing.T) {
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())

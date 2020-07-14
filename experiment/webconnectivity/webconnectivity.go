@@ -7,8 +7,8 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -71,6 +71,9 @@ var (
 	// ErrNoInput indicates that no input was provided
 	ErrNoInput = errors.New("no input provided")
 
+	// ErrInputIsNotAnURL indicates that the input is not an URL.
+	ErrInputIsNotAnURL = errors.New("input is not an URL")
+
 	// ErrUnsupportedInput indicates that the input URL scheme is unsupported.
 	ErrUnsupportedInput = errors.New("unsupported input scheme")
 )
@@ -91,8 +94,11 @@ func (m Measurer) Run(
 	if measurement.Input == "" {
 		return ErrNoInput
 	}
-	if strings.HasPrefix(string(measurement.Input), "http://") != true &&
-		strings.HasPrefix(string(measurement.Input), "https://") != true {
+	URL, err := url.Parse(string(measurement.Input))
+	if err != nil {
+		return ErrInputIsNotAnURL
+	}
+	if URL.Scheme != "http" && URL.Scheme != "https" {
 		return ErrUnsupportedInput
 	}
 	// 1. find test helper
@@ -116,7 +122,6 @@ func (m Measurer) Run(
 	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)
 	// 3. contact the control
 	tk.ControlRequest = NewControlRequest(measurement.Input, tk.TestKeys)
-	var err error
 	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
 	tk.ControlFailure = archival.NewFailure(err)
 	// 4. rewrite TCPConnect to include blocking information - it is very
