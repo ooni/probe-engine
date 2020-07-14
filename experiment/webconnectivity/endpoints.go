@@ -7,20 +7,32 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
-// Endpoint describes a TCP/TLS endpoint.
-type Endpoint struct {
+// EndpointInfo describes a TCP/TLS endpoint.
+type EndpointInfo struct {
 	String       string // String representation
 	URLGetterURL string // URL for urlgetter
 }
 
+// EndpointsList is a list of EndpointInfo
+type EndpointsList []EndpointInfo
+
+// Endpoints returns a list of endpoints for TCP connect
+func (el EndpointsList) Endpoints() (out []string) {
+	out = []string{}
+	for _, ei := range el {
+		out = append(out, ei.String)
+	}
+	return
+}
+
 // NewEndpoints creates a list of TCP/TLS endpoints to test from the
 // target URL and the list of resolved IP addresses.
-func NewEndpoints(URL *url.URL, addrs []string) (out []Endpoint) {
-	out = []Endpoint{}
+func NewEndpoints(URL *url.URL, addrs []string) (out EndpointsList) {
+	out = EndpointsList{}
 	port := NewEndpointPort(URL)
 	for _, addr := range addrs {
 		endpoint := net.JoinHostPort(addr, port.Port)
-		out = append(out, Endpoint{
+		out = append(out, EndpointInfo{
 			String:       endpoint,
 			URLGetterURL: (&url.URL{Scheme: port.URLGetterScheme, Host: endpoint}).String(),
 		})

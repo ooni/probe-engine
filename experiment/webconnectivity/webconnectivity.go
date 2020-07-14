@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 )
@@ -120,15 +121,22 @@ func (m Measurer) Run(
 	// TODO(bassosimone): further refactor and integrate this step
 	dnsResult := DNSLookup(ctx, DNSLookupConfig{Session: sess, URL: URL})
 	epnts := NewEndpoints(URL, dnsResult.Addresses())
-	sess.Logger().Infof("endpoints to test: %+v", epnts)
-	// 3. perform the measurement
+	// 3. perform the control measurement
+	// TODO(bassosimone): further refactor and integrate this step
+	tk.Control, err = Control(ctx, sess, testhelper.Address, ControlRequest{
+		HTTPRequest: URL.String(),
+		HTTPRequestHeaders: map[string][]string{
+			"Accept":          {httpheader.Accept()},
+			"Accept-Language": {httpheader.AcceptLanguage()},
+			"User-Agent":      {httpheader.UserAgent()},
+		},
+		TCPConnect: epnts.Endpoints(),
+	})
+	tk.ControlFailure = archival.NewFailure(err)
+	// 4. perform the measurement
 	tk.TestKeys = Measure(ctx, sess, measurement.Input)
 	tk.DNSExperimentFailure = DNSExperimentFailure(tk)
 	tk.HTTPExperimentFailure = HTTPExperimentFailure(tk)
-	// 4. contact the control
-	tk.ControlRequest = NewControlRequest(measurement.Input, tk.TestKeys)
-	tk.Control, err = Control(ctx, sess, testhelper.Address, tk.ControlRequest)
-	tk.ControlFailure = archival.NewFailure(err)
 	// 5. rewrite TCPConnect to include blocking information - it is very
 	// sad that we're storing analysis result inside the measurement
 	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
