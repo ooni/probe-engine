@@ -45,7 +45,11 @@ type TestKeys struct {
 	Control        ControlResponse `json:"control"`
 
 	// analysis
-	AnalysisResult
+	HTTPAnalysisResult
+
+	// top-level analysis
+	Blocking   *string `json:"blocking"`
+	Accessible *bool   `json:"accessible"`
 }
 
 // Measurer performs the measurement.
@@ -161,7 +165,7 @@ func (m Measurer) Run(
 	// sad that we're storing analysis result inside the measurement
 	tk.TCPConnect = ComputeTCPBlocking(tk.TCPConnect, tk.Control.TCPConnect)
 	// 9. compare measurement to control
-	tk.AnalysisResult = Analyze(tk)
+	tk.HTTPAnalysisResult = HTTPAnalysis(httpResult.TestKeys, tk.Control)
 	return nil
 }
 

@@ -3,37 +3,37 @@ package webconnectivity
 import (
 	"regexp"
 	"strings"
+
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 )
 
-// AnalysisResult contains the results of the analysis performed on the
+// HTTPAnalysisResult contains the results of the analysis performed on the
 // client. We obtain it by comparing the measurement and the control.
-type AnalysisResult struct {
+type HTTPAnalysisResult struct {
 	BodyLengthMatch *bool    `json:"body_length_match"`
 	BodyProportion  *float64 `json:"body_proportion"`
 	StatusCodeMatch *bool    `json:"status_code_match"`
 	HeadersMatch    *bool    `json:"header_match"`
 	TitleMatch      *bool    `json:"title_match"`
-	Blocking        *string  `json:"blocking"`
-	Accessible      *bool    `json:"accessible"`
 }
 
-// Analyze performs follow-up analysis on the webconnectivity measurement by
-// comparing the measurement (tk.TestKeys) and the control (tk.Control). This
-// function will return the results of the analysis.
-func Analyze(tk *TestKeys) (out AnalysisResult) {
-	out.BodyLengthMatch, out.BodyProportion = BodyLengthChecks(tk)
-	out.StatusCodeMatch = StatusCodeMatch(tk)
-	out.HeadersMatch = HeadersMatch(tk)
-	out.TitleMatch = TitleMatch(tk)
+// HTTPAnalysis performs follow-up analysis on the webconnectivity measurement by
+// comparing the measurement test keys and the control.
+func HTTPAnalysis(tk urlgetter.TestKeys, ctrl ControlResponse) (out HTTPAnalysisResult) {
+	out.BodyLengthMatch, out.BodyProportion = HTTPBodyLengthChecks(tk, ctrl)
+	out.StatusCodeMatch = HTTPStatusCodeMatch(tk, ctrl)
+	out.HeadersMatch = HTTPHeadersMatch(tk, ctrl)
+	out.TitleMatch = HTTPTitleMatch(tk, ctrl)
 	return
 }
 
-// BodyLengthChecks returns whether the measured body is reasonably
+// HTTPBodyLengthChecks returns whether the measured body is reasonably
 // long as much as the control body as well as the proportion between
 // the two bodies. This check may return nil, nil when such a
 // comparison would actually not be applicable.
-func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
-	control := tk.Control.HTTPRequest.BodyLength
+func HTTPBodyLengthChecks(
+	tk urlgetter.TestKeys, ctrl ControlResponse) (match *bool, percentage *float64) {
+	control := ctrl.HTTPRequest.BodyLength
 	if control <= 0 {
 		return
 	}
@@ -61,11 +61,11 @@ func BodyLengthChecks(tk *TestKeys) (match *bool, percentage *float64) {
 	return
 }
 
-// StatusCodeMatch returns whether the status code of the measurement
+// HTTPStatusCodeMatch returns whether the status code of the measurement
 // matches the status code of the control, or nil if such comparison
 // is actually not applicable.
-func StatusCodeMatch(tk *TestKeys) (out *bool) {
-	control := tk.Control.HTTPRequest.StatusCode
+func HTTPStatusCodeMatch(tk urlgetter.TestKeys, ctrl ControlResponse) (out *bool) {
+	control := ctrl.HTTPRequest.StatusCode
 	if len(tk.Requests) < 1 {
 		return // no real status code
 	}
@@ -94,19 +94,19 @@ func StatusCodeMatch(tk *TestKeys) (out *bool) {
 	return
 }
 
-// HeadersMatch returns whether uncommon headers match between control and
+// HTTPHeadersMatch returns whether uncommon headers match between control and
 // measurement, or nil if check is not applicable.
-func HeadersMatch(tk *TestKeys) *bool {
+func HTTPHeadersMatch(tk urlgetter.TestKeys, ctrl ControlResponse) *bool {
 	if len(tk.Requests) <= 0 {
 		return nil
 	}
 	if tk.Requests[0].Response.Code == 0 {
 		return nil
 	}
-	if tk.Control.HTTPRequest.StatusCode == 0 {
+	if ctrl.HTTPRequest.StatusCode == 0 {
 		return nil
 	}
-	control := tk.Control.HTTPRequest.Headers
+	control := ctrl.HTTPRequest.Headers
 	// Implementation note: using map because we only care about the
 	// keys being different and we ignore the values.
 	measurement := tk.Requests[0].Response.Headers
@@ -165,9 +165,9 @@ func HeadersMatch(tk *TestKeys) *bool {
 	return &good
 }
 
-// TitleMatch returns whether the measurement and the control titles
+// HTTPTitleMatch returns whether the measurement and the control titles
 // reasonably match, or nil if not applicable.
-func TitleMatch(tk *TestKeys) (out *bool) {
+func HTTPTitleMatch(tk urlgetter.TestKeys, ctrl ControlResponse) (out *bool) {
 	if len(tk.Requests) <= 0 {
 		return
 	}
@@ -178,10 +178,10 @@ func TitleMatch(tk *TestKeys) (out *bool) {
 	if response.BodyIsTruncated {
 		return
 	}
-	if tk.Control.HTTPRequest.StatusCode == 0 {
+	if ctrl.HTTPRequest.StatusCode == 0 {
 		return
 	}
-	control := tk.Control.HTTPRequest.Title
+	control := ctrl.HTTPRequest.Title
 	measurementBody := response.Body.Value
 	re := regexp.MustCompile(`(?i)<title>([^<]{1,128})</title>`) // like MK
 	v := re.FindStringSubmatch(measurementBody)
