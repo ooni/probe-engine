@@ -2,6 +2,7 @@ package webconnectivity
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -137,8 +138,6 @@ func HTTPHeadersMatch(tk urlgetter.TestKeys, ctrl ControlResponse) *bool {
 	// Implementation note: using map because we only care about the
 	// keys being different and we ignore the values.
 	measurement := tk.Requests[0].Response.Headers
-	// Rather than checking all headers first and then uncommon headers
-	// just check whether the uncommon headers are matching
 	const (
 		inMeasurement = 1 << 0
 		inControl     = 1 << 1
@@ -172,23 +171,34 @@ func HTTPHeadersMatch(tk urlgetter.TestKeys, ctrl ControlResponse) *bool {
 		"x-varnish":                 true,
 	}
 	matching := make(map[string]int)
+	ours := make(map[string]bool)
 	for key := range measurement {
+		key = strings.ToLower(key)
 		if _, ok := commonHeaders[key]; !ok {
-			matching[strings.ToLower(key)] |= inMeasurement
+			matching[key] |= inMeasurement
 		}
+		ours[key] = true
 	}
+	theirs := make(map[string]bool)
 	for key := range control {
+		key = strings.ToLower(key)
 		if _, ok := commonHeaders[key]; !ok {
-			matching[strings.ToLower(key)] |= inControl
+			matching[key] |= inControl
 		}
+		theirs[key] = true
 	}
-	good := true
+	// if they are equal we're done
+	if good := reflect.DeepEqual(ours, theirs); good {
+		return &good
+	}
+	// compute the intersection of uncommon headers
+	var intersection int
 	for _, value := range matching {
-		if (value & inBoth) != inBoth {
-			good = false
-			break
+		if (value & inBoth) == inBoth {
+			intersection++
 		}
 	}
+	good := intersection > 0
 	return &good
 }
 

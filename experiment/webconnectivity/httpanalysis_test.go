@@ -413,6 +413,180 @@ func TestHeadersMatch(t *testing.T) {
 			},
 		},
 		want: &falseValue,
+	}, {
+		name: "with small uncommon intersection (X-Cache)",
+		args: args{
+			tk: urlgetter.TestKeys{
+				Requests: []archival.RequestEntry{{
+					Response: archival.HTTPResponse{
+						Headers: map[string]archival.MaybeBinaryValue{
+							"Accept-Ranges":  {Value: "bytes"},
+							"Age":            {Value: "404727"},
+							"Cache-Control":  {Value: "max-age=604800"},
+							"Content-Length": {Value: "1256"},
+							"Content-Type":   {Value: "text/html; charset=UTF-8"},
+							"Date":           {Value: "Tue, 14 Jul 2020 22:26:09 GMT"},
+							"Etag":           {Value: "\"3147526947\""},
+							"Expires":        {Value: "Tue, 21 Jul 2020 22:26:09 GMT"},
+							"Last-Modified":  {Value: "Thu, 17 Oct 2019 07:18:26 GMT"},
+							"Server":         {Value: "ECS (dcb/7F3C)"},
+							"Vary":           {Value: "Accept-Encoding"},
+							"X-Cache":        {Value: "HIT"},
+						},
+						Code: 200,
+					},
+				}},
+			},
+			ctrl: webconnectivity.ControlResponse{
+				HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+					Headers: map[string]string{
+						// Note: the test helper was probably requesting the
+						// resource in a different way. There is content-length
+						// in this response, maybe it's using HTTP/1.0?
+						"Accept-Ranges": "bytes",
+						"Age":           "469182",
+						"Cache-Control": "max-age=604800",
+						"Content-Type":  "text/html; charset=UTF-8",
+						"Date":          "Tue, 14 Jul 2020 22:26:08 GMT",
+						"Etag":          "\"3147526947\"",
+						"Expires":       "Tue, 21 Jul 2020 22:26:08 GMT",
+						"Last-Modified": "Thu, 17 Oct 2019 07:18:26 GMT",
+						"Server":        "ECS (nyb/1D07)",
+						"Vary":          "Accept-Encoding",
+						"X-Cache":       "HIT",
+					},
+					StatusCode: 200,
+				},
+			},
+		},
+		want: &trueValue,
+	}, {
+		name: "with no uncommon intersection",
+		args: args{
+			tk: urlgetter.TestKeys{
+				Requests: []archival.RequestEntry{{
+					Response: archival.HTTPResponse{
+						Headers: map[string]archival.MaybeBinaryValue{
+							"Accept-Ranges":  {Value: "bytes"},
+							"Age":            {Value: "404727"},
+							"Cache-Control":  {Value: "max-age=604800"},
+							"Content-Length": {Value: "1256"},
+							"Content-Type":   {Value: "text/html; charset=UTF-8"},
+							"Date":           {Value: "Tue, 14 Jul 2020 22:26:09 GMT"},
+							"Etag":           {Value: "\"3147526947\""},
+							"Expires":        {Value: "Tue, 21 Jul 2020 22:26:09 GMT"},
+							"Last-Modified":  {Value: "Thu, 17 Oct 2019 07:18:26 GMT"},
+							"Server":         {Value: "ECS (dcb/7F3C)"},
+							"Vary":           {Value: "Accept-Encoding"},
+						},
+						Code: 200,
+					},
+				}},
+			},
+			ctrl: webconnectivity.ControlResponse{
+				HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+					Headers: map[string]string{
+						// Note: the test helper was probably requesting the
+						// resource in a different way. There is content-length
+						// in this response, maybe it's using HTTP/1.0?
+						"Accept-Ranges": "bytes",
+						"Age":           "469182",
+						"Cache-Control": "max-age=604800",
+						"Content-Type":  "text/html; charset=UTF-8",
+						"Date":          "Tue, 14 Jul 2020 22:26:08 GMT",
+						"Etag":          "\"3147526947\"",
+						"Expires":       "Tue, 21 Jul 2020 22:26:08 GMT",
+						"Last-Modified": "Thu, 17 Oct 2019 07:18:26 GMT",
+						"Server":        "ECS (nyb/1D07)",
+						"Vary":          "Accept-Encoding",
+					},
+					StatusCode: 200,
+				},
+			},
+		},
+		want: &falseValue,
+	}, {
+		name: "with exactly equal headers",
+		args: args{
+			tk: urlgetter.TestKeys{
+				Requests: []archival.RequestEntry{{
+					Response: archival.HTTPResponse{
+						Headers: map[string]archival.MaybeBinaryValue{
+							"Accept-Ranges": {Value: "bytes"},
+							"Age":           {Value: "404727"},
+							"Cache-Control": {Value: "max-age=604800"},
+							"Content-Type":  {Value: "text/html; charset=UTF-8"},
+							"Date":          {Value: "Tue, 14 Jul 2020 22:26:09 GMT"},
+							"Etag":          {Value: "\"3147526947\""},
+							"Expires":       {Value: "Tue, 21 Jul 2020 22:26:09 GMT"},
+							"Last-Modified": {Value: "Thu, 17 Oct 2019 07:18:26 GMT"},
+							"Server":        {Value: "ECS (dcb/7F3C)"},
+							"Vary":          {Value: "Accept-Encoding"},
+						},
+						Code: 200,
+					},
+				}},
+			},
+			ctrl: webconnectivity.ControlResponse{
+				HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+					Headers: map[string]string{
+						"Accept-Ranges": "bytes",
+						"Age":           "469182",
+						"Cache-Control": "max-age=604800",
+						"Content-Type":  "text/html; charset=UTF-8",
+						"Date":          "Tue, 14 Jul 2020 22:26:08 GMT",
+						"Etag":          "\"3147526947\"",
+						"Expires":       "Tue, 21 Jul 2020 22:26:08 GMT",
+						"Last-Modified": "Thu, 17 Oct 2019 07:18:26 GMT",
+						"Server":        "ECS (nyb/1D07)",
+						"Vary":          "Accept-Encoding",
+					},
+					StatusCode: 200,
+				},
+			},
+		},
+		want: &trueValue,
+	}, {
+		name: "with equal headers except for the case",
+		args: args{
+			tk: urlgetter.TestKeys{
+				Requests: []archival.RequestEntry{{
+					Response: archival.HTTPResponse{
+						Headers: map[string]archival.MaybeBinaryValue{
+							"accept-ranges": {Value: "bytes"},
+							"AGE":           {Value: "404727"},
+							"cache-Control": {Value: "max-age=604800"},
+							"Content-TyPe":  {Value: "text/html; charset=UTF-8"},
+							"DatE":          {Value: "Tue, 14 Jul 2020 22:26:09 GMT"},
+							"etag":          {Value: "\"3147526947\""},
+							"expires":       {Value: "Tue, 21 Jul 2020 22:26:09 GMT"},
+							"Last-Modified": {Value: "Thu, 17 Oct 2019 07:18:26 GMT"},
+							"SerVer":        {Value: "ECS (dcb/7F3C)"},
+							"Vary":          {Value: "Accept-Encoding"},
+						},
+						Code: 200,
+					},
+				}},
+			},
+			ctrl: webconnectivity.ControlResponse{
+				HTTPRequest: webconnectivity.ControlHTTPRequestResult{
+					Headers: map[string]string{
+						"Accept-Ranges": "bytes",
+						"Age":           "469182",
+						"Cache-Control": "max-age=604800",
+						"Content-Type":  "text/html; charset=UTF-8",
+						"Date":          "Tue, 14 Jul 2020 22:26:08 GMT",
+						"Etag":          "\"3147526947\"",
+						"Expires":       "Tue, 21 Jul 2020 22:26:08 GMT",
+						"Last-Modified": "Thu, 17 Oct 2019 07:18:26 GMT",
+						"Server":        "ECS (nyb/1D07)",
+						"Vary":          "Accept-Encoding",
+					},
+					StatusCode: 200,
+				},
+			},
+		},
+		want: &trueValue,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
