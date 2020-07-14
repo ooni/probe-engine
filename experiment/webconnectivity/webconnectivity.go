@@ -26,9 +26,10 @@ type Config struct{}
 
 // TestKeys contains webconnectivity test keys.
 type TestKeys struct {
-	Agent          string `json:"agent"`
-	ClientResolver string `json:"client_resolver"`
-	Retries        *int64 `json:"retries"` // unused
+	Agent          string  `json:"agent"`
+	ClientResolver string  `json:"client_resolver"`
+	Retries        *int64  `json:"retries"`    // unused
+	SOCKSProxy     *string `json:"socksproxy"` // unused
 
 	// DNS experiment
 	Queries              []archival.DNSQueryEntry `json:"queries"`
