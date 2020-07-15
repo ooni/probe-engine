@@ -2,11 +2,7 @@ package webconnectivity
 
 import (
 	"context"
-	"net"
-	"sort"
-	"strconv"
 
-	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
 	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
@@ -19,39 +15,6 @@ type ControlRequest struct {
 	HTTPRequest        string              `json:"http_request"`
 	HTTPRequestHeaders map[string][]string `json:"http_request_headers"`
 	TCPConnect         []string            `json:"tcp_connect"`
-}
-
-// NewControlRequest creates a new control request from the target
-// URL and the result obtained by measuring it.
-func NewControlRequest(
-	target model.MeasurementTarget, result urlgetter.TestKeys) (out ControlRequest) {
-	out.HTTPRequest = string(target)
-	out.HTTPRequestHeaders = make(map[string][]string)
-	if len(result.Requests) >= 1 { // defensive
-		// Only these headers are accepted by the control service. We use the
-		// canonical header keys, which is what Go enforces.
-		for _, key := range []string{"User-Agent", "Accept", "Accept-Language"} {
-			// We never set multi line headers so using the map instead of the list
-			// is totally fine and saves us some extra lines of code. Also, we never
-			// put binary values in headers, so we can just use value.Value.
-			if value, ok := result.Requests[0].Request.Headers[key]; ok {
-				out.HTTPRequestHeaders[key] = []string{value.Value}
-			}
-		}
-	}
-	// Just in case we have multiple endpoints/attempts, reduce them:
-	out.TCPConnect = []string{}
-	epnts := make(map[string]int)
-	for _, entry := range result.TCPConnect {
-		epnts[net.JoinHostPort(entry.IP, strconv.Itoa(entry.Port))]++
-	}
-	for key := range epnts {
-		out.TCPConnect = append(out.TCPConnect, key)
-	}
-	sort.Slice(out.TCPConnect, func(i, j int) bool { // stable output wrt map iteration
-		return out.TCPConnect[i] < out.TCPConnect[j]
-	})
-	return
 }
 
 // ControlTCPConnectResult is the result of the TCP connect
