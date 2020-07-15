@@ -42,16 +42,17 @@ type TestKeys struct {
 	Control        ControlResponse `json:"control"`
 
 	// TCP connect experiment
-	TCPConnect []archival.TCPConnectEntry `json:"tcp_connect"`
+	TCPConnect          []archival.TCPConnectEntry `json:"tcp_connect"`
+	TCPConnectSuccesses int                        `json:"-"`
+	TCPConnectAttempts  int                        `json:"-"`
 
 	// HTTP experiment
 	Requests              []archival.RequestEntry `json:"requests"`
 	HTTPExperimentFailure *string                 `json:"http_experiment_failure"`
 	HTTPAnalysisResult
 
-	// top-level analysis
-	Blocking   *string `json:"blocking"`
-	Accessible *bool   `json:"accessible"`
+	// Top-level analysis
+	Summary
 }
 
 // Measurer performs the measurement.
@@ -159,6 +160,8 @@ func (m Measurer) Run(
 		tk.TCPConnect = append(tk.TCPConnect, ComputeTCPBlocking(
 			tcpkeys.TCPConnect, tk.Control.TCPConnect)...)
 	}
+	tk.TCPConnectAttempts = connectsResult.Total
+	tk.TCPConnectSuccesses = connectsResult.Successes
 	// 6. perform HTTP/HTTPS measurement
 	httpResult := HTTPGet(ctx, HTTPGetConfig{
 		Addresses: dnsResult.Addresses(),
@@ -170,6 +173,8 @@ func (m Measurer) Run(
 	// 7. compare HTTP measurement to control
 	tk.HTTPAnalysisResult = HTTPAnalysis(httpResult.TestKeys, tk.Control)
 	tk.HTTPAnalysisResult.Log(sess.Logger())
+	tk.Summary = Summarize(tk)
+	tk.Summary.Log(sess.Logger())
 	return nil
 }
 
