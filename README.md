@@ -24,35 +24,26 @@ miniooni CLI will be stable over time.
 ## Integrating ooni/probe-engine
 
 This software uses [Go modules](https://github.com/golang/go/wiki/Modules)
-and requires Go v1.14+. We also depend on [Measurement Kit](
-https://github.com/measurement-kit/measurement-kit), a C++14 library
-implementing many OONI tests, a.k.a. MK.
+and requires Go v1.14+. You can pull the latest version as a dependency from
+your modules aware project by using
 
-Note that passing the `-tags nomk` flag to Go will disable linking
-Measurement Kit into the resulting Go binaries. You may want that in
-cases where you only want to use experiments written in Go.
-
-We plan on gradually rewriting all OONI tests in Go, therefore the
-dependency on Measurement Kit will eventually be removed. A future version
-of this document will provide platform specific instructions for
-installing Measurement Kit and linking to it.
+```bash
+go get -v github.com/ooni/probe-engine
+```
 
 ## Building miniooni
 
+```bash
+go build -v ./cmd/miniooni/
 ```
-go build -v -tags nomk ./cmd/miniooni/
-```
-
-Omit `-tags nomk` to link with MK.
 
 ## Building Android bindings
 
-```
+```bash
 ./build-android.bash
 ```
 
-When building Android bindings, we automatically omit linking with MK. We
-automatically build Android bindings whenever commits are pushed to the
+We automatically build Android bindings whenever commits are pushed to the
 `mobile-staging` branch. Such builds could be integrated by using:
 
 ```Groovy
@@ -63,6 +54,22 @@ and
 
 ```Groovy
 implementation "org.ooni:oonimkall:VERSION"
+```
+
+Where VERSION is like `2020.03.30-231914` corresponding to the moment in
+time in which the version has been built.
+
+## Building iOS bindings
+
+```bash
+./build-ios.bash
+```
+
+We automatically build iOS bindings whenever commits are pushed to the
+`mobile-staging` branch. Such builds could be integrated by using:
+
+```ruby
+pod 'oonimkall', :podspec => 'https://dl.bintray.com/ooni/ios/oonimkall-VERSION.podspec'
 ```
 
 Where VERSION is like `2020.03.30-231914` corresponding to the moment in

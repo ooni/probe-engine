@@ -26,7 +26,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
-	"github.com/ooni/probe-engine/experiment/web_connectivity"
+	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/resources"
@@ -649,11 +649,11 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 	"web_connectivity": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, web_connectivity.NewExperimentMeasurer(
-					*config.(*web_connectivity.Config),
+				return NewExperiment(session, webconnectivity.NewExperimentMeasurer(
+					*config.(*webconnectivity.Config),
 				))
 			},
-			config:      &web_connectivity.Config{},
+			config:      &webconnectivity.Config{},
 			inputPolicy: InputRequired,
 		}
 	},
