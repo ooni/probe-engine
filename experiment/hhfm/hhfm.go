@@ -116,6 +116,9 @@ func (m Measurer) Run(
 	if helper.Type != "legacy" {
 		return ErrInvalidHelperType
 	}
+	measurement.TestHelpers = map[string]interface{}{
+		"backend": helper.Address,
+	}
 	// prepare request
 	req, err := http.NewRequest("GeT", helper.Address, nil)
 	if err != nil {

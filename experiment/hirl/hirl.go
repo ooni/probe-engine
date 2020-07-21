@@ -93,6 +93,9 @@ func (m Measurer) Run(
 	if helper.Type != "legacy" {
 		return ErrInvalidHelperType
 	}
+	measurement.TestHelpers = map[string]interface{}{
+		"backend": helper.Address,
+	}
 	out := make(chan MethodResult)
 	for _, method := range m.Methods {
 		callbacks.OnProgress(0.0, fmt.Sprintf("%s...", method.Name()))
