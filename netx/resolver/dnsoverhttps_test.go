@@ -122,7 +122,7 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 	var correct bool
 	txp := resolver.DNSOverHTTPS{
 		Do: func(req *http.Request) (*http.Response, error) {
-			correct = req.Header.Get("User-Agent") == httpheader.RandomUserAgent()
+			correct = req.Header.Get("User-Agent") == httpheader.UserAgent()
 			return nil, expected
 		},
 		URL: "https://doh.powerdns.org/",
