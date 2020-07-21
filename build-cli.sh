@@ -6,7 +6,7 @@ case $1 in
     go build -o ./CLI/darwin/amd64 -ldflags="-s -w" ./cmd/miniooni;;
   linux)
     export GOOS=linux GOARCH=amd64
-    go build -o ./CLI/linux/amd64 -ldflags="-s -w" ./cmd/miniooni;;
+    go build -o ./CLI/linux/amd64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
   windows)
     export GOOS=windows GOARCH=amd64
     go build -o ./CLI/windows/amd64 -ldflags="-s -w" ./cmd/miniooni;;
