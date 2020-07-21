@@ -466,7 +466,7 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	return (&iplookup.Client{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
-		UserAgent:  httpheader.RandomUserAgent(), // no need to identify as OONI
+		UserAgent:  httpheader.UserAgent(), // no need to identify as OONI
 	}).Do(ctx)
 }
 

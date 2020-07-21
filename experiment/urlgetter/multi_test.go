@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
@@ -63,6 +64,100 @@ func TestMultiIntegration(t *testing.T) {
 	}
 	if count != 4 {
 		t.Fatal("invalid number of outputs")
+	}
+}
+
+func TestMultiIntegrationWithBaseTime(t *testing.T) {
+	// We set a beginning of time that's significantly in the past and then
+	// fail the test if we see any T smaller than 3600 seconds.
+	begin := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
+	multi := urlgetter.Multi{
+		Begin:   begin,
+		Session: &mockable.ExperimentSession{},
+	}
+	inputs := []urlgetter.MultiInput{{
+		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
+		Target: "https://www.google.com",
+	}, {
+		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
+		Target: "https://www.instagram.com",
+	}}
+	outputs := multi.Collect(context.Background(), inputs, "integration-test",
+		handler.NewPrinterCallbacks(log.Log))
+	var count int
+	for result := range outputs {
+		for _, entry := range result.TestKeys.NetworkEvents {
+			if entry.T < 3600 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.Queries {
+			if entry.T < 3600 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.TCPConnect {
+			if entry.T < 3600 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.TLSHandshakes {
+			if entry.T < 3600 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+	}
+	if count <= 0 {
+		t.Fatal("unexpected number of entries processed")
+	}
+}
+
+func TestMultiIntegrationWithoutBaseTime(t *testing.T) {
+	// We use the default beginning of time and then fail the test
+	// if we see any T smaller than 60 seconds.
+	multi := urlgetter.Multi{Session: &mockable.ExperimentSession{}}
+	inputs := []urlgetter.MultiInput{{
+		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
+		Target: "https://www.google.com",
+	}, {
+		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
+		Target: "https://www.instagram.com",
+	}}
+	outputs := multi.Collect(context.Background(), inputs, "integration-test",
+		handler.NewPrinterCallbacks(log.Log))
+	var count int
+	for result := range outputs {
+		for _, entry := range result.TestKeys.NetworkEvents {
+			if entry.T > 60 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.Queries {
+			if entry.T > 60 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.TCPConnect {
+			if entry.T > 60 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+		for _, entry := range result.TestKeys.TLSHandshakes {
+			if entry.T > 60 {
+				t.Fatal("base time not correctly set")
+			}
+			count++
+		}
+	}
+	if count <= 0 {
+		t.Fatal("unexpected number of entries processed")
 	}
 }
 

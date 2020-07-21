@@ -15,7 +15,7 @@ import (
 
 const (
 	testName    = "telegram"
-	testVersion = "0.1.0"
+	testVersion = "0.1.1"
 )
 
 // Config contains the telegram experiment config.
@@ -69,12 +69,6 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		tk.TelegramWebFailure = v.TestKeys.Failure
 		return
 	}
-	if v.TestKeys.HTTPResponseStatus != 200 {
-		failureString := "http_request_failed" // MK uses it
-		tk.TelegramWebFailure = &failureString
-		tk.TelegramWebStatus = "blocked"
-		return
-	}
 	title := `<title>Telegram Web</title>`
 	if strings.Contains(v.TestKeys.HTTPResponseBody, title) == false {
 		failureString := "telegram_missing_title_error"
@@ -85,21 +79,30 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 	return
 }
 
-type measurer struct {
-	config Config
+// Measurer performs the measurement
+type Measurer struct {
+	// Config contains the experiment settings. If empty we
+	// will be using default settings.
+	Config Config
+
+	// Getter is an optional getter to be used for testing.
+	Getter urlgetter.MultiGetter
 }
 
-func (m measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperimentName
+func (m Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion
+func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m measurer) Run(ctx context.Context, sess model.ExperimentSession,
+// Run implements ExperimentMeasurer.Run
+func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	urlgetter.RegisterExtensions(measurement)
 	inputs := []urlgetter.MultiInput{
@@ -115,10 +118,10 @@ func (m measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		{Target: "http://149.154.167.91:443/", Config: urlgetter.Config{Method: "POST"}},
 		{Target: "http://149.154.171.5:443/", Config: urlgetter.Config{Method: "POST"}},
 
-		{Target: "http://web.telegram.org/", Config: urlgetter.Config{Method: "GET"}},
-		{Target: "https://web.telegram.org/", Config: urlgetter.Config{Method: "GET"}},
+		{Target: "http://web.telegram.org/", Config: urlgetter.Config{FailOnHTTPError: true}},
+		{Target: "https://web.telegram.org/", Config: urlgetter.Config{FailOnHTTPError: true}},
 	}
-	multi := urlgetter.Multi{Session: sess}
+	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
 	testkeys := NewTestKeys()
 	testkeys.Agent = "redirect"
 	measurement.TestKeys = testkeys
@@ -130,5 +133,5 @@ func (m measurer) Run(ctx context.Context, sess model.ExperimentSession,
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return measurer{config: config}
+	return Measurer{Config: config}
 }

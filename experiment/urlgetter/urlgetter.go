@@ -18,6 +18,7 @@ const (
 // Config contains the experiment's configuration.
 type Config struct {
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
+	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
@@ -27,6 +28,7 @@ type Config struct {
 	TLSServerName     string `ooni:"Force TLS to using a specific SNI in Client Hello"`
 	TLSVersion        string `ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 	Tunnel            string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+	UserAgent         string `ooni:"Use the specified User-Agent"`
 }
 
 // TestKeys contains the experiment's result.
@@ -40,15 +42,16 @@ type TestKeys struct {
 	NetworkEvents   []archival.NetworkEvent    `json:"network_events"`
 	Queries         []archival.DNSQueryEntry   `json:"queries"`
 	Requests        []archival.RequestEntry    `json:"requests"`
-	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
 	SOCKSProxy      string                     `json:"socksproxy,omitempty"`
+	TCPConnect      []archival.TCPConnectEntry `json:"tcp_connect"`
 	TLSHandshakes   []archival.TLSHandshake    `json:"tls_handshakes"`
 	Tunnel          string                     `json:"tunnel,omitempty"`
 
 	// The following fields are not serialised but are useful to simplify
-	// analysing the measurements in telegram, etc.
-	HTTPResponseStatus int64  `json:"-"`
-	HTTPResponseBody   string `json:"-"`
+	// analysing the measurements in telegram, whatsapp, etc.
+	HTTPResponseStatus    int64    `json:"-"`
+	HTTPResponseBody      string   `json:"-"`
+	HTTPResponseLocations []string `json:"-"`
 }
 
 // RegisterExtensions registers the extensions used by the urlgetter

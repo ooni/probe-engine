@@ -29,6 +29,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 )
@@ -148,8 +149,15 @@ func (r SystemResolver) Address() string {
 // not censor anything unless you call selfcensor.Enable().
 type SystemDialer struct{}
 
-// defaultDialer is the dialer we use by default
-var defaultDialer = new(net.Dialer)
+// defaultNetDialer is the dialer we use by default.
+var defaultNetDialer = &net.Dialer{
+	Timeout:   15 * time.Second,
+	KeepAlive: 15 * time.Second,
+}
+
+// DefaultDialer is the dialer you should use in code that wants
+// to take advantage of selfcensor capabilities.
+var DefaultDialer = SystemDialer{}
 
 // DialContext implements Dialer.DialContext
 func (d SystemDialer) DialContext(
@@ -173,7 +181,7 @@ func (d SystemDialer) DialContext(
 			}
 		}
 		if spec.BlockedFingerprints != nil {
-			conn, err := defaultDialer.DialContext(ctx, network, address)
+			conn, err := defaultNetDialer.DialContext(ctx, network, address)
 			if err != nil {
 				return nil, err
 			}
@@ -182,7 +190,7 @@ func (d SystemDialer) DialContext(
 		}
 		// FALLTHROUGH
 	}
-	return defaultDialer.DialContext(ctx, network, address)
+	return defaultNetDialer.DialContext(ctx, network, address)
 }
 
 type connWrapper struct {

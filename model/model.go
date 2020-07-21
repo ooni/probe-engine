@@ -381,6 +381,7 @@ type ExperimentSession interface {
 	ProbeIP() string
 	ProbeNetworkName() string
 	ProxyURL() *url.URL
+	ResolverIP() string
 	SoftwareName() string
 	SoftwareVersion() string
 	TempDir() string

@@ -2,8 +2,8 @@ package probeservices
 
 import (
 	"context"
-	"math/rand"
-	"time"
+
+	"github.com/ooni/probe-engine/internal/randx"
 )
 
 type registerRequest struct {
@@ -25,7 +25,7 @@ func (c Client) MaybeRegister(ctx context.Context, metadata Metadata) error {
 		return nil // we're already good
 	}
 	c.RegisterCalls.Add(1)
-	pwd := randomPassword(64)
+	pwd := randx.Letters(64)
 	req := &registerRequest{
 		Metadata: metadata,
 		Password: pwd,
@@ -37,15 +37,4 @@ func (c Client) MaybeRegister(ctx context.Context, metadata Metadata) error {
 	state.ClientID = resp.ClientID
 	state.Password = pwd
 	return c.StateFile.Set(state)
-}
-
-func randomPassword(n int) string {
-	// See https://stackoverflow.com/questions/22892120
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rnd.Intn(len(letterBytes))]
-	}
-	return string(b)
 }

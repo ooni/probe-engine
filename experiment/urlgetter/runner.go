@@ -13,7 +13,17 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/modelx"
 )
+
+const httpRequestFailed = "http_request_failed"
+
+// ErrHTTPRequestFailed indicates that the HTTP request failed.
+var ErrHTTPRequestFailed = &modelx.ErrWrapper{
+	Failure:    httpRequestFailed,
+	Operation:  modelx.TopLevelOperation,
+	WrappedErr: errors.New(httpRequestFailed),
+}
 
 // The Runner job is to run a single measurement
 type Runner struct {
@@ -42,14 +52,23 @@ func (r Runner) Run(ctx context.Context) error {
 	}
 }
 
+// MaybeUserAgent returns ua if ua is not empty. Otherwise it
+// returns httpheader.RandomUserAgent().
+func MaybeUserAgent(ua string) string {
+	if ua == "" {
+		ua = httpheader.UserAgent()
+	}
+	return ua
+}
+
 func (r Runner) httpGet(ctx context.Context, url string) error {
 	// Implementation note: empty Method implies using the GET method
 	req, err := http.NewRequest(r.Config.Method, url, nil)
 	runtimex.PanicOnError(err, "http.NewRequest failed")
 	req = req.WithContext(ctx)
-	req.Header.Set("Accept", httpheader.RandomAccept())
-	req.Header.Set("Accept-Language", httpheader.RandomAcceptLanguage())
-	req.Header.Set("User-Agent", httpheader.RandomUserAgent())
+	req.Header.Set("Accept", httpheader.Accept())
+	req.Header.Set("Accept-Language", httpheader.AcceptLanguage())
+	req.Header.Set("User-Agent", MaybeUserAgent(r.Config.UserAgent))
 	if r.Config.HTTPHost != "" {
 		req.Host = r.Config.HTTPHost
 	}
@@ -73,8 +92,16 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	_, err = io.Copy(ioutil.Discard, resp.Body)
-	return err
+	if _, err = io.Copy(ioutil.Discard, resp.Body); err != nil {
+		return err
+	}
+	// Implementation note: we shall check for this error once we have read the
+	// whole body. Even though we discard the body, we want to know whether we
+	// see any error when reading the body before inspecting the HTTP status code.
+	if resp.StatusCode >= 400 && r.Config.FailOnHTTPError {
+		return ErrHTTPRequestFailed
+	}
+	return nil
 }
 
 func (r Runner) dnsLookup(ctx context.Context, hostname string) error {

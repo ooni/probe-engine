@@ -1,5 +1,4 @@
-// Package sniblocking contains the SNI blocking network experiment. This file
-// in particular is a pure-Go implementation of that.
+// Package sniblocking contains the SNI blocking network experiment.
 //
 // See https://github.com/ooni/spec/blob/master/nettests/ts-024-sni-blocking.md.
 package sniblocking
@@ -7,22 +6,21 @@ package sniblocking
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"net/url"
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/netxlogger"
-	"github.com/ooni/probe-engine/internal/oonidatamodel"
-	"github.com/ooni/probe-engine/internal/oonitemplates"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.0.5"
+	testVersion = "0.1.0"
 )
 
 // Config contains the experiment config.
@@ -37,24 +35,10 @@ type Config struct {
 // Subresult contains the keys of a single measurement
 // that targets either the target or the control.
 type Subresult struct {
-	Agent         string                          `json:"agent"`
-	Cached        bool                            `json:"-"`
-	Failure       *string                         `json:"failure"`
-	NetworkEvents oonidatamodel.NetworkEventsList `json:"network_events"`
-	Queries       oonidatamodel.DNSQueriesList    `json:"queries"`
-	Requests      oonidatamodel.RequestList       `json:"requests"`
-	SNI           string                          `json:"sni"`
-	TCPConnect    oonidatamodel.TCPConnectList    `json:"tcp_connect"`
-	THAddress     string                          `json:"th_address"`
-	TLSHandshakes oonidatamodel.TLSHandshakesList `json:"tls_handshakes"`
-}
-
-func registerExtensions(m *model.Measurement) {
-	oonidatamodel.ExtHTTP.AddTo(m)
-	oonidatamodel.ExtNetevents.AddTo(m)
-	oonidatamodel.ExtDNS.AddTo(m)
-	oonidatamodel.ExtTCPConnect.AddTo(m)
-	oonidatamodel.ExtTLSHandshake.AddTo(m)
+	urlgetter.TestKeys
+	Cached    bool   `json:"-"`
+	SNI       string `json:"sni"`
+	THAddress string `json:"th_address"`
 }
 
 // TestKeys contains sniblocking test keys.
@@ -119,7 +103,7 @@ func (m *measurer) ExperimentVersion() string {
 
 func (m *measurer) measureone(
 	ctx context.Context,
-	handler modelx.Handler,
+	sess model.ExperimentSession,
 	beginning time.Time,
 	sni string,
 	thaddr string,
@@ -130,33 +114,32 @@ func (m *measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := modelx.FailureGenericTimeoutError
+		s := modelx.FailureInterrupted
+		failedop := modelx.TopLevelOperation
 		return Subresult{
-			Failure: &s,
-			SNI:     sni,
+			TestKeys: urlgetter.TestKeys{
+				FailedOperation: &failedop,
+				Failure:         &s,
+			},
+			THAddress: thaddr,
+			SNI:       sni,
 		}
 	}
 	// perform the measurement
-	result := oonitemplates.TLSConnect(ctx, oonitemplates.TLSConnectConfig{
-		Address:   thaddr,
-		Beginning: beginning,
-		Handler:   handler,
-		SNI:       sni,
-	})
+	g := urlgetter.Getter{
+		Begin:   beginning,
+		Config:  urlgetter.Config{TLSServerName: sni},
+		Session: sess,
+		Target:  fmt.Sprintf("tlshandshake://%s", thaddr),
+	}
+	// Ignoring the error because g.Get() sets the tk.Failure field
+	// to be the OONI equivalent of the error that occurred.
+	tk, _ := g.Get(ctx)
 	// assemble and publish the results
 	smk := Subresult{
-		Agent:         "redirect",
-		NetworkEvents: oonidatamodel.NewNetworkEventsList(result.TestKeys),
-		Queries:       oonidatamodel.NewDNSQueriesList(result.TestKeys),
-		Requests:      oonidatamodel.NewRequestList(result.TestKeys),
-		SNI:           sni,
-		TCPConnect:    oonidatamodel.NewTCPConnectList(result.TestKeys),
-		THAddress:     thaddr,
-		TLSHandshakes: oonidatamodel.NewTLSHandshakesList(result.TestKeys),
-	}
-	if result.Error != nil {
-		s := result.Error.Error()
-		smk.Failure = &s
+		SNI:       sni,
+		THAddress: thaddr,
+		TestKeys:  tk,
 	}
 	return smk
 }
@@ -164,7 +147,7 @@ func (m *measurer) measureone(
 func (m *measurer) measureonewithcache(
 	ctx context.Context,
 	output chan<- Subresult,
-	handler modelx.Handler,
+	sess model.ExperimentSession,
 	beginning time.Time,
 	sni string,
 	thaddr string,
@@ -177,7 +160,7 @@ func (m *measurer) measureonewithcache(
 		output <- smk
 		return
 	}
-	smk = m.measureone(ctx, handler, beginning, sni, thaddr)
+	smk = m.measureone(ctx, sess, beginning, sni, thaddr)
 	output <- smk
 	smk.Cached = true
 	m.mu.Lock()
@@ -192,7 +175,7 @@ func (m *measurer) startall(
 	outputs := make(chan Subresult, len(inputs))
 	for _, input := range inputs {
 		go m.measureonewithcache(
-			ctx, outputs, netxlogger.NewHandler(sess.Logger()),
+			ctx, outputs, sess,
 			measurement.MeasurementStartTimeSaved,
 			input, m.config.TestHelperAddress,
 		)
@@ -268,7 +251,7 @@ func (m *measurer) Run(
 			m.config.ControlSNI, "443",
 		)
 	}
-	registerExtensions(measurement)
+	urlgetter.RegisterExtensions(measurement)
 	// TODO(bassosimone): if the user has configured DoT or DoH, here we
 	// probably want to perform the name resolution before the measurements
 	// or to make sure that the classify logic is robust to that.

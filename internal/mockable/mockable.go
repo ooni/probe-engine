@@ -29,6 +29,7 @@ type ExperimentSession struct {
 	MockableProbeIP              string
 	MockableProbeNetworkName     string
 	MockableProxyURL             *url.URL
+	MockableResolverIP           string
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
 	MockableTempDir              string
@@ -120,6 +121,11 @@ func (sess *ExperimentSession) ProbeNetworkName() string {
 // ProxyURL implements ExperimentSession.ProxyURL
 func (sess *ExperimentSession) ProxyURL() *url.URL {
 	return sess.MockableProxyURL
+}
+
+// ResolverIP implements ExperimentSession.ResolverIP
+func (sess *ExperimentSession) ResolverIP() string {
+	return sess.MockableResolverIP
 }
 
 // SoftwareName implements ExperimentSession.SoftwareName

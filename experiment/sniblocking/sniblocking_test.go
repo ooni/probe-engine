@@ -2,13 +2,13 @@ package sniblocking
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/netxlogger"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -106,7 +106,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.5" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -184,32 +184,156 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	cancel() // immediately cancel the context
 	result := new(measurer).measureone(
 		ctx,
-		netxlogger.NewHandler(log.Log),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
 	)
-	if *result.Failure != modelx.FailureGenericTimeoutError {
-		t.Fatal("unexpected failure")
+	if result.Agent != "" {
+		t.Fatal("not the expected Agent")
+	}
+	if result.BootstrapTime != 0.0 {
+		t.Fatal("not the expected BootstrapTime")
+	}
+	if result.DNSCache != nil {
+		t.Fatal("not the expected DNSCache")
+	}
+	if result.FailedOperation == nil || *result.FailedOperation != modelx.TopLevelOperation {
+		t.Fatal("not the expected FailedOperation")
+	}
+	if result.Failure == nil || *result.Failure != modelx.FailureInterrupted {
+		t.Fatal("not the expected failure")
+	}
+	if result.NetworkEvents != nil {
+		t.Fatal("not the expected NetworkEvents")
+	}
+	if result.Queries != nil {
+		t.Fatal("not the expected Queries")
+	}
+	if result.Requests != nil {
+		t.Fatal("not the expected Requests")
+	}
+	if result.SOCKSProxy != "" {
+		t.Fatal("not the expected SOCKSProxy")
+	}
+	if result.TCPConnect != nil {
+		t.Fatal("not the expected TCPConnect")
+	}
+	if result.TLSHandshakes != nil {
+		t.Fatal("not the expected TLSHandshakes")
+	}
+	if result.Tunnel != "" {
+		t.Fatal("not the expected Tunnel")
 	}
 	if result.SNI != "kernel.org" {
 		t.Fatal("unexpected SNI")
+	}
+	if result.THAddress != "example.com:443" {
+		t.Fatal("unexpected THAddress")
+	}
+}
+
+func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
+	result := new(measurer).measureone(
+		context.Background(),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
+		time.Now(),
+		"kernel.org",
+		"example.com:443\t\t\t", // cause URL parse error
+	)
+	if result.Agent != "redirect" {
+		t.Fatal("not the expected Agent")
+	}
+	if result.BootstrapTime != 0.0 {
+		t.Fatal("not the expected BootstrapTime")
+	}
+	if result.DNSCache != nil {
+		t.Fatal("not the expected DNSCache")
+	}
+	if result.FailedOperation == nil || *result.FailedOperation != "top_level" {
+		t.Fatal("not the expected FailedOperation")
+	}
+	if result.Failure == nil || !strings.Contains(*result.Failure, "invalid target URL") {
+		t.Fatal("not the expected failure")
+	}
+	if result.NetworkEvents != nil {
+		t.Fatal("not the expected NetworkEvents")
+	}
+	if result.Queries != nil {
+		t.Fatal("not the expected Queries")
+	}
+	if result.Requests != nil {
+		t.Fatal("not the expected Requests")
+	}
+	if result.SOCKSProxy != "" {
+		t.Fatal("not the expected SOCKSProxy")
+	}
+	if result.TCPConnect != nil {
+		t.Fatal("not the expected TCPConnect")
+	}
+	if result.TLSHandshakes != nil {
+		t.Fatal("not the expected TLSHandshakes")
+	}
+	if result.Tunnel != "" {
+		t.Fatal("not the expected Tunnel")
+	}
+	if result.SNI != "kernel.org" {
+		t.Fatal("unexpected SNI")
+	}
+	if result.THAddress != "example.com:443\t\t\t" {
+		t.Fatal("unexpected THAddress")
 	}
 }
 
 func TestUnitMeasureoneSuccess(t *testing.T) {
 	result := new(measurer).measureone(
 		context.Background(),
-		netxlogger.NewHandler(log.Log),
+		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
 	)
-	if *result.Failure != modelx.FailureSSLInvalidHostname {
+	if result.Agent != "redirect" {
+		t.Fatal("not the expected Agent")
+	}
+	if result.BootstrapTime != 0.0 {
+		t.Fatal("not the expected BootstrapTime")
+	}
+	if result.DNSCache != nil {
+		t.Fatal("not the expected DNSCache")
+	}
+	if result.FailedOperation == nil || *result.FailedOperation != modelx.TLSHandshakeOperation {
+		t.Fatal("not the expected FailedOperation")
+	}
+	if result.Failure == nil || *result.Failure != modelx.FailureSSLInvalidHostname {
 		t.Fatal("unexpected failure")
+	}
+	if len(result.NetworkEvents) < 1 {
+		t.Fatal("not the expected NetworkEvents")
+	}
+	if len(result.Queries) < 1 {
+		t.Fatal("not the expected Queries")
+	}
+	if result.Requests != nil {
+		t.Fatal("not the expected Requests")
+	}
+	if result.SOCKSProxy != "" {
+		t.Fatal("not the expected SOCKSProxy")
+	}
+	if len(result.TCPConnect) < 1 {
+		t.Fatal("not the expected TCPConnect")
+	}
+	if len(result.TLSHandshakes) < 1 {
+		t.Fatal("not the expected TLSHandshakes")
+	}
+	if result.Tunnel != "" {
+		t.Fatal("not the expected Tunnel")
 	}
 	if result.SNI != "kernel.org" {
 		t.Fatal("unexpected SNI")
+	}
+	if result.THAddress != "example.com:443" {
+		t.Fatal("unexpected THAddress")
 	}
 }
 
@@ -220,7 +344,7 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 		measurer.measureonewithcache(
 			context.Background(),
 			output,
-			netxlogger.NewHandler(log.Log),
+			&mockable.ExperimentSession{MockableLogger: log.Log},
 			time.Now(),
 			"kernel.org",
 			"example.com:443",

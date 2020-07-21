@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -18,7 +19,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "telegram" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.1.1" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -261,32 +262,44 @@ func TestUpdateWebWithMixedResults(t *testing.T) {
 	}
 }
 
-func TestUpdateWithBadRequest(t *testing.T) {
-	tk := telegram.NewTestKeys()
-	tk.Update(urlgetter.MultiOutput{
-		Input: urlgetter.MultiInput{
-			Config: urlgetter.Config{Method: "GET"},
-			Target: "http://web.telegram.org/",
+func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
+	called := atomicx.NewInt64()
+	failOnErrorHTTPS := atomicx.NewInt64()
+	failOnErrorHTTP := atomicx.NewInt64()
+	measurer := telegram.Measurer{
+		Config: telegram.Config{},
+		Getter: func(ctx context.Context, g urlgetter.Getter) (urlgetter.TestKeys, error) {
+			called.Add(1)
+			switch g.Target {
+			case "https://web.telegram.org/":
+				if g.Config.FailOnHTTPError {
+					failOnErrorHTTPS.Add(1)
+				}
+			case "http://web.telegram.org/":
+				if g.Config.FailOnHTTPError {
+					failOnErrorHTTP.Add(1)
+				}
+			}
+			return urlgetter.DefaultMultiGetter(ctx, g)
 		},
-		TestKeys: urlgetter.TestKeys{
-			HTTPResponseStatus: 400,
-		},
-	})
-	tk.Update(urlgetter.MultiOutput{
-		Input: urlgetter.MultiInput{
-			Config: urlgetter.Config{Method: "GET"},
-			Target: "https://web.telegram.org/",
-		},
-		TestKeys: urlgetter.TestKeys{
-			HTTPResponseBody:   `<title>Telegram Web</title>`,
-			HTTPResponseStatus: 200,
-		},
-	})
-	if tk.TelegramWebStatus != "blocked" {
-		t.Fatal("TelegramWebStatus should be blocked")
 	}
-	if *tk.TelegramWebFailure != "http_request_failed" {
-		t.Fatal("invalid TelegramWebFailure")
+	ctx := context.Background()
+	sess := &mockable.ExperimentSession{
+		MockableLogger: log.Log,
+	}
+	measurement := new(model.Measurement)
+	callbacks := handler.NewPrinterCallbacks(log.Log)
+	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
+		t.Fatal(err)
+	}
+	if called.Load() < 1 {
+		t.Fatal("not called")
+	}
+	if failOnErrorHTTPS.Load() != 1 {
+		t.Fatal("not configured fail on error for HTTPS")
+	}
+	if failOnErrorHTTP.Load() != 1 {
+		t.Fatal("not configured fail on error for HTTP")
 	}
 }
 

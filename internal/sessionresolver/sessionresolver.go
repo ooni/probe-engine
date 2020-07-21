@@ -1,10 +1,11 @@
 // Package sessionresolver contains the resolver used by the session. This
-// resolver uses Cloudflare DoH by default and falls back on the system
-// provided resolver if Cloudflare DoH is not working.
+// resolver uses Powerdns DoH by default and falls back on the system
+// provided resolver if Powerdns DoH is not working.
 package sessionresolver
 
 import (
 	"context"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
@@ -21,8 +22,8 @@ type Resolver struct {
 
 // New creates a new session resolver.
 func New(config httptransport.Config) *Resolver {
-	primary, err := httptransport.NewDNSClient(config, "doh://cloudflare")
-	runtimex.PanicOnError(err, "cannot create cloudflare resolver")
+	primary, err := httptransport.NewDNSClient(config, "doh://powerdns")
+	runtimex.PanicOnError(err, "cannot create powerdns resolver")
 	fallback, err := httptransport.NewDNSClient(config, "system:///")
 	runtimex.PanicOnError(err, "cannot create system resolver")
 	return &Resolver{
@@ -41,7 +42,13 @@ func (r *Resolver) CloseIdleConnections() {
 
 // LookupHost implements Resolver.LookupHost
 func (r *Resolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	addrs, err := r.Primary.LookupHost(ctx, hostname)
+	// Algorithm similar to Firefox TRR2 mode. See:
+	// https://wiki.mozilla.org/Trusted_Recursive_Resolver#DNS-over-HTTPS_Prefs_in_Firefox
+	// We use a higher timeout than Firefox's timeout (1.5s) to be on the safe side
+	// and therefore see to use DoH more often.
+	trr2, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+	addrs, err := r.Primary.LookupHost(trr2, hostname)
 	if err != nil {
 		r.PrimaryFailure.Add(1)
 		addrs, err = r.Fallback.LookupHost(ctx, hostname)
