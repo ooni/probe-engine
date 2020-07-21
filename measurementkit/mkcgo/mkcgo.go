@@ -44,7 +44,7 @@ import (
 	//
 	// #cgo linux,!ooni LDFLAGS: -lmeasurement_kit
 	//
-	// #if MK_VERSION_NUMERIC != 0x00000000010000111LL
+	// #if MK_VERSION_NUMERIC != 0x00000000010000121LL
 	// #error "Wrong measurement-kit version, please recompile measurement-kit"
 	// #endif
 	"C"
