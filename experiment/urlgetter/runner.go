@@ -52,9 +52,9 @@ func (r Runner) Run(ctx context.Context) error {
 	}
 }
 
-// MaybeRandomUserAgent returns ua if ua is not empty. Otherwise it
+// MaybeUserAgent returns ua if ua is not empty. Otherwise it
 // returns httpheader.RandomUserAgent().
-func MaybeRandomUserAgent(ua string) string {
+func MaybeUserAgent(ua string) string {
 	if ua == "" {
 		ua = httpheader.UserAgent()
 	}
@@ -68,7 +68,7 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 	req = req.WithContext(ctx)
 	req.Header.Set("Accept", httpheader.Accept())
 	req.Header.Set("Accept-Language", httpheader.AcceptLanguage())
-	req.Header.Set("User-Agent", MaybeRandomUserAgent(r.Config.UserAgent))
+	req.Header.Set("User-Agent", MaybeUserAgent(r.Config.UserAgent))
 	if r.Config.HTTPHost != "" {
 		req.Host = r.Config.HTTPHost
 	}

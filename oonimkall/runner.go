@@ -292,8 +292,6 @@ func (r *runner) Run(ctx context.Context) {
 		endEvent.DownloadedKB = experiment.KibiBytesReceived()
 		endEvent.UploadedKB = experiment.KibiBytesSent()
 	}()
-	// TODO(bassosimone): here we should recognise the NoEndpoint
-	// setting used by the WhatsApp experiment.
 	if !r.settings.Options.NoCollector {
 		logger.Info("Opening report... please, be patient")
 		if err := experiment.OpenReport(); err != nil {
