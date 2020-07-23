@@ -12,11 +12,10 @@ import urllib.parse
 
 def execute(args):
     """ Execute a specified command """
-    sys.stderr.write("+ " + repr(args) + "\n")
     subprocess.run(args)
 
 
-def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, args):
+def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
     """ Executes jafar and miniooni. Returns the test keys. """
     with contextlib.suppress(FileNotFoundError):
         os.remove(outfile)  # just in case
@@ -27,6 +26,7 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, args):
             "%s -no '%s' %s" % (ooni_exe, outfile, experiment),
             "-main-user",
             os.environ["SUDO_USER"],
+            "-tag", tag,
         ]
         + args
     )
@@ -34,11 +34,6 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, args):
     assert isinstance(result, dict)
     assert isinstance(result["test_keys"], dict)
     return result["test_keys"]
-
-
-def start_test(name):
-    """ Print message informing user that a test is starting """
-    sys.stderr.write("\n* " + repr(name) + "\n")
 
 
 def read_result(outfile):

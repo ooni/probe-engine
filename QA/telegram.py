@@ -29,10 +29,10 @@ ALL_POP_IPS = (
 )
 
 
-def execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args):
+def execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, tag, args):
     """ Executes jafar and returns the validated parsed test keys, or throws
         an AssertionError if the result is not valid. """
-    tk = common.execute_jafar_and_miniooni(ooni_exe, outfile, "telegram", args)
+    tk = common.execute_jafar_and_miniooni(ooni_exe, outfile, "telegram", tag, args)
     assert isinstance(tk["requests"], list)
     assert len(tk["requests"]) > 0
     for entry in tk["requests"]:
@@ -80,10 +80,7 @@ def args_for_blocking_all_pop_ips():
 
 def args_for_blocking_web_telegram_org_http():
     """ Returns arguments for blocking web.telegram.org over http """
-    return [
-        "-iptables-reset-keyword",
-        "Host: web.telegram.org"
-    ]
+    return ["-iptables-reset-keyword", "Host: web.telegram.org"]
 
 
 def args_for_blocking_web_telegram_org_https():
@@ -98,18 +95,19 @@ def args_for_blocking_web_telegram_org_https():
     #
     return [
         "-iptables-reset-keyword-hex",
-        "|00 00 00 15 00 13 00 00 10 77 65 62 2e 74 65 6c 65 67 72 61 6d 2e 6f 72 67|"
+        "|00 00 00 15 00 13 00 00 10 77 65 62 2e 74 65 6c 65 67 72 61 6d 2e 6f 72 67|",
     ]
 
 
 def telegram_block_everything(ooni_exe, outfile):
     """ Test case where everything we measure is blocked """
-    common.start_test("telegram_block_everything")
     args = []
     args.extend(args_for_blocking_all_pop_ips())
     args.extend(args_for_blocking_web_telegram_org_https())
     args.extend(args_for_blocking_web_telegram_org_http())
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_block_everything", args,
+    )
     assert tk["telegram_tcp_blocking"] == True
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == "connection_reset"
@@ -118,9 +116,10 @@ def telegram_block_everything(ooni_exe, outfile):
 
 def telegram_tcp_blocking_all(ooni_exe, outfile):
     """ Test case where all POPs are TCP/IP blocked """
-    common.start_test("telegram_tcp_blocking_all")
     args = args_for_blocking_all_pop_ips()
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_tcp_blocking_all", args
+    )
     assert tk["telegram_tcp_blocking"] == True
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == None
@@ -129,12 +128,13 @@ def telegram_tcp_blocking_all(ooni_exe, outfile):
 
 def telegram_tcp_blocking_some(ooni_exe, outfile):
     """ Test case where some POPs are TCP/IP blocked """
-    common.start_test("telegram_tcp_blocking_some")
     args = [
         "-iptables-reset-ip",
         ALL_POP_IPS[0],
     ]
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_tcp_blocking_some", args
+    )
     assert tk["telegram_tcp_blocking"] == False
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == None
@@ -143,12 +143,13 @@ def telegram_tcp_blocking_some(ooni_exe, outfile):
 
 def telegram_http_blocking_all(ooni_exe, outfile):
     """ Test case where all POPs are HTTP blocked """
-    common.start_test("telegram_http_blocking_all")
     args = []
     for ip in ALL_POP_IPS:
         args.append("-iptables-reset-keyword")
         args.append(ip)
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_http_blocking_all", args,
+    )
     assert tk["telegram_tcp_blocking"] == False
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == None
@@ -157,12 +158,13 @@ def telegram_http_blocking_all(ooni_exe, outfile):
 
 def telegram_http_blocking_some(ooni_exe, outfile):
     """ Test case where some POPs are HTTP blocked """
-    common.start_test("telegram_http_blocking_some")
     args = [
         "-iptables-reset-keyword",
         ALL_POP_IPS[0],
     ]
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_http_blocking_some", args,
+    )
     assert tk["telegram_tcp_blocking"] == False
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == None
@@ -171,9 +173,10 @@ def telegram_http_blocking_some(ooni_exe, outfile):
 
 def telegram_web_failure_http(ooni_exe, outfile):
     """ Test case where the web HTTP endpoint is blocked """
-    common.start_test("telegram_web_failure_http")
     args = args_for_blocking_web_telegram_org_http()
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_web_failure_http", args,
+    )
     assert tk["telegram_tcp_blocking"] == False
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == "connection_reset"
@@ -182,9 +185,10 @@ def telegram_web_failure_http(ooni_exe, outfile):
 
 def telegram_web_failure_https(ooni_exe, outfile):
     """ Test case where the web HTTPS endpoint is blocked """
-    common.start_test("telegram_web_failure_https")
     args = args_for_blocking_web_telegram_org_https()
-    tk = execute_jafar_and_return_validated_test_keys(ooni_exe, outfile, args)
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe, outfile, "telegram_web_failure_https", args,
+    )
     assert tk["telegram_tcp_blocking"] == False
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == "connection_reset"
@@ -192,9 +196,8 @@ def telegram_web_failure_https(ooni_exe, outfile):
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" %
-                 sys.argv[0])
+    if len(sys.argv) != 2:
+        sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
     outfile = "telegram.jsonl"
     ooni_exe = sys.argv[1]
     tests = [
