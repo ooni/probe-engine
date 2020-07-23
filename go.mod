@@ -31,6 +31,8 @@ require (
 	github.com/gobwas/glob v0.2.4-0.20180402141543-f00a7392b439 // indirect
 	github.com/google/go-cmp v0.5.0
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
+	github.com/google/martian/v3 v3.0.0
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafov/m3u8 v0.0.0-20171211212457-6ab8f28ed427 // indirect
