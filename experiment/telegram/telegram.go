@@ -118,8 +118,16 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		{Target: "http://149.154.167.91:443/", Config: urlgetter.Config{Method: "POST"}},
 		{Target: "http://149.154.171.5:443/", Config: urlgetter.Config{Method: "POST"}},
 
-		{Target: "http://web.telegram.org/", Config: urlgetter.Config{FailOnHTTPError: true}},
-		{Target: "https://web.telegram.org/", Config: urlgetter.Config{FailOnHTTPError: true}},
+		// Here we need to provide the method explicitly. See
+		// https://github.com/ooni/probe-engine/issues/827.
+		{Target: "http://web.telegram.org/", Config: urlgetter.Config{
+			Method:          "GET",
+			FailOnHTTPError: true,
+		}},
+		{Target: "https://web.telegram.org/", Config: urlgetter.Config{
+			Method:          "GET",
+			FailOnHTTPError: true,
+		}},
 	}
 	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
 	testkeys := NewTestKeys()
