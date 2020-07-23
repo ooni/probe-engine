@@ -505,7 +505,8 @@ func TestTransactStatusCodeFailure(t *testing.T) {
 		Body:       ioutil.NopCloser(strings.NewReader("")),
 		StatusCode: 500,
 	}}
-	resp, body, err := hhfm.Transact(txp, &http.Request{})
+	resp, body, err := hhfm.Transact(txp, &http.Request{},
+		handler.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, urlgetter.ErrHTTPRequestFailed) {
 		t.Fatal("not the error we expected")
 	}
@@ -523,7 +524,8 @@ func TestTransactCannotReadBody(t *testing.T) {
 		Body:       &FakeBody{Err: expected},
 		StatusCode: 200,
 	}}
-	resp, body, err := hhfm.Transact(txp, &http.Request{})
+	resp, body, err := hhfm.Transact(txp, &http.Request{},
+		handler.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
