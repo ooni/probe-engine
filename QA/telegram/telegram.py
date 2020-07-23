@@ -34,7 +34,7 @@ ALL_POP_IPS = (
 
 def execute(args):
     """ Execute a specified command """
-    print("+", args)
+    sys.stderr.write("+ " + repr(args) + "\n")
     subprocess.run(args)
 
 
@@ -51,8 +51,7 @@ def execute_jafar(ooni_exe, outfile, args):
 
 def start_test(name):
     """ Print message informing user that a test is starting """
-    print("\n")
-    print("*", name)
+    sys.stderr.write("\n* " + repr(name) + "\n")
 
 
 def read_result(outfile):
@@ -163,16 +162,6 @@ def telegram_block_everything(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == "connection_reset"
     assert tk["telegram_web_status"] == "blocked"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == (
-            "connection_refused" if entry["ip"] in ALL_POP_IPS else None
-        )
-    for entry in tk["requests"]:
-        url = urllib.parse.urlsplit(entry["request"]["url"])
-        assert entry["failure"] == (
-            "connection_refused" if url.hostname in ALL_POP_IPS
-            else "connection_reset"
-        )
 
 
 def telegram_tcp_blocking_all(ooni_exe, outfile):
@@ -184,15 +173,6 @@ def telegram_tcp_blocking_all(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == None
     assert tk["telegram_web_status"] == "ok"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == (
-            "connection_refused" if entry["ip"] in ALL_POP_IPS else None
-        )
-    for entry in tk["requests"]:
-        url = urllib.parse.urlsplit(entry["request"]["url"])
-        assert entry["failure"] == (
-            "connection_refused" if url.hostname in ALL_POP_IPS else None
-        )
 
 
 def telegram_tcp_blocking_some(ooni_exe, outfile):
@@ -207,15 +187,6 @@ def telegram_tcp_blocking_some(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == None
     assert tk["telegram_web_status"] == "ok"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == (
-            "connection_refused" if entry["ip"] == ALL_POP_IPS[0] else None
-        )
-    for entry in tk["requests"]:
-        url = urllib.parse.urlsplit(entry["request"]["url"])
-        assert entry["failure"] == (
-            "connection_refused" if url.hostname == ALL_POP_IPS[0] else None
-        )
 
 
 def telegram_http_blocking_all(ooni_exe, outfile):
@@ -230,13 +201,6 @@ def telegram_http_blocking_all(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == True
     assert tk["telegram_web_failure"] == None
     assert tk["telegram_web_status"] == "ok"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == None
-    for entry in tk["requests"]:
-        url = urllib.parse.urlsplit(entry["request"]["url"])
-        assert entry["failure"] == (
-            "connection_reset" if url.hostname in ALL_POP_IPS else None
-        )
 
 
 def telegram_http_blocking_some(ooni_exe, outfile):
@@ -251,13 +215,6 @@ def telegram_http_blocking_some(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == None
     assert tk["telegram_web_status"] == "ok"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == None
-    for entry in tk["requests"]:
-        url = urllib.parse.urlsplit(entry["request"]["url"])
-        assert entry["failure"] == (
-            "connection_reset" if url.hostname == ALL_POP_IPS[0] else None
-        )
 
 
 def telegram_web_failure_http(ooni_exe, outfile):
@@ -269,13 +226,6 @@ def telegram_web_failure_http(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == "connection_reset"
     assert tk["telegram_web_status"] == "blocked"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == None
-    for entry in tk["requests"]:
-        url = entry["request"]["url"]
-        assert entry["failure"] == (
-            "connection_reset" if url == "http://web.telegram.org/" else None
-        )
 
 
 def telegram_web_failure_https(ooni_exe, outfile):
@@ -287,13 +237,6 @@ def telegram_web_failure_https(ooni_exe, outfile):
     assert tk["telegram_http_blocking"] == False
     assert tk["telegram_web_failure"] == "connection_reset"
     assert tk["telegram_web_status"] == "blocked"
-    for entry in tk["tcp_connect"]:
-        assert entry["status"]["failure"] == None
-    for entry in tk["requests"]:
-        url = entry["request"]["url"]
-        assert entry["failure"] == (
-            "connection_reset" if url == "https://web.telegram.org/" else None
-        )
 
 
 def main():
@@ -313,7 +256,7 @@ def main():
     ]
     for test in tests:
         test(ooni_exe, outfile)
-        time.sleep(60)
+        time.sleep(7)
 
 
 if __name__ == "__main__":
