@@ -19,6 +19,7 @@ import (
 const (
 	testName    = "http_invalid_request_line"
 	testVersion = "0.1.0"
+	timeout     = 5 * time.Second
 )
 
 // Config contains the experiment config.
@@ -105,9 +106,21 @@ func (m Measurer) Run(
 			Out:     out,
 		})
 	}
-	var completed int
+	var (
+		completed int
+		progress  float64
+		result    MethodResult
+	)
 	for {
-		result := <-out
+		select {
+		case result = <-out:
+		case <-time.After(500 * time.Millisecond):
+			if completed <= 0 {
+				progress += 0.05
+				callbacks.OnProgress(progress, "waiting for results...")
+			}
+			continue
+		}
 		failure := archival.NewFailure(result.Err)
 		tk.FailureList = append(tk.FailureList, failure)
 		tk.Received = append(tk.Received, result.Received)
@@ -115,7 +128,7 @@ func (m Measurer) Run(
 		tk.TamperingList = append(tk.TamperingList, result.Tampering)
 		tk.Tampering = (tk.Tampering || result.Tampering)
 		completed++
-		percentage := float64(completed) / float64(len(m.Methods))
+		percentage := (float64(completed)/float64(len(m.Methods)))*0.5 + 0.5
 		callbacks.OnProgress(percentage, fmt.Sprintf("%s... %+v", result.Name, result.Err))
 		if completed >= len(m.Methods) {
 			break
@@ -260,7 +273,7 @@ func RunMethod(ctx context.Context, config RunMethodConfig) {
 		result.Err = err
 		return
 	}
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(timeout)
 	if err := conn.SetDeadline(deadline); err != nil {
 		result.Err = err
 		return

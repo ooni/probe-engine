@@ -28,7 +28,7 @@ import (
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libressl/lib/libcrypto.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_core.a
 	// #cgo windows,amd64 LDFLAGS: /usr/local/opt/mingw-w64-libevent/lib/libevent_extra.a
-	// #cgo windows,amd64 LDFLAGS: -lws2_32
+	// #cgo windows,amd64 LDFLAGS: -lws2_32 -liphlpapi
 	// #cgo windows,amd64 LDFLAGS: -fstack-protector-strong
 	//
 	// #cgo linux,amd64,ooni LDFLAGS: -static
