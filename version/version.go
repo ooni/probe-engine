@@ -2,4 +2,4 @@
 package version
 
 // Version is the version of the engine
-const Version = "0.15.1"
+const Version = "0.15.2"
