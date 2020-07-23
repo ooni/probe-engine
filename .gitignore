@@ -1,4 +1,5 @@
 /.vscode
+/QA/__pycache__/
 /asn.mmdb
 /badproxy.pem
 /ca-bundle.pem

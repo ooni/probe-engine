@@ -14,4 +14,4 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
-      - run: ./QA/docker/start.bash ./QA/docker/${{ matrix.experiment }}.sh
+      - run: ./QA/rundocker.bash ${{ matrix.experiment }}
