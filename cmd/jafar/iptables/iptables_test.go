@@ -118,6 +118,7 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
+	t.Log(err.Error())
 	if !strings.HasSuffix(err.Error(), "operation not permitted") {
 		t.Fatal("unexpected error occurred")
 	}
@@ -191,6 +192,7 @@ func TestIntegrationResetKeywordHex(t *testing.T) {
 		t.Fatal("expected nil response here")
 	}
 }
+
 func TestIntegrationHijackDNS(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
