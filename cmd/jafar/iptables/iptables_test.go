@@ -118,8 +118,10 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	t.Log(err.Error())
-	if !strings.HasSuffix(err.Error(), "operation not permitted") {
+	// the error we see with GitHub Actions is different from the error
+	// we see when testing locally on Fedora
+	if !strings.HasSuffix(err.Error(), "operation not permitted") &&
+		!strings.HasSuffix(err.Error(), "Temporary failure in name resolution") {
 		t.Fatal("unexpected error occurred")
 	}
 	if resp != nil {
