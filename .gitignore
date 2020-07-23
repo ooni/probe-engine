@@ -1,5 +1,6 @@
 /.vscode
 /asn.mmdb
+/badproxy.pem
 /ca-bundle.pem
 /country.mmdb
 /jafar
@@ -8,3 +9,4 @@
 /miniooni.exe
 /oonipsiphon/
 /report.jsonl
+/telegram.jsonl
