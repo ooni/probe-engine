@@ -154,7 +154,7 @@ func (m Measurer) Run(
 	// TODO(bassosimone): this implementation will lead to false positives if the
 	// network is really bad. Yet, this seems what MK does, so I'd rather start
 	// from that and then see to improve the robustness in the future.
-	resp, data, err := Transact(txp, req.WithContext(ctx))
+	resp, data, err := Transact(txp, req.WithContext(ctx), callbacks)
 	if err != nil {
 		tk.Failure = archival.NewFailure(err)
 		tk.Requests[0].Failure = tk.Failure
@@ -178,16 +178,20 @@ func (m Measurer) Run(
 
 // Transact performs the HTTP transaction which consists of performing
 // the HTTP round trip and then reading the body.
-func Transact(txp Transport, req *http.Request) (*http.Response, []byte, error) {
+func Transact(txp Transport, req *http.Request,
+	callbacks model.ExperimentCallbacks) (*http.Response, []byte, error) {
 	// make sure that we return a wrapped error here
-	resp, data, err := transact(txp, req)
+	resp, data, err := transact(txp, req, callbacks)
 	err = errorx.SafeErrWrapperBuilder{
 		Error: err, Operation: modelx.TopLevelOperation}.MaybeBuild()
 	return resp, data, err
 }
 
-func transact(txp Transport, req *http.Request) (*http.Response, []byte, error) {
+func transact(txp Transport, req *http.Request,
+	callbacks model.ExperimentCallbacks) (*http.Response, []byte, error) {
+	callbacks.OnProgress(0.25, "sending request...")
 	resp, err := txp.RoundTrip(req)
+	callbacks.OnProgress(0.50, fmt.Sprintf("got reseponse headers... %+v", err))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -195,7 +199,9 @@ func transact(txp Transport, req *http.Request) (*http.Response, []byte, error) 
 	if resp.StatusCode != 200 {
 		return nil, nil, urlgetter.ErrHTTPRequestFailed
 	}
+	callbacks.OnProgress(0.75, "reading response body...")
 	data, err := ioutil.ReadAll(resp.Body)
+	callbacks.OnProgress(1.00, fmt.Sprintf("got reseponse body... %+v", err))
 	if err != nil {
 		return nil, nil, err
 	}
