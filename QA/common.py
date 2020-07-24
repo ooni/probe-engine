@@ -25,7 +25,7 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
             "-main-command",
             "%s -no '%s' %s" % (ooni_exe, outfile, experiment),
             "-main-user",
-            os.environ["SUDO_USER"],
+            "ooniprobe",  # created in cmd/jafar/Dockerfile
             "-tag", tag,
         ]
         + args
