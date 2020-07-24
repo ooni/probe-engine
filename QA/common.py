@@ -4,6 +4,7 @@ import contextlib
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -23,13 +24,14 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
         [
             "./jafar",
             "-main-command",
-            "%s -no '%s' %s" % (ooni_exe, outfile, experiment),
+            "%s -no '/home/ooniprobe/%s' %s" % (ooni_exe, outfile, experiment),
             "-main-user",
-            os.environ["SUDO_USER"],
+            "ooniprobe",  # created in cmd/jafar/Dockerfile
             "-tag", tag,
         ]
         + args
     )
+    shutil.move('/home/ooniprobe/{}'.format(outfile), outfile)
     result = read_result(outfile)
     assert isinstance(result, dict)
     assert isinstance(result["test_keys"], dict)
