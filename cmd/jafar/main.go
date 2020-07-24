@@ -255,7 +255,8 @@ func mustx(err error, message string, osExit func(int)) {
 
 func main() {
 	flag.Parse()
-	log.SetLevel(log.DebugLevel)
+	// TODO(bassosimone): we may want a verbose flag
+	log.SetLevel(log.InfoLevel)
 	log.SetHandler(cli.Default)
 	log.Infof("jafar command line: [%s]", strings.Join(os.Args, ", "))
 	log.Infof("jafar tag: %s", *tag)
