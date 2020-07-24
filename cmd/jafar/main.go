@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/apex/log"
@@ -20,12 +21,12 @@ import (
 	"github.com/ooni/probe-engine/cmd/jafar/badproxy"
 	"github.com/ooni/probe-engine/cmd/jafar/flagx"
 	"github.com/ooni/probe-engine/cmd/jafar/httpproxy"
-	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/cmd/jafar/iptables"
 	"github.com/ooni/probe-engine/cmd/jafar/resolver"
 	"github.com/ooni/probe-engine/cmd/jafar/shellx"
 	"github.com/ooni/probe-engine/cmd/jafar/tlsproxy"
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
+	"github.com/ooni/probe-engine/internal/runtimex"
 )
 
 var (
@@ -54,6 +55,8 @@ var (
 	mainCh      chan os.Signal
 	mainCommand *string
 	mainUser    *string
+
+	tag *string
 
 	tlsProxyAddress *string
 	tlsProxyBlock   flagx.StringArray
@@ -150,6 +153,9 @@ func init() {
 	mainCommand = flag.String("main-command", "", "Optional command to execute")
 	mainUser = flag.String("main-user", "nobody", "Run command as user")
 
+	// tag
+	tag = flag.String("tag", "", "Add tag to a specific run")
+
 	// tlsProxy
 	tlsProxyAddress = flag.String(
 		"tls-proxy-address", "127.0.0.1:443",
@@ -160,6 +166,7 @@ func init() {
 		"Register keyword triggering TLS censorship",
 	)
 
+	// uncensored
 	uncensoredResolverURL = flag.String(
 		"uncensored-resolver-url", "dot://1.1.1.1:853",
 		"URL of an hopefully uncensored resolver",
@@ -250,6 +257,8 @@ func main() {
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)
 	log.SetHandler(cli.Default)
+	log.Infof("jafar command line: [%s]", strings.Join(os.Args, ", "))
+	log.Infof("jafar tag: %s", *tag)
 	uncensoredClient := newUncensoredClient()
 	defer uncensoredClient.CloseIdleConnections()
 	badlistener := badProxyStart()

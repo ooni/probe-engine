@@ -1,8 +1,8 @@
 # Quality Assurance scripts
 
 This directory contains quality assurance scripts that use Jafar to
-ensure that OONI implementations behave. These scripts take as unique
-command line argument the path to a binary with a OONI Probe v2.x
+ensure that OONI implementations behave. These scripts take on the
+command line as argument the path to a binary with a OONI Probe v2.x
 compatible command line interface.
 
 Tools with this CLI are:
@@ -19,7 +19,7 @@ These scripts assume you're on a Linux system with `iptables`, `bash`,
 To start the QA script, run this command:
 
 ```bash
-sudo ./QA/$nettest/$nettest.py $ooni_exe
+sudo ./QA/$nettest.py $ooni_exe
 ```
 
 where `$nettest` is the nettest name (e.g. `telegram`) and `$ooni_exe`
@@ -27,18 +27,18 @@ is the OONI Probe v2.x compatible binary to test.
 
 The Python script needs to run as root. Note however that sudo will also
 be used to run `$ooni_exe` with the privileges of the `$SUDO_USER` that
-called `sudo ./QA/$nettest/$nettest.py ...`.
+called `sudo ./QA/$nettest.py $ooni_exe`.
 
 ## Run QA using a docker container
 
 Run test in a suitable Docker container using:
 
 ```
-./QA/docker/start.sh ./QA/docker/$nettest.sh
+./QA/rundocker.sh $nettest
 ```
 
-Note that this will run a `--privileged` docker container.
-This will eventually run the Python script you would run on Linux.
+Note that this will run a `--privileged` docker container. This will
+eventually run the Python script you would run on Linux.
 
 For now, the docker scripts only perform QA of `miniooni`.
 

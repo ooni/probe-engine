@@ -8,10 +8,10 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         go: ["1.14"]
-        experiment: ["telegram"]
+        experiment: ["telegram", "whatsapp"]
     steps:
       - uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
-      - run: ./QA/docker/start.bash ./QA/docker/${{ matrix.experiment }}.sh
+      - run: ./QA/rundocker.bash ${{ matrix.experiment }}
