@@ -8,7 +8,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         go: ["1.14"]
-        experiment: ["telegram"]
+        experiment: ["telegram", "whatsapp"]
     steps:
       - uses: actions/setup-go@v1
         with:
