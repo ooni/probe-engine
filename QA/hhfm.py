@@ -40,13 +40,13 @@ def hhfm_transparent_proxy(ooni_exe, outfile):
     # The proxy sees a domain that does not make any sense and does not
     # otherwise know where to connect to. Hence the most likely result is
     # a `dns_nxdomain_error` with total tampering.
-    tk["header_field_name"] = False
-    tk["header_field_number"] = False
-    tk["header_field_value"] = False
-    tk["header_name_capitalization"] = False
-    tk["header_name_diff"] = True
-    tk["request_line_capitalization"] = False
-    tk["total"] = True
+    assert tk["tampering"]["header_field_name"] == False
+    assert tk["tampering"]["header_field_number"] == False
+    assert tk["tampering"]["header_field_value"] == False
+    assert tk["tampering"]["header_name_capitalization"] == False
+    assert tk["tampering"]["header_name_diff"] == []
+    assert tk["tampering"]["request_line_capitalization"] == False
+    assert tk["tampering"]["total"] == True
 
 
 def main():
