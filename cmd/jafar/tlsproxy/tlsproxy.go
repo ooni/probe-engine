@@ -156,7 +156,7 @@ func (p *CensoringProxy) handle(clientconn net.Conn) {
 		alertclose(clientconn)
 		return
 	}
-	log.Infof("tlsproxy: routing for %s", sni)
+	log.Debugf("tlsproxy: routing for %s", sni)
 	defer clientconn.Close()
 	defer serverconn.Close()
 	var wg sync.WaitGroup
