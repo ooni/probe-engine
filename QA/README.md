@@ -26,14 +26,13 @@ where `$nettest` is the nettest name (e.g. `telegram`) and `$ooni_exe`
 is the OONI Probe v2.x compatible binary to test.
 
 The Python script needs to run as root. Note however that sudo will also
-be used to run `$ooni_exe` with the privileges of the `$SUDO_USER` that
-called `sudo ./QA/$nettest.py $ooni_exe`.
+be used to run `$ooni_exe` with the privileges of the `nobody` user.
 
 ## Run QA using a docker container
 
 Run test in a suitable Docker container using:
 
-```
+```bash
 ./QA/rundocker.sh $nettest
 ```
 
