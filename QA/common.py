@@ -25,7 +25,7 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
         [
             "./jafar",
             "-main-command",
-            "{} -no '{}' --home ./QA/HOME {}".format(ooni_exe, tmpoutfile, experiment),
+            "{} -no '{}' --home /tmp {}".format(ooni_exe, tmpoutfile, experiment),
             "-main-user",
             "nobody",  # should be present on Unix
             "-tag",
@@ -33,7 +33,7 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
         ]
         + args
     )
-    shutil.move(tmpoutfile, outfile)
+    shutil.copy(tmpoutfile, outfile)
     result = read_result(outfile)
     assert isinstance(result, dict)
     assert isinstance(result["test_keys"], dict)
