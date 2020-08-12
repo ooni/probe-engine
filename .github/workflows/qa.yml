@@ -8,7 +8,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         go: ["1.14"]
-        experiment: ["fbmessenger", "hhfm", "hirl", "telegram", "whatsapp"]
+        experiment: ["fbmessenger", "hhfm", "hirl", "telegram", "webconnectivity", "whatsapp"]
     steps:
       - uses: actions/setup-go@v1
         with:
