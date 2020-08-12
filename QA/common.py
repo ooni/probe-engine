@@ -25,7 +25,9 @@ def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
         [
             "./jafar",
             "-main-command",
-            "{} -no '{}' --home /tmp {}".format(ooni_exe, tmpoutfile, experiment),
+            "./QA/minioonilike.py {} -n -o '{}' --home /tmp {}".format(
+                ooni_exe, tmpoutfile, experiment
+            ),
             "-main-user",
             "nobody",  # should be present on Unix
             "-tag",
