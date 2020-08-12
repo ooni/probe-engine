@@ -18,21 +18,22 @@ def execute(args):
 
 def execute_jafar_and_miniooni(ooni_exe, outfile, experiment, tag, args):
     """ Executes jafar and miniooni. Returns the test keys. """
+    tmpoutfile = "/tmp/{}".format(outfile)
     with contextlib.suppress(FileNotFoundError):
-        os.remove(outfile)  # just in case
+        os.remove(tmpoutfile)  # just in case
     execute(
         [
             "./jafar",
             "-main-command",
-            "%s -no '/home/ooniprobe/%s' %s" % (ooni_exe, outfile, experiment),
+            "{} -no '{}' --home /tmp {}".format(ooni_exe, tmpoutfile, experiment),
             "-main-user",
-            "ooniprobe",  # created in cmd/jafar/Dockerfile
+            "nobody",  # should be present on Unix
             "-tag",
             tag,
         ]
         + args
     )
-    shutil.move("/home/ooniprobe/{}".format(outfile), outfile)
+    shutil.copy(tmpoutfile, outfile)
     result = read_result(outfile)
     assert isinstance(result, dict)
     assert isinstance(result["test_keys"], dict)
