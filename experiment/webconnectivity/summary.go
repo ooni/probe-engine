@@ -17,8 +17,8 @@ type Summary struct {
 	// BlockingReason indicates the cause of blocking when the Accessible
 	// variable is false. BlockingReason is meaningless otherwise.
 	//
-	// Data consumers expect the semantics of Blocking. We don't export
-	// the real field for now, because it Blocking suffices.
+	// This is an intermediate variable used to compute Blocking, which
+	// is what OONI data consumers expect to see.
 	BlockingReason *string `json:"-"`
 
 	// Blocking implements the blocking variable as expected by OONI
