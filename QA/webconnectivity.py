@@ -82,7 +82,7 @@ def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
     assert tk["status_code_match"] == True
     assert tk["headers_match"] == True
     assert tk["title_match"] == True
-    assert tk["blocking"] == None
+    assert tk["blocking"] == False
     assert tk["accessible"] == True
 
 
