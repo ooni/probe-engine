@@ -16,7 +16,7 @@ type HTTPAnalysisResult struct {
 	BodyLengthMatch *bool    `json:"body_length_match"`
 	BodyProportion  *float64 `json:"body_proportion"`
 	StatusCodeMatch *bool    `json:"status_code_match"`
-	HeadersMatch    *bool    `json:"header_match"`
+	HeadersMatch    *bool    `json:"headers_match"`
 	TitleMatch      *bool    `json:"title_match"`
 }
 
