@@ -1,48 +1,32 @@
 package webconnectivity
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/experiment/webconnectivity/internal"
 	"github.com/ooni/probe-engine/model"
 )
 
 // HTTPAnalysisResult contains the results of the analysis performed on the
 // client. We obtain it by comparing the measurement and the control.
 type HTTPAnalysisResult struct {
-	BodyLengthMatch *bool    `json:"body_length_match"`
-	BodyProportion  *float64 `json:"body_proportion"`
-	StatusCodeMatch *bool    `json:"status_code_match"`
-	HeadersMatch    *bool    `json:"headers_match"`
-	TitleMatch      *bool    `json:"title_match"`
-}
-
-func boolPointerToString(v *bool) (out string) {
-	out = "nil"
-	if v != nil {
-		out = fmt.Sprintf("%+v", *v)
-	}
-	return
-}
-
-func float64PointerToString(v *float64) (out string) {
-	out = "nil"
-	if v != nil {
-		out = fmt.Sprintf("%+v", *v)
-	}
-	return
+	BodyLengthMatch *bool   `json:"body_length_match"`
+	BodyProportion  float64 `json:"body_proportion"`
+	StatusCodeMatch *bool   `json:"status_code_match"`
+	HeadersMatch    *bool   `json:"headers_match"`
+	TitleMatch      *bool   `json:"title_match"`
 }
 
 // Log logs the results of the analysis
 func (har HTTPAnalysisResult) Log(logger model.Logger) {
-	logger.Infof("BodyLengthMatch: %+v", boolPointerToString(har.BodyLengthMatch))
-	logger.Infof("BodyProportion: %+v", float64PointerToString(har.BodyProportion))
-	logger.Infof("StatusCodeMatch: %+v", boolPointerToString(har.StatusCodeMatch))
-	logger.Infof("HeadersMatch: %+v", boolPointerToString(har.HeadersMatch))
-	logger.Infof("TitleMatch: %+v", boolPointerToString(har.TitleMatch))
+	logger.Infof("BodyLengthMatch: %+v", internal.BoolPointerToString(har.BodyLengthMatch))
+	logger.Infof("BodyProportion: %+v", har.BodyProportion)
+	logger.Infof("StatusCodeMatch: %+v", internal.BoolPointerToString(har.StatusCodeMatch))
+	logger.Infof("HeadersMatch: %+v", internal.BoolPointerToString(har.HeadersMatch))
+	logger.Infof("TitleMatch: %+v", internal.BoolPointerToString(har.TitleMatch))
 }
 
 // HTTPAnalysis performs follow-up analysis on the webconnectivity measurement by
@@ -60,7 +44,7 @@ func HTTPAnalysis(tk urlgetter.TestKeys, ctrl ControlResponse) (out HTTPAnalysis
 // the two bodies. This check may return nil, nil when such a
 // comparison would actually not be applicable.
 func HTTPBodyLengthChecks(
-	tk urlgetter.TestKeys, ctrl ControlResponse) (match *bool, percentage *float64) {
+	tk urlgetter.TestKeys, ctrl ControlResponse) (match *bool, proportion float64) {
 	control := ctrl.HTTPRequest.BodyLength
 	if control <= 0 {
 		return
@@ -77,7 +61,6 @@ func HTTPBodyLengthChecks(
 		return
 	}
 	const bodyProportionFactor = 0.7
-	var proportion float64
 	if measurement >= control {
 		proportion = float64(control) / float64(measurement)
 	} else {
@@ -85,7 +68,6 @@ func HTTPBodyLengthChecks(
 	}
 	v := proportion > bodyProportionFactor
 	match = &v
-	percentage = &proportion
 	return
 }
 

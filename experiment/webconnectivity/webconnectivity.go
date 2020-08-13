@@ -144,7 +144,9 @@ func (m Measurer) Run(
 	})
 	tk.ControlFailure = archival.NewFailure(err)
 	// 4. analyze DNS results
-	tk.DNSAnalysisResult = DNSAnalysis(URL, dnsResult, tk.Control)
+	if tk.ControlFailure == nil {
+		tk.DNSAnalysisResult = DNSAnalysis(URL, dnsResult, tk.Control)
+	}
 	sess.Logger().Infof("DNS analysis result: %+v", tk.DNSAnalysisResult)
 	// 5. perform TCP/TLS connects
 	connectsResult := Connects(ctx, ConnectsConfig{

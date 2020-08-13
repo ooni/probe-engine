@@ -23,7 +23,7 @@ func TestHTTPBodyLengthChecks(t *testing.T) {
 		name        string
 		args        args
 		lengthMatch *bool
-		proportion  *float64
+		proportion  float64
 	}{{
 		name:        "nothing",
 		args:        args{},
@@ -89,7 +89,7 @@ func TestHTTPBodyLengthChecks(t *testing.T) {
 			},
 		},
 		lengthMatch: &trueValue,
-		proportion:  (func() *float64 { v := 0.75; return &v })(),
+		proportion:  0.75,
 	}, {
 		name: "match with bigger measurement",
 		args: args{
@@ -109,7 +109,7 @@ func TestHTTPBodyLengthChecks(t *testing.T) {
 			},
 		},
 		lengthMatch: &trueValue,
-		proportion:  (func() *float64 { v := 0.75; return &v })(),
+		proportion:  0.75,
 	}, {
 		name: "not match with bigger control",
 		args: args{
@@ -129,7 +129,7 @@ func TestHTTPBodyLengthChecks(t *testing.T) {
 			},
 		},
 		lengthMatch: &falseValue,
-		proportion:  (func() *float64 { v := 0.5; return &v })(),
+		proportion:  0.5,
 	}, {
 		name: "match with bigger measurement",
 		args: args{
@@ -149,7 +149,7 @@ func TestHTTPBodyLengthChecks(t *testing.T) {
 			},
 		},
 		lengthMatch: &falseValue,
-		proportion:  (func() *float64 { v := 0.5; return &v })(),
+		proportion:  0.5,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

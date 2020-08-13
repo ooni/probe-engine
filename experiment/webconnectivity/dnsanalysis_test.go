@@ -36,7 +36,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSConsistent,
+			DNSConsistency: &webconnectivity.DNSConsistent,
 		},
 	}, {
 		name: "when the failures are not compatible",
@@ -54,7 +54,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSInconsistent,
+			DNSConsistency: &webconnectivity.DNSInconsistent,
 		},
 	}, {
 		name: "when the failures are compatible",
@@ -72,7 +72,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSConsistent,
+			DNSConsistency: &webconnectivity.DNSConsistent,
 		},
 	}, {
 		name: "when the ASNs are equal",
@@ -93,7 +93,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSConsistent,
+			DNSConsistency: &webconnectivity.DNSConsistent,
 		},
 	}, {
 		name: "when the ASNs overlap",
@@ -114,7 +114,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSConsistent,
+			DNSConsistency: &webconnectivity.DNSConsistent,
 		},
 	}, {
 		name: "when the ASNs do not overlap",
@@ -135,7 +135,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSInconsistent,
+			DNSConsistency: &webconnectivity.DNSInconsistent,
 		},
 	}, {
 		name: "when ASNs lookup fails but IPs overlap",
@@ -157,7 +157,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSConsistent,
+			DNSConsistency: &webconnectivity.DNSConsistent,
 		},
 	}, {
 		name: "when ASNs lookup fails and IPs do not overlap",
@@ -179,7 +179,7 @@ func TestDNSAnalysis(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.DNSAnalysisResult{
-			DNSConsistency: webconnectivity.DNSInconsistent,
+			DNSConsistency: &webconnectivity.DNSInconsistent,
 		},
 	}}
 	for _, tt := range tests {

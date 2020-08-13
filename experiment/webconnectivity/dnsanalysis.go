@@ -10,7 +10,7 @@ import (
 // DNSAnalysisResult contains the results of analysing comparing
 // the measurement and the control DNS results.
 type DNSAnalysisResult struct {
-	DNSConsistency string `json:"dns_consistency"`
+	DNSConsistency *string `json:"dns_consistency"`
 }
 
 // DNSNameError is the error returned by the control on NXDOMAIN
@@ -32,11 +32,11 @@ var (
 func DNSAnalysis(URL *url.URL, measurement DNSLookupResult,
 	control ControlResponse) (out DNSAnalysisResult) {
 	// 0. start assuming it's not consistent
-	out.DNSConsistency = DNSInconsistent
+	out.DNSConsistency = &DNSInconsistent
 	// 1. flip to consistent if we're targeting an IP address because the
 	// control will actually return dns_name_error in this case.
 	if net.ParseIP(URL.Hostname()) != nil {
-		out.DNSConsistency = DNSConsistent
+		out.DNSConsistency = &DNSConsistent
 		return
 	}
 	// 2. flip to consistent if the failures are compatible
@@ -45,7 +45,7 @@ func DNSAnalysis(URL *url.URL, measurement DNSLookupResult,
 		case DNSNameError: // the control returns this on NXDOMAIN error
 			switch *measurement.Failure {
 			case modelx.FailureDNSNXDOMAINError:
-				out.DNSConsistency = DNSConsistent
+				out.DNSConsistency = &DNSConsistent
 			}
 		}
 		return
@@ -74,7 +74,7 @@ func DNSAnalysis(URL *url.URL, measurement DNSLookupResult,
 	for key, value := range asnmap {
 		// zero means that ASN lookup failed
 		if key != 0 && (value&inBoth) == inBoth {
-			out.DNSConsistency = DNSConsistent
+			out.DNSConsistency = &DNSConsistent
 			return
 		}
 	}
@@ -90,7 +90,7 @@ func DNSAnalysis(URL *url.URL, measurement DNSLookupResult,
 	for key, value := range ipmap {
 		// just in case an empty string slipped through
 		if key != "" && (value&inBoth) == inBoth {
-			out.DNSConsistency = DNSConsistent
+			out.DNSConsistency = &DNSConsistent
 			return
 		}
 	}
