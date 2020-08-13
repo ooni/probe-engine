@@ -77,6 +77,34 @@ def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
         "webconnectivity_transparent_http_proxy",
         args,
     )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["body_length_match"] == True
+    assert tk["body_proportion"] == 1
+    assert tk["status_code_match"] == True
+    assert tk["headers_match"] == True
+    assert tk["title_match"] == True
+    assert tk["blocking"] == False
+    assert tk["accessible"] == True
+
+def webconnectivity_dns_hijacking(ooni_exe, outfile):
+    """ Test case where there is DNS hijacking towards a transparent proxy. """
+    args = []
+    args.append("-iptables-hijack-dns-to")
+    args.append("127.0.0.1:53")
+    args.append("-dns-proxy-hijack")
+    args.append("example.org")
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://example.org web_connectivity",
+        "webconnectivity_dns_hijacking",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "inconsistent"
+    assert tk["control_failure"] == None
     assert tk["body_length_match"] == True
     assert tk["body_proportion"] == 1
     assert tk["status_code_match"] == True
@@ -93,6 +121,7 @@ def main():
     ooni_exe = sys.argv[1]
     tests = [
         webconnectivity_transparent_http_proxy,
+        webconnectivity_dns_hijacking,
     ]
     for test in tests:
         test(ooni_exe, outfile)
