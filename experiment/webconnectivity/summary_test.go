@@ -17,6 +17,7 @@ func TestSummarize(t *testing.T) {
 		falseValue             = false
 		httpDiff               = "http-diff"
 		httpFailure            = "http-failure"
+		nilstring              *string
 		probeConnectionRefused = modelx.FailureConnectionRefused
 		probeConnectionReset   = modelx.FailureConnectionReset
 		probeEOFError          = modelx.FailureEOFError
@@ -49,6 +50,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       false,
 			Accessible:     &trueValue,
 		},
 	}, {
@@ -60,6 +62,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       nilstring,
 			Accessible:     nil,
 		},
 	}, {
@@ -74,6 +77,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       nilstring,
 			Accessible:     nil,
 		},
 	}, {
@@ -89,6 +93,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &tcpIP,
+			Blocking:       &tcpIP,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -104,6 +109,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &dns,
+			Blocking:       &dns,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -119,6 +125,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       nilstring,
 			Accessible:     nil,
 		},
 	}, {
@@ -134,6 +141,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       nilstring,
 			Accessible:     nil,
 		},
 	}, {
@@ -143,6 +151,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       nilstring,
 			Accessible:     nil,
 		},
 	}, {
@@ -156,6 +165,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &tcpIP,
+			Blocking:       &tcpIP,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -169,6 +179,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -182,6 +193,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &dns,
+			Blocking:       &dns,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -195,6 +207,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -208,6 +221,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &tcpIP,
+			Blocking:       &tcpIP,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -221,6 +235,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -234,6 +249,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -247,6 +263,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -263,6 +280,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &dns,
+			Blocking:       &dns,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -279,6 +297,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -294,6 +313,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       falseValue,
 			Accessible:     &trueValue,
 		},
 	}, {
@@ -309,6 +329,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       falseValue,
 			Accessible:     &trueValue,
 		},
 	}, {
@@ -324,6 +345,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
+			Blocking:       falseValue,
 			Accessible:     &trueValue,
 		},
 	}, {
@@ -342,6 +364,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &dns,
+			Blocking:       &dns,
 			Accessible:     &falseValue,
 		},
 	}, {
@@ -360,6 +383,7 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: &httpDiff,
+			Blocking:       &httpDiff,
 			Accessible:     &falseValue,
 		},
 	}}
