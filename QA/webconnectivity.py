@@ -29,39 +29,41 @@ def execute_jafar_and_return_validated_test_keys(
     tk = common.execute_jafar_and_miniooni(
         ooni_exe, outfile, experiment_args, tag, args
     )
-    assert isinstance(tk["requests"], list)
-    assert len(tk["requests"]) > 0
-    for entry in tk["requests"]:
-        assert isinstance(entry, dict)
-        failure = entry["failure"]
-        assert isinstance(failure, str) or failure is None
-        assert isinstance(entry["request"], dict)
-        req = entry["request"]
-        common.check_maybe_binary_value(req["body"])
-        assert isinstance(req["headers"], dict)
-        for key, value in req["headers"].items():
-            assert isinstance(key, str)
-            common.check_maybe_binary_value(value)
-        assert isinstance(req["method"], str)
-        assert isinstance(entry["response"], dict)
-        resp = entry["response"]
-        common.check_maybe_binary_value(resp["body"])
-        assert isinstance(resp["code"], int)
-        if resp["headers"] is not None:
-            for key, value in resp["headers"].items():
+    if tk["requests"]:
+        assert isinstance(tk["requests"], list)
+        assert len(tk["requests"]) > 0
+        for entry in tk["requests"]:
+            assert isinstance(entry, dict)
+            failure = entry["failure"]
+            assert isinstance(failure, str) or failure is None
+            assert isinstance(entry["request"], dict)
+            req = entry["request"]
+            common.check_maybe_binary_value(req["body"])
+            assert isinstance(req["headers"], dict)
+            for key, value in req["headers"].items():
                 assert isinstance(key, str)
                 common.check_maybe_binary_value(value)
-    assert isinstance(tk["tcp_connect"], list)
-    assert len(tk["tcp_connect"]) > 0
-    for entry in tk["tcp_connect"]:
-        assert isinstance(entry, dict)
-        assert isinstance(entry["ip"], str)
-        assert isinstance(entry["port"], int)
-        assert isinstance(entry["status"], dict)
-        failure = entry["status"]["failure"]
-        success = entry["status"]["success"]
-        assert isinstance(failure, str) or failure is None
-        assert isinstance(success, bool)
+            assert isinstance(req["method"], str)
+            assert isinstance(entry["response"], dict)
+            resp = entry["response"]
+            common.check_maybe_binary_value(resp["body"])
+            assert isinstance(resp["code"], int)
+            if resp["headers"] is not None:
+                for key, value in resp["headers"].items():
+                    assert isinstance(key, str)
+                    common.check_maybe_binary_value(value)
+    if tk["tcp_connect"]:
+        assert isinstance(tk["tcp_connect"], list)
+        assert len(tk["tcp_connect"]) > 0
+        for entry in tk["tcp_connect"]:
+            assert isinstance(entry, dict)
+            assert isinstance(entry["ip"], str)
+            assert isinstance(entry["port"], int)
+            assert isinstance(entry["status"], dict)
+            failure = entry["status"]["failure"]
+            success = entry["status"]["success"]
+            assert isinstance(failure, str) or failure is None
+            assert isinstance(success, bool)
     return tk
 
 
@@ -89,6 +91,7 @@ def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
     assert tk["blocking"] == False
     assert tk["accessible"] == True
 
+
 def webconnectivity_dns_hijacking(ooni_exe, outfile):
     """ Test case where there is DNS hijacking towards a transparent proxy. """
     args = []
@@ -114,6 +117,7 @@ def webconnectivity_dns_hijacking(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+
 
 def webconnectivity_control_unreachable_http(ooni_exe, outfile):
     """ Test case where the control is unreachable and we're using the
@@ -141,6 +145,31 @@ def webconnectivity_control_unreachable_http(ooni_exe, outfile):
     assert tk["accessible"] == None
 
 
+def webconnectivity_nonexistent_domain(ooni_exe, outfile):
+    """ Test case where the domain does not exist """
+    if "measurement_kit" in ooni_exe:
+        return  # MK result does not look correct
+    args = []
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://antani.xyz web_connectivity",
+        "webconnectivity_nonexistent_domain",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == "dns_nxdomain_error"
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == None
+    assert tk["accessible"] == None
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -150,6 +179,7 @@ def main():
         webconnectivity_transparent_http_proxy,
         webconnectivity_dns_hijacking,
         webconnectivity_control_unreachable_http,
+        webconnectivity_nonexistent_domain,
     ]
     for test in tests:
         test(ooni_exe, outfile)
