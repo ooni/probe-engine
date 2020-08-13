@@ -80,6 +80,7 @@ def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
     assert tk["dns_experiment_failure"] == None
     assert tk["dns_consistency"] == "consistent"
     assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
     assert tk["body_length_match"] == True
     assert tk["body_proportion"] == 1
     assert tk["status_code_match"] == True
@@ -105,6 +106,7 @@ def webconnectivity_dns_hijacking(ooni_exe, outfile):
     assert tk["dns_experiment_failure"] == None
     assert tk["dns_consistency"] == "inconsistent"
     assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
     assert tk["body_length_match"] == True
     assert tk["body_proportion"] == 1
     assert tk["status_code_match"] == True
@@ -112,6 +114,31 @@ def webconnectivity_dns_hijacking(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+
+def webconnectivity_control_unreachable_http(ooni_exe, outfile):
+    """ Test case where the control is unreachable and we're using the
+        plaintext HTTP protocol rather than HTTPS """
+    args = []
+    args.append("-iptables-reset-keyword")
+    args.append("wcth.ooni.io")
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://example.org web_connectivity",
+        "webconnectivity_control_unreachable_http",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == None
+    assert tk["control_failure"] == "connection_reset"
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == None
+    assert tk["accessible"] == None
 
 
 def main():
@@ -122,6 +149,7 @@ def main():
     tests = [
         webconnectivity_transparent_http_proxy,
         webconnectivity_dns_hijacking,
+        webconnectivity_control_unreachable_http,
     ]
     for test in tests:
         test(ooni_exe, outfile)

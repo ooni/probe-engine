@@ -71,7 +71,7 @@ func TestSummarize(t *testing.T) {
 			tk: &webconnectivity.TestKeys{
 				DNSExperimentFailure: &probeNXDOMAIN,
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSConsistent,
+					DNSConsistency: &webconnectivity.DNSConsistent,
 				},
 			},
 		},
@@ -85,7 +85,7 @@ func TestSummarize(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSConsistent,
+					DNSConsistency: &webconnectivity.DNSConsistent,
 				},
 				TCPConnectAttempts:  7,
 				TCPConnectSuccesses: 0,
@@ -101,7 +101,7 @@ func TestSummarize(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSInconsistent,
+					DNSConsistency: &webconnectivity.DNSInconsistent,
 				},
 				TCPConnectAttempts:  7,
 				TCPConnectSuccesses: 0,
@@ -117,7 +117,10 @@ func TestSummarize(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: "ANTANI",
+					DNSConsistency: func() *string {
+						s := "ANTANI"
+						return &s
+					}(),
 				},
 				TCPConnectAttempts:  7,
 				TCPConnectSuccesses: 0,
@@ -271,7 +274,7 @@ func TestSummarize(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSInconsistent,
+					DNSConsistency: &webconnectivity.DNSInconsistent,
 				},
 				Requests: []archival.RequestEntry{{
 					Failure: &probeSSLUnknownAuth,
@@ -288,7 +291,7 @@ func TestSummarize(t *testing.T) {
 		args: args{
 			tk: &webconnectivity.TestKeys{
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSInconsistent,
+					DNSConsistency: &webconnectivity.DNSInconsistent,
 				},
 				Requests: []archival.RequestEntry{{
 					Failure: &probeSSLUnknownAuth,
@@ -358,7 +361,7 @@ func TestSummarize(t *testing.T) {
 				},
 				Requests: []archival.RequestEntry{{}},
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSInconsistent,
+					DNSConsistency: &webconnectivity.DNSInconsistent,
 				},
 			},
 		},
@@ -377,7 +380,7 @@ func TestSummarize(t *testing.T) {
 				},
 				Requests: []archival.RequestEntry{{}},
 				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
-					DNSConsistency: webconnectivity.DNSConsistent,
+					DNSConsistency: &webconnectivity.DNSConsistent,
 				},
 			},
 		},

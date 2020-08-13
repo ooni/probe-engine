@@ -1,9 +1,9 @@
 package webconnectivity
 
 import (
-	"fmt"
 	"strings"
 
+	"github.com/ooni/probe-engine/experiment/webconnectivity/internal"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
@@ -54,18 +54,10 @@ func DetermineBlocking(s Summary) interface{} {
 	return s.BlockingReason
 }
 
-func stringPointerToString(v *string) (out string) {
-	out = "nil"
-	if v != nil {
-		out = fmt.Sprintf("%+v", *v)
-	}
-	return
-}
-
 // Log logs the summary using the provided logger.
 func (s Summary) Log(logger model.Logger) {
-	logger.Infof("Blocking %+v", stringPointerToString(s.BlockingReason))
-	logger.Infof("Accessible %+v", boolPointerToString(s.Accessible))
+	logger.Infof("Blocking %+v", internal.StringPointerToString(s.BlockingReason))
+	logger.Infof("Accessible %+v", internal.BoolPointerToString(s.Accessible))
 }
 
 // Summarize computes the summary from the TestKeys.
@@ -96,22 +88,23 @@ func Summarize(tk *TestKeys) (out Summary) {
 	if tk.ControlFailure != nil {
 		return
 	}
-	// If DNS failed with NXDOMAIN and the control is consistent, then it
+	// If DNS failed with NXDOMAIN and the control DNS is consistent, then it
 	// means this website does not exist anymore.
 	if tk.DNSExperimentFailure != nil &&
 		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError &&
-		tk.DNSConsistency == DNSConsistent {
+		tk.DNSConsistency != nil && *tk.DNSConsistency == DNSConsistent {
 		return
 	}
-	// If we tried to connect more than once and never succeded and the
-	// DNS is consistent, then it's TCP/IP blocking. Otherwise, it's not
-	// unreasonable to assume that the DNS had lied to us.
-	if tk.TCPConnectAttempts > 0 && tk.TCPConnectSuccesses <= 0 {
-		switch tk.DNSConsistency {
+	// If we tried to connect more than once and never succeded and we were
+	// able to measure DNS consistency, then we can conclude something.
+	if tk.TCPConnectAttempts > 0 && tk.TCPConnectSuccesses <= 0 && tk.DNSConsistency != nil {
+		switch *tk.DNSConsistency {
 		case DNSConsistent:
+			// If the DNS is consistent, then it's TCP/IP blocking.
 			out.BlockingReason = &tcpIP
 			out.Accessible = &inaccessible
 		case DNSInconsistent:
+			// Otherwise, the culprit is the DNS.
 			out.BlockingReason = &dns
 			out.Accessible = &inaccessible
 		default:
@@ -179,7 +172,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 		// chain is longer, for now better to be conservative. (I would argue
 		// that with a lying DNS that's likely the culprit, honestly.)
 		if out.BlockingReason != nil && len(tk.Requests) == 1 &&
-			tk.DNSConsistency == DNSInconsistent {
+			tk.DNSConsistency != nil && *tk.DNSConsistency == DNSInconsistent {
 			out.BlockingReason = &dns
 		}
 		return
@@ -204,7 +197,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 	}
 	// It seems we didn't get the expected web page. What now? Well, if
 	// the DNS does not seem trustworthy, let us blame it.
-	if tk.DNSConsistency == DNSInconsistent {
+	if tk.DNSConsistency != nil && *tk.DNSConsistency == DNSInconsistent {
 		out.BlockingReason = &dns
 		out.Accessible = &inaccessible
 		return
