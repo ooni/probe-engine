@@ -237,6 +237,35 @@ def webconnectivity_http_connection_refused_with_consistent_dns(ooni_exe, outfil
     assert tk["accessible"] == False
 
 
+def webconnectivity_http_connection_reset_with_consistent_dns(ooni_exe, outfile):
+    """ Test case where there's RST-based blocking blocking w/ consistent DNS that
+        occurs while we're following the chain of redirects. """
+    # We use a bit.ly link redirecting to nexa.polito.it. We block the Host header
+    # used for nexa.polito.it. So the error should happen in the redirect chain.
+    args = [
+        "-iptables-reset-keyword",
+        "Host: nexa",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://bit.ly/3h9EJR3 web_connectivity",
+        "webconnectivity_tcpip_blocking_with_consistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == "connection_reset"
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == "http-failure"
+    assert tk["accessible"] == False
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -250,6 +279,7 @@ def main():
         webconnectivity_tcpip_blocking_with_consistent_dns,
         webconnectivity_tcpip_blocking_with_inconsistent_dns,
         webconnectivity_http_connection_refused_with_consistent_dns,
+        webconnectivity_http_connection_reset_with_consistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)
