@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ooni/probe-engine/experiment/webconnectivity/internal"
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
@@ -147,7 +148,8 @@ func (m Measurer) Run(
 	if tk.ControlFailure == nil {
 		tk.DNSAnalysisResult = DNSAnalysis(URL, dnsResult, tk.Control)
 	}
-	sess.Logger().Infof("DNS analysis result: %+v", tk.DNSAnalysisResult)
+	sess.Logger().Infof("DNS analysis result: %+v", internal.StringPointerToString(
+		tk.DNSAnalysisResult.DNSConsistency))
 	// 5. perform TCP/TLS connects
 	connectsResult := Connects(ctx, ConnectsConfig{
 		Session:       sess,
