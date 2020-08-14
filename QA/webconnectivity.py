@@ -112,8 +112,6 @@ def webconnectivity_control_unreachable_http(ooni_exe, outfile):
 
 def webconnectivity_nonexistent_domain(ooni_exe, outfile):
     """ Test case where the domain does not exist """
-    if "measurement_kit" in ooni_exe:
-        return  # MK result does not look correct
     args = []
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
@@ -122,17 +120,30 @@ def webconnectivity_nonexistent_domain(ooni_exe, outfile):
         "webconnectivity_nonexistent_domain",
         args,
     )
-    assert tk["dns_experiment_failure"] == "dns_nxdomain_error"
+    # TODO(bassosimone): Debateable result. We need to do better here.
+    # See <https://github.com/ooni/probe-engine/issues/579>.
+    #
+    # Note that MK is not doing it right here because it's suppressing the
+    # dns_nxdomain_error that instead is very informative. Yet, it is reporting
+    # a failure in HTTP, which miniooni does not because it does not make
+    # sense to perform HTTP when there are no IP addresses.
+    if "miniooni" in ooni_exe:
+        assert tk["dns_experiment_failure"] == "dns_nxdomain_error"
+    else:
+        assert tk["dns_experiment_failure"] == None
     assert tk["dns_consistency"] == "consistent"
     assert tk["control_failure"] == None
-    assert tk["http_experiment_failure"] == None
+    if "miniooni" in ooni_exe:
+        assert tk["http_experiment_failure"] == None
+    else:
+        assert tk["http_experiment_failure"] == "dns_lookup_error"
     assert tk["body_length_match"] == None
     assert tk["body_proportion"] == 0
     assert tk["status_code_match"] == None
     assert tk["headers_match"] == None
     assert tk["title_match"] == None
-    assert tk["blocking"] == None
-    assert tk["accessible"] == None
+    assert tk["blocking"] == False
+    assert tk["accessible"] == True
 
 
 def webconnectivity_tcpip_blocking_with_consistent_dns(ooni_exe, outfile):
