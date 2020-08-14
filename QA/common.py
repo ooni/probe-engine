@@ -5,6 +5,7 @@ import json
 import os
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -59,3 +60,13 @@ def check_maybe_binary_value(value):
         and value["format"] == "base64"
         and isinstance(value["data"], str)
     )
+
+
+def with_free_port(func):
+    """ This function executes |func| passing it a port number on localhost
+        which is bound but not listening for new connections """
+    # See <https://stackoverflow.com/a/45690594>
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        func(sock.getsockname()[1])
