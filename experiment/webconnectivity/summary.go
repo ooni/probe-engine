@@ -129,8 +129,9 @@ func Summarize(tk *TestKeys) (out Summary) {
 		switch *tk.Requests[0].Failure {
 		case modelx.FailureConnectionRefused:
 			// This is possibly because a subsequent connection to some
-			// other endpoint has been blocked. So tcp-ip.
-			out.BlockingReason = &tcpIP
+			// other endpoint has been blocked. We call this http-failure
+			// because this is what MK would actually do.
+			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 		case modelx.FailureConnectionReset:
 			// We don't currently support TLS failures and we don't have a
