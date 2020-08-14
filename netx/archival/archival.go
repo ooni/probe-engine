@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"sort"
@@ -109,15 +108,18 @@ func NewFailure(err error) *string {
 	if err == nil {
 		return nil
 	}
-	var errWrapper *modelx.ErrWrapper
-	if errors.As(err, &errWrapper) {
-		s := errWrapper.Failure
-		if s == "" {
-			s = "unknown_failure: errWrapper.Failure is empty"
-		}
-		return &s
+	// The following code guarantees that the error is always wrapped even
+	// when we could not actually hit our code that does the wrapping. A case
+	// in which this happen is with context deadline for HTTP.
+	err = errorx.SafeErrWrapperBuilder{
+		Error:     err,
+		Operation: modelx.TopLevelOperation,
+	}.MaybeBuild()
+	errWrapper := err.(*modelx.ErrWrapper)
+	s := errWrapper.Failure
+	if s == "" {
+		s = "unknown_failure: errWrapper.Failure is empty"
 	}
-	s := fmt.Sprintf("unknown_failure: %s", errorx.Scrub(err.Error()))
 	return &s
 }
 

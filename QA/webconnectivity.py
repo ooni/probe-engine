@@ -334,6 +334,40 @@ def webconnectivity_http_eof_error_with_consistent_dns(ooni_exe, outfile):
     assert tk["accessible"] == False
 
 
+def webconnectivity_http_generic_timeout_error_with_consistent_dns(ooni_exe, outfile):
+    """ Test case where there's a redirection and the redirected request cannot
+        continue because a generic_timeout_error error occurs. """
+    # We use a bit.ly link redirecting to nexa.polito.it. We block the HTTP request
+    # for nexa.polito.it using the cleartext bad proxy. So the error should happen in
+    # the redirect chain and should be timeout.
+    args = [
+        "-iptables-hijack-dns-to",
+        "127.0.0.1:53",
+        "-dns-proxy-hijack",
+        "nexa.polito.it",
+        "-iptables-drop-keyword",
+        "Host: nexa",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://bit.ly/3h9EJR3 web_connectivity",
+        "webconnectivity_http_generic_timeout_error_with_consistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == "generic_timeout_error"
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == "http-failure"
+    assert tk["accessible"] == False
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -350,6 +384,7 @@ def main():
         webconnectivity_http_connection_reset_with_consistent_dns,
         webconnectivity_http_nxdomain_with_consistent_dns,
         webconnectivity_http_eof_error_with_consistent_dns,
+        webconnectivity_http_generic_timeout_error_with_consistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)

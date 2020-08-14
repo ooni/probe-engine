@@ -156,9 +156,8 @@ func Summarize(tk *TestKeys) (out Summary) {
 			out.Accessible = &inaccessible
 		case modelx.FailureGenericTimeoutError:
 			// Alas, here we don't know whether it's connect or whether it's
-			// perhaps the TLS handshake. Yet, there is some common ground here
-			// that suddenly all our packets are discared at TCP/IP level.
-			out.BlockingReason = &tcpIP
+			// perhaps the TLS handshake. So use the same classification used by MK.
+			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 		case modelx.FailureSSLInvalidHostname,
 			modelx.FailureSSLInvalidCertificate,
