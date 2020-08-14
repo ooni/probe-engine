@@ -29,41 +29,6 @@ def execute_jafar_and_return_validated_test_keys(
     tk = common.execute_jafar_and_miniooni(
         ooni_exe, outfile, experiment_args, tag, args
     )
-    if tk["requests"]:
-        assert isinstance(tk["requests"], list)
-        assert len(tk["requests"]) > 0
-        for entry in tk["requests"]:
-            assert isinstance(entry, dict)
-            failure = entry["failure"]
-            assert isinstance(failure, str) or failure is None
-            assert isinstance(entry["request"], dict)
-            req = entry["request"]
-            common.check_maybe_binary_value(req["body"])
-            assert isinstance(req["headers"], dict)
-            for key, value in req["headers"].items():
-                assert isinstance(key, str)
-                common.check_maybe_binary_value(value)
-            assert isinstance(req["method"], str)
-            assert isinstance(entry["response"], dict)
-            resp = entry["response"]
-            common.check_maybe_binary_value(resp["body"])
-            assert isinstance(resp["code"], int)
-            if resp["headers"] is not None:
-                for key, value in resp["headers"].items():
-                    assert isinstance(key, str)
-                    common.check_maybe_binary_value(value)
-    if tk["tcp_connect"]:
-        assert isinstance(tk["tcp_connect"], list)
-        assert len(tk["tcp_connect"]) > 0
-        for entry in tk["tcp_connect"]:
-            assert isinstance(entry, dict)
-            assert isinstance(entry["ip"], str)
-            assert isinstance(entry["port"], int)
-            assert isinstance(entry["status"], dict)
-            failure = entry["status"]["failure"]
-            success = entry["status"]["success"]
-            assert isinstance(failure, str) or failure is None
-            assert isinstance(success, bool)
     return tk
 
 
@@ -170,6 +135,33 @@ def webconnectivity_nonexistent_domain(ooni_exe, outfile):
     assert tk["accessible"] == None
 
 
+def webconnectivity_tcpip_blocking_with_consistent_dns(ooni_exe, outfile):
+    """ Test case where there's TCP/IP blocking w/ consistent DNS """
+    ip = socket.gethostbyname("nexa.polito.it")
+    args = [
+        "-iptables-drop-ip",
+        ip,
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://nexa.polito.it web_connectivity",
+        "webconnectivity_tcpip_blocking_with_consistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == "generic_timeout_error"
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == "tcp_ip"
+    assert tk["accessible"] == False
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -180,6 +172,7 @@ def main():
         webconnectivity_dns_hijacking,
         webconnectivity_control_unreachable_http,
         webconnectivity_nonexistent_domain,
+        webconnectivity_tcpip_blocking_with_consistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)
