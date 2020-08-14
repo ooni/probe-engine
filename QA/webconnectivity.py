@@ -221,7 +221,7 @@ def webconnectivity_http_connection_refused_with_consistent_dns(ooni_exe, outfil
         ooni_exe,
         outfile,
         "-i https://bit.ly/3h9EJR3 web_connectivity",
-        "webconnectivity_tcpip_blocking_with_consistent_dns",
+        "webconnectivity_http_connection_refused_with_consistent_dns",
         args,
     )
     assert tk["dns_experiment_failure"] == None
@@ -250,7 +250,7 @@ def webconnectivity_http_connection_reset_with_consistent_dns(ooni_exe, outfile)
         ooni_exe,
         outfile,
         "-i https://bit.ly/3h9EJR3 web_connectivity",
-        "webconnectivity_tcpip_blocking_with_consistent_dns",
+        "webconnectivity_http_connection_reset_with_consistent_dns",
         args,
     )
     assert tk["dns_experiment_failure"] == None
@@ -263,6 +263,40 @@ def webconnectivity_http_connection_reset_with_consistent_dns(ooni_exe, outfile)
     assert tk["headers_match"] == None
     assert tk["title_match"] == None
     assert tk["blocking"] == "http-failure"
+    assert tk["accessible"] == False
+
+
+def webconnectivity_http_nxdomain_with_consistent_dns(ooni_exe, outfile):
+    """ Test case where there's a redirection and the redirected request cannot
+        continue because a NXDOMAIN error occurs. """
+    # We use a bit.ly link redirecting to nexa.polito.it. We block the DNS request
+    # for nexa.polito.it. So the error should happen in the redirect chain.
+    args = [
+        "-iptables-hijack-dns-to",
+        "127.0.0.1:53",
+        "-dns-proxy-block",
+        "nexa.polito.it",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://bit.ly/3h9EJR3 web_connectivity",
+        "webconnectivity_http_nxdomain_with_consistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert (
+        tk["http_experiment_failure"] == "dns_nxdomain_error"  # miniooni
+        or tk["http_experiment_failure"] == "dns_lookup_error"  # MK
+    )
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == "dns"
     assert tk["accessible"] == False
 
 
@@ -280,6 +314,7 @@ def main():
         webconnectivity_tcpip_blocking_with_inconsistent_dns,
         webconnectivity_http_connection_refused_with_consistent_dns,
         webconnectivity_http_connection_reset_with_consistent_dns,
+        webconnectivity_http_nxdomain_with_consistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)
