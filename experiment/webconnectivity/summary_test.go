@@ -167,8 +167,8 @@ func TestSummarize(t *testing.T) {
 			},
 		},
 		wantOut: webconnectivity.Summary{
-			BlockingReason: &tcpIP,
-			Blocking:       &tcpIP,
+			BlockingReason: &httpFailure,
+			Blocking:       &httpFailure,
 			Accessible:     &falseValue,
 		},
 	}, {
