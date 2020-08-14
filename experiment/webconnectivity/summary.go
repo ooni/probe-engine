@@ -93,6 +93,11 @@ func Summarize(tk *TestKeys) (out Summary) {
 	if tk.DNSExperimentFailure != nil &&
 		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError &&
 		tk.DNSConsistency != nil && *tk.DNSConsistency == DNSConsistent {
+		// TODO(bassosimone): MK flags this as accessible. This result is debateable. We
+		// are doing what MK does. But we most likely want to make it better later.
+		//
+		// See <https://github.com/ooni/probe-engine/issues/579>.
+		out.Accessible = &accessible
 		return
 	}
 	// If we tried to connect more than once and never succeded and we were

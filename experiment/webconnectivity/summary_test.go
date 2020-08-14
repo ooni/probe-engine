@@ -77,8 +77,8 @@ func TestSummarize(t *testing.T) {
 		},
 		wantOut: webconnectivity.Summary{
 			BlockingReason: nil,
-			Blocking:       nilstring,
-			Accessible:     nil,
+			Blocking:       false,
+			Accessible:     &trueValue,
 		},
 	}, {
 		name: "with TCP total failure and consistent DNS",
