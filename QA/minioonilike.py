@@ -10,11 +10,19 @@
     modify other tools to match miniooni, but this seems useless. """
 
 import argparse
+import os
 import shlex
 import sys
 
 sys.path.insert(0, ".")
 import common
+
+
+def file_must_exist(pathname):
+    """ Throws an exception if the given file does not actually exist. """
+    if not os.path.isfile(pathname):
+        raise RuntimeError("missing {}: please run miniooni first".format(pathname))
+    return pathname
 
 
 def main():
@@ -37,6 +45,25 @@ def main():
 
     args = []
     args.append(command)
+    if "measurement_kit" in command:
+        args.extend(
+            [
+                "--ca-bundle-path",
+                file_must_exist("{}/.miniooni/assets/ca-bundle.pem".format(out.home)),
+            ]
+        )
+        args.extend(
+            [
+                "--geoip-country-path",
+                file_must_exist("{}/.miniooni/assets/country.mmdb".format(out.home)),
+            ]
+        )
+        args.extend(
+            [
+                "--geoip-asn-path",
+                file_must_exist("{}/.miniooni/assets/asn.mmdb".format(out.home)),
+            ]
+        )
     if out.home and "miniooni" in command:
         args.extend(["--home", out.home])  # home applies to miniooni only
     if out.input:
