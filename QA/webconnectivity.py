@@ -501,6 +501,64 @@ def webconnectivity_https_successful_website(ooni_exe, outfile):
     assert tk["accessible"] == True
 
 
+def webconnectivity_http_diff_with_inconsistent_dns(ooni_exe, outfile):
+    """ Test case where we get an http-diff and the DNS is inconsistent """
+    args = [
+        "-iptables-hijack-dns-to",
+        "127.0.0.1:53",
+        "-dns-proxy-hijack",
+        "neverssl",
+        "-http-proxy-block",
+        "neverssl.com",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://neverssl.com/ web_connectivity",
+        "webconnectivity_http_diff_with_inconsistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "inconsistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == False
+    assert tk["body_proportion"] < 1
+    assert tk["status_code_match"] == False
+    assert tk["headers_match"] == False
+    assert tk["title_match"] == False
+    assert tk["blocking"] == "dns"
+    assert tk["accessible"] == False
+
+
+def webconnectivity_http_diff_with_consistent_dns(ooni_exe, outfile):
+    """ Test case where we get an http-diff and the DNS is consistent """
+    args = [
+        "-iptables-hijack-http-to",
+        "127.0.0.1:80",
+        "-http-proxy-block",
+        "neverssl.com",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://neverssl.com/ web_connectivity",
+        "webconnectivity_http_diff_with_consistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == False
+    assert tk["body_proportion"] < 1
+    assert tk["status_code_match"] == False
+    assert tk["headers_match"] == False
+    assert tk["title_match"] == False
+    assert tk["blocking"] == "http-diff"
+    assert tk["accessible"] == False
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -523,6 +581,8 @@ def main():
         webconnectivity_http_connection_reset_with_inconsistent_dns,
         webconnectivity_http_successful_website,
         webconnectivity_https_successful_website,
+        webconnectivity_http_diff_with_inconsistent_dns,
+        webconnectivity_http_diff_with_consistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)
