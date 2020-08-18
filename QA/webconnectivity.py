@@ -455,6 +455,52 @@ def webconnectivity_http_connection_reset_with_inconsistent_dns(ooni_exe, outfil
     assert tk["accessible"] == False
 
 
+def webconnectivity_http_successful_website(ooni_exe, outfile):
+    """ Test case where we succeed with an HTTP only webpage """
+    args = []
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://neverssl.com/ web_connectivity",
+        "webconnectivity_http_successful_website",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == True
+    assert tk["body_proportion"] == 1
+    assert tk["status_code_match"] == True
+    assert tk["headers_match"] == True
+    assert tk["title_match"] == True
+    assert tk["blocking"] == False
+    assert tk["accessible"] == True
+
+
+def webconnectivity_https_successful_website(ooni_exe, outfile):
+    """ Test case where we succeed with an HTTPS only webpage """
+    args = []
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://example.com/ web_connectivity",
+        "webconnectivity_https_successful_website",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "consistent"
+    assert tk["control_failure"] == None
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == True
+    assert tk["body_proportion"] == 1
+    assert tk["status_code_match"] == True
+    assert tk["headers_match"] == True
+    assert tk["title_match"] == True
+    assert tk["blocking"] == False
+    assert tk["accessible"] == True
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit("usage: %s /path/to/ooniprobelegacy-like/binary" % sys.argv[0])
@@ -475,6 +521,8 @@ def main():
         webconnectivity_http_eof_error_with_consistent_dns,
         webconnectivity_http_generic_timeout_error_with_consistent_dns,
         webconnectivity_http_connection_reset_with_inconsistent_dns,
+        webconnectivity_http_successful_website,
+        webconnectivity_https_successful_website,
     ]
     for test in tests:
         test(ooni_exe, outfile)
