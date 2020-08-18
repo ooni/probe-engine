@@ -100,6 +100,13 @@ func Summarize(tk *TestKeys) (out Summary) {
 		out.Accessible = &accessible
 		return
 	}
+	// Otherwise, if DNS failed with NXDOMAIN, it's DNS based blocking.
+	if tk.DNSExperimentFailure != nil &&
+		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError {
+		out.Accessible = &inaccessible
+		out.BlockingReason = &dns
+		return
+	}
 	// If we tried to connect more than once and never succeded and we were
 	// able to measure DNS consistency, then we can conclude something.
 	if tk.TCPConnectAttempts > 0 && tk.TCPConnectSuccesses <= 0 && tk.DNSConsistency != nil {
