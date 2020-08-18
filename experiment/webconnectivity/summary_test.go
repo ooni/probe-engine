@@ -81,6 +81,21 @@ func TestSummarize(t *testing.T) {
 			Accessible:     &trueValue,
 		},
 	}, {
+		name: "with NXDOMAIN measured only by the probe",
+		args: args{
+			tk: &webconnectivity.TestKeys{
+				DNSExperimentFailure: &probeNXDOMAIN,
+				DNSAnalysisResult: webconnectivity.DNSAnalysisResult{
+					DNSConsistency: &webconnectivity.DNSInconsistent,
+				},
+			},
+		},
+		wantOut: webconnectivity.Summary{
+			BlockingReason: &dns,
+			Blocking:       &dns,
+			Accessible:     &falseValue,
+		},
+	}, {
 		name: "with TCP total failure and consistent DNS",
 		args: args{
 			tk: &webconnectivity.TestKeys{
