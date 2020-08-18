@@ -1,5 +1,8 @@
 name: qa
-on: [push]
+on:
+  push:
+  schedule:
+    - cron: "14 17 * * 3"
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
