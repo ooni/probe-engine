@@ -32,6 +32,32 @@ def execute_jafar_and_return_validated_test_keys(
     return tk
 
 
+def webconnectivity_http_ok_with_control_failure(ooni_exe, outfile):
+    """ Successful HTTP measurement but control failure. """
+    args = [
+        "-iptables-reset-keyword",
+        "wcth.ooni.io",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i http://neverssl.com/ web_connectivity",
+        "webconnectivity_http_ok_with_control_failure",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == None
+    assert tk["control_failure"] == "connection_reset"
+    assert tk["http_experiment_failure"] == None
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == None
+    assert tk["accessible"] == None
+
+
 def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
     """ Test case where we pass through a transparent HTTP proxy """
     args = []
@@ -405,6 +431,7 @@ def main():
     outfile = "webconnectivity.jsonl"
     ooni_exe = sys.argv[1]
     tests = [
+        webconnectivity_http_ok_with_control_failure,
         webconnectivity_transparent_http_proxy,
         webconnectivity_dns_hijacking,
         webconnectivity_control_unreachable_http,
