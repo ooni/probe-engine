@@ -32,6 +32,15 @@ def execute_jafar_and_return_validated_test_keys(
     return tk
 
 
+def assert_status_flags_are(ooni_exe, tk, desired):
+    """ Checks whether the status flags are what we expect them to
+        be when we're running miniooni. This check only makes sense
+        with miniooni b/c status flags are a miniooni extension. """
+    if "miniooni" not in ooni_exe:
+        return
+    assert tk["x_status"] == desired
+
+
 def webconnectivity_https_ok_with_control_failure(ooni_exe, outfile):
     """ Successful HTTPS measurement but control failure. """
     args = [
@@ -60,6 +69,7 @@ def webconnectivity_https_ok_with_control_failure(ooni_exe, outfile):
     else:
         assert tk["blocking"] == None
         assert tk["accessible"] == None
+    assert_status_flags_are(ooni_exe, tk, 1)
 
 
 def webconnectivity_http_ok_with_control_failure(ooni_exe, outfile):
@@ -86,6 +96,7 @@ def webconnectivity_http_ok_with_control_failure(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == None
     assert tk["accessible"] == None
+    assert_status_flags_are(ooni_exe, tk, 8)
 
 
 def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
@@ -111,6 +122,7 @@ def webconnectivity_transparent_http_proxy(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 1)
 
 
 def webconnectivity_dns_hijacking(ooni_exe, outfile):
@@ -138,6 +150,7 @@ def webconnectivity_dns_hijacking(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 1)
 
 
 def webconnectivity_control_unreachable_and_using_http(ooni_exe, outfile):
@@ -164,6 +177,7 @@ def webconnectivity_control_unreachable_and_using_http(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == None
     assert tk["accessible"] == None
+    assert_status_flags_are(ooni_exe, tk, 8)
 
 
 def webconnectivity_nonexistent_domain(ooni_exe, outfile):
@@ -205,6 +219,7 @@ def webconnectivity_nonexistent_domain(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 2052)
 
 
 def webconnectivity_tcpip_blocking_with_consistent_dns(ooni_exe, outfile):
@@ -232,6 +247,7 @@ def webconnectivity_tcpip_blocking_with_consistent_dns(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == "tcp_ip"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 4224)
 
 
 def webconnectivity_tcpip_blocking_with_inconsistent_dns(ooni_exe, outfile):
@@ -264,6 +280,7 @@ def webconnectivity_tcpip_blocking_with_inconsistent_dns(ooni_exe, outfile):
         assert tk["title_match"] == None
         assert tk["blocking"] == "dns"
         assert tk["accessible"] == False
+        assert_status_flags_are(ooni_exe, tk, 4256)
 
     common.with_free_port(runner)
 
@@ -296,6 +313,7 @@ def webconnectivity_http_connection_refused_with_consistent_dns(ooni_exe, outfil
     assert tk["title_match"] == None
     assert tk["blocking"] == "http-failure"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8320)
 
 
 def webconnectivity_http_connection_reset_with_consistent_dns(ooni_exe, outfile):
@@ -325,6 +343,7 @@ def webconnectivity_http_connection_reset_with_consistent_dns(ooni_exe, outfile)
     assert tk["title_match"] == None
     assert tk["blocking"] == "http-failure"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8448)
 
 
 def webconnectivity_http_nxdomain_with_consistent_dns(ooni_exe, outfile):
@@ -359,6 +378,7 @@ def webconnectivity_http_nxdomain_with_consistent_dns(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == "dns"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8224)
 
 
 def webconnectivity_http_eof_error_with_consistent_dns(ooni_exe, outfile):
@@ -393,6 +413,7 @@ def webconnectivity_http_eof_error_with_consistent_dns(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == "http-failure"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8448)
 
 
 def webconnectivity_http_generic_timeout_error_with_consistent_dns(ooni_exe, outfile):
@@ -427,6 +448,7 @@ def webconnectivity_http_generic_timeout_error_with_consistent_dns(ooni_exe, out
     assert tk["title_match"] == None
     assert tk["blocking"] == "http-failure"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8704)
 
 
 def webconnectivity_http_connection_reset_with_inconsistent_dns(ooni_exe, outfile):
@@ -458,6 +480,7 @@ def webconnectivity_http_connection_reset_with_inconsistent_dns(ooni_exe, outfil
     assert tk["title_match"] == None
     assert tk["blocking"] == "dns"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 8480)
 
 
 def webconnectivity_http_successful_website(ooni_exe, outfile):
@@ -481,6 +504,7 @@ def webconnectivity_http_successful_website(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 2)
 
 
 def webconnectivity_https_successful_website(ooni_exe, outfile):
@@ -504,6 +528,7 @@ def webconnectivity_https_successful_website(ooni_exe, outfile):
     assert tk["title_match"] == True
     assert tk["blocking"] == False
     assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 1)
 
 
 def webconnectivity_http_diff_with_inconsistent_dns(ooni_exe, outfile):
@@ -534,6 +559,7 @@ def webconnectivity_http_diff_with_inconsistent_dns(ooni_exe, outfile):
     assert tk["title_match"] == False
     assert tk["blocking"] == "dns"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 96)
 
 
 def webconnectivity_http_diff_with_consistent_dns(ooni_exe, outfile):
@@ -562,6 +588,7 @@ def webconnectivity_http_diff_with_consistent_dns(ooni_exe, outfile):
     assert tk["title_match"] == False
     assert tk["blocking"] == "http-diff"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 64)
 
 
 def webconnectivity_https_expired_certificate(ooni_exe, outfile):
@@ -598,6 +625,7 @@ def webconnectivity_https_expired_certificate(ooni_exe, outfile):
     else:
         assert tk["blocking"] == False
         assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 16)
 
 
 def webconnectivity_https_wrong_host(ooni_exe, outfile):
@@ -634,6 +662,7 @@ def webconnectivity_https_wrong_host(ooni_exe, outfile):
     else:
         assert tk["blocking"] == False
         assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 16)
 
 
 def webconnectivity_https_self_signed(ooni_exe, outfile):
@@ -670,6 +699,7 @@ def webconnectivity_https_self_signed(ooni_exe, outfile):
     else:
         assert tk["blocking"] == False
         assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 16)
 
 
 def webconnectivity_https_untrusted_root(ooni_exe, outfile):
@@ -706,6 +736,7 @@ def webconnectivity_https_untrusted_root(ooni_exe, outfile):
     else:
         assert tk["blocking"] == False
         assert tk["accessible"] == True
+    assert_status_flags_are(ooni_exe, tk, 16)
 
 
 def webconnectivity_dns_blocking_nxdomain(ooni_exe, outfile):
@@ -744,6 +775,44 @@ def webconnectivity_dns_blocking_nxdomain(ooni_exe, outfile):
     assert tk["title_match"] == None
     assert tk["blocking"] == "dns"
     assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 2080)
+
+
+def webconnectivity_https_unknown_authority_with_inconsistent_dns(ooni_exe, outfile):
+    """ Test case where the DNS is sending us towards a website where
+        we're served an invalid certificate """
+    args = [
+        "-iptables-hijack-dns-to",
+        "127.0.0.1:53",
+        "-dns-proxy-hijack",
+        "example.org",
+        "-bad-proxy-address-tls",
+        "127.0.0.1:443",
+        "-tls-proxy-address",
+        "127.0.0.1:4114",
+    ]
+    tk = execute_jafar_and_return_validated_test_keys(
+        ooni_exe,
+        outfile,
+        "-i https://example.org/ web_connectivity",
+        "webconnectivity_https_unknown_authority_with_inconsistent_dns",
+        args,
+    )
+    assert tk["dns_experiment_failure"] == None
+    assert tk["dns_consistency"] == "inconsistent"
+    assert tk["control_failure"] == None
+    if "miniooni" in ooni_exe:
+        assert tk["http_experiment_failure"] == "ssl_unknown_authority"
+    else:
+        assert "certificate verify failed" in tk["http_experiment_failure"]
+    assert tk["body_length_match"] == None
+    assert tk["body_proportion"] == 0
+    assert tk["status_code_match"] == None
+    assert tk["headers_match"] == None
+    assert tk["title_match"] == None
+    assert tk["blocking"] == "dns"
+    assert tk["accessible"] == False
+    assert_status_flags_are(ooni_exe, tk, 9248)
 
 
 def main():
@@ -775,6 +844,7 @@ def main():
         webconnectivity_https_self_signed,
         webconnectivity_https_untrusted_root,
         webconnectivity_dns_blocking_nxdomain,
+        webconnectivity_https_unknown_authority_with_inconsistent_dns,
     ]
     for test in tests:
         test(ooni_exe, outfile)

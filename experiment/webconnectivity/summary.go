@@ -8,6 +8,36 @@ import (
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
+// The following set of status flags identifies in a more nuanced way the
+// reason why we say something is blocked, accessible, etc.
+//
+// This is an experimental implementation. The objective is to start using
+// it and learning from it, to eventually understand in which direction
+// the Web Connectivity experiment should evolve. For example, there are
+// a bunch of flags where our understandind is fuzzy or unclear.
+//
+// It also helps to write more precise unit and integration tests.
+const (
+	StatusSuccessSecure    = 1 << iota // success when using HTTPS
+	StatusSuccessCleartext             // success when using HTTP
+	StatusSuccessNXDOMAIN              // probe and control agree on NXDOMAIN
+
+	StatusAnomalyControlUnreachable // cannot access the control
+	StatusAnomalyControlFailure     // control failed for HTTP
+	StatusAnomalyDNS                // probe seems blocked by their DNS
+	StatusAnomalyHTTPDiff           // probe and control do not agree on HTTP features
+	StatusAnomalyConnect            // we saw an error when connecting
+	StatusAnomalyReadWrite          // we saw an error when doing I/O
+	StatusAnomalyUnknown            // we don't know when the error happened
+	StatusAnomalyTLSHandshake       // we think error was during TLS handshake
+
+	StatusExperimentDNS     // we noticed something in the DNS experiment
+	StatusExperimentConnect // ... in the connect experiment
+	StatusExperimentHTTP    // ... in the HTTP experiment
+
+	StatusBugNoRequests // this should never happen
+)
+
 // Summary contains the Web Connectivity summary.
 type Summary struct {
 	// Accessible is nil when the measurement failed, true if we do
@@ -24,6 +54,10 @@ type Summary struct {
 	// Blocking implements the blocking variable as expected by OONI
 	// data consumers. See DetermineBlocking's docs.
 	Blocking interface{} `json:"blocking"`
+
+	// Status contains zero or more status flags. This is currently
+	// an experimental interface subject to change at any time.
+	Status int64 `json:"x_status"`
 }
 
 // DetermineBlocking returns the value of Summary.Blocking according to
@@ -82,10 +116,12 @@ func Summarize(tk *TestKeys) (out Summary) {
 	if len(tk.Requests) > 0 && tk.Requests[0].Failure == nil &&
 		strings.HasPrefix(tk.Requests[0].Request.URL, "https://") {
 		out.Accessible = &accessible
+		out.Status |= StatusSuccessSecure
 		return
 	}
 	// If we couldn't contact the control, we cannot do much more here.
 	if tk.ControlFailure != nil {
+		out.Status |= StatusAnomalyControlUnreachable
 		return
 	}
 	// If DNS failed with NXDOMAIN and the control DNS is consistent, then it
@@ -98,18 +134,22 @@ func Summarize(tk *TestKeys) (out Summary) {
 		//
 		// See <https://github.com/ooni/probe-engine/issues/579>.
 		out.Accessible = &accessible
+		out.Status |= StatusSuccessNXDOMAIN | StatusExperimentDNS
 		return
 	}
 	// Otherwise, if DNS failed with NXDOMAIN, it's DNS based blocking.
+	// TODO(bassosimone): do we wanna include other errors here? Like timeout?
 	if tk.DNSExperimentFailure != nil &&
 		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError {
 		out.Accessible = &inaccessible
 		out.BlockingReason = &dns
+		out.Status |= StatusAnomalyDNS | StatusExperimentDNS
 		return
 	}
 	// If we tried to connect more than once and never succeded and we were
 	// able to measure DNS consistency, then we can conclude something.
 	if tk.TCPConnectAttempts > 0 && tk.TCPConnectSuccesses <= 0 && tk.DNSConsistency != nil {
+		out.Status |= StatusAnomalyConnect | StatusExperimentConnect
 		switch *tk.DNSConsistency {
 		case DNSConsistent:
 			// If the DNS is consistent, then it's TCP/IP blocking.
@@ -119,25 +159,30 @@ func Summarize(tk *TestKeys) (out Summary) {
 			// Otherwise, the culprit is the DNS.
 			out.BlockingReason = &dns
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyDNS
 		default:
 			// this case should not happen with this implementation
 			// so it's fine to leave this as unknown
+			out.Status |= StatusAnomalyUnknown
 		}
 		return
 	}
 	// If the control failed for HTTP it's not immediate for us to
 	// say anything specific on this measurement.
 	if tk.Control.HTTPRequest.Failure != nil {
+		out.Status |= StatusAnomalyControlFailure
 		return
 	}
 	// Likewise, if we don't have requests to examine, leave it.
 	if len(tk.Requests) < 1 {
+		out.Status |= StatusBugNoRequests
 		return
 	}
 	// If the HTTP measurement failed there could be a bunch of reasons
 	// why this occurred, because of HTTP redirects. Try to guess what
 	// could have been wrong by inspecting the error code.
 	if tk.Requests[0].Failure != nil {
+		out.Status |= StatusExperimentHTTP
 		switch *tk.Requests[0].Failure {
 		case modelx.FailureConnectionRefused:
 			// This is possibly because a subsequent connection to some
@@ -145,27 +190,32 @@ func Summarize(tk *TestKeys) (out Summary) {
 			// because this is what MK would actually do.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyConnect
 		case modelx.FailureConnectionReset:
 			// We don't currently support TLS failures and we don't have a
 			// way to know if it was during TLS or later. So, for now we are
 			// going to call this error condition an http-failure.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyReadWrite
 		case modelx.FailureDNSNXDOMAINError:
 			// This is possibly because a subsequent resolution to
 			// some other domain name has been blocked.
 			out.BlockingReason = &dns
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyDNS
 		case modelx.FailureEOFError:
 			// We have seen this happening with TLS handshakes as well as
 			// sometimes with HTTP blocking. So http-failure.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyReadWrite
 		case modelx.FailureGenericTimeoutError:
 			// Alas, here we don't know whether it's connect or whether it's
 			// perhaps the TLS handshake. So use the same classification used by MK.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyUnknown
 		case modelx.FailureSSLInvalidHostname,
 			modelx.FailureSSLInvalidCertificate,
 			modelx.FailureSSLUnknownAuthority:
@@ -174,6 +224,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 			// is no TLS, for now we're going to call this http-failure.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
+			out.Status |= StatusAnomalyTLSHandshake
 		default:
 			// We have not been able to classify the error. Could this perhaps be
 			// caused by a programmer's error? Let us be conservative.
@@ -186,6 +237,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 		if out.BlockingReason != nil && len(tk.Requests) == 1 &&
 			tk.DNSConsistency != nil && *tk.DNSConsistency == DNSInconsistent {
 			out.BlockingReason = &dns
+			out.Status |= StatusAnomalyDNS
 		}
 		return
 	}
@@ -196,22 +248,28 @@ func Summarize(tk *TestKeys) (out Summary) {
 	if tk.StatusCodeMatch != nil && *tk.StatusCodeMatch {
 		if tk.BodyLengthMatch != nil && *tk.BodyLengthMatch {
 			out.Accessible = &accessible
+			out.Status |= StatusSuccessCleartext
 			return
 		}
 		if tk.HeadersMatch != nil && *tk.HeadersMatch {
 			out.Accessible = &accessible
+			out.Status |= StatusSuccessCleartext
 			return
 		}
 		if tk.TitleMatch != nil && *tk.TitleMatch {
 			out.Accessible = &accessible
+			out.Status |= StatusSuccessCleartext
 			return
 		}
 	}
+	// Set the status flag first
+	out.Status |= StatusAnomalyHTTPDiff
 	// It seems we didn't get the expected web page. What now? Well, if
 	// the DNS does not seem trustworthy, let us blame it.
 	if tk.DNSConsistency != nil && *tk.DNSConsistency == DNSInconsistent {
 		out.BlockingReason = &dns
 		out.Accessible = &inaccessible
+		out.Status |= StatusAnomalyDNS
 		return
 	}
 	// The only remaining conclusion seems that the web page we have got
