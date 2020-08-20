@@ -512,7 +512,7 @@ def webconnectivity_http_diff_with_inconsistent_dns(ooni_exe, outfile):
         "-iptables-hijack-dns-to",
         "127.0.0.1:53",
         "-dns-proxy-hijack",
-        "neverssl",
+        "example.org",
         "-http-proxy-block",
         "example.org",
     ]
