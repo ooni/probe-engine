@@ -174,5 +174,5 @@ func newResolverTLS(dial resolver.DialContextFunc, address string) resolver.Emit
 }
 
 func newResolverHTTPS(client *http.Client, address string) resolver.EmitterResolver {
-	return resolverWrapTransport(resolver.NewDNSOverHTTPS(client, address))
+	return resolverWrapTransport(resolver.NewDNSOverHTTPS(client, address, ""))
 }

@@ -72,6 +72,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	}
 	dnsclient, err := netx.NewDNSClient(
 		configuration.HTTPConfig, c.Config.ResolverURL,
+		c.Config.HTTPHost, c.Config.TLSServerName,
 	)
 	if err != nil {
 		return configuration, err

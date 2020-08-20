@@ -14,14 +14,15 @@ import (
 // DNSOverHTTPS is a DNS over HTTPS RoundTripper. Requests are submitted over
 // an HTTP/HTTPS channel provided by URL using the Do function.
 type DNSOverHTTPS struct {
-	Do  func(req *http.Request) (*http.Response, error)
-	URL string
+	Do   func(req *http.Request) (*http.Response, error)
+	URL  string
+	Host string
 }
 
 // NewDNSOverHTTPS creates a new DNSOverHTTP instance from the
 // specified http.Client and URL, as a convenience.
-func NewDNSOverHTTPS(client *http.Client, URL string) DNSOverHTTPS {
-	return DNSOverHTTPS{Do: client.Do, URL: URL}
+func NewDNSOverHTTPS(client *http.Client, URL, Host string) DNSOverHTTPS {
+	return DNSOverHTTPS{Do: client.Do, URL: URL, Host: Host}
 }
 
 // RoundTrip implements RoundTripper.RoundTrip.
@@ -32,6 +33,7 @@ func (t DNSOverHTTPS) RoundTrip(ctx context.Context, query []byte) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
+	req.Host = t.Host
 	req.Header.Set("user-agent", httpheader.UserAgent())
 	req.Header.Set("content-type", "application/dns-message")
 	var resp *http.Response

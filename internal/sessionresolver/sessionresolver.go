@@ -22,9 +22,9 @@ type Resolver struct {
 
 // New creates a new session resolver.
 func New(config netx.Config) *Resolver {
-	primary, err := netx.NewDNSClient(config, "doh://powerdns")
+	primary, err := netx.NewDNSClient(config, "doh://powerdns", "", "")
 	runtimex.PanicOnError(err, "cannot create powerdns resolver")
-	fallback, err := netx.NewDNSClient(config, "system:///")
+	fallback, err := netx.NewDNSClient(config, "system:///", "", "")
 	runtimex.PanicOnError(err, "cannot create system resolver")
 	return &Resolver{
 		Primary:         primary,
