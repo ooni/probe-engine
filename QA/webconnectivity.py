@@ -466,7 +466,7 @@ def webconnectivity_http_successful_website(ooni_exe, outfile):
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://neverssl.com/ web_connectivity",
+        "-i http://example.org/ web_connectivity",
         "webconnectivity_http_successful_website",
         args,
     )
