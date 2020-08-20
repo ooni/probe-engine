@@ -71,7 +71,7 @@ def webconnectivity_http_ok_with_control_failure(ooni_exe, outfile):
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://neverssl.com/ web_connectivity",
+        "-i http://example.org/ web_connectivity",
         "webconnectivity_http_ok_with_control_failure",
         args,
     )
@@ -466,7 +466,7 @@ def webconnectivity_http_successful_website(ooni_exe, outfile):
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://neverssl.com/ web_connectivity",
+        "-i http://example.org/ web_connectivity",
         "webconnectivity_http_successful_website",
         args,
     )
@@ -512,14 +512,14 @@ def webconnectivity_http_diff_with_inconsistent_dns(ooni_exe, outfile):
         "-iptables-hijack-dns-to",
         "127.0.0.1:53",
         "-dns-proxy-hijack",
-        "neverssl",
+        "example.org",
         "-http-proxy-block",
-        "neverssl.com",
+        "example.org",
     ]
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://neverssl.com/ web_connectivity",
+        "-i http://example.org/ web_connectivity",
         "webconnectivity_http_diff_with_inconsistent_dns",
         args,
     )
@@ -542,12 +542,12 @@ def webconnectivity_http_diff_with_consistent_dns(ooni_exe, outfile):
         "-iptables-hijack-http-to",
         "127.0.0.1:80",
         "-http-proxy-block",
-        "neverssl.com",
+        "example.org",
     ]
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://neverssl.com/ web_connectivity",
+        "-i http://example.org/ web_connectivity",
         "webconnectivity_http_diff_with_consistent_dns",
         args,
     )
