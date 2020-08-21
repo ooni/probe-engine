@@ -1,0 +1,20 @@
+name: generate
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "14 17 * * 3"
+jobs:
+  test:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        go: ["1.14"]
+    steps:
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v2
+      - run: go generate ./...
