@@ -2,7 +2,7 @@ package resources
 
 const (
 	// Version contains the assets version.
-	Version = 20200721121920
+	Version = 20200821081345
 
 	// ASNDatabaseName is the ASN-DB file name
 	ASNDatabaseName = "asn.mmdb"
@@ -33,18 +33,18 @@ type ResourceInfo struct {
 // All contains info on all known assets.
 var All = map[string]ResourceInfo{
 	"asn.mmdb": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200721121920/asn.mmdb.gz",
-		GzSHA256: "e0f6adfbbbb565a04b97d9c78d77023e22f8a30477d36acab55169911cb6ba51",
-		SHA256:   "600222c58a464c4cece3096b0b553c0db674276e81e5cd84e76b18acef1c2fce",
+		URLPath:  "/ooni/probe-assets/releases/download/20200821081345/asn.mmdb.gz",
+		GzSHA256: "b118504866e29bc3643c2aec54bf7605fdbac153d60491b0df6960b11837be90",
+		SHA256:   "abcaa0a4bc7d9014affd72f501e64a9b708e701fb0733f72706c4c5ce55897d4",
 	},
 	"ca-bundle.pem": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200721121920/ca-bundle.pem.gz",
-		GzSHA256: "96de2f6469ce24c1909c82704df519566ec9ecddb7fd8b6ae635dba2a55c0e8c",
-		SHA256:   "726889705b00f736200ed7999f7a50021b8735d53228d679c4e6665aa3b44987",
+		URLPath:  "/ooni/probe-assets/releases/download/20200821081345/ca-bundle.pem.gz",
+		GzSHA256: "3a99970bc782e5f7899de9011618bbadde5057d380e8fc7dc58ee96335bc1c30",
+		SHA256:   "2782f0f8e89c786f40240fc1916677be660fb8d8e25dede50c9f6f7b0c2c2178",
 	},
 	"country.mmdb": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200721121920/country.mmdb.gz",
-		GzSHA256: "5f23c9155ce6e786c2c94d154d67411f33b39d67f1206fee8d6c61b829acdad5",
-		SHA256:   "cffb80632d05ea76188bacaf6c085bb41540b283b7189b5f5fed9ae7173e7967",
+		URLPath:  "/ooni/probe-assets/releases/download/20200821081345/country.mmdb.gz",
+		GzSHA256: "c594dea05462f8013d8416cdcf65af61e9adb004d1d6aa9971e021f28cba35b7",
+		SHA256:   "4570ac1701e52aa3d30b2512a3297e028cac6b66a5dac10715db4db8dcd84043",
 	},
 }
