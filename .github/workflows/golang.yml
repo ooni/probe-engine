@@ -1,5 +1,9 @@
 name: golang
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "14 17 * * 3"
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
@@ -13,7 +17,7 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - uses: actions/checkout@v2
-      - run: go test -tags nomk,shaping -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
+      - run: go test -tags shaping -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: probe-engine.cov

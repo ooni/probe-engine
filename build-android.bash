@@ -31,4 +31,4 @@ output=MOBILE/dist/oonimkall.aar
 go get -u golang.org/x/mobile/cmd/gomobile
 gomobile init
 export GO111MODULE=on
-gomobile bind -target=android -o $output -tags nomk -ldflags="-s -w" ./oonimkall
+gomobile bind -target=android -o $output -ldflags="-s -w" ./oonimkall

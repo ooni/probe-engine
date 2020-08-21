@@ -28,8 +28,9 @@ import (
 // Options contains the options you can set from the CLI.
 type Options struct {
 	Annotations      []string
-	Inputs           []string
 	ExtraOptions     []string
+	HomeDir          string
+	Inputs           []string
 	NoBouncer        bool
 	NoGeoIP          bool
 	NoJSON           bool
@@ -69,12 +70,16 @@ func init() {
 		"Unsupported option that used to set the collector base URL", "URL",
 	)
 	getopt.FlagLong(
-		&globalOptions.Inputs, "input", 'i',
-		"Add test-dependent input to the test input", "INPUT",
-	)
-	getopt.FlagLong(
 		&globalOptions.ExtraOptions, "option", 'O',
 		"Pass an option to the experiment", "KEY=VALUE",
+	)
+	getopt.FlagLong(
+		&globalOptions.HomeDir, "home", 0,
+		"Force specific home directory", "PATH",
+	)
+	getopt.FlagLong(
+		&globalOptions.Inputs, "input", 'i',
+		"Add test-dependent input to the test input", "INPUT",
 	)
 	getopt.FlagLong(
 		&globalOptions.NoBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
@@ -196,7 +201,10 @@ func (h *logHandler) HandleLog(e *log.Entry) (err error) {
 }
 
 // See https://gist.github.com/miguelmota/f30a04a6d64bd52d7ab59ea8d95e54da
-func gethomedir() string {
+func gethomedir(optionsHome string) string {
+	if optionsHome != "" {
+		return optionsHome
+	}
 	if runtime.GOOS == "windows" {
 		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
 		if home == "" {
@@ -244,7 +252,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	}
 	log.Log = logger
 
-	homeDir := gethomedir()
+	homeDir := gethomedir(currentOptions.HomeDir)
 	fatalIfFalse(homeDir != "", "home directory is empty")
 	miniooniDir := path.Join(homeDir, ".miniooni")
 	assetsDir := path.Join(miniooniDir, "assets")

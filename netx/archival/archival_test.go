@@ -938,7 +938,7 @@ func TestNewFailure(t *testing.T) {
 			return &s
 		}(),
 	}, {
-		name: "when error is wrapped and failure is notmeaningful",
+		name: "when error is wrapped and failure is not meaningful",
 		args: args{
 			err: &modelx.ErrWrapper{},
 		},
@@ -947,7 +947,14 @@ func TestNewFailure(t *testing.T) {
 			return &s
 		}(),
 	}, {
-		name: "otherwise",
+		name: "when error is not wrapped but wrappable",
+		args: args{err: io.EOF},
+		want: func() *string {
+			s := "eof_error"
+			return &s
+		}(),
+	}, {
+		name: "when the error is not wrapped and not wrappable",
 		args: args{
 			err: errors.New("use of closed socket 127.0.0.1:8080->10.0.0.1:22"),
 		},

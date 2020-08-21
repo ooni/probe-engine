@@ -1,8 +1,17 @@
 /.vscode
 /asn.mmdb
+/badproxy.pem
 /ca-bundle.pem
 /country.mmdb
+/fbmessenger.jsonl
+/hhfm.jsonl
+/hirl.jsonl
+/jafar
+/jafar.exe
 /miniooni
 /miniooni.exe
 /oonipsiphon/
 /report.jsonl
+/telegram.jsonl
+/webconnectivity.jsonl
+/whatsapp.jsonl

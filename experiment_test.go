@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/experiment/example"
-	"github.com/ooni/probe-engine/measurementkit"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -268,9 +267,6 @@ func TestUseOptions(t *testing.T) {
 }
 
 func TestRunHHFM(t *testing.T) {
-	if !measurementkit.Available() {
-		t.Skip("Measurement Kit not available; skipping")
-	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("http_header_field_manipulation")

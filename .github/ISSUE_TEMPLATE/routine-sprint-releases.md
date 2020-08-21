@@ -11,8 +11,7 @@ assignees: bassosimone
 - [ ] Update internal/httpheader/useragent.go
 - [ ] Update version/version.go
 - [ ] Update internal/resources/assets.go
-- [ ] Update measurementkit/mkcgo/mkcgo.go
-- [ ] Update .github/workflows/mk.yml
+- [ ] Run go generate ./...
 - [ ] Tag a new version of ooni/probe-engine
 - [ ] Create release at GitHub
 - [ ] Update ooni/probe-engine mobile-staging branch
