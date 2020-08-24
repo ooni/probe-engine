@@ -5,6 +5,7 @@ package urlgetter
 
 import (
 	"context"
+	"time"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
@@ -80,6 +81,12 @@ func (m measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
+	// When using the urlgetter experiment directly, there is a nonconfigurable
+	// default timeout that applies. When urlgetter is used as a library, it's
+	// instead the responsibility of the user of urlgetter to set timeouts. Note
+	// that this code is indeed only called when using urlgetter directly.
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
 	RegisterExtensions(measurement)
 	g := Getter{
 		Config:  m.Config,
