@@ -90,8 +90,8 @@ func DetermineBlocking(s Summary) interface{} {
 
 // Log logs the summary using the provided logger.
 func (s Summary) Log(logger model.Logger) {
-	logger.Infof("Blocking %+v", internal.StringPointerToString(s.BlockingReason))
-	logger.Infof("Accessible %+v", internal.BoolPointerToString(s.Accessible))
+	logger.Infof("Blocking: %+v", internal.StringPointerToString(s.BlockingReason))
+	logger.Infof("Accessible: %+v", internal.BoolPointerToString(s.Accessible))
 }
 
 // Summarize computes the summary from the TestKeys.
