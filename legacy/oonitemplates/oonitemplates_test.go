@@ -10,8 +10,8 @@ import (
 	"time"
 
 	goptlib "git.torproject.org/pluggable-transports/goptlib.git"
-	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/legacy/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )

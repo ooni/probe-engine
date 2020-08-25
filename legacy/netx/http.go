@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/legacy/netx/oldhttptransport"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"golang.org/x/net/http2"
 )
 

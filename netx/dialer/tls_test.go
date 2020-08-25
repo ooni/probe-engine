@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {

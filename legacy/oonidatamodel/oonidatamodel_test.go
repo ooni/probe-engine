@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/legacy/oonitemplates"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 func TestUnitNewTCPConnectListEmpty(t *testing.T) {
