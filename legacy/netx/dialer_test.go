@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/legacy/netx"
 )
 
 func TestIntegrationDialerDial(t *testing.T) {

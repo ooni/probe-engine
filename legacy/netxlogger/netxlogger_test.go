@@ -8,7 +8,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/discard"
-	"github.com/ooni/probe-engine/netx"
+	"github.com/ooni/probe-engine/legacy/netx"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
