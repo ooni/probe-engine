@@ -23,7 +23,6 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
-	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
 )
 
@@ -49,7 +48,7 @@ type Options struct {
 
 const (
 	softwareName    = "miniooni"
-	softwareVersion = version.Version
+	softwareVersion = engine.Version
 )
 
 var (

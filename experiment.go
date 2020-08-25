@@ -35,7 +35,6 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
 )
 
 const dateFormat = "2006-01-02 15:04:05"
@@ -376,7 +375,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	}
 	m.AddAnnotation("assets_version", strconv.FormatInt(resources.Version, 10))
 	m.AddAnnotation("engine_name", "ooniprobe-engine")
-	m.AddAnnotation("engine_version", version.Version)
+	m.AddAnnotation("engine_version", Version)
 	m.AddAnnotation("platform", platform.Name())
 	return &m
 }

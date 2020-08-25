@@ -9,7 +9,7 @@ assignees: bassosimone
 
 - [ ] Update dependencies
 - [ ] Update internal/httpheader/useragent.go
-- [ ] Update version/version.go
+- [ ] Update version.go
 - [ ] Update resources/assets.go
 - [ ] Run go generate ./...
 - [ ] Tag a new version of ooni/probe-engine
