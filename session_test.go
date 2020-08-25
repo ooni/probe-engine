@@ -18,7 +18,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -524,7 +523,7 @@ func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 }
 
 func TestUserAgentNoProxy(t *testing.T) {
-	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + version.Version
+	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + Version
 	sess := newSessionForTestingNoLookups(t)
 	ua := sess.UserAgent()
 	diff := cmp.Diff(expect, ua)
