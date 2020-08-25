@@ -3,18 +3,15 @@ on:
   push:
     branches:
       - mobile-staging
+  schedule:
+    - cron: "14 17 * * 3"
 jobs:
   test:
-    runs-on: "${{ matrix.os }}"
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest]
-        go: ["1.14"]
+    runs-on: macos-latest
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: ${{ matrix.go }}
+          go-version: "1.14"
       - uses: actions/checkout@v2
       - run: ./build-ios.bash
       - run: ./publish-ios.bash
