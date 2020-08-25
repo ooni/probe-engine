@@ -1,4 +1,4 @@
-# github.com/ooni/probe-engine/netx
+# Package github.com/ooni/probe-engine/netx
 
 OONI extensions to the `net` and `net/http` packages. This code is
 used by `ooni/probe-engine` as a low level library to collect

@@ -17,7 +17,6 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/sessiontunnel"
@@ -25,6 +24,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/resources"
 )
 
 // SessionConfig contains the Session config

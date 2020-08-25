@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/legacy/netx/connid"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/internal/connid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 

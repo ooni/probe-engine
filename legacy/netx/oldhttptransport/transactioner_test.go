@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 )
 
 type transactionerCheckTransactionID struct {

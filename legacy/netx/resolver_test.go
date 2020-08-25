@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx"
-	"github.com/ooni/probe-engine/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx"
+	"github.com/ooni/probe-engine/legacy/netx/handlers"
 )
 
 func testresolverquick(t *testing.T, network, address string) {

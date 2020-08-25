@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/ooni/probe-engine/netx/internal/connid"
+	"github.com/ooni/probe-engine/legacy/netx/connid"
 )
 
 // Dialer is the interface we expect from a dialer

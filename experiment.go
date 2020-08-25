@@ -29,12 +29,12 @@ import (
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/resources"
 )
 
 const dateFormat = "2006-01-02 15:04:05"

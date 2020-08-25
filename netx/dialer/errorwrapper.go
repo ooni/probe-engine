@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/internal/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 

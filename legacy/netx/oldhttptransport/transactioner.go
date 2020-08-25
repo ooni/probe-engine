@@ -3,7 +3,7 @@ package oldhttptransport
 import (
 	"net/http"
 
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 )
 
 // Transactioner performs single HTTP transactions.
