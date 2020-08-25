@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/handler"
 )
 
 func TestIntegration(t *testing.T) {

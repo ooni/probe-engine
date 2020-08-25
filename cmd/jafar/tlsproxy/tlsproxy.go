@@ -1,4 +1,6 @@
-// Package tlsproxy contains a TLS transparent proxy
+// Package tlsproxy contains a censoring TLS proxy. Most traffic is passed
+// through using the SNI to choose the hostname to connect to. Specific offending
+// SNIs are censored by returning a TLS alert to the client.
 package tlsproxy
 
 import (

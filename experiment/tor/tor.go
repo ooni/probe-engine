@@ -134,14 +134,16 @@ func (tk *TestKeys) fillToplevelKeys() {
 	}
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	config             Config
 	fetchTorTargets    func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error)
 	newOrchestraClient func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error)
 }
 
-func newMeasurer(config Config) *measurer {
-	return &measurer{
+// NewMeasurer creates a new Measurer
+func NewMeasurer(config Config) *Measurer {
+	return &Measurer{
 		config: config,
 		fetchTorTargets: func(ctx context.Context, clnt model.ExperimentOrchestraClient, cc string) (map[string]model.TorTarget, error) {
 			return clnt.FetchTorTargets(ctx, cc)
@@ -152,15 +154,18 @@ func newMeasurer(config Config) *measurer {
 	}
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m *measurer) Run(
+// Run implements ExperimentMeasurer.Run.
+func (m *Measurer) Run(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
@@ -179,7 +184,7 @@ func (m *measurer) Run(
 	return nil
 }
 
-func (m *measurer) gimmeTargets(
+func (m *Measurer) gimmeTargets(
 	ctx context.Context, sess model.ExperimentSession,
 ) (map[string]model.TorTarget, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -213,7 +218,7 @@ func (kt keytarget) maybeTargetAddress() (address string) {
 	return
 }
 
-func (m *measurer) measureTargets(
+func (m *Measurer) measureTargets(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
@@ -413,7 +418,7 @@ func (rc *resultsCollector) defaultFlexibleConnect(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return newMeasurer(config)
+	return NewMeasurer(config)
 }
 
 func errString(err error) (s string) {

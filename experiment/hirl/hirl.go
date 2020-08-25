@@ -1,4 +1,6 @@
 // Package hirl contains the HTTP Invalid Request Line network experiment.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-007-http-invalid-request-line.md
 package hirl
 
 import (

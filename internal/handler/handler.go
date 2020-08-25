@@ -1,4 +1,4 @@
-// Package handler contains experiment events handler
+// Package handler contains experiment events handler.
 package handler
 
 import (

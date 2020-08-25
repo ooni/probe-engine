@@ -87,21 +87,24 @@ func (tk *TestKeys) classify() string {
 	return classAnomalyUnexpectedFailure
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	cache  map[string]Subresult
 	config Config
 	mu     sync.Mutex
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m *measurer) measureone(
+func (m *Measurer) measureone(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	beginning time.Time,
@@ -144,7 +147,7 @@ func (m *measurer) measureone(
 	return smk
 }
 
-func (m *measurer) measureonewithcache(
+func (m *Measurer) measureonewithcache(
 	ctx context.Context,
 	output chan<- Subresult,
 	sess model.ExperimentSession,
@@ -168,7 +171,7 @@ func (m *measurer) measureonewithcache(
 	m.mu.Unlock()
 }
 
-func (m *measurer) startall(
+func (m *Measurer) startall(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, inputs []string,
 ) <-chan Subresult {
@@ -229,7 +232,8 @@ func maybeURLToSNI(input model.MeasurementTarget) (model.MeasurementTarget, erro
 	return model.MeasurementTarget(parsed.Hostname()), nil
 }
 
-func (m *measurer) Run(
+// Run implements ExperimentMeasurer.Run.
+func (m *Measurer) Run(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
@@ -277,7 +281,7 @@ func (m *measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return &measurer{config: config}
+	return &Measurer{config: config}
 }
 
 func asString(failure *string) (result string) {

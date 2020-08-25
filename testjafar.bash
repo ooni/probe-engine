@@ -1,4 +1,11 @@
 #!/bin/bash
+
+#
+# This script uses cURL to verify that Jafar is able to produce a
+# bunch of censorship conditions. It should be noted that this script
+# only works on Linux and will never work on other systems.
+#
+
 set -e
 
 function execute() {

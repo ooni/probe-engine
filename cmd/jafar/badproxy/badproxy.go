@@ -1,5 +1,8 @@
-// Package badproxy contains a bad proxy. Specifically this proxy
-// will read some bytes from the input and then close the connection.
+// Package badproxy implements misbehaving proxies. We have a single
+// CensoringProxy that exports two misbehaving endpoints. Each endpoint
+// implements a different proxy-censorsing technique. The first one
+// reads some bytes from the connection then closes the connection. The
+// other instead replies with a self signed x509 certificate.
 package badproxy
 
 import (
@@ -15,7 +18,7 @@ import (
 	"github.com/google/martian/v3/mitm"
 )
 
-// CensoringProxy is a bad proxy
+// CensoringProxy is a proxy that does not behave correctly.
 type CensoringProxy struct {
 	mitmNewAuthority func(
 		name string, organization string,
@@ -31,7 +34,7 @@ type CensoringProxy struct {
 	) (net.Listener, error)
 }
 
-// NewCensoringProxy creates a new bad proxy
+// NewCensoringProxy creates a new instance of a misbehaving proxy.
 func NewCensoringProxy() *CensoringProxy {
 	return &CensoringProxy{
 		mitmNewAuthority: mitm.NewAuthority,
@@ -73,7 +76,10 @@ func (p *CensoringProxy) run(listener net.Listener) {
 	}
 }
 
-// Start starts the bad proxy for TCP.
+// Start starts the misbehaving proxy for TCP. This endpoint will read some
+// bytes from the request and then close the connection. This behaviour is
+// implemented by a bunch of censoring proxy around the world. Usually such
+// proxies only close the connection with offending SNIs/Host headers.
 func (p *CensoringProxy) Start(address string) (net.Listener, error) {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -83,7 +89,10 @@ func (p *CensoringProxy) Start(address string) (net.Listener, error) {
 	return listener, nil
 }
 
-// StartTLS starts the bad proxy for TLS.
+// StartTLS starts the misbehaving proxy for TLS. This endpoint will return
+// to the client a self signed certificate. Thus, it models the case where a
+// MITM forces users to accept a rogue certificate. After sending such a
+// certificate, this proxy will close the TCP connection.
 func (p *CensoringProxy) StartTLS(address string) (net.Listener, *x509.Certificate, error) {
 	cert, privkey, err := p.mitmNewAuthority(
 		"jafar", "OONI", 24*time.Hour,

@@ -13,14 +13,14 @@ iptables installed, and root permissions.
 
 With Linux Alpine edge, you can compile Jafar with:
 
-```
-# apk add go git musl-dev iptables
-# go build -v .
+```bash
+apk add go git musl-dev iptables
+go build -v .
 ```
 
 Otherwise, using Docker:
 
-```
+```bash
 docker build -t jafar-runner .
 docker run -it --privileged -v`pwd`:/jafar -w/jafar jafar-runner
 go build -v .
@@ -59,7 +59,7 @@ to make sure that `sudo` is installed.
 
 The iptables module is only available on Linux. It exports these flags:
 
-```
+```bash
   -iptables-drop-ip value
         Drop traffic to the specified IP address
   -iptables-drop-keyword-hex value
@@ -113,7 +113,7 @@ The DNS proxy or resolver allows to manipulate DNS. Unless you use DNS
 hijacking, you will need to configure your application explicitly to use
 the proxy with application specific command line flags.
 
-```
+```bash
   -dns-proxy-address string
         Address where the DNS proxy should listen (default "127.0.0.1:53")
   -dns-proxy-block value
@@ -141,7 +141,7 @@ The `-dns-proxy-ignore` is similar but instead just ignores the query.
 The HTTP proxy is an HTTP proxy that may refuse to forward some
 specific requests. It's controlled by these flags:
 
-```
+```bash
   -http-proxy-address string
         Address where the HTTP proxy should listen (default "127.0.0.1:80")
   -http-proxy-block value
@@ -159,7 +159,7 @@ response for every request whose `Host` contains the specified string.
 TLS proxy is a proxy that routes traffic to specific servers depending
 on their SNI value. It is controlled by the following flags:
 
-```
+```bash
   -tls-proxy-address string
         Address where the HTTP proxy should listen (default "127.0.0.1:443")
   -tls-proxy-block value
@@ -175,7 +175,7 @@ contains one of the strings provided with this option.
 
 ### bad-proxy
 
-```
+```bash
   -bad-proxy-address string
         Address where to listen for TCP connections (default "127.0.0.1:7117")
   -bad-proxy-address-tls string
@@ -197,7 +197,7 @@ the client Hello message will cause the TLS handshake to fail.
 
 ### uncensored
 
-```
+```bash
   -uncensored-resolver-url string
     	URL of an hopefully uncensored resolver (default "dot://1.1.1.1:853")
 ```
@@ -222,7 +222,7 @@ most likely want to use `-uncensored-resolver-url`.
 Block `play.google.com` with RST injection, force DNS traffic to use the our
 DNS proxy, and force it to censor `play.google.com` with `NXDOMAIN`.
 
-```
+```bash
 # ./jafar -iptables-reset-keyword play.google.com \
           -iptables-hijack-dns-to 127.0.0.1:5353  \
           -dns-proxy-address 127.0.0.1:5353       \
@@ -232,7 +232,7 @@ DNS proxy, and force it to censor `play.google.com` with `NXDOMAIN`.
 Force all traffic through the HTTP and TLS proxy and use them to censor
 `play.google.com` using HTTP 451 and responding with TLS alerts:
 
-```
+```bash
 # ./jafar -iptables-hijack-dns-to 127.0.0.1:5353 \
           -dns-proxy-address 127.0.0.1:5353      \
           -dns-proxy-hijack play.google.com      \
@@ -242,14 +242,14 @@ Force all traffic through the HTTP and TLS proxy and use them to censor
 
 Run `ping` in a censored environment:
 
-```
+```bash
 # ./jafar -iptables-drop-ip 8.8.8.8 -main-command 'ping -c3 8.8.8.8'
 ```
 
 Run `curl` in a censored environment where it cannot connect to
 `play.google.com` using `https`:
 
-```
+```bash
 # ./jafar -iptables-hijack-https-to 127.0.0.1:443         \
           -tls-proxy-block play.google.com                \
           -main-command 'curl -Lv http://play.google.com'

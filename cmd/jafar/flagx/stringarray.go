@@ -1,8 +1,8 @@
-package flagx
-
-// The code in this file is adapted from github.com/m-lab/go and more
+// Package flagx contains extensions for the standard library
+// flag package. The code is adapted from github.com/m-lab/go and more
 // specifically from <https://git.io/JJ8UA>. This file is licensed under
 // version 2.0 of the Apache License <https://git.io/JJ8Ux>.
+package flagx
 
 import (
 	"fmt"

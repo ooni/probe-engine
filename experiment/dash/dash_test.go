@@ -12,7 +12,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/montanaflynn/stats"
-	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -271,7 +271,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
-	m := &measurer{}
+	m := &Measurer{}
 	err := m.Run(
 		ctx,
 		&mockable.ExperimentSession{
@@ -287,7 +287,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
-	m := &measurer{config: Config{
+	m := &Measurer{config: Config{
 		Tunnel: "psiphon",
 	}}
 	expected := errors.New("mocked error")
@@ -309,7 +309,7 @@ func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
 func TestUnitMeasureWithProxyURL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
-	m := &measurer{}
+	m := &Measurer{}
 	measurement := &model.Measurement{}
 	err := m.Run(
 		ctx,

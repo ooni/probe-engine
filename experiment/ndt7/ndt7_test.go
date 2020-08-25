@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 )
@@ -25,7 +25,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 }
 
 func TestUnitDiscoverCancelledContext(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
@@ -54,7 +54,7 @@ func (txp *verifyRequestTransport) RoundTrip(req *http.Request) (*http.Response,
 }
 
 func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
@@ -71,7 +71,7 @@ func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitDoUploadWithCancelledContext(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
@@ -88,7 +88,7 @@ func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitRunWithCancelledContext(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
@@ -103,7 +103,7 @@ func TestUnitRunWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	expected := errors.New("mocked error")
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient:          http.DefaultClient,
@@ -119,7 +119,7 @@ func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
 }
 
 func TestUnitRunWithProxyURL(t *testing.T) {
-	m := new(measurer)
+	m := new(Measurer)
 	sess := &mockable.ExperimentSession{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
@@ -157,7 +157,7 @@ func TestIntegration(t *testing.T) {
 func TestIntegrationFailDownload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	measurer := NewExperimentMeasurer(Config{}).(*measurer)
+	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
 	measurer.preDownloadHook = func() {
 		cancel()
 	}
@@ -178,7 +178,7 @@ func TestIntegrationFailDownload(t *testing.T) {
 func TestIntegrationFailUpload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	measurer := NewExperimentMeasurer(Config{}).(*measurer)
+	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
 	measurer.preUploadHook = func() {
 		cancel()
 	}
@@ -197,7 +197,7 @@ func TestIntegrationFailUpload(t *testing.T) {
 }
 
 func TestIntegrationDownloadJSONUnmarshalFail(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{}).(*measurer)
+	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
 	var seenError bool
 	expected := errors.New("expected error")
 	measurer.jsonUnmarshal = func(data []byte, v interface{}) error {

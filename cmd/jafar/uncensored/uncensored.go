@@ -1,5 +1,5 @@
-// Package uncensored contains uncensored facilities. These facilities
-// are used by Jafar code to evade its own censorship efforts.
+// Package uncensored contains code used by Jafar to evade its own
+// censorship efforts by taking alternate routes.
 package uncensored
 
 import (
@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 

@@ -6,13 +6,19 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ooni/probe-engine/cmd/jafar/iptables"
 	"github.com/ooni/probe-engine/cmd/jafar/shellx"
 )
+
+func ensureWeStartOverWithIPTables() {
+	iptables.NewCensoringPolicy().Waive()
+}
 
 func TestIntegrationNoCommand(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("skipping test on non Linux systems")
 	}
+	ensureWeStartOverWithIPTables()
 	*dnsProxyAddress = "127.0.0.1:0"
 	*httpProxyAddress = "127.0.0.1:0"
 	*tlsProxyAddress = "127.0.0.1:0"
@@ -26,6 +32,7 @@ func TestIntegrationWithCommand(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("skipping test on non Linux systems")
 	}
+	ensureWeStartOverWithIPTables()
 	*dnsProxyAddress = "127.0.0.1:0"
 	*httpProxyAddress = "127.0.0.1:0"
 	*tlsProxyAddress = "127.0.0.1:0"
