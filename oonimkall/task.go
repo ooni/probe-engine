@@ -1,12 +1,27 @@
-// Package oonimkall implements measurement-kit's FFI API.
+// Package oonimkall implements API used by OONI mobile apps. We
+// expose this API to mobile apps using gomobile.
 //
-// See https://git.io/Jv4Rv (measurement-kit/measurement-kit@v0.10.9)
-// for a comprehensive description of MK's FFI API.
+// This package is named oonimkall because it's a ooni/probe-engine
+// implementation of the mkall API implemented by Measurement Kit
+// in, e.g., https://github.com/measurement-kit/mkall-ios.
+//
+// The basic tenet of oonimkall is that you define an experiment
+// task you wanna run using a JSON, then you start such task, and
+// you receive events as serialized JSONs. In addition to this
+// functionality, we also include extra APIs used by OONI mobile.
+//
+// The task API was first defined in Measurement Kit v0.9.0. In this
+// context, it was called "the FFI API". The API we expose here is not
+// strictly an FFI API, but is close enough for the purpose of using
+// OONI from Android and iOS. See https://git.io/Jv4Rv
+// (measurement-kit/measurement-kit@v0.10.9) for a comprehensive
+// description of MK's FFI API.
 //
 // See also https://github.com/ooni/probe-engine/pull/347 for the
 // design document describing this API.
 //
-// See also https://github.com/ooni/probe-engine/blob/master/DESIGN.md.
+// See also https://github.com/ooni/probe-engine/blob/master/DESIGN.md,
+// which explains why we implemented to oonimkall API.
 package oonimkall
 
 import (

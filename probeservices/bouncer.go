@@ -1,14 +1,3 @@
-// Package probeservices contains code to contact OONI probe services.
-//
-// Specifically we implement v2.0.0 of the OONI bouncer specification defined
-// in https://github.com/ooni/spec/blob/master/backends/bk-004-bouncer
-//
-// We additionally implement v2.0.0 of the OONI collector specification defined
-// in https://github.com/ooni/spec/blob/master/backends/bk-003-collector.md.
-//
-// We additonally implement the orchestra API. Orchestra is a set of
-// OONI APIs for probe orchestration. We currently mainly using it for
-// fetching inputs for the tor, psiphon, and web experiments.
 package probeservices
 
 import (
