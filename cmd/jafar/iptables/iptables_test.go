@@ -18,11 +18,17 @@ import (
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
 
+func newCensoringPolicy() *CensoringPolicy {
+	policy := NewCensoringPolicy()
+	policy.Waive() // start over to allow for repeated tests on failure
+	return policy
+}
+
 func TestUnitCannotApplyPolicy(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.DropIPs = []string{"antani"}
 	if err := policy.Apply(); err == nil {
 		t.Fatal("expected an error here")
@@ -34,7 +40,7 @@ func TestUnitCreateChainsError(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +56,7 @@ func TestIntegrationDropIP(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.DropIPs = []string{"1.1.1.1"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -74,7 +80,7 @@ func TestIntegrationDropKeyword(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.DropKeywords = []string{"ooni.io"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -102,7 +108,7 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.DropKeywordsHex = []string{"|6f 6f 6e 69|"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -133,7 +139,7 @@ func TestIntegrationResetIP(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.ResetIPs = []string{"1.1.1.1"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -155,7 +161,7 @@ func TestIntegrationResetKeyword(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.ResetKeywords = []string{"ooni.io"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -177,7 +183,7 @@ func TestIntegrationResetKeywordHex(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
 	}
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.ResetKeywordsHex = []string{"|6f 6f 6e 69|"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -208,7 +214,7 @@ func TestIntegrationHijackDNS(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer server.Shutdown()
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	policy.HijackDNSAddress = server.PacketConn.LocalAddr().String()
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
@@ -238,7 +244,7 @@ func TestIntegrationHijackHTTP(t *testing.T) {
 		}),
 	)
 	defer server.Close()
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	pu, err := url.Parse(server.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -274,7 +280,7 @@ func TestIntegrationHijackHTTPS(t *testing.T) {
 		}),
 	)
 	defer server.Close()
-	policy := NewCensoringPolicy()
+	policy := newCensoringPolicy()
 	pu, err := url.Parse(server.URL)
 	if err != nil {
 		t.Fatal(err)
