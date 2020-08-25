@@ -13,7 +13,7 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/websocket"
-	"github.com/ooni/probe-engine/internal/resources"
+	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/modelx"

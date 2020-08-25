@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/resources"
+	"github.com/ooni/probe-engine/resources"
 )
 
 func TestEnsureMkdirAllFailure(t *testing.T) {

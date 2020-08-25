@@ -17,7 +17,7 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/resources"
+	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/sessiontunnel"

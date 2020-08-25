@@ -29,7 +29,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/resources"
+	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
