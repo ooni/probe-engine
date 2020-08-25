@@ -5,7 +5,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/webconnectivity/internal"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 // The following set of status flags identifies in a more nuanced way the
@@ -127,7 +127,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 	// If DNS failed with NXDOMAIN and the control DNS is consistent, then it
 	// means this website does not exist anymore.
 	if tk.DNSExperimentFailure != nil &&
-		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError &&
+		*tk.DNSExperimentFailure == errorx.FailureDNSNXDOMAINError &&
 		tk.DNSConsistency != nil && *tk.DNSConsistency == DNSConsistent {
 		// TODO(bassosimone): MK flags this as accessible. This result is debateable. We
 		// are doing what MK does. But we most likely want to make it better later.
@@ -140,7 +140,7 @@ func Summarize(tk *TestKeys) (out Summary) {
 	// Otherwise, if DNS failed with NXDOMAIN, it's DNS based blocking.
 	// TODO(bassosimone): do we wanna include other errors here? Like timeout?
 	if tk.DNSExperimentFailure != nil &&
-		*tk.DNSExperimentFailure == modelx.FailureDNSNXDOMAINError {
+		*tk.DNSExperimentFailure == errorx.FailureDNSNXDOMAINError {
 		out.Accessible = &inaccessible
 		out.BlockingReason = &dns
 		out.Status |= StatusAnomalyDNS | StatusExperimentDNS
@@ -184,41 +184,41 @@ func Summarize(tk *TestKeys) (out Summary) {
 	if tk.Requests[0].Failure != nil {
 		out.Status |= StatusExperimentHTTP
 		switch *tk.Requests[0].Failure {
-		case modelx.FailureConnectionRefused:
+		case errorx.FailureConnectionRefused:
 			// This is possibly because a subsequent connection to some
 			// other endpoint has been blocked. We call this http-failure
 			// because this is what MK would actually do.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 			out.Status |= StatusAnomalyConnect
-		case modelx.FailureConnectionReset:
+		case errorx.FailureConnectionReset:
 			// We don't currently support TLS failures and we don't have a
 			// way to know if it was during TLS or later. So, for now we are
 			// going to call this error condition an http-failure.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 			out.Status |= StatusAnomalyReadWrite
-		case modelx.FailureDNSNXDOMAINError:
+		case errorx.FailureDNSNXDOMAINError:
 			// This is possibly because a subsequent resolution to
 			// some other domain name has been blocked.
 			out.BlockingReason = &dns
 			out.Accessible = &inaccessible
 			out.Status |= StatusAnomalyDNS
-		case modelx.FailureEOFError:
+		case errorx.FailureEOFError:
 			// We have seen this happening with TLS handshakes as well as
 			// sometimes with HTTP blocking. So http-failure.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 			out.Status |= StatusAnomalyReadWrite
-		case modelx.FailureGenericTimeoutError:
+		case errorx.FailureGenericTimeoutError:
 			// Alas, here we don't know whether it's connect or whether it's
 			// perhaps the TLS handshake. So use the same classification used by MK.
 			out.BlockingReason = &httpFailure
 			out.Accessible = &inaccessible
 			out.Status |= StatusAnomalyUnknown
-		case modelx.FailureSSLInvalidHostname,
-			modelx.FailureSSLInvalidCertificate,
-			modelx.FailureSSLUnknownAuthority:
+		case errorx.FailureSSLInvalidHostname,
+			errorx.FailureSSLInvalidCertificate,
+			errorx.FailureSSLUnknownAuthority:
 			// We treat these three cases equally. Misconfiguration is a bit
 			// less likely since we also checked with the control. Since there
 			// is no TLS, for now we're going to call this http-failure.

@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestUnitDNSDialerNoPort(t *testing.T) {
@@ -155,15 +156,15 @@ func TestUnitReduceErrors(t *testing.T) {
 
 	t.Run("multiple errors with meaningful ones", func(t *testing.T) {
 		err1 := errors.New("mocked error #1")
-		err2 := &modelx.ErrWrapper{
+		err2 := &errorx.ErrWrapper{
 			Failure: "unknown_failure: antani",
 		}
-		err3 := &modelx.ErrWrapper{
-			Failure: modelx.FailureConnectionRefused,
+		err3 := &errorx.ErrWrapper{
+			Failure: errorx.FailureConnectionRefused,
 		}
 		err4 := errors.New("mocked error #3")
 		result := dialer.ReduceErrors([]error{err1, err2, err3, err4})
-		if result.Error() != modelx.FailureConnectionRefused {
+		if result.Error() != errorx.FailureConnectionRefused {
 			t.Fatal("wrong result")
 		}
 	})

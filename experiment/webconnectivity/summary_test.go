@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestSummarize(t *testing.T) {
@@ -18,14 +18,14 @@ func TestSummarize(t *testing.T) {
 		httpDiff               = "http-diff"
 		httpFailure            = "http-failure"
 		nilstring              *string
-		probeConnectionRefused = modelx.FailureConnectionRefused
-		probeConnectionReset   = modelx.FailureConnectionReset
-		probeEOFError          = modelx.FailureEOFError
-		probeNXDOMAIN          = modelx.FailureDNSNXDOMAINError
-		probeTimeout           = modelx.FailureGenericTimeoutError
-		probeSSLInvalidHost    = modelx.FailureSSLInvalidHostname
-		probeSSLInvalidCert    = modelx.FailureSSLInvalidCertificate
-		probeSSLUnknownAuth    = modelx.FailureSSLUnknownAuthority
+		probeConnectionRefused = errorx.FailureConnectionRefused
+		probeConnectionReset   = errorx.FailureConnectionReset
+		probeEOFError          = errorx.FailureEOFError
+		probeNXDOMAIN          = errorx.FailureDNSNXDOMAINError
+		probeTimeout           = errorx.FailureGenericTimeoutError
+		probeSSLInvalidHost    = errorx.FailureSSLInvalidHostname
+		probeSSLInvalidCert    = errorx.FailureSSLInvalidCertificate
+		probeSSLUnknownAuth    = errorx.FailureSSLUnknownAuthority
 		tcpIP                  = "tcp_ip"
 		trueValue              = true
 	)

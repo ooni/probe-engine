@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/netx/connid"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // TLSHandshaker is the generic TLS handshaker
@@ -67,7 +67,7 @@ func (h ErrorWrapperTLSHandshaker) Handshake(
 	err = errorx.SafeErrWrapperBuilder{
 		ConnID:    connID,
 		Error:     err,
-		Operation: modelx.TLSHandshakeOperation,
+		Operation: errorx.TLSHandshakeOperation,
 	}.MaybeBuild()
 	return tlsconn, state, err
 }

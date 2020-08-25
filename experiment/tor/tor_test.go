@@ -18,7 +18,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/oonidatamodel"
 	"github.com/ooni/probe-engine/legacy/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/probeservices"
 )
 
@@ -469,7 +469,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 1 {
 			t.Fatal("cannot find expected entry")
 		}
-		if *tr.Summary[modelx.ConnectOperation].Failure != failure {
+		if *tr.Summary[errorx.ConnectOperation].Failure != failure {
 			t.Fatal("invalid failure")
 		}
 	})
@@ -488,7 +488,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 2 {
 			t.Fatal("cannot find expected entry")
 		}
-		if tr.Summary[modelx.ConnectOperation].Failure != nil {
+		if tr.Summary[errorx.ConnectOperation].Failure != nil {
 			t.Fatal("invalid failure")
 		}
 		if *tr.Summary["handshake"].Failure != failure {
@@ -512,7 +512,7 @@ func TestUnitSummary(t *testing.T) {
 			if len(tr.Summary) < 1 {
 				t.Fatal("cannot find expected entry")
 			}
-			if tr.Summary[modelx.ConnectOperation].Failure != nil {
+			if tr.Summary[errorx.ConnectOperation].Failure != nil {
 				t.Fatal("invalid failure")
 			}
 			if handshake == nil {

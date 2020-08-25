@@ -20,7 +20,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -152,14 +152,14 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	if tk.Agent != "agent" {
 		t.Fatal("invalid Agent")
 	}
-	if *tk.Failure != modelx.FailureInterrupted {
+	if *tk.Failure != errorx.FailureInterrupted {
 		t.Fatal("invalid Failure")
 	}
 	if len(tk.Requests) != 1 {
 		t.Fatal("invalid Requests")
 	}
 	request := tk.Requests[0]
-	if *request.Failure != modelx.FailureInterrupted {
+	if *request.Failure != errorx.FailureInterrupted {
 		t.Fatal("invalid Requests[0].Failure")
 	}
 	if request.Request.Body.Value != "" {
@@ -467,7 +467,7 @@ func TestInvalidJSONBody(t *testing.T) {
 	if tk.Agent != "agent" {
 		t.Fatal("invalid Agent")
 	}
-	if *tk.Failure != modelx.FailureJSONParseError {
+	if *tk.Failure != errorx.FailureJSONParseError {
 		t.Fatal("invalid Failure")
 	}
 	if len(tk.Requests) != 1 {

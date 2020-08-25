@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/pion/stun"
 )
 
@@ -204,7 +204,7 @@ func TestReadFailure(t *testing.T) {
 		t.Fatal("not the error we expected")
 	}
 	tk := measurement.TestKeys.(*stunreachability.TestKeys)
-	if *tk.Failure != modelx.FailureGenericTimeoutError {
+	if *tk.Failure != errorx.FailureGenericTimeoutError {
 		t.Fatal("expected different failure here")
 	}
 	if tk.Endpoint != "stun.l.google.com:19302" {

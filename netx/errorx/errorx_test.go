@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/pion/stun"
 )
 
@@ -21,7 +20,7 @@ func TestMaybeBuildFactory(t *testing.T) {
 		Error:         errors.New("mocked error"),
 		TransactionID: 100,
 	}.MaybeBuild()
-	var target *modelx.ErrWrapper
+	var target *ErrWrapper
 	if errors.As(err, &target) == false {
 		t.Fatal("not the expected error type")
 	}
@@ -45,55 +44,55 @@ func TestMaybeBuildFactory(t *testing.T) {
 func TestToFailureString(t *testing.T) {
 	t.Run("for already wrapped error", func(t *testing.T) {
 		err := SafeErrWrapperBuilder{Error: io.EOF}.MaybeBuild()
-		if toFailureString(err) != modelx.FailureEOFError {
+		if toFailureString(err) != FailureEOFError {
 			t.Fatal("unexpected result")
 		}
 	})
-	t.Run("for modelx.ErrDNSBogon", func(t *testing.T) {
-		if toFailureString(modelx.ErrDNSBogon) != modelx.FailureDNSBogonError {
+	t.Run("for ErrDNSBogon", func(t *testing.T) {
+		if toFailureString(ErrDNSBogon) != FailureDNSBogonError {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for context.Canceled", func(t *testing.T) {
-		if toFailureString(context.Canceled) != modelx.FailureInterrupted {
+		if toFailureString(context.Canceled) != FailureInterrupted {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.HostnameError", func(t *testing.T) {
 		var err x509.HostnameError
-		if toFailureString(err) != modelx.FailureSSLInvalidHostname {
+		if toFailureString(err) != FailureSSLInvalidHostname {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.UnknownAuthorityError", func(t *testing.T) {
 		var err x509.UnknownAuthorityError
-		if toFailureString(err) != modelx.FailureSSLUnknownAuthority {
+		if toFailureString(err) != FailureSSLUnknownAuthority {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for x509.CertificateInvalidError", func(t *testing.T) {
 		var err x509.CertificateInvalidError
-		if toFailureString(err) != modelx.FailureSSLInvalidCertificate {
+		if toFailureString(err) != FailureSSLInvalidCertificate {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for operation was canceled error", func(t *testing.T) {
-		if toFailureString(errors.New("operation was canceled")) != modelx.FailureInterrupted {
+		if toFailureString(errors.New("operation was canceled")) != FailureInterrupted {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for EOF", func(t *testing.T) {
-		if toFailureString(io.EOF) != modelx.FailureEOFError {
+		if toFailureString(io.EOF) != FailureEOFError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for connection_refused", func(t *testing.T) {
-		if toFailureString(syscall.ECONNREFUSED) != modelx.FailureConnectionRefused {
+		if toFailureString(syscall.ECONNREFUSED) != FailureConnectionRefused {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for connection_reset", func(t *testing.T) {
-		if toFailureString(syscall.ECONNRESET) != modelx.FailureConnectionReset {
+		if toFailureString(syscall.ECONNRESET) != FailureConnectionReset {
 			t.Fatal("unexpected results")
 		}
 	})
@@ -101,12 +100,12 @@ func TestToFailureString(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
 		defer cancel()
 		<-ctx.Done()
-		if toFailureString(ctx.Err()) != modelx.FailureGenericTimeoutError {
+		if toFailureString(ctx.Err()) != FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for stun's transaction is timed out", func(t *testing.T) {
-		if toFailureString(stun.ErrTransactionTimeOut) != modelx.FailureGenericTimeoutError {
+		if toFailureString(stun.ErrTransactionTimeOut) != FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
@@ -120,20 +119,20 @@ func TestToFailureString(t *testing.T) {
 		if conn != nil {
 			t.Fatal("expected nil connection here")
 		}
-		if toFailureString(err) != modelx.FailureGenericTimeoutError {
+		if toFailureString(err) != FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for TLS handshake timeout error", func(t *testing.T) {
 		err := errors.New("net/http: TLS handshake timeout")
-		if toFailureString(err) != modelx.FailureGenericTimeoutError {
+		if toFailureString(err) != FailureGenericTimeoutError {
 			t.Fatal("unexpected results")
 		}
 	})
 	t.Run("for no such host", func(t *testing.T) {
 		if toFailureString(&net.DNSError{
 			Err: "no such host",
-		}) != modelx.FailureDNSNXDOMAINError {
+		}) != FailureDNSNXDOMAINError {
 			t.Fatal("unexpected results")
 		}
 	})
@@ -159,32 +158,32 @@ func TestUnitToOperationString(t *testing.T) {
 	t.Run("for connect", func(t *testing.T) {
 		// You're doing HTTP and connect fails. You want to know
 		// that connect failed not that HTTP failed.
-		err := &modelx.ErrWrapper{Operation: modelx.ConnectOperation}
-		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.ConnectOperation {
+		err := &ErrWrapper{Operation: ConnectOperation}
+		if toOperationString(err, HTTPRoundTripOperation) != ConnectOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for http_round_trip", func(t *testing.T) {
 		// You're doing DoH and something fails inside HTTP. You want
 		// to know about the internal HTTP error, not resolve.
-		err := &modelx.ErrWrapper{Operation: modelx.HTTPRoundTripOperation}
-		if toOperationString(err, modelx.ResolveOperation) != modelx.HTTPRoundTripOperation {
+		err := &ErrWrapper{Operation: HTTPRoundTripOperation}
+		if toOperationString(err, ResolveOperation) != HTTPRoundTripOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for resolve", func(t *testing.T) {
 		// You're doing HTTP and the DNS fails. You want to
 		// know that resolve failed.
-		err := &modelx.ErrWrapper{Operation: modelx.ResolveOperation}
-		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.ResolveOperation {
+		err := &ErrWrapper{Operation: ResolveOperation}
+		if toOperationString(err, HTTPRoundTripOperation) != ResolveOperation {
 			t.Fatal("unexpected result")
 		}
 	})
 	t.Run("for tls_handshake", func(t *testing.T) {
 		// You're doing HTTP and the TLS handshake fails. You want
 		// to know about a TLS handshake error.
-		err := &modelx.ErrWrapper{Operation: modelx.TLSHandshakeOperation}
-		if toOperationString(err, modelx.HTTPRoundTripOperation) != modelx.TLSHandshakeOperation {
+		err := &ErrWrapper{Operation: TLSHandshakeOperation}
+		if toOperationString(err, HTTPRoundTripOperation) != TLSHandshakeOperation {
 			t.Fatal("unexpected result")
 		}
 	})
@@ -192,8 +191,8 @@ func TestUnitToOperationString(t *testing.T) {
 		// You just noticed that TLS handshake failed and you
 		// have a child error telling you that read failed. Here
 		// you want to know about a TLS handshake error.
-		err := &modelx.ErrWrapper{Operation: modelx.ReadOperation}
-		if toOperationString(err, modelx.TLSHandshakeOperation) != modelx.TLSHandshakeOperation {
+		err := &ErrWrapper{Operation: ReadOperation}
+		if toOperationString(err, TLSHandshakeOperation) != TLSHandshakeOperation {
 			t.Fatal("unexpected result")
 		}
 	})

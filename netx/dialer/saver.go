@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/tlsx"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -28,7 +28,7 @@ func (d SaverDialer) DialContext(ctx context.Context, network, address string) (
 		Address:  address,
 		Duration: stop.Sub(start),
 		Err:      err,
-		Name:     modelx.ConnectOperation,
+		Name:     errorx.ConnectOperation,
 		Proto:    network,
 		Time:     stop,
 	})
@@ -101,7 +101,7 @@ func (c saverConn) Read(p []byte) (int, error) {
 		Duration: stop.Sub(start),
 		Err:      err,
 		NumBytes: count,
-		Name:     modelx.ReadOperation,
+		Name:     errorx.ReadOperation,
 		Time:     stop,
 	})
 	return count, err
@@ -116,7 +116,7 @@ func (c saverConn) Write(p []byte) (int, error) {
 		Duration: stop.Sub(start),
 		Err:      err,
 		NumBytes: count,
-		Name:     modelx.WriteOperation,
+		Name:     errorx.WriteOperation,
 		Time:     stop,
 	})
 	return count, err

@@ -15,7 +15,7 @@ import (
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -110,7 +110,7 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := new(trace.Saver)
-	saver.Write(trace.Event{Name: modelx.ConnectOperation, Duration: 150 * time.Millisecond})
+	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
 	r := runner{
 		callbacks: handler.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
@@ -154,7 +154,7 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 
 func TestUnitRunnerLoopSuccess(t *testing.T) {
 	saver := new(trace.Saver)
-	saver.Write(trace.Event{Name: modelx.ConnectOperation, Duration: 150 * time.Millisecond})
+	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
 	r := runner{
 		callbacks: handler.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{

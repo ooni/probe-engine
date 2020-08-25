@@ -15,7 +15,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 const (
@@ -64,24 +64,24 @@ func (tk *TestKeys) classify() string {
 		return classSuccessGotServerHello
 	}
 	switch *tk.Target.Failure {
-	case modelx.FailureConnectionRefused:
+	case errorx.FailureConnectionRefused:
 		return classAnomalyTestHelperUnreachable
-	case modelx.FailureConnectionReset:
+	case errorx.FailureConnectionReset:
 		return classInterferenceReset
-	case modelx.FailureDNSNXDOMAINError:
+	case errorx.FailureDNSNXDOMAINError:
 		return classAnomalyTestHelperUnreachable
-	case modelx.FailureEOFError:
+	case errorx.FailureEOFError:
 		return classInterferenceClosed
-	case modelx.FailureGenericTimeoutError:
+	case errorx.FailureGenericTimeoutError:
 		if tk.Control.Failure != nil {
 			return classAnomalyTestHelperUnreachable
 		}
 		return classAnomalyTimeout
-	case modelx.FailureSSLInvalidCertificate:
+	case errorx.FailureSSLInvalidCertificate:
 		return classInterferenceInvalidCertificate
-	case modelx.FailureSSLInvalidHostname:
+	case errorx.FailureSSLInvalidHostname:
 		return classSuccessGotServerHello
-	case modelx.FailureSSLUnknownAuthority:
+	case errorx.FailureSSLUnknownAuthority:
 		return classInterferenceUnknownAuthority
 	}
 	return classAnomalyUnexpectedFailure
@@ -117,8 +117,8 @@ func (m *Measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := modelx.FailureInterrupted
-		failedop := modelx.TopLevelOperation
+		s := errorx.FailureInterrupted
+		failedop := errorx.TopLevelOperation
 		return Subresult{
 			TestKeys: urlgetter.TestKeys{
 				FailedOperation: &failedop,

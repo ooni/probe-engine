@@ -9,8 +9,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/netx/bytecounter"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -81,10 +81,10 @@ func TestIntegrationBogonResolutionNotBroken(t *testing.T) {
 		Logger:       log.Log,
 	})
 	addrs, err := r.LookupHost(context.Background(), "www.google.com")
-	if !errors.Is(err, modelx.ErrDNSBogon) {
+	if !errors.Is(err, errorx.ErrDNSBogon) {
 		t.Fatal("not the error we expected")
 	}
-	if err.Error() != modelx.FailureDNSBogonError {
+	if err.Error() != errorx.FailureDNSBogonError {
 		t.Fatal("error not correctly wrapped")
 	}
 	if len(addrs) != 1 || addrs[0] != "127.0.0.1" {
