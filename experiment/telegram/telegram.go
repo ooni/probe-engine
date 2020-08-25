@@ -10,7 +10,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 const (
@@ -55,7 +55,7 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 			tk.TelegramTCPBlocking = false
 			return // found successful access point connection
 		}
-		if v.TestKeys.FailedOperation == nil || *v.TestKeys.FailedOperation != modelx.ConnectOperation {
+		if v.TestKeys.FailedOperation == nil || *v.TestKeys.FailedOperation != errorx.ConnectOperation {
 			tk.TelegramTCPBlocking = false
 		}
 		return

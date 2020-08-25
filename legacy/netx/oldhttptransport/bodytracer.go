@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/netx/transactionid"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 // BodyTracer performs single HTTP transactions and emits

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ooni/probe-engine/internal/tlsx"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 // Logger is the interface we expect from a logger

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 type stdoutHandler struct{}

@@ -24,7 +24,7 @@ import (
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/legacy/netx"
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"gitlab.com/yawning/obfs4.git/transports"
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )

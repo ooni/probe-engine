@@ -13,8 +13,8 @@ import (
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -85,7 +85,7 @@ func TestIntegrationCancelledContext(t *testing.T) {
 		t.Fatal("unexpected FailureList length")
 	}
 	for _, failure := range tk.FailureList {
-		if *failure != modelx.FailureInterrupted {
+		if *failure != errorx.FailureInterrupted {
 			t.Fatal("unexpected failure")
 		}
 	}

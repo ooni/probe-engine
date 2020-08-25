@@ -19,7 +19,6 @@ import (
 	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -84,7 +83,7 @@ type TCPConnectEntry struct {
 func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry {
 	var out []TCPConnectEntry
 	for _, event := range events {
-		if event.Name != modelx.ConnectOperation {
+		if event.Name != errorx.ConnectOperation {
 			continue
 		}
 		// We assume Go is passing us legit data structures
@@ -113,9 +112,9 @@ func NewFailure(err error) *string {
 	// in which this happen is with context deadline for HTTP.
 	err = errorx.SafeErrWrapperBuilder{
 		Error:     err,
-		Operation: modelx.TopLevelOperation,
+		Operation: errorx.TopLevelOperation,
 	}.MaybeBuild()
-	errWrapper := err.(*modelx.ErrWrapper)
+	errWrapper := err.(*errorx.ErrWrapper)
 	s := errWrapper.Failure
 	if s == "" {
 		s = "unknown_failure: errWrapper.Failure is empty"
@@ -129,8 +128,8 @@ func NewFailedOperation(err error) *string {
 		return nil
 	}
 	var (
-		errWrapper *modelx.ErrWrapper
-		s          = modelx.UnknownOperation
+		errWrapper *errorx.ErrWrapper
+		s          = errorx.UnknownOperation
 	)
 	if errors.As(err, &errWrapper) && errWrapper.Operation != "" {
 		s = errWrapper.Operation
@@ -476,7 +475,7 @@ type NetworkEvent struct {
 func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent {
 	var out []NetworkEvent
 	for _, ev := range events {
-		if ev.Name == modelx.ConnectOperation {
+		if ev.Name == errorx.ConnectOperation {
 			out = append(out, NetworkEvent{
 				Address:   ev.Address,
 				Failure:   NewFailure(ev.Err),
@@ -486,7 +485,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 			})
 			continue
 		}
-		if ev.Name == modelx.ReadOperation {
+		if ev.Name == errorx.ReadOperation {
 			out = append(out, NetworkEvent{
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
@@ -495,7 +494,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 			})
 			continue
 		}
-		if ev.Name == modelx.WriteOperation {
+		if ev.Name == errorx.WriteOperation {
 			out = append(out, NetworkEvent{
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,

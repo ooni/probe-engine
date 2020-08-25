@@ -7,7 +7,6 @@ import (
 	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // ControlRequest is the request that we send to the control
@@ -62,7 +61,7 @@ func Control(
 	// make sure error is wrapped
 	err = errorx.SafeErrWrapperBuilder{
 		Error:     clnt.PostJSON(ctx, "/", creq, &out),
-		Operation: modelx.TopLevelOperation,
+		Operation: errorx.TopLevelOperation,
 	}.MaybeBuild()
 	sess.Logger().Infof("control %s... %+v", creq.HTTPRequest, err)
 	(&out.DNS).FillASNs(sess)

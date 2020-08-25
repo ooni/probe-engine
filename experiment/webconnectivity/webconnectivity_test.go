@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -69,10 +69,10 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
-	if *tk.ControlFailure != modelx.FailureInterrupted {
+	if *tk.ControlFailure != errorx.FailureInterrupted {
 		t.Fatal("unexpected control_failure")
 	}
-	if *tk.DNSExperimentFailure != modelx.FailureInterrupted {
+	if *tk.DNSExperimentFailure != errorx.FailureInterrupted {
 		t.Fatal("unexpected dns_experiment_failure")
 	}
 	if tk.HTTPExperimentFailure != nil {

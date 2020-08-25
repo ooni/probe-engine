@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -152,7 +152,7 @@ func TestIntegrationWithCancelledContext(t *testing.T) {
 
 func TestComputeEndpointStatsTCPBlocking(t *testing.T) {
 	failure := io.EOF.Error()
-	operation := modelx.ConnectOperation
+	operation := errorx.ConnectOperation
 	tk := fbmessenger.TestKeys{}
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: fbmessenger.ServiceEdge},
@@ -182,7 +182,7 @@ func TestComputeEndpointStatsTCPBlocking(t *testing.T) {
 
 func TestComputeEndpointStatsDNSIsLying(t *testing.T) {
 	failure := io.EOF.Error()
-	operation := modelx.ConnectOperation
+	operation := errorx.ConnectOperation
 	tk := fbmessenger.TestKeys{}
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: fbmessenger.ServiceEdge},

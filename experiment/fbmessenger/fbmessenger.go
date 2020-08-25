@@ -10,7 +10,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 const (
@@ -110,7 +110,7 @@ func (tk *TestKeys) ComputeEndpointStatus(v urlgetter.MultiOutput, dns, tcp **bo
 	// start where all is unknown
 	*dns, *tcp = nil, nil
 	// process DNS first
-	if v.TestKeys.FailedOperation != nil && *v.TestKeys.FailedOperation == modelx.ResolveOperation {
+	if v.TestKeys.FailedOperation != nil && *v.TestKeys.FailedOperation == errorx.ResolveOperation {
 		tk.FacebookDNSBlocking = &trueValue
 		*dns = &falseValue
 		return // we know that the DNS has failed
@@ -126,7 +126,7 @@ func (tk *TestKeys) ComputeEndpointStatus(v urlgetter.MultiOutput, dns, tcp **bo
 	}
 	*dns = &trueValue
 	// now process connect
-	if v.TestKeys.FailedOperation != nil && *v.TestKeys.FailedOperation == modelx.ConnectOperation {
+	if v.TestKeys.FailedOperation != nil && *v.TestKeys.FailedOperation == errorx.ConnectOperation {
 		tk.FacebookTCPBlocking = &trueValue
 		*tcp = &falseValue
 		return // because connect failed

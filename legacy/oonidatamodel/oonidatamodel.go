@@ -19,7 +19,8 @@ import (
 	"github.com/ooni/probe-engine/internal/tlsx"
 	"github.com/ooni/probe-engine/legacy/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 // ExtSpec describes a data format extension
@@ -434,7 +435,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 				ConnID:        in.Connect.ConnID,
 				DialID:        in.Connect.DialID,
 				Failure:       makeFailure(in.Connect.Error),
-				Operation:     modelx.ConnectOperation,
+				Operation:     errorx.ConnectOperation,
 				Proto:         protocolName[in.Connect.ConnID >= 0],
 				T:             in.Connect.DurationSinceBeginning.Seconds(),
 				TransactionID: in.Connect.TransactionID,
@@ -445,7 +446,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 			out = append(out, &NetworkEvent{
 				ConnID:    in.Read.ConnID,
 				Failure:   makeFailure(in.Read.Error),
-				Operation: modelx.ReadOperation,
+				Operation: errorx.ReadOperation,
 				NumBytes:  in.Read.NumBytes,
 				Proto:     protocolName[in.Read.ConnID >= 0],
 				T:         in.Read.DurationSinceBeginning.Seconds(),
@@ -456,7 +457,7 @@ func NewNetworkEventsList(results oonitemplates.Results) NetworkEventsList {
 			out = append(out, &NetworkEvent{
 				ConnID:    in.Write.ConnID,
 				Failure:   makeFailure(in.Write.Error),
-				Operation: modelx.WriteOperation,
+				Operation: errorx.WriteOperation,
 				NumBytes:  in.Write.NumBytes,
 				Proto:     protocolName[in.Write.ConnID >= 0],
 				T:         in.Write.DurationSinceBeginning.Seconds(),

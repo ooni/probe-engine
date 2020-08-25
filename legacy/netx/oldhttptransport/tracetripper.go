@@ -15,7 +15,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 // TraceTripper performs single HTTP transactions.
@@ -88,7 +88,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	var (
 		err              error
-		majorOp          = modelx.HTTPRoundTripOperation
+		majorOp          = errorx.HTTPRoundTripOperation
 		majorOpMu        sync.Mutex
 		requestBody      []byte
 		requestHeaders   = http.Header{}
@@ -108,7 +108,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	tracer := &httptrace.ClientTrace{
 		TLSHandshakeStart: func() {
 			majorOpMu.Lock()
-			majorOp = modelx.TLSHandshakeOperation
+			majorOp = errorx.TLSHandshakeOperation
 			majorOpMu.Unlock()
 			// Event emitted by net/http when DialTLS is not
 			// configured in the http.Transport
@@ -124,7 +124,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 			// less confusing to users to see the wrapped name
 			err = errorx.SafeErrWrapperBuilder{
 				Error:         err,
-				Operation:     modelx.TLSHandshakeOperation,
+				Operation:     errorx.TLSHandshakeOperation,
 				TransactionID: tid,
 			}.MaybeBuild()
 			durationSinceBeginning := time.Now().Sub(root.Beginning)
@@ -141,7 +141,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		},
 		GotConn: func(info httptrace.GotConnInfo) {
 			majorOpMu.Lock()
-			majorOp = modelx.HTTPRoundTripOperation
+			majorOp = errorx.HTTPRoundTripOperation
 			majorOpMu.Unlock()
 			root.Handler.OnMeasurement(modelx.Measurement{
 				HTTPConnectionReady: &modelx.HTTPConnectionReadyEvent{
@@ -188,7 +188,7 @@ func (t *TraceTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 			// less confusing to users to see the wrapped name
 			err := errorx.SafeErrWrapperBuilder{
 				Error:         info.Err,
-				Operation:     modelx.HTTPRoundTripOperation,
+				Operation:     errorx.HTTPRoundTripOperation,
 				TransactionID: tid,
 			}.MaybeBuild()
 			root.Handler.OnMeasurement(modelx.Measurement{

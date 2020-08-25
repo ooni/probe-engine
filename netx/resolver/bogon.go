@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 var privateIPBlocks []*net.IPNet
@@ -62,7 +62,7 @@ func (r BogonResolver) LookupHost(ctx context.Context, hostname string) ([]strin
 		if IsBogon(addr) == true {
 			// We need to return the addrs otherwise the caller cannot see/log/save
 			// the specific addresses that triggered our bogon filter
-			return addrs, modelx.ErrDNSBogon
+			return addrs, errorx.ErrDNSBogon
 		}
 	}
 	return addrs, err

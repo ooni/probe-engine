@@ -11,7 +11,8 @@ import (
 
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {
@@ -104,17 +105,17 @@ func TestUnitErrorWrapperTLSHandshakerFailure(t *testing.T) {
 	if conn != nil {
 		t.Fatal("expected nil con here")
 	}
-	var errWrapper *modelx.ErrWrapper
+	var errWrapper *errorx.ErrWrapper
 	if !errors.As(err, &errWrapper) {
 		t.Fatal("cannot cast to ErrWrapper")
 	}
 	if errWrapper.ConnID == 0 {
 		t.Fatal("unexpected ConnID")
 	}
-	if errWrapper.Failure != modelx.FailureEOFError {
+	if errWrapper.Failure != errorx.FailureEOFError {
 		t.Fatal("unexpected Failure")
 	}
-	if errWrapper.Operation != modelx.TLSHandshakeOperation {
+	if errWrapper.Operation != errorx.TLSHandshakeOperation {
 		t.Fatal("unexpected Operation")
 	}
 }
@@ -267,7 +268,7 @@ func TestIntegrationDialTLSContextTimeout(t *testing.T) {
 		},
 	}
 	conn, err := dialer.DialTLSContext(context.Background(), "tcp", "google.com:443")
-	if err.Error() != modelx.FailureGenericTimeoutError {
+	if err.Error() != errorx.FailureGenericTimeoutError {
 		t.Fatal("not the error that we expected")
 	}
 	if conn != nil {

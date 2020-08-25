@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/legacy/oonitemplates"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 func TestUnitNewTCPConnectListEmpty(t *testing.T) {
@@ -66,7 +67,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 		Connects: []*modelx.ConnectEvent{
 			{
 				RemoteAddress: "8.8.8.8:53",
-				Error:         errors.New(modelx.FailureConnectionReset),
+				Error:         errors.New(errorx.FailureConnectionReset),
 			},
 		},
 	})
@@ -79,7 +80,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 	if out[0].Port != 53 {
 		t.Fatal("unexpected out[0].Port")
 	}
-	if *out[0].Status.Failure != modelx.FailureConnectionReset {
+	if *out[0].Status.Failure != errorx.FailureConnectionReset {
 		t.Fatal("unexpected out[0].Failure")
 	}
 	if out[0].Status.Success != false {
@@ -92,7 +93,7 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 		Connects: []*modelx.ConnectEvent{
 			{
 				RemoteAddress: "8.8.8.8",
-				Error:         errors.New(modelx.FailureConnectionReset),
+				Error:         errors.New(errorx.FailureConnectionReset),
 			},
 		},
 	})
@@ -105,7 +106,7 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 	if out[0].Port != 0 {
 		t.Fatal("unexpected out[0].Port")
 	}
-	if *out[0].Status.Failure != modelx.FailureConnectionReset {
+	if *out[0].Status.Failure != errorx.FailureConnectionReset {
 		t.Fatal("unexpected out[0].Failure")
 	}
 	if out[0].Status.Success != false {
@@ -648,7 +649,7 @@ func TestUnitNewDNSQueriesListSuccess(t *testing.T) {
 				TransportNetwork: "system",
 			},
 			{
-				Error:            errors.New(modelx.FailureDNSNXDOMAINError),
+				Error:            errors.New(errorx.FailureDNSNXDOMAINError),
 				Hostname:         "dns.googlex",
 				TransportNetwork: "system",
 			},
@@ -767,7 +768,7 @@ func dnscheckbad(e DNSQueryEntry) error {
 	if e.Engine != "system" {
 		return errors.New("invalid engine")
 	}
-	if *e.Failure != modelx.FailureDNSNXDOMAINError {
+	if *e.Failure != errorx.FailureDNSNXDOMAINError {
 		return errors.New("invalid failure")
 	}
 	if e.Hostname != "dns.googlex" {
@@ -863,7 +864,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[0].NumBytes != 0 {
 		t.Fatal("wrong out[0].NumBytes")
 	}
-	if out[0].Operation != modelx.ConnectOperation {
+	if out[0].Operation != errorx.ConnectOperation {
 		t.Fatal("wrong out[0].Operation")
 	}
 	if out[0].Proto != "tcp" {
@@ -888,7 +889,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[1].NumBytes != 1789 {
 		t.Fatal("wrong out[1].NumBytes")
 	}
-	if out[1].Operation != modelx.ReadOperation {
+	if out[1].Operation != errorx.ReadOperation {
 		t.Fatal("wrong out[1].Operation")
 	}
 	if out[1].Proto != "tcp" {
@@ -913,7 +914,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	if out[2].NumBytes != 17714 {
 		t.Fatal("wrong out[2].NumBytes")
 	}
-	if out[2].Operation != modelx.WriteOperation {
+	if out[2].Operation != errorx.WriteOperation {
 		t.Fatal("wrong out[2].Operation")
 	}
 	if out[2].Proto != "tcp" {
@@ -973,7 +974,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[0].NumBytes != 0 {
 		t.Fatal("wrong out[0].NumBytes")
 	}
-	if out[0].Operation != modelx.ConnectOperation {
+	if out[0].Operation != errorx.ConnectOperation {
 		t.Fatal("wrong out[0].Operation")
 	}
 	if out[0].Proto != "udp" {
@@ -998,7 +999,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[1].NumBytes != 1789 {
 		t.Fatal("wrong out[1].NumBytes")
 	}
-	if out[1].Operation != modelx.ReadOperation {
+	if out[1].Operation != errorx.ReadOperation {
 		t.Fatal("wrong out[1].Operation")
 	}
 	if out[1].Proto != "udp" {
@@ -1023,7 +1024,7 @@ func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	if out[2].NumBytes != 17714 {
 		t.Fatal("wrong out[2].NumBytes")
 	}
-	if out[2].Operation != modelx.WriteOperation {
+	if out[2].Operation != errorx.WriteOperation {
 		t.Fatal("wrong out[2].Operation")
 	}
 	if out[2].Proto != "udp" {

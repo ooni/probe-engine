@@ -7,7 +7,6 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -46,7 +45,7 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	// hitting our httptransport that does error wrapping.
 	err = errorx.SafeErrWrapperBuilder{
 		Error:     err,
-		Operation: modelx.TopLevelOperation,
+		Operation: errorx.TopLevelOperation,
 	}.MaybeBuild()
 	tk.FailedOperation = archival.NewFailedOperation(err)
 	tk.Failure = archival.NewFailure(err)

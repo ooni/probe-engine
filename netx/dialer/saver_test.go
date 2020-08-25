@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -43,7 +43,7 @@ func TestUnitSaverDialerFailure(t *testing.T) {
 	if !errors.Is(ev[0].Err, expected) {
 		t.Fatal("unexpected Err")
 	}
-	if ev[0].Name != modelx.ConnectOperation {
+	if ev[0].Name != errorx.ConnectOperation {
 		t.Fatal("unexpected Name")
 	}
 	if ev[0].Proto != "tcp" {
@@ -129,7 +129,7 @@ func TestIntegrationSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
 			t.Fatal("unexpected NumBytes")
 		}
 		switch ev[idx].Name {
-		case modelx.ReadOperation, modelx.WriteOperation:
+		case errorx.ReadOperation, errorx.WriteOperation:
 		default:
 			t.Fatal("unexpected Name")
 		}

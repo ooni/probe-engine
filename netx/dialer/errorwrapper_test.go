@@ -8,7 +8,7 @@ import (
 
 	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestErrorWrapperFailure(t *testing.T) {
@@ -18,14 +18,14 @@ func TestErrorWrapperFailure(t *testing.T) {
 	if conn != nil {
 		t.Fatal("expected a nil conn here")
 	}
-	errorWrapperCheckErr(t, err, modelx.ConnectOperation)
+	errorWrapperCheckErr(t, err, errorx.ConnectOperation)
 }
 
 func errorWrapperCheckErr(t *testing.T, err error, op string) {
 	if !errors.Is(err, io.EOF) {
 		t.Fatal("expected another error here")
 	}
-	var errWrapper *modelx.ErrWrapper
+	var errWrapper *errorx.ErrWrapper
 	if !errors.As(err, &errWrapper) {
 		t.Fatal("cannot cast to ErrWrapper")
 	}
@@ -35,7 +35,7 @@ func errorWrapperCheckErr(t *testing.T, err error, op string) {
 	if errWrapper.Operation != op {
 		t.Fatal("unexpected Operation")
 	}
-	if errWrapper.Failure != modelx.FailureEOFError {
+	if errWrapper.Failure != errorx.FailureEOFError {
 		t.Fatal("unexpected failure")
 	}
 }
@@ -51,11 +51,11 @@ func TestErrorWrapperSuccess(t *testing.T) {
 		t.Fatal("expected non-nil conn here")
 	}
 	count, err := conn.Read(nil)
-	errorWrapperCheckIOResult(t, count, err, modelx.ReadOperation)
+	errorWrapperCheckIOResult(t, count, err, errorx.ReadOperation)
 	count, err = conn.Write(nil)
-	errorWrapperCheckIOResult(t, count, err, modelx.WriteOperation)
+	errorWrapperCheckIOResult(t, count, err, errorx.WriteOperation)
 	err = conn.Close()
-	errorWrapperCheckErr(t, err, modelx.CloseOperation)
+	errorWrapperCheckErr(t, err, errorx.CloseOperation)
 }
 
 func errorWrapperCheckIOResult(t *testing.T, count int, err error, op string) {

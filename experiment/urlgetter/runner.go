@@ -12,16 +12,16 @@ import (
 
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 const httpRequestFailed = "http_request_failed"
 
 // ErrHTTPRequestFailed indicates that the HTTP request failed.
-var ErrHTTPRequestFailed = &modelx.ErrWrapper{
+var ErrHTTPRequestFailed = &errorx.ErrWrapper{
 	Failure:    httpRequestFailed,
-	Operation:  modelx.TopLevelOperation,
+	Operation:  errorx.TopLevelOperation,
 	WrappedErr: errors.New(httpRequestFailed),
 }
 

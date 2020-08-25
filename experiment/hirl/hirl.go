@@ -14,8 +14,8 @@ import (
 	"github.com/ooni/probe-engine/internal/randx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 const (
@@ -293,7 +293,7 @@ func RunMethod(ctx context.Context, config RunMethodConfig) {
 		count, err := conn.Read(data)
 		if err != nil {
 			// We expect this method to terminate w/ timeout
-			if err.Error() == modelx.FailureGenericTimeoutError {
+			if err.Error() == errorx.FailureGenericTimeoutError {
 				err = nil
 			}
 			result.Err = err

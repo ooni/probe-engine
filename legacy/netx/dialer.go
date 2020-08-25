@@ -12,7 +12,7 @@ import (
 
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
 // Dialer performs measurements while dialing.
