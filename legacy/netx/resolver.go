@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/resolver"
 )

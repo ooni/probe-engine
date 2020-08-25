@@ -13,10 +13,10 @@ import (
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/httpheader"
-	"github.com/ooni/probe-engine/internal/netxlogger"
-	"github.com/ooni/probe-engine/internal/oonidatamodel"
-	"github.com/ooni/probe-engine/internal/oonitemplates"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/legacy/netxlogger"
+	"github.com/ooni/probe-engine/legacy/oonidatamodel"
+	"github.com/ooni/probe-engine/legacy/oonitemplates"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/modelx"

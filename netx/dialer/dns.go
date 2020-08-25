@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ooni/probe-engine/netx/internal/dialid"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 

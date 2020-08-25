@@ -10,8 +10,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/legacy/netx/handlers"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 

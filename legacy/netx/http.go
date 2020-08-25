@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ooni/probe-engine/legacy/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/oldhttptransport"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/handlers"
 	"github.com/ooni/probe-engine/netx/modelx"
-	"github.com/ooni/probe-engine/netx/oldhttptransport"
 	"golang.org/x/net/http2"
 )
 

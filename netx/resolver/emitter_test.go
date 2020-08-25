@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/ooni/probe-engine/netx/handlers"
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/legacy/netx/handlers"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/resolver"
 )

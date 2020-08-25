@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 	"github.com/ooni/probe-engine/netx/modelx"
 )
 
