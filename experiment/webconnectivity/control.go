@@ -3,7 +3,7 @@ package webconnectivity
 import (
 	"context"
 
-	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -79,7 +79,7 @@ func (dns *ControlDNSResult) FillASNs(sess model.ExperimentSession) {
 	for _, ip := range dns.Addrs {
 		// TODO(bassosimone): this would be more efficient if we'd open just
 		// once the database and then reuse it for every address.
-		asn, _, _ := mmdblookup.ASN(sess.ASNDatabasePath(), ip)
+		asn, _, _ := geolocate.LookupASN(sess.ASNDatabasePath(), ip)
 		dns.ASNs = append(dns.ASNs, int64(asn))
 	}
 }

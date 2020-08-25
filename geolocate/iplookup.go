@@ -1,5 +1,4 @@
-// Package iplookup implements probe IP lookup.
-package iplookup
+package geolocate
 
 import (
 	"context"
@@ -11,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ooni/probe-engine/geoiplookup/iplookup/avast"
-	"github.com/ooni/probe-engine/geoiplookup/iplookup/ubuntu"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -31,19 +28,19 @@ var (
 	methods = []method{
 		{
 			name: "avast",
-			fn:   avast.Do,
+			fn:   AvastIPLookup,
 		},
 		{
 			name: "ubuntu",
-			fn:   ubuntu.Do,
+			fn:   UbuntuIPLookup,
 		},
 	}
 
 	once sync.Once
 )
 
-// Client is an iplookup client
-type Client struct {
+// IPLookupClient is an iplookup client
+type IPLookupClient struct {
 	// HTTPClient is the HTTP client to use
 	HTTPClient *http.Client
 
@@ -65,7 +62,7 @@ func makeSlice() []method {
 }
 
 // DoWithCustomFunc performs the IP lookup with a custom function.
-func (c *Client) DoWithCustomFunc(
+func (c *IPLookupClient) DoWithCustomFunc(
 	ctx context.Context, fn LookupFunc,
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
@@ -80,7 +77,7 @@ func (c *Client) DoWithCustomFunc(
 }
 
 // Do performs the IP lookup.
-func (c *Client) Do(ctx context.Context) (ip string, err error) {
+func (c *IPLookupClient) Do(ctx context.Context) (ip string, err error) {
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)
 		ip, err = c.DoWithCustomFunc(ctx, method.fn)

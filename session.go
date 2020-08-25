@@ -13,9 +13,7 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/geoiplookup/iplookup"
-	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
-	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
@@ -459,11 +457,11 @@ func (s *Session) initOrchestraClient(
 }
 
 func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
-	return mmdblookup.ASN(dbPath, ip)
+	return geolocate.LookupASN(dbPath, ip)
 }
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
-	return (&iplookup.Client{
+	return (&geolocate.IPLookupClient{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
 		UserAgent:  httpheader.UserAgent(), // no need to identify as OONI
@@ -471,11 +469,11 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 }
 
 func (s *Session) lookupProbeCC(dbPath, probeIP string) (string, error) {
-	return mmdblookup.CC(dbPath, probeIP)
+	return geolocate.LookupCC(dbPath, probeIP)
 }
 
 func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
-	return resolverlookup.First(ctx, nil)
+	return geolocate.LookupFirstResolverIP(ctx, nil)
 }
 
 func (s *Session) maybeLookupBackends(ctx context.Context) error {

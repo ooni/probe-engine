@@ -1,4 +1,4 @@
-package iplookup_test
+package geolocate_test
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/geoiplookup/iplookup"
-	"github.com/ooni/probe-engine/geoiplookup/iplookup/invalid"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIPLookupIntegration(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	ip, err := (&iplookup.Client{
+	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
@@ -24,11 +23,11 @@ func TestIntegration(t *testing.T) {
 	t.Log(ip)
 }
 
-func TestAllFailed(t *testing.T) {
+func TestIPLookupAllFailed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel to cause Do() to fail
 	log.SetLevel(log.DebugLevel)
-	ip, err := (&iplookup.Client{
+	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
@@ -41,14 +40,14 @@ func TestAllFailed(t *testing.T) {
 	}
 }
 
-func TestInvalidIP(t *testing.T) {
+func TestIPLookupInvalidIP(t *testing.T) {
 	ctx := context.Background()
 	log.SetLevel(log.DebugLevel)
-	ip, err := (&iplookup.Client{
+	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).DoWithCustomFunc(ctx, invalid.Do)
+	}).DoWithCustomFunc(ctx, geolocate.InvalidIPLookup)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

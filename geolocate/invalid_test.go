@@ -1,5 +1,4 @@
-// Package invalid returns an invalid IP.
-package invalid
+package geolocate
 
 import (
 	"context"
@@ -8,8 +7,8 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// Do performs the IP lookup.
-func Do(
+// InvalidIPLookup is an IP lookup that always returns an invalid IP.
+func InvalidIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,

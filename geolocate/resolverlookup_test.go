@@ -1,14 +1,14 @@
-package resolverlookup_test
+package geolocate_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
+	"github.com/ooni/probe-engine/geolocate"
 )
 
 func TestResolverLookupAll(t *testing.T) {
-	addrs, err := resolverlookup.All(context.Background(), nil)
+	addrs, err := geolocate.LookupAllResolverIPs(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,7 +18,7 @@ func TestResolverLookupAll(t *testing.T) {
 }
 
 func TestResolverLookupFirstSuccess(t *testing.T) {
-	addr, err := resolverlookup.First(context.Background(), nil)
+	addr, err := geolocate.LookupFirstResolverIP(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func (*brokenHostLookupper) LookupHost(
 
 func TestResolverLookupFirstFailure(t *testing.T) {
 	resolver := &brokenHostLookupper{}
-	addr, err := resolverlookup.First(context.Background(), resolver)
+	addr, err := geolocate.LookupFirstResolverIP(context.Background(), resolver)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

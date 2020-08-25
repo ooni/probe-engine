@@ -1,5 +1,4 @@
-// Package resolverlookup discovers the resolver's IP
-package resolverlookup
+package geolocate
 
 import (
 	"context"
@@ -12,8 +11,8 @@ type HostLookupper interface {
 	LookupHost(ctx context.Context, host string) (addrs []string, err error)
 }
 
-// All returns all resolver IPs
-func All(ctx context.Context, resolver HostLookupper) (ips []string, err error) {
+// LookupAllResolverIPs returns all resolver IPs
+func LookupAllResolverIPs(ctx context.Context, resolver HostLookupper) (ips []string, err error) {
 	if resolver == nil {
 		resolver = &net.Resolver{}
 	}
@@ -21,10 +20,10 @@ func All(ctx context.Context, resolver HostLookupper) (ips []string, err error) 
 	return
 }
 
-// First returns the first resolver IP
-func First(ctx context.Context, resolver HostLookupper) (ip string, err error) {
+// LookupFirstResolverIP returns the first resolver IP
+func LookupFirstResolverIP(ctx context.Context, resolver HostLookupper) (ip string, err error) {
 	var ips []string
-	ips, err = All(ctx, resolver)
+	ips, err = LookupAllResolverIPs(ctx, resolver)
 	if err == nil && len(ips) < 1 {
 		err = errors.New("No IP address returned")
 		return
