@@ -1,4 +1,6 @@
-// Package resolver contains the DNS resolver
+// Package resolver contains a censoring DNS resolver. Most queries are
+// answered without censorship, but selected queries could either be
+// discarded or replied to with a bogon or NXDOMAIN answer.
 package resolver
 
 import (

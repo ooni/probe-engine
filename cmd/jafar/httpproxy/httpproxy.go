@@ -1,4 +1,6 @@
-// Package httpproxy contains the HTTP proxy.
+// Package httpproxy contains a censoring HTTP proxy. This proxy will
+// vet all the traffic and reply with 451 responses for a configurable
+// set of offending Host headers in incoming requests.
 package httpproxy
 
 import (

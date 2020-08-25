@@ -1,4 +1,4 @@
-// jafar is the grand vizier of censorship simulation.
+// Jafar is a censorship simulation tool used for testing OONI.
 package main
 
 import (
