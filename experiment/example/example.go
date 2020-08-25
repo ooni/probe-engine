@@ -1,4 +1,7 @@
-// Package example contains a simple example of experiment.
+// Package example contains a simple example experiment.
+//
+// You could use this code to boostrap the implementation of
+// a new experiment that you are working on.
 package example
 
 import (
@@ -14,7 +17,8 @@ const testVersion = "0.0.1"
 // Config contains the experiment config.
 //
 // This contains all the settings that user can set to modify the behaviour
-// of this experiment.
+// of this experiment. By tagging these variables with `ooni:"..."`, we allow
+// miniooni's -O flag to find them and set them.
 type Config struct {
 	Message     string `ooni:"Message to emit at test completion"`
 	ReturnError bool   `ooni:"Toogle to return a mocked error"`
@@ -25,26 +29,31 @@ type Config struct {
 //
 // This is what will end up into the Measurement.TestKeys field
 // when you run this experiment.
+//
 // In other words, the variables in this struct will be
-// the particular results of this experiment.
+// the specific results of this experiment.
 type TestKeys struct {
 	Success bool `json:"success"`
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	config   Config
 	testName string
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements model.ExperimentMeasurer.ExperimentName.
+func (m Measurer) ExperimentName() string {
 	return m.testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements model.ExperimentMeasurer.ExperimentVersion.
+func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m *measurer) Run(
+// Run implements model.ExperimentMeasurer.Run.
+func (m Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -65,5 +74,5 @@ func (m *measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config, testName string) model.ExperimentMeasurer {
-	return &measurer{config: config, testName: testName}
+	return Measurer{config: config, testName: testName}
 }

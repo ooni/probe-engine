@@ -182,7 +182,7 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	result := new(measurer).measureone(
+	result := new(Measurer).measureone(
 		ctx,
 		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
@@ -234,7 +234,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 }
 
 func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
-	result := new(measurer).measureone(
+	result := new(Measurer).measureone(
 		context.Background(),
 		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
@@ -286,7 +286,7 @@ func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
 }
 
 func TestUnitMeasureoneSuccess(t *testing.T) {
-	result := new(measurer).measureone(
+	result := new(Measurer).measureone(
 		context.Background(),
 		&mockable.ExperimentSession{MockableLogger: log.Log},
 		time.Now(),
@@ -338,7 +338,7 @@ func TestUnitMeasureoneSuccess(t *testing.T) {
 }
 
 func TestUnitMeasureonewithcacheWorks(t *testing.T) {
-	measurer := &measurer{cache: make(map[string]Subresult)}
+	measurer := &Measurer{cache: make(map[string]Subresult)}
 	output := make(chan Subresult, 2)
 	for i := 0; i < 2; i++ {
 		measurer.measureonewithcache(

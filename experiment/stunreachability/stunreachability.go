@@ -42,15 +42,18 @@ func registerExtensions(m *model.Measurement) {
 	archival.ExtNetevents.AddTo(m)
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	config Config
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
@@ -61,7 +64,8 @@ func wrap(err error) error {
 	}.MaybeBuild()
 }
 
-func (m *measurer) Run(
+// Run implements ExperimentMeasurer.Run.
+func (m *Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -148,5 +152,5 @@ func (tk *TestKeys) do(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return &measurer{config: config}
+	return &Measurer{config: config}
 }

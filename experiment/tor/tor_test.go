@@ -33,7 +33,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return nil, expected
@@ -52,7 +52,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
@@ -74,7 +74,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
@@ -102,7 +102,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	// This test mocks orchestra to return a nil list of targets, so the code runs
 	// but we don't perform any actualy network actions.
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
@@ -126,7 +126,7 @@ func TestMeasurerMeasureGood(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	sess := newsession()
 	err := measurer.Run(
 		context.Background(),
@@ -157,7 +157,7 @@ func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	sess := newsession()
 	key := "xyz-xyz-xyz-theCh2ju-ahG4chei-Ai2eka0a"
 	sess.MockableOrchestraClient = &mockable.ExperimentOrchestraClient{
@@ -222,7 +222,7 @@ var staticTestingTargets = []model.TorTarget{
 
 func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	var measurement model.Measurement
-	measurer := new(measurer)
+	measurer := new(Measurer)
 	measurer.measureTargets(
 		context.Background(),
 		&mockable.ExperimentSession{
@@ -241,7 +241,7 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we don't actually do anything
 	var measurement model.Measurement
-	measurer := new(measurer)
+	measurer := new(Measurer)
 	measurer.measureTargets(
 		ctx,
 		&mockable.ExperimentSession{

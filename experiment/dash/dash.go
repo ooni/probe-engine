@@ -1,5 +1,4 @@
-// Package dash contains the dash network experiment. This file
-// in particular is a pure-Go implementation of this test.
+// Package dash implements the DASH network experiment.
 //
 // Spec: https://github.com/ooni/spec/blob/master/nettests/ts-021-dash.md
 package dash
@@ -245,19 +244,23 @@ func (r runner) do(ctx context.Context) error {
 	return err
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	config Config
 }
 
-func (m measurer) ExperimentName() string {
+// ExperimentName implements model.ExperimentMeasurer.ExperimentName.
+func (m Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m measurer) ExperimentVersion() string {
+// ExperimentVersion implements model.ExperimentMeasurer.ExperimentVersion.
+func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m measurer) Run(
+// Run implements model.ExperimentMeasurer.Run.
+func (m Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -298,5 +301,5 @@ func (m measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return measurer{config: config}
+	return Measurer{config: config}
 }
