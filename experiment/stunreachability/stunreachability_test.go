@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"os"
 	"strings"
 	"testing"
 
@@ -27,6 +28,10 @@ func TestMeasurerExperimentNameVersion(t *testing.T) {
 }
 
 func TestIntegrationRun(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		// See https://github.com/ooni/probe-engine/issues/874#issuecomment-679850652
+		t.Skip("skipping broken test on GitHub Actions")
+	}
 	measurer := stunreachability.NewExperimentMeasurer(stunreachability.Config{})
 	measurement := new(model.Measurement)
 	err := measurer.Run(
