@@ -1,5 +1,4 @@
-// Package ubuntu lookups the IP using Ubuntu.
-package ubuntu
+package geolocate
 
 import (
 	"context"
@@ -10,13 +9,14 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-type response struct {
+// UbuntuResponse is the response by Ubuntu IP lookup services.
+type UbuntuResponse struct {
 	XMLName xml.Name `xml:"Response"`
 	IP      string   `xml:"Ip"`
 }
 
-// Do performs the IP lookup.
-func Do(
+// UbuntuIPLookup performs the IP lookup using Ubuntu services.
+func UbuntuIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,
@@ -32,7 +32,7 @@ func Do(
 		return model.DefaultProbeIP, err
 	}
 	logger.Debugf("ubuntu: body: %s", string(data))
-	var v response
+	var v UbuntuResponse
 	err = xml.Unmarshal(data, &v)
 	if err != nil {
 		return model.DefaultProbeIP, err

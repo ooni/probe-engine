@@ -1,4 +1,4 @@
-package mmdblookup_test
+package geolocate_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
 )
@@ -29,9 +29,9 @@ func maybeFetchResources(t *testing.T) {
 	}
 }
 
-func TestLookupProbeASN(t *testing.T) {
+func TestLookupASN(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.ASN(asnDBPath, ipAddr)
+	asn, org, err := geolocate.LookupASN(asnDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,9 +39,9 @@ func TestLookupProbeASN(t *testing.T) {
 	t.Log(org)
 }
 
-func TestLookupProbeASNInvalidFile(t *testing.T) {
+func TestLookupASNInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.ASN("/nonexistent", ipAddr)
+	asn, org, err := geolocate.LookupASN("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -53,9 +53,9 @@ func TestLookupProbeASNInvalidFile(t *testing.T) {
 	}
 }
 
-func TestLookupProbeASNInvalidIP(t *testing.T) {
+func TestLookupASNInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := mmdblookup.ASN(asnDBPath, "xxx")
+	asn, org, err := geolocate.LookupASN(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -67,18 +67,18 @@ func TestLookupProbeASNInvalidIP(t *testing.T) {
 	}
 }
 
-func TestLookupProbeCC(t *testing.T) {
+func TestLookupCC(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.CC(countryDBPath, ipAddr)
+	cc, err := geolocate.LookupCC(countryDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(cc)
 }
 
-func TestLookupProbeCCInvalidFile(t *testing.T) {
+func TestLookupCCInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.CC("/nonexistent", ipAddr)
+	cc, err := geolocate.LookupCC("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -87,9 +87,9 @@ func TestLookupProbeCCInvalidFile(t *testing.T) {
 	}
 }
 
-func TestLookupProbeCCInvalidIP(t *testing.T) {
+func TestLookupCCInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := mmdblookup.CC(asnDBPath, "xxx")
+	cc, err := geolocate.LookupCC(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

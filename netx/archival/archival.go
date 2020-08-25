@@ -16,7 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/modelx"
@@ -436,7 +436,7 @@ func (qtype dnsQueryType) ipoftype(addr string) bool {
 
 func (qtype dnsQueryType) makeanswerentry(addr string, dbpath string) DNSAnswerEntry {
 	answer := DNSAnswerEntry{AnswerType: string(qtype)}
-	asn, org, _ := mmdblookup.ASN(dbpath, addr)
+	asn, org, _ := geolocate.LookupASN(dbpath, addr)
 	answer.ASN = int64(asn)
 	answer.ASOrgName = org
 	switch qtype {
