@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/handler"
+	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/modelx"
