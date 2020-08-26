@@ -1,8 +1,8 @@
 {
   "assets_dir": ".",
   "inputs": [
-    "https://www.google.com",
-    "https://www.x.org"
+    "https://www.example.com",
+    "https://www.example.org"
   ],
   "name": "WebConnectivity",
   "log_level": "INFO",
