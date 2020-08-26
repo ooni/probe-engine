@@ -24,11 +24,10 @@ if [ -z "$ANDROID_HOME" -o "$1" = "--help" ]; then
 fi
 topdir=$(cd $(dirname $0) && pwd -P)
 set -x
-export GOPATH=$topdir/MOBILE/gopath
-export PATH=$GOPATH/bin:$PATH
+export PATH=$(go env GOPATH)/bin:$PATH
 export GO111MODULE=off
-output=MOBILE/dist/oonimkall.aar
 go get -u golang.org/x/mobile/cmd/gomobile
 gomobile init
 export GO111MODULE=on
+output=MOBILE/android/oonimkall.aar
 gomobile bind -target=android -o $output -ldflags="-s -w" ./oonimkall

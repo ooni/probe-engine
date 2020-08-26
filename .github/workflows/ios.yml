@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - mobile-staging
-  schedule:
-    - cron: "14 17 * * 3"
 jobs:
   test:
     runs-on: macos-latest
