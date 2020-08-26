@@ -10,7 +10,6 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 )
@@ -34,7 +33,7 @@ func TestRunWithCancelledContext(t *testing.T) {
 	cancel() // fail immediately
 	measurement := new(model.Measurement)
 	err := measurer.Run(ctx, newfakesession(), measurement,
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected another error here")
 	}
@@ -58,7 +57,7 @@ func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	err := measurer.Run(ctx, newfakesession(), measurement,
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected another error here")
 	}

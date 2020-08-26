@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 )
@@ -63,7 +62,7 @@ func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
 	err := m.doDownload(
-		ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys),
+		ctx, sess, model.NewPrinterCallbacks(log.Log), new(TestKeys),
 		"ws://host.name")
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
@@ -80,7 +79,7 @@ func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
 	err := m.doUpload(
-		ctx, sess, handler.NewPrinterCallbacks(log.Log), new(TestKeys),
+		ctx, sess, model.NewPrinterCallbacks(log.Log), new(TestKeys),
 		"ws://host.name")
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal("not the error we expected")
@@ -96,7 +95,7 @@ func TestUnitRunWithCancelledContext(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
-	err := m.Run(ctx, sess, new(model.Measurement), handler.NewPrinterCallbacks(log.Log))
+	err := m.Run(ctx, sess, new(model.Measurement), model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
@@ -112,7 +111,7 @@ func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
 		MockableUserAgent:           "miniooni/0.1.0-dev",
 	}
 	measurement := new(model.Measurement)
-	err := m.Run(context.TODO(), sess, measurement, handler.NewPrinterCallbacks(log.Log))
+	err := m.Run(context.TODO(), sess, measurement, model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
@@ -129,7 +128,7 @@ func TestUnitRunWithProxyURL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel
 	measurement := new(model.Measurement)
-	err := m.Run(ctx, sess, measurement, handler.NewPrinterCallbacks(log.Log))
+	err := m.Run(ctx, sess, measurement, model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
@@ -147,7 +146,7 @@ func TestIntegration(t *testing.T) {
 			MockableLogger:     log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -168,7 +167,7 @@ func TestIntegrationFailDownload(t *testing.T) {
 			MockableLogger:     log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal(err)
@@ -189,7 +188,7 @@ func TestIntegrationFailUpload(t *testing.T) {
 			MockableLogger:     log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil || !strings.HasSuffix(err.Error(), "operation was canceled") {
 		t.Fatal(err)
@@ -211,7 +210,7 @@ func TestIntegrationDownloadJSONUnmarshalFail(t *testing.T) {
 			MockableLogger:     log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)

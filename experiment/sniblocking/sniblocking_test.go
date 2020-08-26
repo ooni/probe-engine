@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -117,7 +116,7 @@ func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err.Error() != "Experiment requires ControlSNI" {
 		t.Fatal("not the error we expected")
@@ -132,7 +131,7 @@ func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err.Error() != "Experiment requires measurement.Input" {
 		t.Fatal("not the error we expected")
@@ -152,7 +151,7 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 		ctx,
 		newsession(),
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -172,7 +171,7 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 		ctx,
 		newsession(),
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -386,7 +385,7 @@ func TestUnitProcessallPanicsIfInvalidSNI(t *testing.T) {
 	processall(
 		outputs,
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 		[]string{"kernel.org", "example.com"},
 		newsession(),
 		"example.com",

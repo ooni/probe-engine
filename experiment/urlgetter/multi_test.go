@@ -8,8 +8,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
+	"github.com/ooni/probe-engine/model"
 )
 
 func TestMultiIntegration(t *testing.T) {
@@ -28,7 +28,7 @@ func TestMultiIntegration(t *testing.T) {
 		Target: "https://www.instagram.com",
 	}}
 	outputs := multi.Collect(context.Background(), inputs, "integration-test",
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	var count int
 	for result := range outputs {
 		count++
@@ -83,7 +83,7 @@ func TestMultiIntegrationWithBaseTime(t *testing.T) {
 		Target: "https://www.instagram.com",
 	}}
 	outputs := multi.Collect(context.Background(), inputs, "integration-test",
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	var count int
 	for result := range outputs {
 		for _, entry := range result.TestKeys.NetworkEvents {
@@ -128,7 +128,7 @@ func TestMultiIntegrationWithoutBaseTime(t *testing.T) {
 		Target: "https://www.instagram.com",
 	}}
 	outputs := multi.Collect(context.Background(), inputs, "integration-test",
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	var count int
 	for result := range outputs {
 		for _, entry := range result.TestKeys.NetworkEvents {
@@ -179,7 +179,7 @@ func TestMultiContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	outputs := multi.Collect(ctx, inputs, "integration-test",
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	var count int
 	for result := range outputs {
 		count++

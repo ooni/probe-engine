@@ -8,7 +8,6 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/telegram"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -33,7 +32,7 @@ func TestIntegration(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +287,7 @@ func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
 		MockableLogger: log.Log,
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}

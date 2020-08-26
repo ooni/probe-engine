@@ -9,7 +9,6 @@ import (
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/experiment/hirl"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
@@ -33,7 +32,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +74,7 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -167,7 +166,7 @@ func TestWithFakeMethods(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -228,7 +227,7 @@ func TestWithNoMethods(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hirl.ErrNoMeasurementMethod) {
 		t.Fatal("not the error we expected")
@@ -256,7 +255,7 @@ func TestNoHelpers(t *testing.T) {
 	ctx := context.Background()
 	sess := &mockable.ExperimentSession{}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hirl.ErrNoAvailableTestHelpers) {
 		t.Fatal("not the error we expected")
@@ -288,7 +287,7 @@ func TestNoActualHelperInList(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hirl.ErrNoAvailableTestHelpers) {
 		t.Fatal("not the error we expected")
@@ -323,7 +322,7 @@ func TestWrongTestHelperType(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hirl.ErrInvalidHelperType) {
 		t.Fatal("not the error we expected")

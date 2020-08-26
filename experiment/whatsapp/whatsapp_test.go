@@ -11,7 +11,6 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/httpfailure"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
@@ -32,7 +31,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	ctx := context.Background()
 	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +66,7 @@ func TestIntegrationFailureAllEndpoints(t *testing.T) {
 	cancel()
 	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -585,7 +584,7 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 		MockableLogger: log.Log,
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}
