@@ -43,7 +43,7 @@ require (
 	github.com/montanaflynn/stats v0.6.3
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
-	github.com/pborman/getopt/v2 v2.0.0
+	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pion/stun v0.3.5
 	github.com/redjack/marionette v0.0.0-20180818172807-360dd8f58226 // indirect
 	github.com/refraction-networking/gotapdance v0.0.0-20190909202946-3a6e1938ad70 // indirect
