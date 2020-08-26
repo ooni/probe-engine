@@ -10,7 +10,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/stunreachability"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -38,7 +37,7 @@ func TestIntegrationRun(t *testing.T) {
 		context.Background(),
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +66,7 @@ func TestIntegrationRunCustomInput(t *testing.T) {
 		context.Background(),
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +95,7 @@ func TestCancelledContext(t *testing.T) {
 		ctx,
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err.Error() != "interrupted" {
 		t.Fatal("not the error we expected")
@@ -129,7 +128,7 @@ func TestNewClientFailure(t *testing.T) {
 		context.Background(),
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -163,7 +162,7 @@ func TestStartFailure(t *testing.T) {
 		context.Background(),
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -198,7 +197,7 @@ func TestReadFailure(t *testing.T) {
 		context.Background(),
 		&mockable.ExperimentSession{},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, stun.ErrTransactionTimeOut) {
 		t.Fatal("not the error we expected")

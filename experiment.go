@@ -27,7 +27,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -194,7 +193,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 		return nil, fmt.Errorf("no such experiment: %s", name)
 	}
 	builder := factory(session)
-	builder.callbacks = handler.NewPrinterCallbacks(session.Logger())
+	builder.callbacks = model.NewPrinterCallbacks(session.Logger())
 	return builder, nil
 }
 
@@ -216,7 +215,7 @@ type Experiment struct {
 func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment {
 	return &Experiment{
 		byteCounter:   bytecounter.New(),
-		callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
+		callbacks:     model.NewPrinterCallbacks(sess.Logger()),
 		measurer:      measurer,
 		session:       sess,
 		testName:      measurer.ExperimentName(),

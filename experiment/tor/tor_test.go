@@ -13,7 +13,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/legacy/oonidatamodel"
 	"github.com/ooni/probe-engine/legacy/oonitemplates"
@@ -44,7 +43,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -66,7 +65,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -88,7 +87,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +114,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -132,7 +131,7 @@ func TestMeasurerMeasureGood(t *testing.T) {
 		context.Background(),
 		sess,
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -170,7 +169,7 @@ func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
 		context.Background(),
 		sess,
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -229,7 +228,7 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		&measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 		nil,
 	)
 	if len(measurement.TestKeys.(*TestKeys).Targets) != 0 {
@@ -248,7 +247,7 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		&measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 		map[string]model.TorTarget{
 			"xx": staticTestingTargets[0],
 		},
@@ -279,7 +278,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, nil
@@ -313,7 +312,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, errors.New("mocked error")
@@ -350,7 +349,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -372,7 +371,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -397,7 +396,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -422,7 +421,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
