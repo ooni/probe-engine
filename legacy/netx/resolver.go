@@ -12,7 +12,6 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/handlers"
 	"github.com/ooni/probe-engine/legacy/netx/modelx"
 	"github.com/ooni/probe-engine/netx/resolver"
-	newresolver "github.com/ooni/probe-engine/netx/resolver"
 )
 
 var (
@@ -143,37 +142,37 @@ func (r chainWrapperResolver) Address() string {
 // ChainResolvers chains a primary and a secondary resolver such that
 // we can fallback to the secondary if primary is broken.
 func ChainResolvers(primary, secondary modelx.DNSResolver) modelx.DNSResolver {
-	return newresolver.ChainResolver{
+	return resolver.ChainResolver{
 		Primary:   chainWrapperResolver{DNSResolver: primary},
 		Secondary: chainWrapperResolver{DNSResolver: secondary},
 	}
 }
 
-func resolverWrapResolver(r newresolver.Resolver) resolver.EmitterResolver {
-	return resolver.EmitterResolver{Resolver: newresolver.ErrorWrapperResolver{Resolver: r}}
+func resolverWrapResolver(r resolver.Resolver) resolver.EmitterResolver {
+	return resolver.EmitterResolver{Resolver: resolver.ErrorWrapperResolver{Resolver: r}}
 }
 
-func resolverWrapTransport(txp newresolver.RoundTripper) resolver.EmitterResolver {
-	return resolverWrapResolver(newresolver.NewSerialResolver(
+func resolverWrapTransport(txp resolver.RoundTripper) resolver.EmitterResolver {
+	return resolverWrapResolver(resolver.NewSerialResolver(
 		resolver.EmitterTransport{RoundTripper: txp}))
 }
 
 func newResolverSystem() resolver.EmitterResolver {
-	return resolverWrapResolver(newresolver.SystemResolver{})
+	return resolverWrapResolver(resolver.SystemResolver{})
 }
 
-func newResolverUDP(dialer newresolver.Dialer, address string) resolver.EmitterResolver {
-	return resolverWrapTransport(newresolver.NewDNSOverUDP(dialer, address))
+func newResolverUDP(dialer resolver.Dialer, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverUDP(dialer, address))
 }
 
-func newResolverTCP(dial newresolver.DialContextFunc, address string) resolver.EmitterResolver {
-	return resolverWrapTransport(newresolver.NewDNSOverTCP(dial, address))
+func newResolverTCP(dial resolver.DialContextFunc, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverTCP(dial, address))
 }
 
-func newResolverTLS(dial newresolver.DialContextFunc, address string) resolver.EmitterResolver {
-	return resolverWrapTransport(newresolver.NewDNSOverTLS(dial, address))
+func newResolverTLS(dial resolver.DialContextFunc, address string) resolver.EmitterResolver {
+	return resolverWrapTransport(resolver.NewDNSOverTLS(dial, address))
 }
 
 func newResolverHTTPS(client *http.Client, address string) resolver.EmitterResolver {
-	return resolverWrapTransport(newresolver.NewDNSOverHTTPS(client, address))
+	return resolverWrapTransport(resolver.NewDNSOverHTTPS(client, address))
 }
