@@ -5,11 +5,14 @@
 #include <stdlib.h>
 
 /*
- * API/ABI compatible with Measurement Kit v0.10.11 [1].
+ * ABI compatible with Measurement Kit v0.10.11 [1].
  *
  * Just replace `mk_` with `ooniffi_` and recompile.
  *
  * .. [1] https://github.com/measurement-kit/measurement-kit/tree/v0.10.11/
+ * 
+ * This is not used in any OONI product. We may break something
+ * in ooniffi without noticing it. Please, be aware of that.
  */
 
 typedef struct ooniffi_task_ ooniffi_task_t;
@@ -31,7 +34,10 @@ extern void ooniffi_task_destroy(ooniffi_task_t *task);
 }
 #endif
 
-/* Define OONIFFI_EMULATE_MK_API to provide MK compatible API. */
+/*
+ * Define OONIFFI_EMULATE_MK_API to provide a MK-compatible API at
+ * compile time that will map to ooniffi's own API.
+ */
 #ifdef OONIFFI_EMULATE_MK_API
 #define mk_task_start ooniffi_task_start
 #define mk_task_wait_for_next_event ooniffi_task_wait_for_next_event
