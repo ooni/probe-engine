@@ -6,13 +6,13 @@
 #
 
 set -ex
-mkdir -p example.org/x
-cd example.org/x
+mkdir -p /tmp/example.org/x
+cd /tmp/example.org/x
 go mod init example.org/x
-echo > main.go << EOF
+cat > main.go << EOF
 package main
 
-import "github.com/ooni/probe-engine/libminiooni
+import "github.com/ooni/probe-engine/libminiooni"
 
 func main() {
     libminiooni.Main()
