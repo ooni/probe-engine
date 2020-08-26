@@ -1,6 +1,8 @@
 name: ios
 on:
   push:
+    branches:
+      - mobile-staging
 jobs:
   test:
     runs-on: macos-latest
