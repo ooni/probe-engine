@@ -21,8 +21,8 @@ import (
 	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/sessiontunnel"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/resources"
 )
@@ -48,7 +48,7 @@ type Session struct {
 	availableProbeServices   []model.Service
 	availableTestHelpers     map[string][]model.Service
 	byteCounter              *bytecounter.Counter
-	httpDefaultTransport     httptransport.RoundTripper
+	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
 	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
@@ -108,7 +108,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		torArgs:                 config.TorArgs,
 		torBinary:               config.TorBinary,
 	}
-	httpConfig := httptransport.Config{
+	httpConfig := netx.Config{
 		ByteCounter:  sess.byteCounter,
 		BogonIsError: true,
 		Logger:       sess.logger,
@@ -116,7 +116,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	sess.resolver = sessionresolver.New(httpConfig)
 	httpConfig.FullResolver = sess.resolver
 	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
-	sess.httpDefaultTransport = httptransport.New(httpConfig)
+	sess.httpDefaultTransport = netx.NewHTTPTransport(httpConfig)
 	return sess, nil
 }
 

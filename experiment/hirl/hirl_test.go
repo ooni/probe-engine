@@ -12,9 +12,9 @@ import (
 	"github.com/ooni/probe-engine/internal/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -361,7 +361,7 @@ func TestRunMethodDialFailure(t *testing.T) {
 			Out:     out,
 		},
 		Name: "random_invalid_version_number",
-		NewDialer: func(config httptransport.Config) httptransport.Dialer {
+		NewDialer: func(config netx.Config) netx.Dialer {
 			return FakeDialer{Err: expected}
 		},
 		RequestLine: "GET / HTTP/ABC",
@@ -400,7 +400,7 @@ func TestRunMethodSetDeadlineFailure(t *testing.T) {
 			Out:     out,
 		},
 		Name: "random_invalid_version_number",
-		NewDialer: func(config httptransport.Config) httptransport.Dialer {
+		NewDialer: func(config netx.Config) netx.Dialer {
 			return FakeDialer{Conn: &FakeConn{
 				SetDeadlineError: expected,
 			}}
@@ -441,7 +441,7 @@ func TestRunMethodWriteFailure(t *testing.T) {
 			Out:     out,
 		},
 		Name: "random_invalid_version_number",
-		NewDialer: func(config httptransport.Config) httptransport.Dialer {
+		NewDialer: func(config netx.Config) netx.Dialer {
 			return FakeDialer{Conn: &FakeConn{
 				WriteError: expected,
 			}}
@@ -481,7 +481,7 @@ func TestRunMethodReadEOFWithWrongData(t *testing.T) {
 			Out:     out,
 		},
 		Name: "random_invalid_version_number",
-		NewDialer: func(config httptransport.Config) httptransport.Dialer {
+		NewDialer: func(config netx.Config) netx.Dialer {
 			return FakeDialer{Conn: &FakeConn{
 				ReadData: []byte("0xdeadbeef"),
 			}}

@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 	"github.com/pion/stun"
 )
@@ -95,7 +95,7 @@ func (tk *TestKeys) run(
 	tk.Endpoint = endpoint
 	saver := new(trace.Saver)
 	begin := time.Now()
-	err := tk.do(ctx, config, httptransport.NewDialer(httptransport.Config{
+	err := tk.do(ctx, config, netx.NewDialer(netx.Config{
 		ContextByteCounting: true,
 		DialSaver:           saver,
 		Logger:              sess.Logger(),

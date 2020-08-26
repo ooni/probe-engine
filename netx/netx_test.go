@@ -1,4 +1,4 @@
-package httptransport_test
+package netx_test
 
 import (
 	"crypto/tls"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
@@ -17,7 +18,7 @@ import (
 )
 
 func TestNewResolverVanilla(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{})
+	r := netx.NewResolver(netx.Config{})
 	ar, ok := r.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
@@ -33,7 +34,7 @@ func TestNewResolverVanilla(t *testing.T) {
 }
 
 func TestNewResolverSpecificResolver(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		BaseResolver: resolver.BogonResolver{
 			// not initialized because it doesn't matter in this context
 		},
@@ -53,7 +54,7 @@ func TestNewResolverSpecificResolver(t *testing.T) {
 }
 
 func TestNewResolverWithBogonFilter(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		BogonIsError: true,
 	})
 	ar, ok := r.(resolver.AddressResolver)
@@ -75,7 +76,7 @@ func TestNewResolverWithBogonFilter(t *testing.T) {
 }
 
 func TestNewResolverWithLogging(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		Logger: log.Log,
 	})
 	ar, ok := r.(resolver.AddressResolver)
@@ -101,7 +102,7 @@ func TestNewResolverWithLogging(t *testing.T) {
 
 func TestNewResolverWithSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		ResolveSaver: saver,
 	})
 	ar, ok := r.(resolver.AddressResolver)
@@ -126,7 +127,7 @@ func TestNewResolverWithSaver(t *testing.T) {
 }
 
 func TestNewResolverWithReadWriteCache(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		CacheResolutions: true,
 	})
 	ar, ok := r.(resolver.AddressResolver)
@@ -151,7 +152,7 @@ func TestNewResolverWithReadWriteCache(t *testing.T) {
 }
 
 func TestNewResolverWithPrefilledReadonlyCache(t *testing.T) {
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		DNSCache: map[string][]string{
 			"dns.google.com": {"8.8.8.8"},
 		},
@@ -181,7 +182,7 @@ func TestNewResolverWithPrefilledReadonlyCache(t *testing.T) {
 }
 
 func TestNewDialerVanilla(t *testing.T) {
-	d := httptransport.NewDialer(httptransport.Config{})
+	d := netx.NewDialer(netx.Config{})
 	sd, ok := d.(dialer.ShapingDialer)
 	if !ok {
 		t.Fatal("not the dialer we expected")
@@ -217,7 +218,7 @@ func TestNewDialerVanilla(t *testing.T) {
 }
 
 func TestNewDialerWithResolver(t *testing.T) {
-	d := httptransport.NewDialer(httptransport.Config{
+	d := netx.NewDialer(netx.Config{
 		FullResolver: resolver.BogonResolver{
 			// not initialized because it doesn't matter in this context
 		},
@@ -257,7 +258,7 @@ func TestNewDialerWithResolver(t *testing.T) {
 }
 
 func TestNewDialerWithLogger(t *testing.T) {
-	d := httptransport.NewDialer(httptransport.Config{
+	d := netx.NewDialer(netx.Config{
 		Logger: log.Log,
 	})
 	sd, ok := d.(dialer.ShapingDialer)
@@ -303,7 +304,7 @@ func TestNewDialerWithLogger(t *testing.T) {
 
 func TestNewDialerWithDialSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	d := httptransport.NewDialer(httptransport.Config{
+	d := netx.NewDialer(netx.Config{
 		DialSaver: saver,
 	})
 	sd, ok := d.(dialer.ShapingDialer)
@@ -349,7 +350,7 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 
 func TestNewDialerWithReadWriteSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	d := httptransport.NewDialer(httptransport.Config{
+	d := netx.NewDialer(netx.Config{
 		ReadWriteSaver: saver,
 	})
 	sd, ok := d.(dialer.ShapingDialer)
@@ -394,7 +395,7 @@ func TestNewDialerWithReadWriteSaver(t *testing.T) {
 }
 
 func TestNewDialerWithContextByteCounting(t *testing.T) {
-	d := httptransport.NewDialer(httptransport.Config{
+	d := netx.NewDialer(netx.Config{
 		ContextByteCounting: true,
 	})
 	sd, ok := d.(dialer.ShapingDialer)
@@ -436,7 +437,7 @@ func TestNewDialerWithContextByteCounting(t *testing.T) {
 }
 
 func TestNewTLSDialerVanilla(t *testing.T) {
-	td := httptransport.NewTLSDialer(httptransport.Config{})
+	td := netx.NewTLSDialer(netx.Config{})
 	rtd, ok := td.(dialer.TLSDialer)
 	if !ok {
 		t.Fatal("not the TLSDialer we expected")
@@ -447,7 +448,7 @@ func TestNewTLSDialerVanilla(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -477,7 +478,7 @@ func TestNewTLSDialerVanilla(t *testing.T) {
 }
 
 func TestNewTLSDialerWithConfig(t *testing.T) {
-	td := httptransport.NewTLSDialer(httptransport.Config{
+	td := netx.NewTLSDialer(netx.Config{
 		TLSConfig: new(tls.Config),
 	})
 	rtd, ok := td.(dialer.TLSDialer)
@@ -487,7 +488,7 @@ func TestNewTLSDialerWithConfig(t *testing.T) {
 	if len(rtd.Config.NextProtos) != 0 {
 		t.Fatal("invalid len(config.NextProtos)")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -517,7 +518,7 @@ func TestNewTLSDialerWithConfig(t *testing.T) {
 }
 
 func TestNewTLSDialerWithLogging(t *testing.T) {
-	td := httptransport.NewTLSDialer(httptransport.Config{
+	td := netx.NewTLSDialer(netx.Config{
 		Logger: log.Log,
 	})
 	rtd, ok := td.(dialer.TLSDialer)
@@ -530,7 +531,7 @@ func TestNewTLSDialerWithLogging(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -568,7 +569,7 @@ func TestNewTLSDialerWithLogging(t *testing.T) {
 
 func TestNewTLSDialerWithSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	td := httptransport.NewTLSDialer(httptransport.Config{
+	td := netx.NewTLSDialer(netx.Config{
 		TLSSaver: saver,
 	})
 	rtd, ok := td.(dialer.TLSDialer)
@@ -581,7 +582,7 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -618,7 +619,7 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 }
 
 func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
-	td := httptransport.NewTLSDialer(httptransport.Config{
+	td := netx.NewTLSDialer(netx.Config{
 		TLSConfig:   new(tls.Config),
 		NoTLSVerify: true,
 	})
@@ -632,7 +633,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -662,7 +663,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
 }
 
 func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
-	td := httptransport.NewTLSDialer(httptransport.Config{
+	td := netx.NewTLSDialer(netx.Config{
 		NoTLSVerify: true,
 	})
 	rtd, ok := td.(dialer.TLSDialer)
@@ -678,7 +679,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
-	if rtd.Config.RootCAs != httptransport.CertPool {
+	if rtd.Config.RootCAs != netx.CertPool {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -708,7 +709,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
 }
 
 func TestNewVanilla(t *testing.T) {
-	txp := httptransport.New(httptransport.Config{})
+	txp := netx.NewHTTPTransport(netx.Config{})
 	uatxp, ok := txp.(httptransport.UserAgentTransport)
 	if !ok {
 		t.Fatal("not the transport we expected")
@@ -720,8 +721,8 @@ func TestNewVanilla(t *testing.T) {
 
 func TestNewWithDialer(t *testing.T) {
 	expected := errors.New("mocked error")
-	dialer := httptransport.FakeDialer{Err: expected}
-	txp := httptransport.New(httptransport.Config{
+	dialer := netx.FakeDialer{Err: expected}
+	txp := netx.NewHTTPTransport(netx.Config{
 		Dialer: dialer,
 	})
 	client := &http.Client{Transport: txp}
@@ -738,10 +739,10 @@ func TestNewWithTLSDialer(t *testing.T) {
 	expected := errors.New("mocked error")
 	tlsDialer := dialer.TLSDialer{
 		Config:        new(tls.Config),
-		Dialer:        httptransport.FakeDialer{Err: expected},
+		Dialer:        netx.FakeDialer{Err: expected},
 		TLSHandshaker: dialer.SystemTLSHandshaker{},
 	}
-	txp := httptransport.New(httptransport.Config{
+	txp := netx.NewHTTPTransport(netx.Config{
 		TLSDialer: tlsDialer,
 	})
 	client := &http.Client{Transport: txp}
@@ -756,7 +757,7 @@ func TestNewWithTLSDialer(t *testing.T) {
 
 func TestNewWithByteCounter(t *testing.T) {
 	counter := bytecounter.New()
-	txp := httptransport.New(httptransport.Config{
+	txp := netx.NewHTTPTransport(netx.Config{
 		ByteCounter: counter,
 	})
 	uatxp, ok := txp.(httptransport.UserAgentTransport)
@@ -776,7 +777,7 @@ func TestNewWithByteCounter(t *testing.T) {
 }
 
 func TestNewWithLogger(t *testing.T) {
-	txp := httptransport.New(httptransport.Config{
+	txp := netx.NewHTTPTransport(netx.Config{
 		Logger: log.Log,
 	})
 	uatxp, ok := txp.(httptransport.UserAgentTransport)
@@ -797,7 +798,7 @@ func TestNewWithLogger(t *testing.T) {
 
 func TestNewWithSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	txp := httptransport.New(httptransport.Config{
+	txp := netx.NewHTTPTransport(netx.Config{
 		HTTPSaver: saver,
 	})
 	uatxp, ok := txp.(httptransport.UserAgentTransport)
@@ -838,7 +839,7 @@ func TestNewWithSaver(t *testing.T) {
 }
 
 func TestNewDNSClientInvalidURL(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "\t\t\t")
+	dnsclient, err := netx.NewDNSClient(netx.Config{}, "\t\t\t")
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}
@@ -849,7 +850,7 @@ func TestNewDNSClientInvalidURL(t *testing.T) {
 }
 
 func TestNewDNSClientUnsupportedScheme(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(httptransport.Config{}, "antani:///")
+	dnsclient, err := netx.NewDNSClient(netx.Config{}, "antani:///")
 	if err == nil || err.Error() != "unsupported resolver scheme" {
 		t.Fatal("not the error we expected")
 	}
@@ -860,8 +861,8 @@ func TestNewDNSClientUnsupportedScheme(t *testing.T) {
 }
 
 func TestNewDNSClientSystemResolver(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "system:///")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "system:///")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -872,8 +873,8 @@ func TestNewDNSClientSystemResolver(t *testing.T) {
 }
 
 func TestNewDNSClientEmpty(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -884,8 +885,8 @@ func TestNewDNSClientEmpty(t *testing.T) {
 }
 
 func TestNewDNSClientPowerdnsDoH(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "doh://powerdns")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "doh://powerdns")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -900,8 +901,8 @@ func TestNewDNSClientPowerdnsDoH(t *testing.T) {
 }
 
 func TestNewDNSClientGoogleDoH(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "doh://google")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "doh://google")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -916,8 +917,8 @@ func TestNewDNSClientGoogleDoH(t *testing.T) {
 }
 
 func TestNewDNSClientCloudflareDoH(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "doh://cloudflare")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "doh://cloudflare")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -933,8 +934,8 @@ func TestNewDNSClientCloudflareDoH(t *testing.T) {
 
 func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{ResolveSaver: saver}, "doh://cloudflare")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{ResolveSaver: saver}, "doh://cloudflare")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -953,8 +954,8 @@ func TestNewDNSClientCloudflareDoHSaver(t *testing.T) {
 }
 
 func TestNewDNSClientUDP(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "udp://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "udp://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -970,8 +971,8 @@ func TestNewDNSClientUDP(t *testing.T) {
 
 func TestNewDNSClientUDPDNSSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{ResolveSaver: saver}, "udp://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{ResolveSaver: saver}, "udp://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -990,8 +991,8 @@ func TestNewDNSClientUDPDNSSaver(t *testing.T) {
 }
 
 func TestNewDNSClientTCP(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "tcp://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "tcp://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1011,8 +1012,8 @@ func TestNewDNSClientTCP(t *testing.T) {
 
 func TestNewDNSClientTCPDNSSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{ResolveSaver: saver}, "tcp://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{ResolveSaver: saver}, "tcp://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1035,8 +1036,8 @@ func TestNewDNSClientTCPDNSSaver(t *testing.T) {
 }
 
 func TestNewDNSClientDoT(t *testing.T) {
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{}, "dot://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{}, "dot://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1056,8 +1057,8 @@ func TestNewDNSClientDoT(t *testing.T) {
 
 func TestNewDNSClientDoTDNSSaver(t *testing.T) {
 	saver := new(trace.Saver)
-	dnsclient, err := httptransport.NewDNSClient(
-		httptransport.Config{ResolveSaver: saver}, "dot://8.8.8.8:53")
+	dnsclient, err := netx.NewDNSClient(
+		netx.Config{ResolveSaver: saver}, "dot://8.8.8.8:53")
 	if err != nil {
 		t.Fatal(err)
 	}

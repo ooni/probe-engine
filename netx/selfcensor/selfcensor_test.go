@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
@@ -214,7 +214,7 @@ func TestBlockedFingerprintsTimeout(t *testing.T) {
 	if selfcensor.Enabled() != true {
 		t.Fatal("we expected self censorship to be enabled now")
 	}
-	tlsDialer := httptransport.NewTLSDialer(httptransport.Config{
+	tlsDialer := netx.NewTLSDialer(netx.Config{
 		Dialer: selfcensor.SystemDialer{},
 	})
 	conn, err := tlsDialer.DialTLSContext(
@@ -235,7 +235,7 @@ func TestBlockedFingerprintsNoMatch(t *testing.T) {
 	if selfcensor.Enabled() != true {
 		t.Fatal("we expected self censorship to be enabled now")
 	}
-	tlsDialer := httptransport.NewTLSDialer(httptransport.Config{
+	tlsDialer := netx.NewTLSDialer(netx.Config{
 		Dialer: selfcensor.SystemDialer{},
 	})
 	conn, err := tlsDialer.DialTLSContext(
@@ -257,7 +257,7 @@ func TestBlockedFingerprintsConnectionReset(t *testing.T) {
 	if selfcensor.Enabled() != true {
 		t.Fatal("we expected self censorship to be enabled now")
 	}
-	tlsDialer := httptransport.NewTLSDialer(httptransport.Config{
+	tlsDialer := netx.NewTLSDialer(netx.Config{
 		Dialer: selfcensor.SystemDialer{},
 	})
 	conn, err := tlsDialer.DialTLSContext(

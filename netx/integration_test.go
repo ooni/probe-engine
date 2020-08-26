@@ -1,4 +1,4 @@
-package httptransport_test
+package netx_test
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -20,7 +20,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 	log.SetLevel(log.DebugLevel)
 	counter := bytecounter.New()
-	config := httptransport.Config{
+	config := netx.Config{
 		BogonIsError:        true,
 		ByteCounter:         counter,
 		CacheResolutions:    true,
@@ -32,7 +32,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		ResolveSaver:        &trace.Saver{},
 		TLSSaver:            &trace.Saver{},
 	}
-	txp := httptransport.New(config)
+	txp := netx.NewHTTPTransport(config)
 	client := &http.Client{Transport: txp}
 	resp, err := client.Get("https://www.google.com")
 	if err != nil {
@@ -72,7 +72,7 @@ func TestIntegrationBogonResolutionNotBroken(t *testing.T) {
 		t.Skip("skipping test in short mode")
 	}
 	saver := new(trace.Saver)
-	r := httptransport.NewResolver(httptransport.Config{
+	r := netx.NewResolver(netx.Config{
 		BogonIsError: true,
 		DNSCache: map[string][]string{
 			"www.google.com": {"127.0.0.1"},

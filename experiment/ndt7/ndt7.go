@@ -13,8 +13,8 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
@@ -93,7 +93,7 @@ type Measurer struct {
 func (m *Measurer) discover(
 	ctx context.Context, sess model.ExperimentSession) (mlablocatev2.NDT7Result, error) {
 	httpClient := &http.Client{
-		Transport: httptransport.New(httptransport.Config{
+		Transport: netx.NewHTTPTransport(netx.Config{
 			Logger:   sess.Logger(),
 			ProxyURL: sess.ProxyURL(),
 		}),
