@@ -30,4 +30,16 @@ extern void ooniffi_task_destroy(ooniffi_task_t *task);
 #ifdef __cplusplus
 }
 #endif
+
+/* Define OONIFFI_EMULATE_MK_API to provide MK compatible API. */
+#ifdef OONIFFI_EMULATE_MK_API
+#define mk_task_start ooniffi_task_start
+#define mk_task_wait_for_next_event ooniffi_wait_for_next_event
+#define mk_task_is_done ooniffi_task_is_done
+#define mk_task_interrupt ooniffi_task_interrupt
+#define mk_event_serialization ooniffi_event_serialization
+#define mk_event_destroy ooniffi_event_destroy
+#define mk_task_destroy ooniffi_task_destroy
+#endif
+
 #endif /* INCLUDE_OONIFFI_H_ */
