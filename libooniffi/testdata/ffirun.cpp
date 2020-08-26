@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     std::clog << "usage: ffirun /path/to/json/settings" << std::endl;
     exit(1);
   }
-  std::ifstream filep{argv[1]};
+  std::ifstream filep(argv[1]);
   if (!filep.good()) {
     std::clog << "fatal: cannot open settings file" << std::endl;
     exit(1);
