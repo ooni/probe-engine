@@ -7,8 +7,8 @@ reviewer is satisfied, they will merge the pull request.
 
 ## PR requirements
 
-Every pull request that introduces new functionality should feature
-comprehensive test coverage. Any pull request that modifies existing
+Every pull request that introduces new functionality should at least
+include a basic integration test. Any pull request that modifies existing
 functionality should pass existing tests. What's more, any new pull
 request that modifies existing functionality should not decrease the
 existing code coverage.
@@ -30,7 +30,7 @@ functional to better understand your changes.
 
 ## Code style requirements
 
-Please, use `go fmt`, `go vet`, and `golint` to check your code
+You should use `go fmt`, `go vet`, and `golint` to vet your code
 contribution before submitting a pull request. Make sure your code
 is documented. At the minimum document all the exported symbols.
 
@@ -39,8 +39,8 @@ run `go mod tidy` to minimize such changes.
 
 ## Code testing requirements
 
-Make sure all tests pass with `go test -race ./...` run from the
-top-level directory of this repository.
+Make sure all tests pass with `go test ./...` run from the
+top-level directory.
 
 ## Writing a new OONI experiment
 
@@ -58,6 +58,7 @@ To get a sense of what we expect from an experiment, see:
 
 - the experiment/example experiment
 
-- the experiment/webconnectivity experiment
+- the experiment/dash experiment
 
 Thank you!
+

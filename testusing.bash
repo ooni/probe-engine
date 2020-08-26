@@ -18,6 +18,6 @@ func main() {
     libminiooni.Main()
 }
 EOF
-go get -v github.com/ooni/probe-engine@GITHUB_SHA
+go get -v github.com/ooni/probe-engine@$GITHUB_SHA
 go build -v .
 ./x -OTunnel=psiphon -ni https://www.example.com urlgetter
