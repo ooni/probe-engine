@@ -3,9 +3,11 @@
 This directory contains quality assurance scripts that use Jafar to
 ensure that OONI implementations behave. These scripts take on the
 command line as argument the path to a binary with a OONI Probe v2.x
-compatible command line interface.
+like command line interface. We do not care about full compatibility
+but rather about having enough similar flags that running these tools
+in parallel is not too much of a burden for us.
 
-Tools with this CLI are:
+Tools with this shallow-compatible CLI are:
 
 1. `github.com/ooni/probe-legacy`
 2. `github.com/measurement-kit/measurement-kit/src/measurement_kit`
