@@ -17,7 +17,7 @@ case $1 in
   windows)
     set -x
     go build -ldflags '-s -w' -buildmode=c-shared -o libooniffi.dll .
-    x64_64-w64-mingw32-g++ -std=c++11 -Wall -Wextra -I. -L. -o ffirun -looniffi ./testdata/ffirun.cpp
+    x86_64-w64-mingw32-g++ -std=c++11 -Wall -Wextra -I. -L. -o ffirun -looniffi ./testdata/ffirun.cpp
     ./ffirun testdata/webconnectivity.json
     ;;
   *)
