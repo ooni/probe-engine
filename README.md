@@ -1,25 +1,13 @@
-[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Golang Status](https://github.com/ooni/probe-engine/workflows/golang/badge.svg) ![Android Status](https://github.com/ooni/probe-engine/workflows/android/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
-
 # OONI probe measurement engine
+
+[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Golang Status](https://github.com/ooni/probe-engine/workflows/golang/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
 
 This repository contains OONI probe's [measurement engine](
 https://github.com/ooni/spec/tree/master/probe#engine). That is, the
-piece of software that implements OONI nettests.
+piece of software that implements OONI nettests as well as all the
+required functionality to run such nettests.
 
-## API
-
-You can [browse ooni/probe-engine's API](
-https://godoc.org/github.com/ooni/probe-engine)
-online at godoc.org. We currently don't provide any API
-stability guarantees.
-
-This repository also allows to build [miniooni](cmd/miniooni), a
-small command line client useful to test the functionality in here
-without integrating with OONI probe. You can browse [the manual
-of this tool](
-https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
-online at godoc.org. We currently don't promise that the
-miniooni CLI will be stable over time.
+We expect you to use the Go version indicated in [go.mod](go.mod).
 
 ## Integrating ooni/probe-engine
 
@@ -32,6 +20,14 @@ go get -v github.com/ooni/probe-engine
 ```
 
 ## Building miniooni
+
+This repository also allows to build [miniooni](cmd/miniooni), a
+small command line client useful to test the functionality in here
+without integrating with OONI probe. You can browse [the manual
+of this tool](
+https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
+online at godoc.org. We currently don't promise that the
+miniooni CLI will be stable over time.
 
 ```bash
 go build -v ./cmd/miniooni/

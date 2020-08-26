@@ -1,4 +1,4 @@
-name: qa
+name: using
 on:
   push:
   schedule:
