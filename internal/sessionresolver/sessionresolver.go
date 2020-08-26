@@ -9,22 +9,22 @@ import (
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 )
 
 // Resolver is the session resolver.
 type Resolver struct {
-	Primary         httptransport.DNSClient
+	Primary         netx.DNSClient
 	PrimaryFailure  *atomicx.Int64
-	Fallback        httptransport.DNSClient
+	Fallback        netx.DNSClient
 	FallbackFailure *atomicx.Int64
 }
 
 // New creates a new session resolver.
-func New(config httptransport.Config) *Resolver {
-	primary, err := httptransport.NewDNSClient(config, "doh://powerdns")
+func New(config netx.Config) *Resolver {
+	primary, err := netx.NewDNSClient(config, "doh://powerdns")
 	runtimex.PanicOnError(err, "cannot create powerdns resolver")
-	fallback, err := httptransport.NewDNSClient(config, "system:///")
+	fallback, err := netx.NewDNSClient(config, "system:///")
 	runtimex.PanicOnError(err, "cannot create system resolver")
 	return &Resolver{
 		Primary:         primary,

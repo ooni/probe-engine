@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/internal/sessionresolver"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 )
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	reso := sessionresolver.New(httptransport.Config{})
+	reso := sessionresolver.New(netx.Config{})
 	defer reso.CloseIdleConnections()
 	if reso.Network() != "sessionresolver" {
 		t.Fatal("unexpected Network")

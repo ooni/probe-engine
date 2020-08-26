@@ -17,9 +17,9 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -279,7 +279,7 @@ func (m Measurer) Run(
 	}
 	saver := &trace.Saver{}
 	httpClient := &http.Client{
-		Transport: httptransport.New(httptransport.Config{
+		Transport: netx.NewHTTPTransport(netx.Config{
 			ContextByteCounting: true,
 			DialSaver:           saver,
 			Logger:              sess.Logger(),

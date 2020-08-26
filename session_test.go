@@ -16,7 +16,7 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
 )
 
@@ -546,7 +546,7 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 }
 
 type httpTransportThatSleeps struct {
-	txp httptransport.RoundTripper
+	txp netx.HTTPRoundTripper
 	st  time.Duration
 }
 

@@ -12,8 +12,8 @@ import (
 
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const httpRequestFailed = "http_request_failed"
@@ -28,7 +28,7 @@ var ErrHTTPRequestFailed = &errorx.ErrWrapper{
 // The Runner job is to run a single measurement
 type Runner struct {
 	Config     Config
-	HTTPConfig httptransport.Config
+	HTTPConfig netx.Config
 	Target     string
 }
 
@@ -79,7 +79,7 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 	runtimex.PanicOnError(err, "cookiejar.New failed")
 	httpClient := &http.Client{
 		Jar:       jar,
-		Transport: httptransport.New(r.HTTPConfig),
+		Transport: netx.NewHTTPTransport(r.HTTPConfig),
 	}
 	if r.Config.NoFollowRedirects {
 		httpClient.CheckRedirect = func(*http.Request, []*http.Request) error {
@@ -105,13 +105,13 @@ func (r Runner) httpGet(ctx context.Context, url string) error {
 }
 
 func (r Runner) dnsLookup(ctx context.Context, hostname string) error {
-	resolver := httptransport.NewResolver(r.HTTPConfig)
+	resolver := netx.NewResolver(r.HTTPConfig)
 	_, err := resolver.LookupHost(ctx, hostname)
 	return err
 }
 
 func (r Runner) tlsHandshake(ctx context.Context, address string) error {
-	tlsDialer := httptransport.NewTLSDialer(r.HTTPConfig)
+	tlsDialer := netx.NewTLSDialer(r.HTTPConfig)
 	conn, err := tlsDialer.DialTLSContext(ctx, "tcp", address)
 	if conn != nil {
 		conn.Close()
@@ -120,7 +120,7 @@ func (r Runner) tlsHandshake(ctx context.Context, address string) error {
 }
 
 func (r Runner) tcpConnect(ctx context.Context, address string) error {
-	dialer := httptransport.NewDialer(r.HTTPConfig)
+	dialer := netx.NewDialer(r.HTTPConfig)
 	conn, err := dialer.DialContext(ctx, "tcp", address)
 	if conn != nil {
 		conn.Close()

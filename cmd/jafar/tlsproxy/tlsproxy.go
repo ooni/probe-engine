@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 )
 
 // CensoringProxy is a censoring TLS proxy
@@ -27,7 +27,7 @@ type CensoringProxy struct {
 // the SNII record of a ClientHello. dnsNetwork and dnsAddress are
 // settings to configure the upstream, non censored DNS.
 func NewCensoringProxy(
-	keywords []string, uncensored httptransport.Dialer,
+	keywords []string, uncensored netx.Dialer,
 ) *CensoringProxy {
 	return &CensoringProxy{
 		keywords: keywords,

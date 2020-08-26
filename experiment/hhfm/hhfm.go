@@ -19,9 +19,9 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/randx"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
@@ -312,7 +312,7 @@ type JSONHeaders struct {
 // guarantee that the connection is used for a single request and that
 // such a request does not contain any body.
 type Dialer struct {
-	Dialer  httptransport.Dialer // used for testing
+	Dialer  netx.Dialer // used for testing
 	Headers map[string]string
 }
 
