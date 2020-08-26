@@ -51,12 +51,6 @@ We automatically build Android bindings whenever commits are pushed to the
 `mobile-staging` branch. Such builds could be integrated by using:
 
 ```Groovy
-maven { url "https://dl.bintray.com/ooni/android/" }
-```
-
-and
-
-```Groovy
 implementation "org.ooni:oonimkall:VERSION"
 ```
 
