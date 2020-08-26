@@ -2,13 +2,12 @@
 set -e
 topdir=$(cd $(dirname $0) && pwd -P)
 set -x
-export GOPATH=$topdir/MOBILE/gopath
-export PATH=$GOPATH/bin:$PATH
+export PATH=$(go env GOPATH)/bin:$PATH
 export GO111MODULE=off
-output=MOBILE/dist/oonimkall.framework
 go get -u golang.org/x/mobile/cmd/gomobile
 gomobile init
 export GO111MODULE=on
+output=MOBILE/ios/oonimkall.framework
 gomobile bind -target=ios -o $output -ldflags="-s -w" ./oonimkall
 # See https://github.com/ooni/probe-engine/issues/668
 for header in $output/Headers/*.objc.h; do
