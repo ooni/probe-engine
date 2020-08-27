@@ -1,8 +1,8 @@
-package oonimkall
+package tasks
 
-// settingsRecord contains settings for a task. This structure extends the one
+// SettingsRecord contains settings for a task. This structure extends the one
 // described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
-type settingsRecord struct {
+type SettingsRecord struct {
 	// Annotations contains the annotations to be added
 	// to every measurements performed by the task.
 	Annotations map[string]string `json:"annotations,omitempty"`
@@ -34,7 +34,7 @@ type settingsRecord struct {
 	Name string `json:"name"`
 
 	// Options contains the task options.
-	Options settingsOptions `json:"options"`
+	Options SettingsOptions `json:"options"`
 
 	// OutputFilepath contains the output filepath. This
 	// setting is not implemented by this library. Attempting
@@ -55,8 +55,8 @@ type settingsRecord struct {
 	TempDir string `json:"temp_dir"`
 }
 
-// settingsOptions contains the settings options
-type settingsOptions struct {
+// SettingsOptions contains the settings options
+type SettingsOptions struct {
 	// AllEndpoints is a WhatsApp specific option indicating that we
 	// should test all endpoints rather than a random susbet. This
 	// library does not support this setting and will emit a warning

@@ -1,4 +1,4 @@
-package oonimkall
+package tasks
 
 type eventEmpty struct{}
 
@@ -46,9 +46,9 @@ type eventStatusResolverLookup struct {
 	ResolverNetworkName string `json:"resolver_network_name"`
 }
 
-// eventRecord is an event emitted by a task. This structure extends the event
+// EventRecord is an event emitted by a task. This structure extends the event
 // described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
-type eventRecord struct {
+type EventRecord struct {
 	Key   string      `json:"key"`
 	Value interface{} `json:"value"`
 }

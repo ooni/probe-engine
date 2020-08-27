@@ -1,4 +1,5 @@
-package oonimkall
+// Package tasks implements tasks run using the oonimkall API.
+package tasks
 
 import (
 	"context"
@@ -32,24 +33,24 @@ const (
 	statusStarted                = "status.started"
 )
 
-// runner runs a specific task
-type runner struct {
+// Runner runs a specific task
+type Runner struct {
 	emitter             *eventEmitter
 	maybeLookupLocation func(*engine.Session) error
-	out                 chan<- *eventRecord
-	settings            *settingsRecord
+	out                 chan<- *EventRecord
+	settings            *SettingsRecord
 }
 
-// newRunner creates a new task runner
-func newRunner(settings *settingsRecord, out chan<- *eventRecord) *runner {
-	return &runner{
+// NewRunner creates a new task runner
+func NewRunner(settings *SettingsRecord, out chan<- *EventRecord) *Runner {
+	return &Runner{
 		emitter:  newEventEmitter(settings.DisabledEvents, out),
 		out:      out,
 		settings: settings,
 	}
 }
 
-func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
+func (r *Runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	sadly := func(why string) {
 		r.emitter.EmitFailureStartup(why)
 		unsupported = true
@@ -158,7 +159,7 @@ func (r *runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	return
 }
 
-func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
+func (r *Runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
 	if err != nil {
 		return nil, err
@@ -185,7 +186,7 @@ func (r *runner) newsession(logger *chanLogger) (*engine.Session, error) {
 	return engine.NewSession(config)
 }
 
-func (r *runner) contextForExperiment(
+func (r *Runner) contextForExperiment(
 	ctx context.Context, builder *engine.ExperimentBuilder,
 ) context.Context {
 	if builder.Interruptible() {
@@ -212,7 +213,7 @@ func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
 // Run runs the runner until completion. The context argument controls
 // when to stop when processing multiple inputs, as well as when to stop
 // experiments explicitly marked as interruptible.
-func (r *runner) Run(ctx context.Context) {
+func (r *Runner) Run(ctx context.Context) {
 	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {

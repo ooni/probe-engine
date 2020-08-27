@@ -1,4 +1,4 @@
-package oonimkall
+package tasks
 
 import (
 	"context"
@@ -16,14 +16,14 @@ import (
 )
 
 func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
-	out := make(chan *eventRecord)
+	out := make(chan *EventRecord)
 	var falsebool bool
 	var zerodotzero float64
 	var zero int64
 	var emptystring string
-	settings := &settingsRecord{
+	settings := &SettingsRecord{
 		InputFilepaths: []string{"foo"},
-		Options: settingsOptions{
+		Options: SettingsOptions{
 			AllEndpoints:          &falsebool,
 			Backend:               "foo",
 			BouncerBaseURL:        "https://ps-nonexistent.ooni.io/",
@@ -61,7 +61,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	}
 	go func() {
 		defer close(out)
-		r := newRunner(settings, out)
+		r := NewRunner(settings, out)
 		logger := newChanLogger(r.emitter, "WARNING", r.out)
 		if r.hasUnsupportedSettings(logger) != true {
 			panic("expected to see unsupported settings")
@@ -150,11 +150,11 @@ func TestUnitMeasurementSubmissionFailure(t *testing.T) {
 }
 
 func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
-	out := make(chan *eventRecord)
-	settings := &settingsRecord{
+	out := make(chan *EventRecord)
+	settings := &SettingsRecord{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
-		Options: settingsOptions{
+		Options: SettingsOptions{
 			SoftwareName:    "oonimkall-test",
 			SoftwareVersion: "0.1.0",
 		},
@@ -181,7 +181,7 @@ func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
 		seench <- seen
 	}()
 	expected := errors.New("mocked error")
-	r := newRunner(settings, out)
+	r := NewRunner(settings, out)
 	r.maybeLookupLocation = func(*engine.Session) error {
 		return expected
 	}
@@ -197,11 +197,11 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 		w.WriteHeader(500)
 	}))
 	defer server.Close()
-	out := make(chan *eventRecord)
-	settings := &settingsRecord{
+	out := make(chan *EventRecord)
+	settings := &SettingsRecord{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
-		Options: settingsOptions{
+		Options: SettingsOptions{
 			ProbeServicesBaseURL: server.URL,
 			SoftwareName:         "oonimkall-test",
 			SoftwareVersion:      "0.1.0",
@@ -222,7 +222,7 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 		}
 		seench <- seen
 	}()
-	r := newRunner(settings, out)
+	r := NewRunner(settings, out)
 	r.Run(context.Background())
 	close(out)
 	if n := <-seench; n != 1 {
@@ -246,11 +246,11 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 		w.WriteHeader(500)
 	}))
 	defer server.Close()
-	out := make(chan *eventRecord)
-	settings := &settingsRecord{
+	out := make(chan *EventRecord)
+	settings := &SettingsRecord{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
-		Options: settingsOptions{
+		Options: SettingsOptions{
 			ProbeServicesBaseURL: server.URL,
 			SoftwareName:         "oonimkall-test",
 			SoftwareVersion:      "0.1.0",
@@ -277,7 +277,7 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 		}
 		seench <- seen
 	}()
-	r := newRunner(settings, out)
+	r := NewRunner(settings, out)
 	r.Run(context.Background())
 	close(out)
 	if n := <-seench; n != 1 {

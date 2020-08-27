@@ -1,13 +1,13 @@
-package oonimkall
+package tasks
 
 // eventEmitter emits event on a channel
 type eventEmitter struct {
 	disabled map[string]bool
-	out      chan<- *eventRecord
+	out      chan<- *EventRecord
 }
 
 // newEventEmitter creates a new Emitter
-func newEventEmitter(disabledEvents []string, out chan<- *eventRecord) *eventEmitter {
+func newEventEmitter(disabledEvents []string, out chan<- *EventRecord) *eventEmitter {
 	ee := &eventEmitter{out: out}
 	ee.disabled = make(map[string]bool)
 	for _, eventname := range disabledEvents {
@@ -36,5 +36,5 @@ func (ee *eventEmitter) Emit(key string, value interface{}) {
 	if ee.disabled[key] == true {
 		return
 	}
-	ee.out <- &eventRecord{Key: key, Value: value}
+	ee.out <- &EventRecord{Key: key, Value: value}
 }
