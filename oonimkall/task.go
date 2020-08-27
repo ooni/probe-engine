@@ -38,13 +38,13 @@ type Task struct {
 	cancel    context.CancelFunc
 	isdone    *atomicx.Int64
 	isstopped *atomicx.Int64
-	out       chan *tasks.EventRecord
+	out       chan *tasks.Event
 }
 
 // StartTask starts an asynchronous task. The input argument is a
 // serialized JSON conforming to MK v0.10.9's API.
 func StartTask(input string) (*Task, error) {
-	var settings tasks.SettingsRecord
+	var settings tasks.Settings
 	if err := json.Unmarshal([]byte(input), &settings); err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func StartTask(input string) (*Task, error) {
 		cancel:    cancel,
 		isdone:    atomicx.NewInt64(),
 		isstopped: atomicx.NewInt64(),
-		out:       make(chan *tasks.EventRecord, bufsiz),
+		out:       make(chan *tasks.Event, bufsiz),
 	}
 	go func() {
 		defer close(task.out)

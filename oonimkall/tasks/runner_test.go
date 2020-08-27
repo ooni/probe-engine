@@ -16,12 +16,12 @@ import (
 )
 
 func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
-	out := make(chan *EventRecord)
+	out := make(chan *Event)
 	var falsebool bool
 	var zerodotzero float64
 	var zero int64
 	var emptystring string
-	settings := &SettingsRecord{
+	settings := &Settings{
 		InputFilepaths: []string{"foo"},
 		Options: SettingsOptions{
 			AllEndpoints:          &falsebool,
@@ -150,8 +150,8 @@ func TestUnitMeasurementSubmissionFailure(t *testing.T) {
 }
 
 func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
-	out := make(chan *EventRecord)
-	settings := &SettingsRecord{
+	out := make(chan *Event)
+	settings := &Settings{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
 		Options: SettingsOptions{
@@ -197,8 +197,8 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 		w.WriteHeader(500)
 	}))
 	defer server.Close()
-	out := make(chan *EventRecord)
-	settings := &SettingsRecord{
+	out := make(chan *Event)
+	settings := &Settings{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
 		Options: SettingsOptions{
@@ -246,8 +246,8 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 		w.WriteHeader(500)
 	}))
 	defer server.Close()
-	out := make(chan *EventRecord)
-	settings := &SettingsRecord{
+	out := make(chan *Event)
+	settings := &Settings{
 		AssetsDir: "../testdata/oonimkall/assets",
 		Name:      "Example",
 		Options: SettingsOptions{

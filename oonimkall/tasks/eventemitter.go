@@ -3,11 +3,11 @@ package tasks
 // eventEmitter emits event on a channel
 type eventEmitter struct {
 	disabled map[string]bool
-	out      chan<- *EventRecord
+	out      chan<- *Event
 }
 
 // newEventEmitter creates a new Emitter
-func newEventEmitter(disabledEvents []string, out chan<- *EventRecord) *eventEmitter {
+func newEventEmitter(disabledEvents []string, out chan<- *Event) *eventEmitter {
 	ee := &eventEmitter{out: out}
 	ee.disabled = make(map[string]bool)
 	for _, eventname := range disabledEvents {
@@ -36,5 +36,5 @@ func (ee *eventEmitter) Emit(key string, value interface{}) {
 	if ee.disabled[key] == true {
 		return
 	}
-	ee.out <- &EventRecord{Key: key, Value: value}
+	ee.out <- &Event{Key: key, Value: value}
 }

@@ -37,12 +37,12 @@ const (
 type Runner struct {
 	emitter             *eventEmitter
 	maybeLookupLocation func(*engine.Session) error
-	out                 chan<- *EventRecord
-	settings            *SettingsRecord
+	out                 chan<- *Event
+	settings            *Settings
 }
 
 // NewRunner creates a new task runner
-func NewRunner(settings *SettingsRecord, out chan<- *EventRecord) *Runner {
+func NewRunner(settings *Settings, out chan<- *Event) *Runner {
 	return &Runner{
 		emitter:  newEventEmitter(settings.DisabledEvents, out),
 		out:      out,

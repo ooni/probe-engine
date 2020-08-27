@@ -1,8 +1,8 @@
 package tasks
 
-// SettingsRecord contains settings for a task. This structure extends the one
+// Settings contains settings for a task. This structure extends the one
 // described by MK v0.10.9 FFI API (https://git.io/Jv4Rv).
-type SettingsRecord struct {
+type Settings struct {
 	// Annotations contains the annotations to be added
 	// to every measurements performed by the task.
 	Annotations map[string]string `json:"annotations,omitempty"`

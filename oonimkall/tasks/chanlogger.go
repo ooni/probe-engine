@@ -10,7 +10,7 @@ type chanLogger struct {
 	hasdebug   bool
 	hasinfo    bool
 	haswarning bool
-	out        chan<- *EventRecord
+	out        chan<- *Event
 }
 
 // Debug implements Logger.Debug
@@ -67,7 +67,7 @@ func (cl *chanLogger) Warnf(format string, v ...interface{}) {
 // newChanLogger creates a new ChanLogger instance.
 func newChanLogger(
 	emitter *eventEmitter, logLevel string,
-	out chan<- *EventRecord,
+	out chan<- *Event,
 ) *chanLogger {
 	cl := &chanLogger{
 		emitter: emitter,
