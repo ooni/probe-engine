@@ -222,8 +222,7 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 		}
 		seench <- seen
 	}()
-	r := NewRunner(settings, out)
-	r.Run(context.Background())
+	Run(context.Background(), settings, out)
 	close(out)
 	if n := <-seench; n != 1 {
 		t.Fatal("unexpected number of events")
@@ -277,8 +276,7 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 		}
 		seench <- seen
 	}()
-	r := NewRunner(settings, out)
-	r.Run(context.Background())
+	Run(context.Background(), settings, out)
 	close(out)
 	if n := <-seench; n != 1 {
 		t.Fatal("unexpected number of events")

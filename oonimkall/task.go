@@ -59,8 +59,7 @@ func StartTask(input string) (*Task, error) {
 	go func() {
 		defer close(task.out)
 		defer task.isstopped.Add(1)
-		r := tasks.NewRunner(&settings, task.out)
-		r.Run(ctx)
+		tasks.Run(ctx, &settings, task.out)
 	}()
 	return task, nil
 }

@@ -33,6 +33,13 @@ const (
 	statusStarted                = "status.started"
 )
 
+// Run runs the task specified by settings.Name until completion. This is the
+// top-level API that should be called by oonimkall.
+func Run(ctx context.Context, settings *Settings, out chan<- *Event) {
+	r := NewRunner(settings, out)
+	r.Run(ctx)
+}
+
 // Runner runs a specific task
 type Runner struct {
 	emitter             *EventEmitter
