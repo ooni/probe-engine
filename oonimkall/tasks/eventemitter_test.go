@@ -6,7 +6,7 @@ import (
 
 func TestUnitDisabledEvents(t *testing.T) {
 	out := make(chan *Event)
-	emitter := newEventEmitter([]string{"log"}, out)
+	emitter := NewEventEmitter([]string{"log"}, out)
 	go func() {
 		emitter.Emit("log", eventLog{Message: "foo"})
 		close(out)
@@ -24,7 +24,7 @@ func TestUnitDisabledEvents(t *testing.T) {
 
 func TestUnitEmitFailureStartup(t *testing.T) {
 	out := make(chan *Event)
-	emitter := newEventEmitter([]string{}, out)
+	emitter := NewEventEmitter([]string{}, out)
 	go func() {
 		emitter.EmitFailureStartup("mocked error")
 		close(out)
@@ -45,7 +45,7 @@ func TestUnitEmitFailureStartup(t *testing.T) {
 
 func TestUnitEmitStatusProgress(t *testing.T) {
 	out := make(chan *Event)
-	emitter := newEventEmitter([]string{}, out)
+	emitter := NewEventEmitter([]string{}, out)
 	go func() {
 		emitter.EmitStatusProgress(0.7, "foo")
 		close(out)

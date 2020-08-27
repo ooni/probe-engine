@@ -35,7 +35,7 @@ const (
 
 // Runner runs a specific task
 type Runner struct {
-	emitter             *eventEmitter
+	emitter             *EventEmitter
 	maybeLookupLocation func(*engine.Session) error
 	out                 chan<- *Event
 	settings            *Settings
@@ -44,13 +44,13 @@ type Runner struct {
 // NewRunner creates a new task runner
 func NewRunner(settings *Settings, out chan<- *Event) *Runner {
 	return &Runner{
-		emitter:  newEventEmitter(settings.DisabledEvents, out),
+		emitter:  NewEventEmitter(settings.DisabledEvents, out),
 		out:      out,
 		settings: settings,
 	}
 }
 
-func (r *Runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
+func (r *Runner) hasUnsupportedSettings(logger *ChanLogger) (unsupported bool) {
 	sadly := func(why string) {
 		r.emitter.EmitFailureStartup(why)
 		unsupported = true
@@ -159,7 +159,7 @@ func (r *Runner) hasUnsupportedSettings(logger *chanLogger) (unsupported bool) {
 	return
 }
 
-func (r *Runner) newsession(logger *chanLogger) (*engine.Session, error) {
+func (r *Runner) newsession(logger *ChanLogger) (*engine.Session, error) {
 	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (r *Runner) contextForExperiment(
 }
 
 type runnerCallbacks struct {
-	emitter *eventEmitter
+	emitter *EventEmitter
 }
 
 func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
@@ -214,7 +214,7 @@ func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
 // when to stop when processing multiple inputs, as well as when to stop
 // experiments explicitly marked as interruptible.
 func (r *Runner) Run(ctx context.Context) {
-	logger := newChanLogger(r.emitter, r.settings.LogLevel, r.out)
+	logger := NewChanLogger(r.emitter, r.settings.LogLevel, r.out)
 	r.emitter.Emit(statusQueued, eventEmpty{})
 	if r.hasUnsupportedSettings(logger) {
 		return

@@ -62,7 +62,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	go func() {
 		defer close(out)
 		r := NewRunner(settings, out)
-		logger := newChanLogger(r.emitter, "WARNING", r.out)
+		logger := NewChanLogger(r.emitter, "WARNING", r.out)
 		if r.hasUnsupportedSettings(logger) != true {
 			panic("expected to see unsupported settings")
 		}
