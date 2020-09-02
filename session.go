@@ -185,7 +185,7 @@ func (s *Session) Logger() model.Logger {
 
 // MaybeLookupLocation is a caching location lookup call.
 func (s *Session) MaybeLookupLocation() error {
-	return s.maybeLookupLocation(context.Background())
+	return s.MaybeLookupLocationContext(context.Background())
 }
 
 // MaybeLookupBackends is a caching OONI backends lookup call.
@@ -261,7 +261,7 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrche
 	if err := s.maybeLookupBackends(ctx); err != nil {
 		return nil, err
 	}
-	if err := s.maybeLookupLocation(ctx); err != nil {
+	if err := s.MaybeLookupLocationContext(ctx); err != nil {
 		return nil, err
 	}
 	if s.selectedProbeServiceHook != nil {
@@ -492,7 +492,9 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	return nil
 }
 
-func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
+// MaybeLookupLocationContext is like MaybeLookupLocation but with a context
+// that can be used to interrupt this long running operation.
+func (s *Session) MaybeLookupLocationContext(ctx context.Context) (err error) {
 	if s.location == nil {
 		defer func() {
 			if recover() != nil {
