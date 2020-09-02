@@ -292,6 +292,7 @@ func TestSessionGeolocateWithCancelledContext(t *testing.T) {
 	}
 	defer sess.Close()
 	location, err := sess.Geolocate(ctx)
+	t.Log(err)
 	if err == nil || err.Error() != "All IP lookuppers failed" {
 		t.Fatal("not the error we expected")
 	}
