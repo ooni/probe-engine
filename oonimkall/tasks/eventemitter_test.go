@@ -1,14 +1,16 @@
-package tasks
+package tasks_test
 
 import (
 	"testing"
+
+	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
 func TestUnitDisabledEvents(t *testing.T) {
-	out := make(chan *Event)
-	emitter := NewEventEmitter([]string{"log"}, out)
+	out := make(chan *tasks.Event)
+	emitter := tasks.NewEventEmitter([]string{"log"}, out)
 	go func() {
-		emitter.Emit("log", eventLog{Message: "foo"})
+		emitter.Emit("log", tasks.EventLog{Message: "foo"})
 		close(out)
 	}()
 	var count int64
@@ -23,8 +25,8 @@ func TestUnitDisabledEvents(t *testing.T) {
 }
 
 func TestUnitEmitFailureStartup(t *testing.T) {
-	out := make(chan *Event)
-	emitter := NewEventEmitter([]string{}, out)
+	out := make(chan *tasks.Event)
+	emitter := tasks.NewEventEmitter([]string{}, out)
 	go func() {
 		emitter.EmitFailureStartup("mocked error")
 		close(out)
@@ -32,7 +34,7 @@ func TestUnitEmitFailureStartup(t *testing.T) {
 	var found bool
 	for ev := range out {
 		if ev.Key == "failure.startup" {
-			evv := ev.Value.(eventFailureGeneric) // panic if not castable
+			evv := ev.Value.(tasks.EventFailure) // panic if not castable
 			if evv.Failure == "mocked error" {
 				found = true
 			}
@@ -44,8 +46,8 @@ func TestUnitEmitFailureStartup(t *testing.T) {
 }
 
 func TestUnitEmitStatusProgress(t *testing.T) {
-	out := make(chan *Event)
-	emitter := NewEventEmitter([]string{}, out)
+	out := make(chan *tasks.Event)
+	emitter := tasks.NewEventEmitter([]string{}, out)
 	go func() {
 		emitter.EmitStatusProgress(0.7, "foo")
 		close(out)
@@ -53,7 +55,7 @@ func TestUnitEmitStatusProgress(t *testing.T) {
 	var found bool
 	for ev := range out {
 		if ev.Key == "status.progress" {
-			evv := ev.Value.(eventStatusProgress) // panic if not castable
+			evv := ev.Value.(tasks.EventStatusProgress) // panic if not castable
 			if evv.Message == "foo" && evv.Percentage == 0.7 {
 				found = true
 			}

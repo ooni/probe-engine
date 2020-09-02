@@ -461,7 +461,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputNone,
@@ -477,7 +477,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputRequired,
@@ -497,7 +497,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: false,
 			inputPolicy:   InputRequired,
@@ -514,7 +514,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			config: &example.Config{
 				Message:     "Good day from the example with failure experiment!",
 				ReturnError: true,
-				SleepTime:   int64(5 * time.Second),
+				SleepTime:   int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputNone,

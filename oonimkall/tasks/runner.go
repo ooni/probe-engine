@@ -211,7 +211,7 @@ func (cb *runnerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
 }
 
 func (cb *runnerCallbacks) OnProgress(percentage float64, message string) {
-	cb.emitter.Emit(statusProgress, eventStatusProgress{
+	cb.emitter.Emit(statusProgress, EventStatusProgress{
 		Percentage: 0.4 + (percentage * 0.6), // open report is 40%
 		Message:    message,
 	})
