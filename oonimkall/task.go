@@ -30,6 +30,7 @@ import (
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
 // Task is an asynchronous task.
@@ -37,13 +38,13 @@ type Task struct {
 	cancel    context.CancelFunc
 	isdone    *atomicx.Int64
 	isstopped *atomicx.Int64
-	out       chan *eventRecord
+	out       chan *tasks.Event
 }
 
 // StartTask starts an asynchronous task. The input argument is a
 // serialized JSON conforming to MK v0.10.9's API.
 func StartTask(input string) (*Task, error) {
-	var settings settingsRecord
+	var settings tasks.Settings
 	if err := json.Unmarshal([]byte(input), &settings); err != nil {
 		return nil, err
 	}
@@ -53,13 +54,12 @@ func StartTask(input string) (*Task, error) {
 		cancel:    cancel,
 		isdone:    atomicx.NewInt64(),
 		isstopped: atomicx.NewInt64(),
-		out:       make(chan *eventRecord, bufsiz),
+		out:       make(chan *tasks.Event, bufsiz),
 	}
 	go func() {
 		defer close(task.out)
 		defer task.isstopped.Add(1)
-		r := newRunner(&settings, task.out)
-		r.Run(ctx)
+		tasks.Run(ctx, &settings, task.out)
 	}()
 	return task, nil
 }
