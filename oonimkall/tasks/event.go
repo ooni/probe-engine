@@ -2,11 +2,13 @@ package tasks
 
 type eventEmpty struct{}
 
-type eventFailureGeneric struct {
+// EventFailure contains information on a failure.
+type EventFailure struct {
 	Failure string `json:"failure"`
 }
 
-type eventLog struct {
+// EventLog is an event containing a log message.
+type EventLog struct {
 	LogLevel string `json:"log_level"`
 	Message  string `json:"message"`
 }
@@ -31,7 +33,8 @@ type eventStatusGeoIPLookup struct {
 	ProbeNetworkName string `json:"probe_network_name"`
 }
 
-type eventStatusProgress struct {
+// EventStatusProgress reports progress information.
+type EventStatusProgress struct {
 	Message    string  `json:"message"`
 	Percentage float64 `json:"percentage"`
 }

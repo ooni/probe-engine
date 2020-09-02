@@ -23,12 +23,12 @@ func (ee *EventEmitter) EmitFailureStartup(failure string) {
 
 // EmitFailureGeneric emits a failure event
 func (ee *EventEmitter) EmitFailureGeneric(name, failure string) {
-	ee.Emit(name, eventFailureGeneric{Failure: failure})
+	ee.Emit(name, EventFailure{Failure: failure})
 }
 
 // EmitStatusProgress emits the status.Progress event
 func (ee *EventEmitter) EmitStatusProgress(percentage float64, message string) {
-	ee.Emit(statusProgress, eventStatusProgress{Message: message, Percentage: percentage})
+	ee.Emit(statusProgress, EventStatusProgress{Message: message, Percentage: percentage})
 }
 
 // Emit emits the specified event

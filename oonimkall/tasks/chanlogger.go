@@ -16,7 +16,7 @@ type ChanLogger struct {
 // Debug implements Logger.Debug
 func (cl *ChanLogger) Debug(msg string) {
 	if cl.hasdebug {
-		cl.emitter.Emit("log", eventLog{
+		cl.emitter.Emit("log", EventLog{
 			LogLevel: "DEBUG",
 			Message:  msg,
 		})
@@ -33,7 +33,7 @@ func (cl *ChanLogger) Debugf(format string, v ...interface{}) {
 // Info implements Logger.Info
 func (cl *ChanLogger) Info(msg string) {
 	if cl.hasinfo {
-		cl.emitter.Emit("log", eventLog{
+		cl.emitter.Emit("log", EventLog{
 			LogLevel: "INFO",
 			Message:  msg,
 		})
@@ -50,7 +50,7 @@ func (cl *ChanLogger) Infof(format string, v ...interface{}) {
 // Warn implements Logger.Warn
 func (cl *ChanLogger) Warn(msg string) {
 	if cl.haswarning {
-		cl.emitter.Emit("log", eventLog{
+		cl.emitter.Emit("log", EventLog{
 			LogLevel: "WARNING",
 			Message:  msg,
 		})
