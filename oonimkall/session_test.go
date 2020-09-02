@@ -99,6 +99,7 @@ func (rl *RecordingLogger) CheckVerboseEntries() error {
 	}
 	return nil
 }
+
 func TestNewLoggerQuietLogger(t *testing.T) {
 	handler := new(RecordingLogger)
 	logger := oonimkall.NewLogger(&oonimkall.SessionConfig{Logger: handler})
@@ -131,14 +132,14 @@ func TestNullContextDoesNotCrash(t *testing.T) {
 	if err := ctx.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if ctx.Timeout() != 0 {
+	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
 }
 
 func TestNewContext(t *testing.T) {
 	ctx := oonimkall.NewContext()
-	if ctx.Timeout() != 0 {
+	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
 	go func() {
@@ -150,7 +151,7 @@ func TestNewContext(t *testing.T) {
 
 func TestNewContextWithNegativeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(-1)
-	if ctx.Timeout() != 0 {
+	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
 	go func() {
@@ -162,7 +163,7 @@ func TestNewContextWithNegativeTimeout(t *testing.T) {
 
 func TestNewContextWithHugeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(oonimkall.MaxContextTimeout + 1)
-	if ctx.Timeout() != oonimkall.MaxContextTimeout {
+	if ctx.GetTimeout() != oonimkall.MaxContextTimeout {
 		t.Fatal("invalid Timeout value")
 	}
 	go func() {
@@ -174,7 +175,7 @@ func TestNewContextWithHugeTimeout(t *testing.T) {
 
 func TestNewContextWithReasonableTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(1)
-	if ctx.Timeout() != 1 {
+	if ctx.GetTimeout() != 1 {
 		t.Fatal("invalid Timeout value")
 	}
 	go func() {

@@ -34,15 +34,16 @@ type SessionConfig struct {
 
 	// TempDir is the mandatory directory where the Session shall
 	// store temporary files. Among other tasks, Session.Close will
-	// all ensure that temporary files have been removed.
+	// ensure that temporary files have been removed.
 	TempDir string
 
 	// Verbose is optional. If there is a non-null Logger and this
-	// field is true, then the Logger will also receive Debug messages.
+	// field is true, then the Logger will also receive Debug messages,
+	// otherwise it will not receive such messages.
 	Verbose bool
 }
 
-// Logger is the logger used by a session. You should implement a class
+// Logger is the logger used by a Session. You should implement a class
 // compatible with this interface in Java/ObjC and then save a reference
 // to this instance in the SessionConfig object. All log messages that
 // the Session will generate will be routed to this Logger.
@@ -170,9 +171,9 @@ func (ctx *Context) Context() context.Context {
 	return ctx.ctx
 }
 
-// Timeout returns the timeout (in seconds) configured for the context. A
+// GetTimeout returns the timeout (in seconds) configured for the context. A
 // negative or zero value implies there is no timeout.
-func (ctx *Context) Timeout() (timeout int64) {
+func (ctx *Context) GetTimeout() (timeout int64) {
 	if ctx != nil {
 		timeout = ctx.timeout
 	}
@@ -192,6 +193,6 @@ func (ctx *Context) Cancel() {
 // method is idempotent; only its first invocation has side effects. It
 // is also thread safe and might be called from any thread.
 func (ctx *Context) Close() error {
-	ctx.Cancel() // calling directly Cancel
+	ctx.Cancel() // calling Cancel which handles nil gracefully
 	return nil
 }

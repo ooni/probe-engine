@@ -2,7 +2,7 @@
 // expose these APIs to mobile apps using gomobile.
 //
 // We expose two APIs: the task API, which is derived from the
-// API originall exposed by Measurement Kit, and the session API,
+// API originally exposed by Measurement Kit, and the session API,
 // which is a Go API that mobile apps can use via `gomobile`.
 //
 // This package is named oonimkall because it's a ooni/probe-engine
@@ -32,8 +32,8 @@
 // Session API
 //
 // The Session API is a Go API that can be exported to mobile apps
-// using the gomobile tool. The design document of this API is described
-// in https://github.com/ooni/probe-engine/issues/893.
+// using the gomobile tool. The design for this API is at
+// https://github.com/ooni/probe-engine/issues/893.
 //
 // The basic tenet of the session API is that you create an instance
 // of `Session` and use it to perform the operations you need.
