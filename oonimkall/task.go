@@ -1,11 +1,17 @@
-// Package oonimkall implements API used by OONI mobile apps. We
-// expose this API to mobile apps using gomobile.
+// Package oonimkall implements APIs used by OONI mobile apps. We
+// expose these APIs to mobile apps using gomobile.
+//
+// We expose two APIs: the task API, which is derived from the
+// API originally exposed by Measurement Kit, and the session API,
+// which is a Go API that mobile apps can use via `gomobile`.
 //
 // This package is named oonimkall because it's a ooni/probe-engine
 // implementation of the mkall API implemented by Measurement Kit
 // in, e.g., https://github.com/measurement-kit/mkall-ios.
 //
-// The basic tenet of oonimkall is that you define an experiment
+// Task API
+//
+// The basic tenet of the task API is that you define an experiment
 // task you wanna run using a JSON, then you start such task, and
 // you receive events as serialized JSONs. In addition to this
 // functionality, we also include extra APIs used by OONI mobile.
@@ -18,10 +24,19 @@
 // description of MK's FFI API.
 //
 // See also https://github.com/ooni/probe-engine/pull/347 for the
-// design document describing this API.
+// design document describing the task API.
 //
 // See also https://github.com/ooni/probe-engine/blob/master/DESIGN.md,
 // which explains why we implemented to oonimkall API.
+//
+// Session API
+//
+// The Session API is a Go API that can be exported to mobile apps
+// using the gomobile tool. The design for this API is at
+// https://github.com/ooni/probe-engine/issues/893.
+//
+// The basic tenet of the session API is that you create an instance
+// of `Session` and use it to perform the operations you need.
 package oonimkall
 
 import (
