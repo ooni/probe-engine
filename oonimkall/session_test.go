@@ -1,6 +1,7 @@
 package oonimkall_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -292,9 +293,20 @@ func TestSessionGeolocateWithCancelledContext(t *testing.T) {
 	}
 	defer sess.Close()
 	location, err := sess.Geolocate(ctx)
-	t.Log(err)
-	if err == nil || err.Error() != "All IP lookuppers failed" {
-		t.Fatal("not the error we expected")
+	reduceError := func(err error) error {
+		if err == nil {
+			return errors.New("we expected an error here")
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil // when we have not downloaded the resources yet
+		}
+		if err.Error() == "All IP lookuppers failed" {
+			return nil // otherwise
+		}
+		return fmt.Errorf("not the error we expected: %w", err)
+	}
+	if err := reduceError(err); err != nil {
+		t.Fatal(err)
 	}
 	if location != nil {
 		t.Fatal("expected nil location here")
