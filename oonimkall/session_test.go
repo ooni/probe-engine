@@ -1,9 +1,11 @@
 package oonimkall_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -128,6 +130,7 @@ func TestNewLoggerVerboseLogger(t *testing.T) {
 
 func TestNullContextDoesNotCrash(t *testing.T) {
 	var ctx *oonimkall.Context
+	defer ctx.Close()
 	ctx.Cancel()
 	if err := ctx.Close(); err != nil {
 		t.Fatal(err)
@@ -139,6 +142,7 @@ func TestNullContextDoesNotCrash(t *testing.T) {
 
 func TestNewContext(t *testing.T) {
 	ctx := oonimkall.NewContext()
+	defer ctx.Close()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -151,6 +155,7 @@ func TestNewContext(t *testing.T) {
 
 func TestNewContextWithNegativeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(-1)
+	defer ctx.Close()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -163,6 +168,7 @@ func TestNewContextWithNegativeTimeout(t *testing.T) {
 
 func TestNewContextWithHugeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(oonimkall.MaxContextTimeout + 1)
+	defer ctx.Close()
 	if ctx.GetTimeout() != oonimkall.MaxContextTimeout {
 		t.Fatal("invalid Timeout value")
 	}
@@ -175,6 +181,7 @@ func TestNewContextWithHugeTimeout(t *testing.T) {
 
 func TestNewContextWithReasonableTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(1)
+	defer ctx.Close()
 	if ctx.GetTimeout() != 1 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -186,5 +193,148 @@ func TestNewContextWithReasonableTimeout(t *testing.T) {
 	<-ctx.Context().Done()
 	if time.Now().Sub(start) >= 2*time.Second {
 		t.Fatal("context timeout not working as intended")
+	}
+}
+
+func TestCloseNullSession(t *testing.T) {
+	var sess *oonimkall.Session
+	if err := sess.Close(); err != nil {
+		t.Fatal("sess.Close should not fail here")
+	}
+}
+
+func TestNewSessionWithNilConfig(t *testing.T) {
+	sess, err := oonimkall.NewSession(nil)
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if sess != nil {
+		t.Fatal("expected a nil Session here")
+	}
+}
+
+func TestNewSessionWithInvalidStateDir(t *testing.T) {
+	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
+		StateDir: "",
+	})
+	if err == nil || !strings.HasSuffix(err.Error(), "no such file or directory") {
+		t.Fatal("not the error we expected")
+	}
+	if sess != nil {
+		t.Fatal("expected a nil Session here")
+	}
+}
+
+func TestNewSessionWithMissingSoftwareName(t *testing.T) {
+	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
+		StateDir: "../testdata/oonimkall/state",
+	})
+	if err == nil || err.Error() != "AssetsDir is empty" {
+		t.Fatal("not the error we expected")
+	}
+	if sess != nil {
+		t.Fatal("expected a nil Session here")
+	}
+}
+
+func NewSession() (*oonimkall.Session, error) {
+	return oonimkall.NewSession(&oonimkall.SessionConfig{
+		AssetsDir:       "../testdata/oonimkall/assets",
+		SoftwareName:    "oonimkall-test",
+		SoftwareVersion: "0.1.0",
+		StateDir:        "../testdata/oonimkall/state",
+		TempDir:         "../testdata/",
+	})
+}
+
+func TestNewSessionWorksAndWeCanClose(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := sess.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSessionGeolocateWithNullSession(t *testing.T) {
+	var sess *oonimkall.Session
+	location, err := sess.Geolocate(oonimkall.NewContext())
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if location != nil {
+		t.Fatal("expected nil location here")
+	}
+}
+
+func TestSessionGeolocateWithNullContext(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	location, err := sess.Geolocate(nil)
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if location != nil {
+		t.Fatal("expected nil location here")
+	}
+}
+
+func TestSessionGeolocateWithCancelledContext(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Close()
+	ctx.Cancel() // cause immediate failure
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	location, err := sess.Geolocate(ctx)
+	reduceError := func(err error) error {
+		if err == nil {
+			return errors.New("we expected an error here")
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil // when we have not downloaded the resources yet
+		}
+		if err.Error() == "All IP lookuppers failed" {
+			return nil // otherwise
+		}
+		return fmt.Errorf("not the error we expected: %w", err)
+	}
+	if err := reduceError(err); err != nil {
+		t.Fatal(err)
+	}
+	if location != nil {
+		t.Fatal("expected nil location here")
+	}
+}
+
+func TestSessionGeolocateGood(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Close()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	location, err := sess.Geolocate(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if location.ASN == "" {
+		t.Fatal("location.ASN is empty")
+	}
+	if location.Country == "" {
+		t.Fatal("location.Country is empty")
+	}
+	if location.IP == "" {
+		t.Fatal("location.IP is empty")
+	}
+	if location.Org == "" {
+		t.Fatal("location.Org is empty")
 	}
 }

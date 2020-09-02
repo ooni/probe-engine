@@ -2,10 +2,12 @@ package oonimkall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"time"
 
+	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -195,4 +197,91 @@ func (ctx *Context) Cancel() {
 func (ctx *Context) Close() error {
 	ctx.Cancel() // calling Cancel which handles nil gracefully
 	return nil
+}
+
+// ErrNullPointer indicates that you passed to any API within the
+// oonimkall package a null pointer. We generally don't bother with
+// handling this error condition in Go or Java, but across the
+// programming languages boundaries it is more critical to perform
+// these checks. Specifically, the program will crash without any
+// possibility of repair (i.e. panic) when Go receives a null pointer
+// from Java. This will not be a great user experience.
+var ErrNullPointer = errors.New("oonimkall: you passed me a null pointer")
+
+// Session contains shared state for running experiments and/or other
+// OONI related task (e.g. geolocation). Note that the Session isn't
+// mean to be shared across thread. It is also not meant to be a long
+// living object. The workflow is to create a Session, do the operations
+// you need to do with it now, then call Session.Close. All of this is
+// supposed to happen within the same Java thread. If you need to cancel
+// any operation from other threads, please use a Context instead.
+type Session struct {
+	s *engine.Session
+}
+
+// NewSession creates a new session. You should use a session for running
+// related operation in a relatively short time frame. You should not create
+// a single session and keep it all alive for the whole app lifecyle, since
+// the Session code is not specifically designed for this use case.
+func NewSession(config *SessionConfig) (*Session, error) {
+	if config == nil {
+		return nil, ErrNullPointer
+	}
+	kvstore, err := engine.NewFileSystemKVStore(config.StateDir)
+	if err != nil {
+		return nil, err
+	}
+	engineConfig := engine.SessionConfig{
+		AssetsDir:       config.AssetsDir,
+		KVStore:         kvstore,
+		Logger:          NewLogger(config),
+		SoftwareName:    config.SoftwareName,
+		SoftwareVersion: config.SoftwareVersion,
+		TempDir:         config.TempDir,
+	}
+	sess, err := engine.NewSession(engineConfig)
+	if err != nil {
+		return nil, err
+	}
+	return &Session{s: sess}, nil
+}
+
+// Close closes the resources used by a Session. Specifically, we close
+// any still open connection and cleanup temporary storage.
+//
+// Bug
+//
+// This method is not idempotent. It may become idempotent in the future
+// but currently you need to invoke it exactly once.
+func (sess *Session) Close() (err error) {
+	if sess != nil {
+		err = sess.s.Close()
+	}
+	return
+}
+
+// Location contains the location of a probe.
+type Location struct {
+	ASN     string
+	Country string
+	IP      string
+	Org     string
+}
+
+// Geolocate geolocates a probe. This function returns an error if passed
+// a null context or when the sess receiver is null.
+func (sess *Session) Geolocate(ctx *Context) (*Location, error) {
+	if sess == nil || ctx == nil {
+		return nil, ErrNullPointer
+	}
+	if err := sess.s.MaybeLookupLocationContext(ctx.ctx); err != nil {
+		return nil, err
+	}
+	info := &Location{
+		ASN:     sess.s.ProbeASNString(),
+		Country: sess.s.ProbeCC(),
+		IP:      sess.s.ProbeIP(),
+		Org:     sess.s.ProbeNetworkName(),
+	}
+	return info, nil
 }

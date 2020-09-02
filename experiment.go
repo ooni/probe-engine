@@ -280,7 +280,7 @@ func (e *Experiment) Measure(input string) (*model.Measurement, error) {
 func (e *Experiment) MeasureWithContext(
 	ctx context.Context, input string,
 ) (measurement *model.Measurement, err error) {
-	err = e.session.maybeLookupLocation(ctx) // this already tracks session bytes
+	err = e.session.MaybeLookupLocationContext(ctx) // this already tracks session bytes
 	if err != nil {
 		return
 	}
