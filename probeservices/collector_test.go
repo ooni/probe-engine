@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -37,6 +38,31 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 		TestName:             rt.TestName,
 		TestStartTime:        "2018-11-01 15:33:17",
 		TestVersion:          rt.TestVersion,
+	}
+}
+
+func TestNewReportTemplate(t *testing.T) {
+	m := &model.Measurement{
+		ProbeASN:        "AS117",
+		ProbeCC:         "IT",
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.1.0",
+		TestName:        "dummy",
+		TestVersion:     "0.1.0",
+	}
+	rt := probeservices.NewReportTemplate(m)
+	expect := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS117",
+		ProbeCC:           "IT",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	if diff := cmp.Diff(expect, rt); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
