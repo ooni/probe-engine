@@ -61,6 +61,20 @@ type ReportTemplate struct {
 	TestVersion string `json:"test_version"`
 }
 
+// NewReportTemplate creates a new ReportTemplate from a Measurement.
+func NewReportTemplate(m *model.Measurement) ReportTemplate {
+	return ReportTemplate{
+		DataFormatVersion: DefaultDataFormatVersion,
+		Format:            DefaultFormat,
+		ProbeASN:          m.ProbeASN,
+		ProbeCC:           m.ProbeCC,
+		SoftwareName:      m.SoftwareName,
+		SoftwareVersion:   m.SoftwareVersion,
+		TestName:          m.TestName,
+		TestVersion:       m.TestVersion,
+	}
+}
+
 type collectorOpenResponse struct {
 	ID               string   `json:"report_id"`
 	SupportedFormats []string `json:"supported_formats"`
