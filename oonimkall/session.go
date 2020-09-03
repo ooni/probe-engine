@@ -2,6 +2,7 @@ package oonimkall
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -9,6 +10,7 @@ import (
 
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/probeservices"
 )
 
 // SessionConfig contains configuration for a Session.
@@ -284,4 +286,54 @@ func (sess *Session) Geolocate(ctx *Context) (*Location, error) {
 		Org:     sess.s.ProbeNetworkName(),
 	}
 	return info, nil
+}
+
+// ProbeServicesClient is a client for OONI probe services. The probe services
+// are a set of data centres hosted at different locations though which we could
+// access all OONI APIs (bouncer, collector, orchestra, etc).
+type ProbeServicesClient struct {
+	clnt *probeservices.Client
+	sess *Session
+}
+
+// NewProbeServicesClient creates a new ProbeServicesClient. This method will
+// discover all available probe services and return the one that appears to have
+// the best performance. If some probe services are down or blocked, they will
+// be excluded. If all services are down or blocked, we will try to apply a bunch
+// of circumvention tactics to work around the block.
+func NewProbeServicesClient(ctx *Context, sess *Session) (*ProbeServicesClient, error) {
+	if ctx == nil || sess == nil {
+		return nil, ErrNullPointer
+	}
+	clnt, err := sess.s.NewProbeServicesClient(ctx.ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &ProbeServicesClient{clnt: clnt, sess: sess}, nil
+}
+
+// Measurement is a OONI measurement. The current implementation is such that
+// you cannot directly manipulate a measurement from Java/ObjC. Yet, you can
+// create a new measurement from a serialized JSON and serialize a specific
+// measurement to JSON. This allows you to resubmit a measurement.
+type Measurement struct {
+	m model.Measurement
+}
+
+// NewMeasurement loads a measurement from a serialized JSON string.
+func NewMeasurement(serialized string) (*Measurement, error) {
+	m := new(Measurement)
+	if err := json.Unmarshal([]byte(serialized), &m.m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Marshal dumps a measurement to a JSON string.
+func (m *Measurement) Marshal() (string, error) {
+	b, err := json.Marshal(m.m)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

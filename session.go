@@ -252,12 +252,11 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 	return newExperimentBuilder(s, name)
 }
 
-// NewOrchestraClient creates a new orchestra client. This client is registered
-// and logged in with the OONI orchestra. An error is returned on failure.
-func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	// TODO(bassosimone): we should have APIs that mediate access to structures
-	// like the selected probe service, rather than having control APIs after which
-	// it is safe to access the relevant internal structure.
+// NewProbeServicesClient creates a new client for talking with the
+// OONI probe services. This function will benchmark the available
+// probe services, and select the fastest. In case all probe services
+// seem to be down, we try again applying circumvention tactics.
+func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
 	if err := s.maybeLookupBackends(ctx); err != nil {
 		return nil, err
 	}
@@ -267,7 +266,13 @@ func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrche
 	if s.selectedProbeServiceHook != nil {
 		s.selectedProbeServiceHook(s.selectedProbeService)
 	}
-	clnt, err := probeservices.NewClient(s, *s.selectedProbeService)
+	return probeservices.NewClient(s, *s.selectedProbeService)
+}
+
+// NewOrchestraClient creates a new orchestra client. This client is registered
+// and logged in with the OONI orchestra. An error is returned on failure.
+func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
+	clnt, err := s.NewProbeServicesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -475,6 +480,9 @@ func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
 	return geolocate.LookupFirstResolverIP(ctx, nil)
 }
 
+// ErrAllProbeServicesFailed indicates all probe services failed.
+var ErrAllProbeServicesFailed = errors.New("all available probe services failed")
+
 func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	// TODO(bassosimone): do we need a mutex here?
 	if s.selectedProbeService != nil {
@@ -484,7 +492,7 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	candidates := probeservices.TryAll(ctx, s, s.getAvailableProbeServices())
 	selected := probeservices.SelectBest(candidates)
 	if selected == nil {
-		return errors.New("all available probe services failed")
+		return ErrAllProbeServicesFailed
 	}
 	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
 	s.selectedProbeService = &selected.Endpoint
