@@ -5,14 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -338,101 +336,5 @@ func TestSessionGeolocateGood(t *testing.T) {
 	}
 	if location.Org == "" {
 		t.Fatal("location.Org is empty")
-	}
-}
-
-func TestNewProbeServicesClientWithNullContext(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	clnt, err := oonimkall.NewProbeServicesClient(nil, sess)
-	if !errors.Is(err, oonimkall.ErrNullPointer) {
-		t.Fatal("not the error we expected")
-	}
-	if clnt != nil {
-		t.Fatal("expected nil client here")
-	}
-}
-
-func TestNewProbeServicesClientWithNullSession(t *testing.T) {
-	ctx := oonimkall.NewContext()
-	defer ctx.Close()
-	clnt, err := oonimkall.NewProbeServicesClient(ctx, nil)
-	if !errors.Is(err, oonimkall.ErrNullPointer) {
-		t.Fatal("not the error we expected")
-	}
-	if clnt != nil {
-		t.Fatal("expected nil client here")
-	}
-}
-
-func TestNewProbeServicesClientWithCancelledContext(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	ctx := oonimkall.NewContext()
-	defer ctx.Close()
-	ctx.Cancel() // cancel the context
-	clnt, err := oonimkall.NewProbeServicesClient(ctx, sess)
-	if !errors.Is(err, engine.ErrAllProbeServicesFailed) {
-		t.Fatal(err)
-	}
-	if clnt != nil {
-		t.Fatal("expected nil client here")
-	}
-}
-
-func TestNewProbeServicesClientGood(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	ctx := oonimkall.NewContext()
-	defer ctx.Close()
-	clnt, err := oonimkall.NewProbeServicesClient(ctx, sess)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if clnt == nil {
-		t.Fatal("expected non-nil client here")
-	}
-}
-
-func TestNewMeasurementWithInvalidJSON(t *testing.T) {
-	input := "{"
-	measurement, err := oonimkall.NewMeasurement(input)
-	if err == nil || !strings.HasSuffix(err.Error(), "unexpected end of JSON input") {
-		t.Fatal("not the error we expected")
-	}
-	if measurement != nil {
-		t.Fatal("expected nil measurement here")
-	}
-}
-
-func TestNewMeasurementRoundTrip(t *testing.T) {
-	slurp := func(filepath string) string {
-		data, err := ioutil.ReadFile(filepath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return strings.Trim(string(data), "\n")
-	}
-	input := slurp("../testdata/loadable-measurement-example.jsonl")
-	measurement, err := oonimkall.NewMeasurement(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-	output, err := measurement.Marshal()
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := slurp("../testdata/loadable-measurement-example-loaded.jsonl")
-	if diff := cmp.Diff(expected, output); diff != "" {
-		t.Fatal(diff)
 	}
 }
