@@ -84,11 +84,39 @@ func TestReportLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	measurement := makeMeasurement(template, report.ID)
+	if report.CanSubmit(&measurement) != true {
+		t.Fatal("report should be able to submit this measurement")
+	}
 	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestReportLifecycleWrongExperiment(t *testing.T) {
+	ctx := context.Background()
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestVersion:       "0.1.0",
+	}
+	client := newclient()
+	report, err := client.OpenReport(ctx, template)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer report.Close(ctx)
+	measurement := makeMeasurement(template, report.ID)
+	measurement.TestName = "antani"
+	if report.CanSubmit(&measurement) != false {
+		t.Fatal("report should not be able to submit this measurement")
 	}
 }
 

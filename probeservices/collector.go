@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/ooni/probe-engine/model"
 )
@@ -87,6 +88,9 @@ type Report struct {
 
 	// client is the client that was used.
 	client Client
+
+	// tmpl is the template used when opening this report.
+	tmpl ReportTemplate
 }
 
 // OpenReport opens a new report.
@@ -103,7 +107,7 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 	}
 	for _, format := range cor.SupportedFormats {
 		if format == "json" {
-			return &Report{ID: cor.ID, client: c}, nil
+			return &Report{ID: cor.ID, client: c, tmpl: rt}, nil
 		}
 	}
 	return nil, ErrJSONFormatNotSupported
@@ -120,6 +124,13 @@ type collectorUpdateRequest struct {
 type collectorUpdateResponse struct {
 	// ID is the measurement ID
 	ID string `json:"measurement_id"`
+}
+
+// CanSubmit returns true whether the provided measurement belongs to
+// this report, false otherwise. We say that a given measurement belongs
+// to this report if its report template matches the report's one.
+func (r Report) CanSubmit(m *model.Measurement) bool {
+	return reflect.DeepEqual(NewReportTemplate(m), r.tmpl)
 }
 
 // SubmitMeasurement submits a measurement belonging to the report
