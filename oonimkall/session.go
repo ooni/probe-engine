@@ -9,6 +9,7 @@ import (
 	"time"
 
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -332,8 +333,6 @@ func NewMeasurement(serialized string) (*Measurement, error) {
 // Marshal dumps a measurement to a JSON string.
 func (m *Measurement) Marshal() (string, error) {
 	b, err := json.Marshal(m.m)
-	if err != nil {
-		return "", err
-	}
+	runtimex.PanicOnError(err, "json.Marshal should not fail here")
 	return string(b), nil
 }
