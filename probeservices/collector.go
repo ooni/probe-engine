@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/ooni/probe-engine/model"
 )
@@ -94,6 +95,8 @@ type Report struct {
 }
 
 // OpenReport opens a new report.
+//
+// This method will eventually be replaced by NewReportChannel.
 func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
 		return nil, ErrUnsupportedDataFormatVersion
@@ -170,4 +173,78 @@ func (r Report) Close(ctx context.Context) error {
 		err = nil
 	}
 	return err
+}
+
+// ReportChannel is a channel through which one could submit measurements
+// belonging to the same report. The Report struct belongs to this interface.
+type ReportChannel interface {
+	CanSubmit(m *model.Measurement) bool
+	SubmitMeasurement(ctx context.Context, m *model.Measurement) error
+	Close(ctx context.Context) error
+}
+
+var _ ReportChannel = &Report{}
+
+// ReportOpener is any struct that is able to open a new ReportChannel. The
+// Client struct belongs to this interface.
+type ReportOpener interface {
+	NewReportChannel(ctx context.Context, rt ReportTemplate) (ReportChannel, error)
+}
+
+// NewReportChannel creates a new ReportChannel
+func (c Client) NewReportChannel(ctx context.Context, rt ReportTemplate) (ReportChannel, error) {
+	report, err := c.OpenReport(ctx, rt)
+	if err != nil {
+		return nil, err
+	}
+	return report, nil
+}
+
+var _ ReportOpener = Client{}
+
+// Submitter is an abstraction allowing you to submit arbitrary measurements
+// to a given OONI backend. This implementation will take care of opening
+// reports when needed as well as of closing reports when needed. Nonetheless
+// you need to remember to call its Close method when done, because there is
+// likely an open report that has not been closed yet.
+type Submitter struct {
+	channel ReportChannel
+	mu      sync.Mutex
+	opener  ReportOpener
+}
+
+// NewSubmitter creates a new Submitter instance.
+func NewSubmitter(opener ReportOpener) *Submitter {
+	return &Submitter{opener: opener}
+}
+
+// Submit submits the current measurement to the OONI backend created using
+// the ReportOpener passed to the constructor.
+func (sub *Submitter) Submit(ctx context.Context, m *model.Measurement) error {
+	var err error
+	sub.mu.Lock()
+	defer sub.mu.Unlock()
+	if sub.channel == nil || !sub.channel.CanSubmit(m) {
+		sub.maybeCloseUnlocked(ctx)
+		sub.channel, err = sub.opener.NewReportChannel(ctx, NewReportTemplate(m))
+		if err != nil {
+			return err
+		}
+	}
+	return sub.channel.SubmitMeasurement(ctx, m)
+}
+
+func (sub *Submitter) maybeCloseUnlocked(ctx context.Context) (err error) {
+	if sub.channel != nil {
+		err = sub.channel.Close(ctx)
+		sub.channel = nil
+	}
+	return
+}
+
+// Close will ensure Submitter is not leaking resources.
+func (sub *Submitter) Close(ctx context.Context) error {
+	sub.mu.Lock()
+	defer sub.mu.Unlock()
+	return sub.maybeCloseUnlocked(ctx)
 }
