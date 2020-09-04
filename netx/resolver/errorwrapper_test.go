@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
@@ -36,11 +36,11 @@ func TestUnitErrorWrapperFailure(t *testing.T) {
 	if addrs != nil {
 		t.Fatal("expected nil addr here")
 	}
-	var errWrapper *modelx.ErrWrapper
+	var errWrapper *errorx.ErrWrapper
 	if !errors.As(err, &errWrapper) {
 		t.Fatal("cannot properly cast the returned error")
 	}
-	if errWrapper.Failure != modelx.FailureDNSNXDOMAINError {
+	if errWrapper.Failure != errorx.FailureDNSNXDOMAINError {
 		t.Fatal("unexpected failure")
 	}
 	if errWrapper.ConnID != 0 {
@@ -52,7 +52,7 @@ func TestUnitErrorWrapperFailure(t *testing.T) {
 	if errWrapper.TransactionID == 0 {
 		t.Fatal("unexpected TransactionID")
 	}
-	if errWrapper.Operation != modelx.ResolveOperation {
+	if errWrapper.Operation != errorx.ResolveOperation {
 		t.Fatal("unexpected Operation")
 	}
 }

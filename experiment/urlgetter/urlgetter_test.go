@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
@@ -26,7 +25,7 @@ func TestMeasurer(t *testing.T) {
 	measurement.Input = "https://www.google.com"
 	err := m.Run(
 		ctx, &mockable.ExperimentSession{},
-		measurement, handler.NewPrinterCallbacks(log.Log),
+		measurement, model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
@@ -56,7 +55,7 @@ func TestMeasurerDNSCache(t *testing.T) {
 	measurement.Input = "https://www.google.com"
 	err := m.Run(
 		ctx, &mockable.ExperimentSession{},
-		measurement, handler.NewPrinterCallbacks(log.Log),
+		measurement, model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")

@@ -8,11 +8,10 @@ import (
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -31,7 +30,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	// we need a real session because we need to ASN database
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -93,7 +92,7 @@ func TestIntegrationWithCancelledContext(t *testing.T) {
 	cancel() // so we fail immediately
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -152,7 +151,7 @@ func TestIntegrationWithCancelledContext(t *testing.T) {
 
 func TestComputeEndpointStatsTCPBlocking(t *testing.T) {
 	failure := io.EOF.Error()
-	operation := modelx.ConnectOperation
+	operation := errorx.ConnectOperation
 	tk := fbmessenger.TestKeys{}
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: fbmessenger.ServiceEdge},
@@ -182,7 +181,7 @@ func TestComputeEndpointStatsTCPBlocking(t *testing.T) {
 
 func TestComputeEndpointStatsDNSIsLying(t *testing.T) {
 	failure := io.EOF.Error()
-	operation := modelx.ConnectOperation
+	operation := errorx.ConnectOperation
 	tk := fbmessenger.TestKeys{}
 	tk.Update(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{Target: fbmessenger.ServiceEdge},

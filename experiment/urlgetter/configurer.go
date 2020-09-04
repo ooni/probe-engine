@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
@@ -24,8 +24,8 @@ type Configurer struct {
 
 // The Configuration is the configuration for running a measurement.
 type Configuration struct {
-	HTTPConfig httptransport.Config
-	DNSClient  httptransport.DNSClient
+	HTTPConfig netx.Config
+	DNSClient  netx.DNSClient
 }
 
 // CloseIdleConnections will close idle connections, if needed.
@@ -37,7 +37,7 @@ func (c Configuration) CloseIdleConnections() {
 func (c Configurer) NewConfiguration() (Configuration, error) {
 	// set up defaults
 	configuration := Configuration{
-		HTTPConfig: httptransport.Config{
+		HTTPConfig: netx.Config{
 			BogonIsError:        c.Config.RejectDNSBogons,
 			CacheResolutions:    true,
 			ContextByteCounting: true,
@@ -70,7 +70,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			entry[0]: addresses,
 		}
 	}
-	dnsclient, err := httptransport.NewDNSClient(
+	dnsclient, err := netx.NewDNSClient(
 		configuration.HTTPConfig, c.Config.ResolverURL,
 	)
 	if err != nil {

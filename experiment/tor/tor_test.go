@@ -13,12 +13,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/oonidatamodel"
-	"github.com/ooni/probe-engine/internal/oonitemplates"
+	"github.com/ooni/probe-engine/legacy/oonidatamodel"
+	"github.com/ooni/probe-engine/legacy/oonitemplates"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/probeservices"
 )
 
@@ -33,7 +32,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return nil, expected
@@ -44,7 +43,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -52,7 +51,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
@@ -66,7 +65,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
@@ -74,7 +73,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 }
 
 func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
@@ -88,7 +87,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +101,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 func TestUnitMeasurerMeasureGood(t *testing.T) {
 	// This test mocks orchestra to return a nil list of targets, so the code runs
 	// but we don't perform any actualy network actions.
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
 	}
@@ -115,7 +114,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -126,13 +125,13 @@ func TestMeasurerMeasureGood(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	sess := newsession()
 	err := measurer.Run(
 		context.Background(),
 		sess,
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -157,7 +156,7 @@ func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	measurer := newMeasurer(Config{})
+	measurer := NewMeasurer(Config{})
 	sess := newsession()
 	key := "xyz-xyz-xyz-theCh2ju-ahG4chei-Ai2eka0a"
 	sess.MockableOrchestraClient = &mockable.ExperimentOrchestraClient{
@@ -170,7 +169,7 @@ func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
 		context.Background(),
 		sess,
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -222,14 +221,14 @@ var staticTestingTargets = []model.TorTarget{
 
 func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	var measurement model.Measurement
-	measurer := new(measurer)
+	measurer := new(Measurer)
 	measurer.measureTargets(
 		context.Background(),
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
 		&measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 		nil,
 	)
 	if len(measurement.TestKeys.(*TestKeys).Targets) != 0 {
@@ -241,14 +240,14 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we don't actually do anything
 	var measurement model.Measurement
-	measurer := new(measurer)
+	measurer := new(Measurer)
 	measurer.measureTargets(
 		ctx,
 		&mockable.ExperimentSession{
 			MockableLogger: log.Log,
 		},
 		&measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 		map[string]model.TorTarget{
 			"xx": staticTestingTargets[0],
 		},
@@ -279,7 +278,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, nil
@@ -313,7 +312,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	rc.flexibleConnect = func(context.Context, keytarget) (oonitemplates.Results, error) {
 		return oonitemplates.Results{}, errors.New("mocked error")
@@ -350,7 +349,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -372,7 +371,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -397,7 +396,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -422,7 +421,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -469,7 +468,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 1 {
 			t.Fatal("cannot find expected entry")
 		}
-		if *tr.Summary[modelx.ConnectOperation].Failure != failure {
+		if *tr.Summary[errorx.ConnectOperation].Failure != failure {
 			t.Fatal("invalid failure")
 		}
 	})
@@ -488,7 +487,7 @@ func TestUnitSummary(t *testing.T) {
 		if len(tr.Summary) != 2 {
 			t.Fatal("cannot find expected entry")
 		}
-		if tr.Summary[modelx.ConnectOperation].Failure != nil {
+		if tr.Summary[errorx.ConnectOperation].Failure != nil {
 			t.Fatal("invalid failure")
 		}
 		if *tr.Summary["handshake"].Failure != failure {
@@ -512,7 +511,7 @@ func TestUnitSummary(t *testing.T) {
 			if len(tr.Summary) < 1 {
 				t.Fatal("cannot find expected entry")
 			}
-			if tr.Summary[modelx.ConnectOperation].Failure != nil {
+			if tr.Summary[errorx.ConnectOperation].Failure != nil {
 				t.Fatal("invalid failure")
 			}
 			if handshake == nil {

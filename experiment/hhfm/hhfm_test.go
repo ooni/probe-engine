@@ -14,13 +14,12 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -39,7 +38,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -143,7 +142,7 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	// we need a real session because we need the tcp-echo helper
 	sess := newsession(t)
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -152,14 +151,14 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	if tk.Agent != "agent" {
 		t.Fatal("invalid Agent")
 	}
-	if *tk.Failure != modelx.FailureInterrupted {
+	if *tk.Failure != errorx.FailureInterrupted {
 		t.Fatal("invalid Failure")
 	}
 	if len(tk.Requests) != 1 {
 		t.Fatal("invalid Requests")
 	}
 	request := tk.Requests[0]
-	if *request.Failure != modelx.FailureInterrupted {
+	if *request.Failure != errorx.FailureInterrupted {
 		t.Fatal("invalid Requests[0].Failure")
 	}
 	if request.Request.Body.Value != "" {
@@ -245,7 +244,7 @@ func TestNoHelpers(t *testing.T) {
 	ctx := context.Background()
 	sess := &mockable.ExperimentSession{}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hhfm.ErrNoAvailableTestHelpers) {
 		t.Fatal("not the error we expected")
@@ -295,7 +294,7 @@ func TestNoActualHelpersInList(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hhfm.ErrNoAvailableTestHelpers) {
 		t.Fatal("not the error we expected")
@@ -348,7 +347,7 @@ func TestWrongTestHelperType(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, hhfm.ErrInvalidHelperType) {
 		t.Fatal("not the error we expected")
@@ -401,7 +400,7 @@ func TestNewRequestFailure(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
@@ -458,7 +457,7 @@ func TestInvalidJSONBody(t *testing.T) {
 		},
 	}
 	measurement := new(model.Measurement)
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -467,7 +466,7 @@ func TestInvalidJSONBody(t *testing.T) {
 	if tk.Agent != "agent" {
 		t.Fatal("invalid Agent")
 	}
-	if *tk.Failure != modelx.FailureJSONParseError {
+	if *tk.Failure != errorx.FailureJSONParseError {
 		t.Fatal("invalid Failure")
 	}
 	if len(tk.Requests) != 1 {
@@ -506,7 +505,7 @@ func TestTransactStatusCodeFailure(t *testing.T) {
 		StatusCode: 500,
 	}}
 	resp, body, err := hhfm.Transact(txp, &http.Request{},
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, urlgetter.ErrHTTPRequestFailed) {
 		t.Fatal("not the error we expected")
 	}
@@ -525,7 +524,7 @@ func TestTransactCannotReadBody(t *testing.T) {
 		StatusCode: 200,
 	}}
 	resp, body, err := hhfm.Transact(txp, &http.Request{},
-		handler.NewPrinterCallbacks(log.Log))
+		model.NewPrinterCallbacks(log.Log))
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}

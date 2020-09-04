@@ -42,7 +42,6 @@ func TestIntegrationGood(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("%+v", event)
 	}
 	// make sure we only see task_terminated at this point
 	for {
@@ -80,7 +79,6 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("%+v", event)
 	}
 }
 
@@ -106,7 +104,6 @@ func TestIntegrationWithMeasurementFailure(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("%+v", event)
 	}
 }
 
@@ -146,7 +143,6 @@ func TestIntegrationUnsupportedSetting(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -176,7 +172,6 @@ func TestIntegrationEmptyStateDir(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -206,7 +201,6 @@ func TestIntegrationEmptyAssetsDir(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -237,7 +231,6 @@ func TestIntegrationUnknownExperiment(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -270,7 +263,6 @@ func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -301,7 +293,6 @@ func TestIntegrationInputIsRequired(t *testing.T) {
 		if event.Key == "failure.startup" {
 			seen = true
 		}
-		t.Logf("%+v", event)
 	}
 	if !seen {
 		t.Fatal("did not see failure.startup")
@@ -325,9 +316,7 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 		t.Fatal(err)
 	}
 	for !task.IsDone() {
-		ev := task.WaitForNextEvent()
-		delta := time.Now().Sub(begin)
-		fmt.Println(delta, ev)
+		task.WaitForNextEvent()
 	}
 	// The runtime is long because of ancillary operations and is even more
 	// longer because of self shaping we may be performing (especially in

@@ -1,5 +1,6 @@
-// Package iptables contains code for managing firewall rules. Despite the
-// linux-oriented name, this also works on macOS.
+// Package iptables contains code for managing firewall rules. This package
+// really only works reliably on Linux. In all other systems the functionality
+// in here is just a set of stubs returning errors.
 package iptables
 
 import (

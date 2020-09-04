@@ -13,21 +13,18 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/geoiplookup/iplookup"
-	"github.com/ooni/probe-engine/geoiplookup/mmdblookup"
-	"github.com/ooni/probe-engine/geoiplookup/resolverlookup"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/sessiontunnel"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
-	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
+	"github.com/ooni/probe-engine/resources"
 )
 
 // SessionConfig contains the Session config
@@ -51,7 +48,7 @@ type Session struct {
 	availableProbeServices   []model.Service
 	availableTestHelpers     map[string][]model.Service
 	byteCounter              *bytecounter.Counter
-	httpDefaultTransport     httptransport.RoundTripper
+	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
 	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
@@ -111,7 +108,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		torArgs:                 config.TorArgs,
 		torBinary:               config.TorBinary,
 	}
-	httpConfig := httptransport.Config{
+	httpConfig := netx.Config{
 		ByteCounter:  sess.byteCounter,
 		BogonIsError: true,
 		Logger:       sess.logger,
@@ -119,7 +116,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	sess.resolver = sessionresolver.New(httpConfig)
 	httpConfig.FullResolver = sess.resolver
 	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
-	sess.httpDefaultTransport = httptransport.New(httpConfig)
+	sess.httpDefaultTransport = netx.NewHTTPTransport(httpConfig)
 	return sess, nil
 }
 
@@ -188,7 +185,7 @@ func (s *Session) Logger() model.Logger {
 
 // MaybeLookupLocation is a caching location lookup call.
 func (s *Session) MaybeLookupLocation() error {
-	return s.maybeLookupLocation(context.Background())
+	return s.MaybeLookupLocationContext(context.Background())
 }
 
 // MaybeLookupBackends is a caching OONI backends lookup call.
@@ -255,22 +252,27 @@ func (s *Session) NewExperimentBuilder(name string) (*ExperimentBuilder, error) 
 	return newExperimentBuilder(s, name)
 }
 
-// NewOrchestraClient creates a new orchestra client. This client is registered
-// and logged in with the OONI orchestra. An error is returned on failure.
-func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
-	// TODO(bassosimone): we should have APIs that mediate access to structures
-	// like the selected probe service, rather than having control APIs after which
-	// it is safe to access the relevant internal structure.
+// NewProbeServicesClient creates a new client for talking with the
+// OONI probe services. This function will benchmark the available
+// probe services, and select the fastest. In case all probe services
+// seem to be down, we try again applying circumvention tactics.
+func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
 	if err := s.maybeLookupBackends(ctx); err != nil {
 		return nil, err
 	}
-	if err := s.maybeLookupLocation(ctx); err != nil {
+	if err := s.MaybeLookupLocationContext(ctx); err != nil {
 		return nil, err
 	}
 	if s.selectedProbeServiceHook != nil {
 		s.selectedProbeServiceHook(s.selectedProbeService)
 	}
-	clnt, err := probeservices.NewClient(s, *s.selectedProbeService)
+	return probeservices.NewClient(s, *s.selectedProbeService)
+}
+
+// NewOrchestraClient creates a new orchestra client. This client is registered
+// and logged in with the OONI orchestra. An error is returned on failure.
+func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
+	clnt, err := s.NewProbeServicesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +412,7 @@ func (s *Session) TunnelBootstrapTime() time.Duration {
 // UserAgent constructs the user agent to be used in this session.
 func (s *Session) UserAgent() (useragent string) {
 	useragent += s.softwareName + "/" + s.softwareVersion
-	useragent += " ooniprobe-engine/" + version.Version
+	useragent += " ooniprobe-engine/" + Version
 	return
 }
 
@@ -459,11 +461,11 @@ func (s *Session) initOrchestraClient(
 }
 
 func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
-	return mmdblookup.ASN(dbPath, ip)
+	return geolocate.LookupASN(dbPath, ip)
 }
 
 func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
-	return (&iplookup.Client{
+	return (&geolocate.IPLookupClient{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
 		UserAgent:  httpheader.UserAgent(), // no need to identify as OONI
@@ -471,12 +473,15 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 }
 
 func (s *Session) lookupProbeCC(dbPath, probeIP string) (string, error) {
-	return mmdblookup.CC(dbPath, probeIP)
+	return geolocate.LookupCC(dbPath, probeIP)
 }
 
 func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
-	return resolverlookup.First(ctx, nil)
+	return geolocate.LookupFirstResolverIP(ctx, nil)
 }
+
+// ErrAllProbeServicesFailed indicates all probe services failed.
+var ErrAllProbeServicesFailed = errors.New("all available probe services failed")
 
 func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	// TODO(bassosimone): do we need a mutex here?
@@ -487,7 +492,7 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	candidates := probeservices.TryAll(ctx, s, s.getAvailableProbeServices())
 	selected := probeservices.SelectBest(candidates)
 	if selected == nil {
-		return errors.New("all available probe services failed")
+		return ErrAllProbeServicesFailed
 	}
 	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
 	s.selectedProbeService = &selected.Endpoint
@@ -495,7 +500,9 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	return nil
 }
 
-func (s *Session) maybeLookupLocation(ctx context.Context) (err error) {
+// MaybeLookupLocationContext is like MaybeLookupLocation but with a context
+// that can be used to interrupt this long running operation.
+func (s *Session) MaybeLookupLocationContext(ctx context.Context) (err error) {
 	if s.location == nil {
 		defer func() {
 			if recover() != nil {

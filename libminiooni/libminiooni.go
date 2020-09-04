@@ -1,6 +1,17 @@
-// Package libminiooni implements the cmd/miniooni CLI.
+// Package libminiooni implements the cmd/miniooni CLI. Miniooni is our
+// experimental client used for research and QA testing.
 //
-// This CLI is compatible with both OONI Probe v2.x and MK v0.10.x.
+// This CLI has CLI options that do not conflict with Measurement Kit
+// v0.10.x CLI options. There are some options conflict with the legacy
+// OONI Probe CLI options. Perfect backwards compatibility is not a
+// design goal for miniooni. Rather, we aim to have as little conflict
+// as possible such that we can run side by side QA checks.
+//
+// We extracted this package from cmd/miniooni to allow us to further
+// integrate the miniooni CLI into other binaries (see for example the
+// code at github.com/bassosimone/aladdin). In retrospect, this isn't
+// particularly simple to keep up to date because it is complex to sync
+// the dependencies used by Psiphon, which need precise pinning.
 package libminiooni
 
 import (
@@ -12,7 +23,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,7 +34,6 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
-	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
 )
 
@@ -47,27 +59,17 @@ type Options struct {
 
 const (
 	softwareName    = "miniooni"
-	softwareVersion = version.Version
+	softwareVersion = engine.Version
 )
 
 var (
-	bouncerURLUnused   string
-	collectorURLUnused string
-	globalOptions      Options
-	startTime          = time.Now()
+	globalOptions Options
+	startTime     = time.Now()
 )
 
 func init() {
 	getopt.FlagLong(
 		&globalOptions.Annotations, "annotation", 'A', "Add annotaton", "KEY=VALUE",
-	)
-	getopt.FlagLong(
-		&bouncerURLUnused, "bouncer", 'b',
-		"Unsupported option that used to set the bouncer base URL", "URL",
-	)
-	getopt.FlagLong(
-		&collectorURLUnused, "collector", 'c',
-		"Unsupported option that used to set the collector base URL", "URL",
 	)
 	getopt.FlagLong(
 		&globalOptions.ExtraOptions, "option", 'O',
@@ -95,7 +97,7 @@ func init() {
 		&globalOptions.NoCollector, "no-collector", 'n', "Don't use a collector",
 	)
 	getopt.FlagLong(
-		&globalOptions.ProbeServicesURL, "probe-services-url", 0,
+		&globalOptions.ProbeServicesURL, "probe-services", 0,
 		"Set the URL of the probe-services instance you want to use", "URL",
 	)
 	getopt.FlagLong(
@@ -228,15 +230,6 @@ func gethomedir(optionsHome string) string {
 // This function will panic in case of a fatal error. It is up to you that
 // integrate this function to either handle the panic of ignore it.
 func MainWithConfiguration(experimentName string, currentOptions Options) {
-	fatalIfFalse(
-		bouncerURLUnused == "",
-		"-b,--bouncer is not supported anymore, use --probe-services-url instead",
-	)
-	fatalIfFalse(
-		collectorURLUnused == "",
-		"-c,--collector is not supported anymore, use --probe-services-url instead",
-	)
-
 	extraOptions := mustMakeMap(currentOptions.ExtraOptions)
 	annotations := mustMakeMap(currentOptions.Annotations)
 
@@ -350,10 +343,16 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		// Tests that do not expect input internally require an empty input to run
 		currentOptions.Inputs = append(currentOptions.Inputs, "")
 	}
+	intregexp := regexp.MustCompile("^[0-9]+$")
 	for key, value := range extraOptions {
 		if value == "true" || value == "false" {
 			err := builder.SetOptionBool(key, value == "true")
 			fatalOnError(err, "cannot set boolean option")
+		} else if intregexp.MatchString(value) {
+			number, err := strconv.ParseInt(value, 10, 64)
+			fatalOnError(err, "cannot parse integer option")
+			err = builder.SetOptionInt(key, number)
+			fatalOnError(err, "cannot set integer option")
 		} else {
 			err := builder.SetOptionString(key, value)
 			fatalOnError(err, "cannot set string option")

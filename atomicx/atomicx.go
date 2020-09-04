@@ -1,9 +1,10 @@
-// Package atomicx contains atomic extensions. The main reason for rolling out
-// this package is to avoid potential crashes when using 32 bit devices where we
-// are atomically accessing a 64 bit variable that is not aligned. The solution
-// to this issue is rather crude: use a normal variable and protect it using a
-// normal mutex. While this could be disappointing in general, it seems fine to
-// be done in our context where we mainly use atomic semantics for counting.
+// Package atomicx contains atomic int64/float64 that work also on 32 bit
+// platforms. The main reason for rolling out this package is to avoid potential
+// crashes when using 32 bit devices where we are atomically accessing a 64 bit
+// variable that is not aligned. The solution to this issue is rather crude: use
+// a normal variable and protect it using a normal mutex. While this could be
+// disappointing in general, it seems fine to be done in our context where
+// we mainly use atomic semantics for counting.
 package atomicx
 
 import (

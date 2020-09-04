@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/dialer"
-	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 func TestIntegration(t *testing.T) {
-	txp := httptransport.New(httptransport.Config{
+	txp := netx.NewHTTPTransport(netx.Config{
 		Dialer: dialer.ShapingDialer{
 			Dialer: new(net.Dialer),
 		},

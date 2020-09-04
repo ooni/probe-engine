@@ -15,7 +15,7 @@ import (
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 const (
@@ -64,44 +64,47 @@ func (tk *TestKeys) classify() string {
 		return classSuccessGotServerHello
 	}
 	switch *tk.Target.Failure {
-	case modelx.FailureConnectionRefused:
+	case errorx.FailureConnectionRefused:
 		return classAnomalyTestHelperUnreachable
-	case modelx.FailureConnectionReset:
+	case errorx.FailureConnectionReset:
 		return classInterferenceReset
-	case modelx.FailureDNSNXDOMAINError:
+	case errorx.FailureDNSNXDOMAINError:
 		return classAnomalyTestHelperUnreachable
-	case modelx.FailureEOFError:
+	case errorx.FailureEOFError:
 		return classInterferenceClosed
-	case modelx.FailureGenericTimeoutError:
+	case errorx.FailureGenericTimeoutError:
 		if tk.Control.Failure != nil {
 			return classAnomalyTestHelperUnreachable
 		}
 		return classAnomalyTimeout
-	case modelx.FailureSSLInvalidCertificate:
+	case errorx.FailureSSLInvalidCertificate:
 		return classInterferenceInvalidCertificate
-	case modelx.FailureSSLInvalidHostname:
+	case errorx.FailureSSLInvalidHostname:
 		return classSuccessGotServerHello
-	case modelx.FailureSSLUnknownAuthority:
+	case errorx.FailureSSLUnknownAuthority:
 		return classInterferenceUnknownAuthority
 	}
 	return classAnomalyUnexpectedFailure
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	cache  map[string]Subresult
 	config Config
 	mu     sync.Mutex
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m *measurer) measureone(
+func (m *Measurer) measureone(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	beginning time.Time,
@@ -114,8 +117,8 @@ func (m *measurer) measureone(
 	select {
 	case <-time.After(sleeptime):
 	case <-ctx.Done():
-		s := modelx.FailureInterrupted
-		failedop := modelx.TopLevelOperation
+		s := errorx.FailureInterrupted
+		failedop := errorx.TopLevelOperation
 		return Subresult{
 			TestKeys: urlgetter.TestKeys{
 				FailedOperation: &failedop,
@@ -144,7 +147,7 @@ func (m *measurer) measureone(
 	return smk
 }
 
-func (m *measurer) measureonewithcache(
+func (m *Measurer) measureonewithcache(
 	ctx context.Context,
 	output chan<- Subresult,
 	sess model.ExperimentSession,
@@ -168,7 +171,7 @@ func (m *measurer) measureonewithcache(
 	m.mu.Unlock()
 }
 
-func (m *measurer) startall(
+func (m *Measurer) startall(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, inputs []string,
 ) <-chan Subresult {
@@ -229,7 +232,8 @@ func maybeURLToSNI(input model.MeasurementTarget) (model.MeasurementTarget, erro
 	return model.MeasurementTarget(parsed.Hostname()), nil
 }
 
-func (m *measurer) Run(
+// Run implements ExperimentMeasurer.Run.
+func (m *Measurer) Run(
 	ctx context.Context,
 	sess model.ExperimentSession,
 	measurement *model.Measurement,
@@ -277,7 +281,7 @@ func (m *measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return &measurer{config: config}
+	return &Measurer{config: config}
 }
 
 func asString(failure *string) (result string) {

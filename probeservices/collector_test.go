@@ -1,15 +1,17 @@
 package probeservices_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 )
@@ -35,8 +37,35 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 		SoftwareVersion:      rt.SoftwareVersion,
 		TestKeys:             fakeTestKeys{Failure: nil},
 		TestName:             rt.TestName,
-		TestStartTime:        "2018-11-01 15:33:17",
+		TestStartTime:        rt.TestStartTime,
 		TestVersion:          rt.TestVersion,
+	}
+}
+
+func TestNewReportTemplate(t *testing.T) {
+	m := &model.Measurement{
+		ProbeASN:        "AS117",
+		ProbeCC:         "IT",
+		SoftwareName:    "ooniprobe-engine",
+		SoftwareVersion: "0.1.0",
+		TestName:        "dummy",
+		TestStartTime:   "2019-10-28 12:51:06",
+		TestVersion:     "0.1.0",
+	}
+	rt := probeservices.NewReportTemplate(m)
+	expect := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS117",
+		ProbeCC:           "IT",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
+		TestVersion:       "0.1.0",
+	}
+	if diff := cmp.Diff(expect, rt); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -50,6 +79,7 @@ func TestReportLifecycle(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -58,11 +88,40 @@ func TestReportLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	measurement := makeMeasurement(template, report.ID)
+	if report.CanSubmit(&measurement) != true {
+		t.Fatal("report should be able to submit this measurement")
+	}
 	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
 	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestReportLifecycleWrongExperiment(t *testing.T) {
+	ctx := context.Background()
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
+		TestVersion:       "0.1.0",
+	}
+	client := newclient()
+	report, err := client.OpenReport(ctx, template)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer report.Close(ctx)
+	measurement := makeMeasurement(template, report.ID)
+	measurement.TestName = "antani"
+	if report.CanSubmit(&measurement) != false {
+		t.Fatal("report should not be able to submit this measurement")
 	}
 }
 
@@ -76,6 +135,7 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -98,6 +158,7 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -120,6 +181,7 @@ func TestJSONAPIClientCreateFailure(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -149,6 +211,7 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -178,8 +241,8 @@ func TestEndToEnd(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				if !bytes.Equal(data, sdata) {
-					panic("mismatch between submission and disk")
+				if diff := cmp.Diff(data, sdata); diff != "" {
+					panic(diff)
 				}
 				w.Write([]byte(`{"measurement_id":"e00c584e6e9e5326"}`))
 				return
@@ -201,6 +264,7 @@ func TestEndToEnd(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2018-11-01 15:33:17",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -215,5 +279,184 @@ func TestEndToEnd(t *testing.T) {
 	}
 	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
+	}
+}
+
+type RecordingReportChannel struct {
+	cc   int64
+	tmpl probeservices.ReportTemplate
+	m    []*model.Measurement
+	mu   sync.Mutex
+}
+
+func (rrc *RecordingReportChannel) CanSubmit(m *model.Measurement) bool {
+	return reflect.DeepEqual(probeservices.NewReportTemplate(m), rrc.tmpl)
+}
+
+func (rrc *RecordingReportChannel) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	rrc.mu.Lock()
+	defer rrc.mu.Unlock()
+	rrc.m = append(rrc.m, m)
+	return nil
+}
+
+func (rrc *RecordingReportChannel) Close(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	rrc.mu.Lock()
+	defer rrc.mu.Unlock()
+	rrc.cc++
+	return nil
+}
+
+type RecordingReportOpener struct {
+	channels []*RecordingReportChannel
+	mu       sync.Mutex
+}
+
+func (rro *RecordingReportOpener) NewReportChannel(
+	ctx context.Context, rt probeservices.ReportTemplate,
+) (probeservices.ReportChannel, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	rrc := &RecordingReportChannel{tmpl: rt}
+	rro.mu.Lock()
+	defer rro.mu.Unlock()
+	rro.channels = append(rro.channels, rrc)
+	return rrc, nil
+}
+
+func TestNewReportChannelGood(t *testing.T) {
+	ctx := context.Background()
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
+		TestVersion:       "0.1.0",
+	}
+	client := newclient()
+	report, err := client.NewReportChannel(ctx, template)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = report.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNewReportChannelCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // immediately abort
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
+		TestVersion:       "0.1.0",
+	}
+	client := newclient()
+	report, err := client.NewReportChannel(ctx, template)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if report != nil {
+		t.Fatal("expected nil report here")
+	}
+}
+
+func makeMeasurementWithoutTemplate(failure, testName string) *model.Measurement {
+	return &model.Measurement{
+		DataFormatVersion:    probeservices.DefaultDataFormatVersion,
+		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
+		MeasurementRuntime:   5.0565230846405,
+		MeasurementStartTime: "2018-11-01 15:33:20",
+		ProbeIP:              "1.2.3.4",
+		ProbeASN:             "AS123",
+		ProbeCC:              "IT",
+		ReportID:             "",
+		ResolverASN:          "AS15169",
+		ResolverIP:           "8.8.8.8",
+		ResolverNetworkName:  "Google LLC",
+		SoftwareName:         "miniooni",
+		SoftwareVersion:      "0.1.0-dev",
+		TestKeys:             fakeTestKeys{Failure: &failure},
+		TestName:             testName,
+		TestStartTime:        "2018-11-01 15:33:17",
+		TestVersion:          "0.1.0",
+	}
+}
+
+func TestSubmitterLifecyle(t *testing.T) {
+	rro := &RecordingReportOpener{}
+	submitter := probeservices.NewSubmitter(rro)
+	ctx := context.Background()
+	m1 := makeMeasurementWithoutTemplate("antani", "example")
+	if err := submitter.Submit(ctx, m1); err != nil {
+		t.Fatal(err)
+	}
+	m2 := makeMeasurementWithoutTemplate("mascetti", "example")
+	if err := submitter.Submit(ctx, m2); err != nil {
+		t.Fatal(err)
+	}
+	m3 := makeMeasurementWithoutTemplate("antani", "example_extended")
+	if err := submitter.Submit(ctx, m3); err != nil {
+		t.Fatal(err)
+	}
+	if err := submitter.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(rro.channels) != 2 {
+		t.Fatal("unexpected number of channels")
+	}
+	if len(rro.channels[0].m) != 2 {
+		t.Fatal("unexpected number of measurements in first channel")
+	}
+	if rro.channels[0].cc != 1 {
+		t.Fatal("first channel was not closed exactly once")
+	}
+	if len(rro.channels[1].m) != 1 {
+		t.Fatal("unexpected number of measurements in second channel")
+	}
+	if rro.channels[1].cc != 1 {
+		t.Fatal("second channel was not closed exactly once")
+	}
+}
+
+func TestSubmitterCannotOpenNewChannel(t *testing.T) {
+	rro := &RecordingReportOpener{}
+	submitter := probeservices.NewSubmitter(rro)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // fail immediately
+	m1 := makeMeasurementWithoutTemplate("antani", "example")
+	if err := submitter.Submit(ctx, m1); !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	m2 := makeMeasurementWithoutTemplate("mascetti", "example")
+	if err := submitter.Submit(ctx, m2); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	m3 := makeMeasurementWithoutTemplate("antani", "example_extended")
+	if err := submitter.Submit(ctx, m3); !errors.Is(err, context.Canceled) {
+		t.Fatal(err)
+	}
+	if err := submitter.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(rro.channels) != 0 {
+		t.Fatal("unexpected number of channels")
 	}
 }

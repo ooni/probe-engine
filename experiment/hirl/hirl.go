@@ -1,4 +1,6 @@
 // Package hirl contains the HTTP Invalid Request Line network experiment.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-007-http-invalid-request-line.md
 package hirl
 
 import (
@@ -11,9 +13,9 @@ import (
 
 	"github.com/ooni/probe-engine/internal/randx"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 const (
@@ -249,7 +251,7 @@ func (meth squidCacheManager) Run(ctx context.Context, config MethodConfig) {
 type RunMethodConfig struct {
 	MethodConfig
 	Name        string
-	NewDialer   func(config httptransport.Config) httptransport.Dialer
+	NewDialer   func(config netx.Config) netx.Dialer
 	RequestLine string
 }
 
@@ -262,9 +264,9 @@ func RunMethod(ctx context.Context, config RunMethodConfig) {
 		config.Out <- result
 	}()
 	if config.NewDialer == nil {
-		config.NewDialer = httptransport.NewDialer
+		config.NewDialer = netx.NewDialer
 	}
-	dialer := config.NewDialer(httptransport.Config{
+	dialer := config.NewDialer(netx.Config{
 		ContextByteCounting: true,
 		Logger:              config.Logger,
 	})
@@ -291,7 +293,7 @@ func RunMethod(ctx context.Context, config RunMethodConfig) {
 		count, err := conn.Read(data)
 		if err != nil {
 			// We expect this method to terminate w/ timeout
-			if err.Error() == modelx.FailureGenericTimeoutError {
+			if err.Error() == errorx.FailureGenericTimeoutError {
 				err = nil
 			}
 			result.Err = err

@@ -12,17 +12,16 @@ import (
 
 	"github.com/apex/log"
 	"github.com/montanaflynn/stats"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 func TestUnitRunnerLoopLocateFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
-		callbacks: handler.NewPrinterCallbacks(log.Log),
+		callbacks: model.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
 			Transport: FakeHTTPTransport{
 				err: expected,
@@ -43,7 +42,7 @@ func TestUnitRunnerLoopLocateFailure(t *testing.T) {
 func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
-		callbacks: handler.NewPrinterCallbacks(log.Log),
+		callbacks: model.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
@@ -73,7 +72,7 @@ func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
-		callbacks: handler.NewPrinterCallbacks(log.Log),
+		callbacks: model.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
@@ -110,9 +109,9 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := new(trace.Saver)
-	saver.Write(trace.Event{Name: modelx.ConnectOperation, Duration: 150 * time.Millisecond})
+	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
 	r := runner{
-		callbacks: handler.NewPrinterCallbacks(log.Log),
+		callbacks: model.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
@@ -154,9 +153,9 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 
 func TestUnitRunnerLoopSuccess(t *testing.T) {
 	saver := new(trace.Saver)
-	saver.Write(trace.Event{Name: modelx.ConnectOperation, Duration: 150 * time.Millisecond})
+	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
 	r := runner{
-		callbacks: handler.NewPrinterCallbacks(log.Log),
+		callbacks: model.NewPrinterCallbacks(log.Log),
 		httpClient: &http.Client{
 			Transport: &FakeHTTPTransportStack{
 				all: []FakeHTTPTransport{
@@ -271,7 +270,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
-	m := &measurer{}
+	m := &Measurer{}
 	err := m.Run(
 		ctx,
 		&mockable.ExperimentSession{
@@ -279,7 +278,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 			MockableLogger:     log.Log,
 		},
 		&model.Measurement{},
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("unexpected error value")
@@ -287,7 +286,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
-	m := &measurer{config: Config{
+	m := &Measurer{config: Config{
 		Tunnel: "psiphon",
 	}}
 	expected := errors.New("mocked error")
@@ -299,7 +298,7 @@ func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
 			MockableLogger:              log.Log,
 		},
 		&model.Measurement{},
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, expected) {
 		t.Fatal("unexpected error value")
@@ -309,7 +308,7 @@ func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
 func TestUnitMeasureWithProxyURL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
-	m := &measurer{}
+	m := &Measurer{}
 	measurement := &model.Measurement{}
 	err := m.Run(
 		ctx,
@@ -319,7 +318,7 @@ func TestUnitMeasureWithProxyURL(t *testing.T) {
 			MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
 		},
 		measurement,
-		handler.NewPrinterCallbacks(log.Log),
+		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("unexpected error value")

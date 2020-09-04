@@ -1,4 +1,6 @@
-// Package resolver contains the DNS resolver
+// Package resolver contains a censoring DNS resolver. Most queries are
+// answered without censorship, but selected queries could either be
+// discarded or replied to with a bogon or NXDOMAIN answer.
 package resolver
 
 import (
@@ -7,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/miekg/dns"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 )
 
 // CensoringResolver is a censoring resolver.
@@ -25,7 +27,7 @@ type CensoringResolver struct {
 // and TLS proxies will pick them up. dnsNetwork and dnsAddress are the
 // settings to configure the upstream, non censored DNS.
 func NewCensoringResolver(
-	blocked, hijacked, ignored []string, uncensored httptransport.Resolver,
+	blocked, hijacked, ignored []string, uncensored netx.Resolver,
 ) *CensoringResolver {
 	return &CensoringResolver{
 		blocked:    blocked,

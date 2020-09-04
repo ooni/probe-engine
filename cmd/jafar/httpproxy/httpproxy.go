@@ -1,4 +1,6 @@
-// Package httpproxy contains the HTTP proxy.
+// Package httpproxy contains a censoring HTTP proxy. This proxy will
+// vet all the traffic and reply with 451 responses for a configurable
+// set of offending Host headers in incoming requests.
 package httpproxy
 
 import (
@@ -8,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 )
 
 const product = "jafar/0.1.0"
@@ -25,7 +27,7 @@ type CensoringProxy struct {
 // the Host header of a request. dnsNetwork and dnsAddress are
 // settings to configure the upstream, non censored DNS.
 func NewCensoringProxy(
-	keywords []string, uncensored httptransport.RoundTripper,
+	keywords []string, uncensored netx.HTTPRoundTripper,
 ) *CensoringProxy {
 	return &CensoringProxy{keywords: keywords, transport: uncensored}
 }

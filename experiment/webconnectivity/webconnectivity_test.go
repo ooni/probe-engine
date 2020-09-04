@@ -9,11 +9,10 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -32,7 +31,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +59,7 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
@@ -69,10 +68,10 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
-	if *tk.ControlFailure != modelx.FailureInterrupted {
+	if *tk.ControlFailure != errorx.FailureInterrupted {
 		t.Fatal("unexpected control_failure")
 	}
-	if *tk.DNSExperimentFailure != modelx.FailureInterrupted {
+	if *tk.DNSExperimentFailure != errorx.FailureInterrupted {
 		t.Fatal("unexpected dns_experiment_failure")
 	}
 	if tk.HTTPExperimentFailure != nil {
@@ -88,7 +87,7 @@ func TestMeasureWithNoInput(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: ""}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, webconnectivity.ErrNoInput) {
 		t.Fatal(err)
@@ -116,7 +115,7 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "\t\t\t\t\t\t"}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, webconnectivity.ErrInputIsNotAnURL) {
 		t.Fatal(err)
@@ -144,7 +143,7 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "dnslookup://example.com"}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, webconnectivity.ErrUnsupportedInput) {
 		t.Fatal(err)
@@ -172,7 +171,7 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, false)
 	measurement := &model.Measurement{Input: "https://www.example.com"}
-	callbacks := handler.NewPrinterCallbacks(log.Log)
+	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if !errors.Is(err, webconnectivity.ErrNoAvailableTestHelpers) {
 		t.Fatal(err)

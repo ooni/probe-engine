@@ -6,8 +6,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 // DNSDialer is a dialer that uses the configured Resolver to resolver a
@@ -52,7 +52,7 @@ func reduceErrors(errorslist []error) error {
 	// the user has no IPv6 connectivity, an IPv6 error is going to
 	// appear later in the list of errors.
 	for _, err := range errorslist {
-		var wrapper *modelx.ErrWrapper
+		var wrapper *errorx.ErrWrapper
 		if errors.As(err, &wrapper) && !strings.HasPrefix(
 			err.Error(), "unknown_failure",
 		) {

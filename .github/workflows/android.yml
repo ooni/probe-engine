@@ -5,16 +5,11 @@ on:
       - mobile-staging
 jobs:
   test:
-    runs-on: "${{ matrix.os }}"
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest]
-        go: ["1.14"]
+    runs-on: macos-latest
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: ${{ matrix.go }}
+          go-version: "1.14"
       - uses: actions/checkout@v2
       - run: brew cask install android-sdk
       - run: echo y | sdkmanager --install "platforms;android-29" ndk-bundle

@@ -16,7 +16,6 @@ import (
 	"github.com/ooni/probe-engine/experiment/dash"
 	"github.com/ooni/probe-engine/experiment/example"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
-	"github.com/ooni/probe-engine/experiment/handler"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
 	"github.com/ooni/probe-engine/experiment/ndt7"
@@ -29,13 +28,12 @@ import (
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/experiment/whatsapp"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
+	"github.com/ooni/probe-engine/resources"
 )
 
 const dateFormat = "2006-01-02 15:04:05"
@@ -195,7 +193,7 @@ func newExperimentBuilder(session *Session, name string) (*ExperimentBuilder, er
 		return nil, fmt.Errorf("no such experiment: %s", name)
 	}
 	builder := factory(session)
-	builder.callbacks = handler.NewPrinterCallbacks(session.Logger())
+	builder.callbacks = model.NewPrinterCallbacks(session.Logger())
 	return builder, nil
 }
 
@@ -217,7 +215,7 @@ type Experiment struct {
 func NewExperiment(sess *Session, measurer model.ExperimentMeasurer) *Experiment {
 	return &Experiment{
 		byteCounter:   bytecounter.New(),
-		callbacks:     handler.NewPrinterCallbacks(sess.Logger()),
+		callbacks:     model.NewPrinterCallbacks(sess.Logger()),
 		measurer:      measurer,
 		session:       sess,
 		testName:      measurer.ExperimentName(),
@@ -282,7 +280,7 @@ func (e *Experiment) Measure(input string) (*model.Measurement, error) {
 func (e *Experiment) MeasureWithContext(
 	ctx context.Context, input string,
 ) (measurement *model.Measurement, err error) {
-	err = e.session.maybeLookupLocation(ctx) // this already tracks session bytes
+	err = e.session.MaybeLookupLocationContext(ctx) // this already tracks session bytes
 	if err != nil {
 		return
 	}
@@ -376,7 +374,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	}
 	m.AddAnnotation("assets_version", strconv.FormatInt(resources.Version, 10))
 	m.AddAnnotation("engine_name", "ooniprobe-engine")
-	m.AddAnnotation("engine_version", version.Version)
+	m.AddAnnotation("engine_version", Version)
 	m.AddAnnotation("platform", platform.Name())
 	return &m
 }
@@ -409,6 +407,7 @@ func (e *Experiment) openReport(ctx context.Context) error {
 		SoftwareName:      e.session.SoftwareName(),
 		SoftwareVersion:   e.session.SoftwareVersion(),
 		TestName:          e.testName,
+		TestStartTime:     e.testStartTime,
 		TestVersion:       e.testVersion,
 	}
 	e.report, err = client.OpenReport(ctx, template)
@@ -463,7 +462,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputNone,
@@ -479,7 +478,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputRequired,
@@ -499,7 +498,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config: &example.Config{
 				Message:   "Good day from the example with input experiment!",
-				SleepTime: int64(5 * time.Second),
+				SleepTime: int64(time.Second),
 			},
 			interruptible: false,
 			inputPolicy:   InputRequired,
@@ -516,7 +515,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			config: &example.Config{
 				Message:     "Good day from the example with failure experiment!",
 				ReturnError: true,
-				SleepTime:   int64(5 * time.Second),
+				SleepTime:   int64(time.Second),
 			},
 			interruptible: true,
 			inputPolicy:   InputNone,

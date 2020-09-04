@@ -11,8 +11,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ooni/probe-engine/experiment/internal/httpfailure"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/httpfailure"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 )

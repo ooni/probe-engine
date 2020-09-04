@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/internal/transactionid"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/legacy/netx/modelx"
+	"github.com/ooni/probe-engine/legacy/netx/transactionid"
 )
 
 // EmitterTransport is a RoundTripper that emits events when they occur.

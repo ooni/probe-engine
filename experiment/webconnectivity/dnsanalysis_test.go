@@ -7,11 +7,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 func TestDNSAnalysis(t *testing.T) {
-	measurementFailure := modelx.FailureDNSNXDOMAINError
+	measurementFailure := errorx.FailureDNSNXDOMAINError
 	controlFailure := webconnectivity.DNSNameError
 	eofFailure := io.EOF.Error()
 	type args struct {

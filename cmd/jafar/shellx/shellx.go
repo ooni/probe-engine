@@ -1,4 +1,4 @@
-// Package shellx allows to run commands
+// Package shellx contains utilities to run external commands.
 package shellx
 
 import (

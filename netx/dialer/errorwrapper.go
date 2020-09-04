@@ -4,9 +4,8 @@ import (
 	"context"
 	"net"
 
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/internal/dialid"
-	"github.com/ooni/probe-engine/netx/modelx"
 )
 
 // ErrorWrapperDialer is a dialer that performs err wrapping
@@ -23,7 +22,7 @@ func (d ErrorWrapperDialer) DialContext(ctx context.Context, network, address st
 		// does not make any sense (and is nil) if we succeded.
 		DialID:    dialID,
 		Error:     err,
-		Operation: modelx.ConnectOperation,
+		Operation: errorx.ConnectOperation,
 	}.MaybeBuild()
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func (c ErrorWrapperConn) Read(b []byte) (n int, err error) {
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
-		Operation: modelx.ReadOperation,
+		Operation: errorx.ReadOperation,
 	}.MaybeBuild()
 	return
 }
@@ -58,7 +57,7 @@ func (c ErrorWrapperConn) Write(b []byte) (n int, err error) {
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
-		Operation: modelx.WriteOperation,
+		Operation: errorx.WriteOperation,
 	}.MaybeBuild()
 	return
 }
@@ -70,7 +69,7 @@ func (c ErrorWrapperConn) Close() (err error) {
 		ConnID:    c.ConnID,
 		DialID:    c.DialID,
 		Error:     err,
-		Operation: modelx.CloseOperation,
+		Operation: errorx.CloseOperation,
 	}.MaybeBuild()
 	return
 }

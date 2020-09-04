@@ -1,4 +1,6 @@
 // Package ndt7 contains the ndt7 network experiment.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-022-ndt.md
 package ndt7
 
 import (
@@ -11,8 +13,8 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
 const (
@@ -80,17 +82,18 @@ func registerExtensions(m *model.Measurement) {
 	archival.ExtTunnel.AddTo(m)
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	config          Config
 	jsonUnmarshal   func(data []byte, v interface{}) error
 	preDownloadHook func()
 	preUploadHook   func()
 }
 
-func (m *measurer) discover(
+func (m *Measurer) discover(
 	ctx context.Context, sess model.ExperimentSession) (mlablocatev2.NDT7Result, error) {
 	httpClient := &http.Client{
-		Transport: httptransport.New(httptransport.Config{
+		Transport: netx.NewHTTPTransport(netx.Config{
 			Logger:   sess.Logger(),
 			ProxyURL: sess.ProxyURL(),
 		}),
@@ -104,15 +107,17 @@ func (m *measurer) discover(
 	return out[0], nil // same as with locate services v1
 }
 
-func (m *measurer) ExperimentName() string {
+// ExperimentName implements ExperimentMeasurer.ExperiExperimentName.
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m *measurer) ExperimentVersion() string {
+// ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m *measurer) doDownload(
+func (m *Measurer) doDownload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	URL string,
@@ -179,7 +184,7 @@ func (m *measurer) doDownload(
 	return nil // failure is only when we cannot connect
 }
 
-func (m *measurer) doUpload(
+func (m *Measurer) doUpload(
 	ctx context.Context, sess model.ExperimentSession,
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	URL string,
@@ -219,7 +224,8 @@ func (m *measurer) doUpload(
 	return nil // failure is only when we cannot connect
 }
 
-func (m *measurer) Run(
+// Run implements ExperimentMeasurer.Run.
+func (m *Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -267,7 +273,7 @@ func (m *measurer) Run(
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return &measurer{config: config, jsonUnmarshal: json.Unmarshal}
+	return &Measurer{config: config, jsonUnmarshal: json.Unmarshal}
 }
 
 func failureFromError(err error) (failure *string) {

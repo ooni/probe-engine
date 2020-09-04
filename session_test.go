@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -16,9 +15,8 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -250,7 +248,7 @@ func TestMaybeLookupBackendsNewClientError(t *testing.T) {
 	}}
 	defer sess.Close()
 	err := sess.MaybeLookupBackends()
-	if err.Error() != "all available probe services failed" {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("not the error we expected")
 	}
 }
@@ -370,7 +368,7 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	err = sess.MaybeLookupBackendsContext(ctx)
-	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("unexpected error")
 	}
 }
@@ -414,7 +412,7 @@ func TestUnitAllProbeServicesUnsupported(t *testing.T) {
 		Type:    "antani",
 	})
 	err = sess.MaybeLookupBackends()
-	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("unexpected error")
 	}
 }
@@ -524,7 +522,7 @@ func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 }
 
 func TestUserAgentNoProxy(t *testing.T) {
-	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + version.Version
+	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + Version
 	sess := newSessionForTestingNoLookups(t)
 	ua := sess.UserAgent()
 	diff := cmp.Diff(expect, ua)
@@ -538,7 +536,7 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	client, err := sess.NewOrchestraClient(ctx)
-	if err == nil || err.Error() != "all available probe services failed" {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("not the error we expected")
 	}
 	if client != nil {
@@ -547,7 +545,7 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 }
 
 type httpTransportThatSleeps struct {
-	txp httptransport.RoundTripper
+	txp netx.HTTPRoundTripper
 	st  time.Duration
 }
 

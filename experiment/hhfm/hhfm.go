@@ -19,10 +19,9 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/randx"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
-	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/modelx"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
@@ -166,7 +165,7 @@ func (m Measurer) Run(
 	// parse response body
 	var jsonHeaders JSONHeaders
 	if err := json.Unmarshal(data, &jsonHeaders); err != nil {
-		failure := modelx.FailureJSONParseError
+		failure := errorx.FailureJSONParseError
 		tk.Failure = &failure
 		tk.Tampering.Total = true
 		return nil // measurement did not fail, we measured tampering
@@ -183,7 +182,7 @@ func Transact(txp Transport, req *http.Request,
 	// make sure that we return a wrapped error here
 	resp, data, err := transact(txp, req, callbacks)
 	err = errorx.SafeErrWrapperBuilder{
-		Error: err, Operation: modelx.TopLevelOperation}.MaybeBuild()
+		Error: err, Operation: errorx.TopLevelOperation}.MaybeBuild()
 	return resp, data, err
 }
 
@@ -313,7 +312,7 @@ type JSONHeaders struct {
 // guarantee that the connection is used for a single request and that
 // such a request does not contain any body.
 type Dialer struct {
-	Dialer  httptransport.Dialer // used for testing
+	Dialer  netx.Dialer // used for testing
 	Headers map[string]string
 }
 

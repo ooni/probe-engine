@@ -1,41 +1,45 @@
-[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Golang Status](https://github.com/ooni/probe-engine/workflows/golang/badge.svg) ![Android Status](https://github.com/ooni/probe-engine/workflows/android/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
-
 # OONI probe measurement engine
+
+[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Golang Status](https://github.com/ooni/probe-engine/workflows/golang/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
 
 This repository contains OONI probe's [measurement engine](
 https://github.com/ooni/spec/tree/master/probe#engine). That is, the
-piece of software that implements OONI nettests.
+piece of software that implements OONI nettests as well as all the
+required functionality to run such nettests.
 
-## API
-
-You can [browse ooni/probe-engine's API](
-https://godoc.org/github.com/ooni/probe-engine)
-online at godoc.org. We currently don't provide any API
-stability guarantees.
-
-This repository also allows to build [miniooni](cmd/miniooni), a
-small command line client useful to test the functionality in here
-without integrating with OONI probe. You can browse [the manual
-of this tool](
-https://godoc.org/github.com/ooni/probe-engine/cmd/miniooni)
-online at godoc.org. We currently don't promise that the
-miniooni CLI will be stable over time.
+We expect you to use the Go version indicated in [go.mod](go.mod).
 
 ## Integrating ooni/probe-engine
 
-This software uses [Go modules](https://github.com/golang/go/wiki/Modules)
-and requires Go v1.14+. You can pull the latest version as a dependency from
-your modules aware project by using
+We recommend pinning to a specific version of probe-engine:
 
 ```bash
-go get -v github.com/ooni/probe-engine
+go get -v github.com/ooni/probe-engine@VERSION
 ```
 
+See also the [workflows/using.yml](.github/workflows/using.yml) test
+where we check that the latest commit can be imported by a third party.
+
+We do not provide any API stability guarantee.
+
 ## Building miniooni
+
+[miniooni](cmd/miniooni) is a small command line client used for
+research and quality assurance testing. Build using:
 
 ```bash
 go build -v ./cmd/miniooni/
 ```
+
+We don't provide any `miniooni` command line flags stability guarantee.
+
+See
+
+```bash
+./miniooni --help
+```
+
+for more help.
 
 ## Building Android bindings
 
@@ -47,17 +51,11 @@ We automatically build Android bindings whenever commits are pushed to the
 `mobile-staging` branch. Such builds could be integrated by using:
 
 ```Groovy
-maven { url "https://dl.bintray.com/ooni/android/" }
-```
-
-and
-
-```Groovy
 implementation "org.ooni:oonimkall:VERSION"
 ```
 
-Where VERSION is like `2020.03.30-231914` corresponding to the moment in
-time in which the version has been built.
+Where VERSION is like `2020.03.30-231914` corresponding to the
+time when the build occurred.
 
 ## Building iOS bindings
 
@@ -72,8 +70,8 @@ We automatically build iOS bindings whenever commits are pushed to the
 pod 'oonimkall', :podspec => 'https://dl.bintray.com/ooni/ios/oonimkall-VERSION.podspec'
 ```
 
-Where VERSION is like `2020.03.30-231914` corresponding to the moment in
-time in which the version has been built.
+Where VERSION is like `2020.03.30-231914` corresponding to the
+time when the build occurred.
 
 ## Release procedure
 
@@ -118,4 +116,4 @@ will break downstream builds on MIPS:
 go get -u -v github.com/Psiphon-Labs/bolt github.com/creack/goselect
 ```
 
-This allows us to pin all psiphon dependencies precisely.
+The above procedure allows us to pin all psiphon dependencies precisely.

@@ -13,11 +13,11 @@ import (
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/websocket"
-	"github.com/ooni/probe-engine/internal/resources"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
-	"github.com/ooni/probe-engine/netx/modelx"
+	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
+	"github.com/ooni/probe-engine/resources"
 )
 
 func TestNewTCPConnectList(t *testing.T) {
@@ -49,14 +49,14 @@ func TestNewTCPConnectList(t *testing.T) {
 			}, {
 				Address:  "8.8.8.8:853",
 				Duration: 30 * time.Millisecond,
-				Name:     modelx.ConnectOperation,
+				Name:     errorx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
-				Name:     modelx.ConnectOperation,
+				Name:     errorx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(180 * time.Millisecond),
 			}},
@@ -320,14 +320,14 @@ func TestNewDNSQueriesList(t *testing.T) {
 			}, {
 				Address:  "8.8.8.8:853",
 				Duration: 30 * time.Millisecond,
-				Name:     modelx.ConnectOperation,
+				Name:     errorx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
-				Name:     modelx.ConnectOperation,
+				Name:     errorx.ConnectOperation,
 				Proto:    "tcp",
 				Time:     begin.Add(180 * time.Millisecond),
 			}},
@@ -394,7 +394,7 @@ func TestNewDNSQueriesList(t *testing.T) {
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
-				Err:      &modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError},
+				Err:      &errorx.ErrWrapper{Failure: errorx.FailureDNSNXDOMAINError},
 				Hostname: "dns.google.com",
 				Name:     "resolve_done",
 				Time:     begin.Add(200 * time.Millisecond),
@@ -404,14 +404,14 @@ func TestNewDNSQueriesList(t *testing.T) {
 		want: []archival.DNSQueryEntry{{
 			Answers: nil,
 			Failure: archival.NewFailure(
-				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+				&errorx.ErrWrapper{Failure: errorx.FailureDNSNXDOMAINError}),
 			Hostname:  "dns.google.com",
 			QueryType: "A",
 			T:         0.2,
 		}, {
 			Answers: nil,
 			Failure: archival.NewFailure(
-				&modelx.ErrWrapper{Failure: modelx.FailureDNSNXDOMAINError}),
+				&errorx.ErrWrapper{Failure: errorx.FailureDNSNXDOMAINError}),
 			Hostname:  "dns.google.com",
 			QueryType: "AAAA",
 			T:         0.2,
@@ -449,23 +449,23 @@ func TestNewNetworkEventsList(t *testing.T) {
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
-				Name:    modelx.ConnectOperation,
+				Name:    errorx.ConnectOperation,
 				Address: "8.8.8.8:853",
 				Err:     io.EOF,
 				Proto:   "tcp",
 				Time:    begin.Add(7 * time.Millisecond),
 			}, {
-				Name:     modelx.ReadOperation,
+				Name:     errorx.ReadOperation,
 				Err:      context.Canceled,
 				NumBytes: 7117,
 				Time:     begin.Add(11 * time.Millisecond),
 			}, {
-				Name:     modelx.WriteOperation,
+				Name:     errorx.WriteOperation,
 				Err:      websocket.ErrBadHandshake,
 				NumBytes: 4114,
 				Time:     begin.Add(14 * time.Millisecond),
 			}, {
-				Name: modelx.CloseOperation,
+				Name: errorx.CloseOperation,
 				Err:  websocket.ErrReadLimit,
 				Time: begin.Add(17 * time.Millisecond),
 			}},
@@ -473,22 +473,22 @@ func TestNewNetworkEventsList(t *testing.T) {
 		want: []archival.NetworkEvent{{
 			Address:   "8.8.8.8:853",
 			Failure:   archival.NewFailure(io.EOF),
-			Operation: modelx.ConnectOperation,
+			Operation: errorx.ConnectOperation,
 			Proto:     "tcp",
 			T:         0.007,
 		}, {
 			Failure:   archival.NewFailure(context.Canceled),
 			NumBytes:  7117,
-			Operation: modelx.ReadOperation,
+			Operation: errorx.ReadOperation,
 			T:         0.011,
 		}, {
 			Failure:   archival.NewFailure(websocket.ErrBadHandshake),
 			NumBytes:  4114,
-			Operation: modelx.WriteOperation,
+			Operation: errorx.WriteOperation,
 			T:         0.014,
 		}, {
 			Failure:   archival.NewFailure(websocket.ErrReadLimit),
-			Operation: modelx.CloseOperation,
+			Operation: errorx.CloseOperation,
 			T:         0.017,
 		}},
 	}}
@@ -523,7 +523,7 @@ func TestNewTLSHandshakesList(t *testing.T) {
 		args: args{
 			begin: begin,
 			events: []trace.Event{{
-				Name: modelx.CloseOperation,
+				Name: errorx.CloseOperation,
 				Err:  websocket.ErrReadLimit,
 				Time: begin.Add(17 * time.Millisecond),
 			}, {
@@ -929,18 +929,18 @@ func TestNewFailure(t *testing.T) {
 	}, {
 		name: "when error is wrapped and failure meaningful",
 		args: args{
-			err: &modelx.ErrWrapper{
-				Failure: modelx.FailureConnectionRefused,
+			err: &errorx.ErrWrapper{
+				Failure: errorx.FailureConnectionRefused,
 			},
 		},
 		want: func() *string {
-			s := modelx.FailureConnectionRefused
+			s := errorx.FailureConnectionRefused
 			return &s
 		}(),
 	}, {
 		name: "when error is wrapped and failure is not meaningful",
 		args: args{
-			err: &modelx.ErrWrapper{},
+			err: &errorx.ErrWrapper{},
 		},
 		want: func() *string {
 			s := "unknown_failure: errWrapper.Failure is empty"
@@ -1009,24 +1009,24 @@ func TestNewFailedOperation(t *testing.T) {
 	}, {
 		name: "With wrapped error and non-empty operation",
 		args: args{
-			err: &modelx.ErrWrapper{
-				Failure:   modelx.FailureConnectionRefused,
-				Operation: modelx.ConnectOperation,
+			err: &errorx.ErrWrapper{
+				Failure:   errorx.FailureConnectionRefused,
+				Operation: errorx.ConnectOperation,
 			},
 		},
 		want: (func() *string {
-			s := modelx.ConnectOperation
+			s := errorx.ConnectOperation
 			return &s
 		})(),
 	}, {
 		name: "With wrapped error and empty operation",
 		args: args{
-			err: &modelx.ErrWrapper{
-				Failure: modelx.FailureConnectionRefused,
+			err: &errorx.ErrWrapper{
+				Failure: errorx.FailureConnectionRefused,
 			},
 		},
 		want: (func() *string {
-			s := modelx.UnknownOperation
+			s := errorx.UnknownOperation
 			return &s
 		})(),
 	}, {
@@ -1035,7 +1035,7 @@ func TestNewFailedOperation(t *testing.T) {
 			err: io.EOF,
 		},
 		want: (func() *string {
-			s := modelx.UnknownOperation
+			s := errorx.UnknownOperation
 			return &s
 		})(),
 	}}
