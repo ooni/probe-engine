@@ -433,7 +433,6 @@ func TestSubmitterCannotOpenNewChannel(t *testing.T) {
 	cancel() // fail immediately
 	m1 := makeMeasurementWithoutTemplate("antani", "example")
 	if err := submitter.Submit(ctx, m1); !errors.Is(err, context.Canceled) {
-		t.Log(err)
 		t.Fatal("not the error we expected")
 	}
 	m2 := makeMeasurementWithoutTemplate("mascetti", "example")

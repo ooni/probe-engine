@@ -2,6 +2,7 @@ package oonimkall_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -239,11 +241,12 @@ func TestNewSessionWithMissingSoftwareName(t *testing.T) {
 
 func NewSession() (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
-		AssetsDir:       "../testdata/oonimkall/assets",
-		SoftwareName:    "oonimkall-test",
-		SoftwareVersion: "0.1.0",
-		StateDir:        "../testdata/oonimkall/state",
-		TempDir:         "../testdata/",
+		AssetsDir:        "../testdata/oonimkall/assets",
+		ProbeServicesURL: "https://ps-test.ooni.io/",
+		SoftwareName:     "oonimkall-test",
+		SoftwareVersion:  "0.1.0",
+		StateDir:         "../testdata/oonimkall/state",
+		TempDir:          "../testdata/",
 	})
 }
 
@@ -336,5 +339,220 @@ func TestSessionGeolocateGood(t *testing.T) {
 	}
 	if location.Org == "" {
 		t.Fatal("location.Org is empty")
+	}
+}
+
+func TestNewSubmitTaskGood(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := submitTask.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestNewSubmitTaskWithNilContext(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(nil, sess)
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if submitTask != nil {
+		t.Fatal("expected nil submit task here")
+	}
+}
+
+func TestNewSubmitTaskWithNilSession(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, nil)
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if submitTask != nil {
+		t.Fatal("expected nil submit task here")
+	}
+}
+
+func TestNewSubmitTaskWithCancelledContext(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	ctx.Cancel() // immediately!!!
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if !errors.Is(err, engine.ErrAllProbeServicesFailed) {
+		t.Fatal("not the error we expected")
+	}
+	if submitTask != nil {
+		t.Fatal("expected nil submit task here")
+	}
+}
+
+func TestSubmitWithNilTask(t *testing.T) {
+	var task *oonimkall.SubmitTask
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	result, err := task.Submit(ctx, "{}")
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestSubmitWithNilContext(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer submitTask.Close(ctx)
+	result, err := submitTask.Submit(nil, "{}")
+	if !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestSubmitWithInvalidJSON(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer submitTask.Close(ctx)
+	result, err := submitTask.Submit(ctx, "{")
+	if err == nil || err.Error() != "unexpected end of JSON input" {
+		t.Fatal("not the error we expected")
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestSubmitWithCancelledContext(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer submitTask.Close(ctx)
+	ctx.Cancel() // here!
+	result, err := submitTask.Submit(ctx, "{}")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("not the error we expected")
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestSubmitGood(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	submitTask, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer submitTask.Close(ctx)
+	inputm := model.Measurement{
+		DataFormatVersion:    "0.2.0",
+		MeasurementStartTime: "2019-10-28 12:51:07",
+		MeasurementRuntime:   1.71,
+		ProbeASN:             "AS30722",
+		ProbeCC:              "IT",
+		ProbeIP:              "127.0.0.1",
+		ReportID:             "",
+		ResolverIP:           "172.217.33.129",
+		SoftwareName:         "miniooni",
+		SoftwareVersion:      "0.1.0-dev",
+		TestKeys:             map[string]bool{"success": true},
+		TestName:             "example",
+		TestVersion:          "0.1.0",
+	}
+	inputd, err := json.Marshal(inputm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := submitTask.Submit(ctx, string(inputd))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.UpdatedMeasurement == "" {
+		t.Fatal("expected non empty measurement")
+	}
+	if result.UpdatedReportID == "" {
+		t.Fatal("expected non empty report ID")
+	}
+	var outputm model.Measurement
+	if err := json.Unmarshal([]byte(result.UpdatedMeasurement), &outputm); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSubmitTaskCloseWithNullTask(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	var task *oonimkall.SubmitTask
+	if err := task.Close(ctx); !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSubmitTaskCloseWithNullContext(t *testing.T) {
+	ctx := oonimkall.NewContext()
+	defer ctx.Cancel()
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sess.Close()
+	task, err := oonimkall.NewSubmitTask(ctx, sess)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := task.Close(nil); !errors.Is(err, oonimkall.ErrNullPointer) {
+		t.Fatal("not the error we expected")
 	}
 }

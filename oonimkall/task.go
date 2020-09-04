@@ -33,7 +33,7 @@
 //
 // The Session API is a Go API that can be exported to mobile apps
 // using the gomobile tool. The design for this API is at
-// https://github.com/ooni/probe-engine/issues/893.
+// https://github.com/ooni/probe-engine/issues/893#issuecomment-686613123.
 //
 // The basic tenet of the session API is that you create an instance
 // of `Session` and use it to perform the operations you need.

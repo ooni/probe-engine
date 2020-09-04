@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -249,7 +248,7 @@ func TestMaybeLookupBackendsNewClientError(t *testing.T) {
 	}}
 	defer sess.Close()
 	err := sess.MaybeLookupBackends()
-	if err.Error() != "all available probe services failed" {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("not the error we expected")
 	}
 }
@@ -369,7 +368,7 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	err = sess.MaybeLookupBackendsContext(ctx)
-	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("unexpected error")
 	}
 }
@@ -413,7 +412,7 @@ func TestUnitAllProbeServicesUnsupported(t *testing.T) {
 		Type:    "antani",
 	})
 	err = sess.MaybeLookupBackends()
-	if !strings.HasSuffix(err.Error(), "all available probe services failed") {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("unexpected error")
 	}
 }
@@ -537,7 +536,7 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	client, err := sess.NewOrchestraClient(ctx)
-	if err == nil || err.Error() != "all available probe services failed" {
+	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("not the error we expected")
 	}
 	if client != nil {
