@@ -59,6 +59,9 @@ type ReportTemplate struct {
 	// TestName is the test name (e.g. `ndt`)
 	TestName string `json:"test_name"`
 
+	// TestStartTime contains the test start time
+	TestStartTime string `json:"test_start_time"`
+
 	// TestVersion is the test version (e.g. `1.0.1`)
 	TestVersion string `json:"test_version"`
 }
@@ -73,6 +76,7 @@ func NewReportTemplate(m *model.Measurement) ReportTemplate {
 		SoftwareName:      m.SoftwareName,
 		SoftwareVersion:   m.SoftwareVersion,
 		TestName:          m.TestName,
+		TestStartTime:     m.TestStartTime,
 		TestVersion:       m.TestVersion,
 	}
 }

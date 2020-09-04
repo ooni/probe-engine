@@ -1,7 +1,6 @@
 package probeservices_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/ioutil"
@@ -38,7 +37,7 @@ func makeMeasurement(rt probeservices.ReportTemplate, ID string) model.Measureme
 		SoftwareVersion:      rt.SoftwareVersion,
 		TestKeys:             fakeTestKeys{Failure: nil},
 		TestName:             rt.TestName,
-		TestStartTime:        "2018-11-01 15:33:17",
+		TestStartTime:        rt.TestStartTime,
 		TestVersion:          rt.TestVersion,
 	}
 }
@@ -50,6 +49,7 @@ func TestNewReportTemplate(t *testing.T) {
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.1.0",
 		TestName:        "dummy",
+		TestStartTime:   "2019-10-28 12:51:06",
 		TestVersion:     "0.1.0",
 	}
 	rt := probeservices.NewReportTemplate(m)
@@ -61,6 +61,7 @@ func TestNewReportTemplate(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	if diff := cmp.Diff(expect, rt); diff != "" {
@@ -78,6 +79,7 @@ func TestReportLifecycle(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -107,6 +109,7 @@ func TestReportLifecycleWrongExperiment(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -132,6 +135,7 @@ func TestOpenReportInvalidDataFormatVersion(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -154,6 +158,7 @@ func TestOpenReportInvalidFormat(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -176,6 +181,7 @@ func TestJSONAPIClientCreateFailure(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -205,6 +211,7 @@ func TestOpenResponseNoJSONSupport(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -234,8 +241,8 @@ func TestEndToEnd(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				if !bytes.Equal(data, sdata) {
-					panic("mismatch between submission and disk")
+				if diff := cmp.Diff(data, sdata); diff != "" {
+					panic(diff)
 				}
 				w.Write([]byte(`{"measurement_id":"e00c584e6e9e5326"}`))
 				return
@@ -257,6 +264,7 @@ func TestEndToEnd(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2018-11-01 15:33:17",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -333,6 +341,7 @@ func TestNewReportChannelGood(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
@@ -356,6 +365,7 @@ func TestNewReportChannelCancelledContext(t *testing.T) {
 		SoftwareName:      "ooniprobe-engine",
 		SoftwareVersion:   "0.1.0",
 		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()

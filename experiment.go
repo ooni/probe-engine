@@ -407,6 +407,7 @@ func (e *Experiment) openReport(ctx context.Context) error {
 		SoftwareName:      e.session.SoftwareName(),
 		SoftwareVersion:   e.session.SoftwareVersion(),
 		TestName:          e.testName,
+		TestStartTime:     e.testStartTime,
 		TestVersion:       e.testVersion,
 	}
 	e.report, err = client.OpenReport(ctx, template)
