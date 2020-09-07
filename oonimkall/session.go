@@ -128,37 +128,37 @@ func NewLogger(config *SessionConfig) model.Logger {
 	return loggerNormal{Logger: config.Logger}
 }
 
-// The Context allows the programmer to interrupt long running operations
+// The TaskContext allows the programmer to interrupt long running operations
 // and/or to add specific timeouts to such operations. Make sure you always
-// call Close when you are done using a Context.
-type Context struct {
+// call Cancel when you are done using a TaskContext.
+type TaskContext struct {
 	cancel  context.CancelFunc
 	ctx     context.Context
 	timeout int64
 }
 
-// NewContext creates a new Context.
-func NewContext() *Context {
-	ctx := new(Context)
+// NewTaskContext creates a new Context.
+func NewTaskContext() *TaskContext {
+	ctx := new(TaskContext)
 	ctx.ctx, ctx.cancel = context.WithCancel(context.Background())
 	return ctx
 }
 
-// MaxContextTimeout is the maximum timeout that you can set with
-// the NewContextWithTimeout function. Any value greater than this
+// MaxTaskContextTimeout is the maximum timeout that you can set with
+// the NewTaskContextWithTimeout function. Any value greater than this
 // value will be silently clamped down to such a value.
-const MaxContextTimeout = int64(time.Duration(math.MaxInt64) / time.Second)
+const MaxTaskContextTimeout = int64(time.Duration(math.MaxInt64) / time.Second)
 
-// NewContextWithTimeout creates a new Context where the operations using
-// such a Context will fail after timeout seconds. If the timeout argument
-// is zero or less, this constructor is equivalent to NewContext. Note that
-// any value that is greater than MaxContextTimeout is clamped down to
-// MaxContextTimeout to avoid overflow errors.
-func NewContextWithTimeout(timeout int64) *Context {
-	ctx := new(Context)
+// NewTaskContextWithTimeout creates a new Context where the operations using
+// such a TaskContext will fail after timeout seconds. If the timeout argument
+// is zero or less, this constructor is equivalent to NewTaskContext. Note that
+// any value that is greater than MaxTaskContextTimeout is clamped down to
+// MaxTaskContextTimeout to avoid overflow errors.
+func NewTaskContextWithTimeout(timeout int64) *TaskContext {
+	ctx := new(TaskContext)
 	if timeout > 0 {
-		if timeout > MaxContextTimeout {
-			timeout = MaxContextTimeout
+		if timeout > MaxTaskContextTimeout {
+			timeout = MaxTaskContextTimeout
 		}
 		ctx.ctx, ctx.cancel = context.WithTimeout(
 			context.Background(), time.Duration(timeout)*time.Second,
@@ -176,13 +176,13 @@ func NewContextWithTimeout(timeout int64) *Context {
 //
 // Because this method is not exported to Java/ObjC we will not bother
 // with making sure that it behaves with a null pointer receiver.
-func (ctx *Context) Context() context.Context {
+func (ctx *TaskContext) Context() context.Context {
 	return ctx.ctx
 }
 
 // GetTimeout returns the timeout (in seconds) configured for the context. A
 // negative or zero value implies there is no timeout.
-func (ctx *Context) GetTimeout() (timeout int64) {
+func (ctx *TaskContext) GetTimeout() (timeout int64) {
 	if ctx != nil {
 		timeout = ctx.timeout
 	}
@@ -192,7 +192,7 @@ func (ctx *Context) GetTimeout() (timeout int64) {
 // Cancel cancels any pending operation. This method is idempotent
 // and only its first invocation has side effects. This method is
 // thread safe; it might be called from any thread.
-func (ctx *Context) Cancel() {
+func (ctx *TaskContext) Cancel() {
 	if ctx != nil {
 		ctx.cancel()
 	}
@@ -213,7 +213,7 @@ var ErrNullPointer = errors.New("oonimkall: you passed me a null pointer")
 // living object. The workflow is to create a Session, do the operations
 // you need to do with it now, then call Session.Close. All of this is
 // supposed to happen within the same Java thread. If you need to cancel
-// any operation from other threads, please use a Context instead.
+// any operation from other threads, please use a TaskContext instead.
 type Session struct {
 	s *engine.Session
 }
@@ -277,7 +277,7 @@ type Location struct {
 
 // Geolocate geolocates a probe. This function returns an error if passed
 // a null context or when the sess receiver is null.
-func (sess *Session) Geolocate(ctx *Context) (*Location, error) {
+func (sess *Session) Geolocate(ctx *TaskContext) (*Location, error) {
 	if sess == nil || ctx == nil {
 		return nil, ErrNullPointer
 	}
@@ -305,7 +305,7 @@ type SubmitResult struct {
 }
 
 // NewSubmitTask creates a new SubmitTask instance.
-func NewSubmitTask(ctx *Context, sess *Session) (*SubmitTask, error) {
+func NewSubmitTask(ctx *TaskContext, sess *Session) (*SubmitTask, error) {
 	if ctx == nil || sess == nil {
 		return nil, ErrNullPointer
 	}
@@ -317,7 +317,7 @@ func NewSubmitTask(ctx *Context, sess *Session) (*SubmitTask, error) {
 }
 
 // Submit submits a measurement to the OONI collector.
-func (task *SubmitTask) Submit(ctx *Context, measurement string) (*SubmitResult, error) {
+func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitResult, error) {
 	if task == nil || ctx == nil {
 		return nil, ErrNullPointer
 	}
@@ -337,7 +337,7 @@ func (task *SubmitTask) Submit(ctx *Context, measurement string) (*SubmitResult,
 }
 
 // Close releases the resources used by the SubmitTask.
-func (task *SubmitTask) Close(ctx *Context) error {
+func (task *SubmitTask) Close(ctx *TaskContext) error {
 	if task == nil || ctx == nil {
 		return ErrNullPointer
 	}

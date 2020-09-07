@@ -131,7 +131,7 @@ func TestNewLoggerVerboseLogger(t *testing.T) {
 }
 
 func TestNullContextDoesNotCrash(t *testing.T) {
-	var ctx *oonimkall.Context
+	var ctx *oonimkall.TaskContext
 	defer ctx.Cancel()
 	ctx.Cancel()
 	if ctx.GetTimeout() != 0 {
@@ -140,7 +140,7 @@ func TestNullContextDoesNotCrash(t *testing.T) {
 }
 
 func TestNewContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
@@ -153,7 +153,7 @@ func TestNewContext(t *testing.T) {
 }
 
 func TestNewContextWithNegativeTimeout(t *testing.T) {
-	ctx := oonimkall.NewContextWithTimeout(-1)
+	ctx := oonimkall.NewTaskContextWithTimeout(-1)
 	defer ctx.Cancel()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
@@ -166,9 +166,9 @@ func TestNewContextWithNegativeTimeout(t *testing.T) {
 }
 
 func TestNewContextWithHugeTimeout(t *testing.T) {
-	ctx := oonimkall.NewContextWithTimeout(oonimkall.MaxContextTimeout + 1)
+	ctx := oonimkall.NewTaskContextWithTimeout(oonimkall.MaxTaskContextTimeout + 1)
 	defer ctx.Cancel()
-	if ctx.GetTimeout() != oonimkall.MaxContextTimeout {
+	if ctx.GetTimeout() != oonimkall.MaxTaskContextTimeout {
 		t.Fatal("invalid Timeout value")
 	}
 	go func() {
@@ -179,7 +179,7 @@ func TestNewContextWithHugeTimeout(t *testing.T) {
 }
 
 func TestNewContextWithReasonableTimeout(t *testing.T) {
-	ctx := oonimkall.NewContextWithTimeout(1)
+	ctx := oonimkall.NewTaskContextWithTimeout(1)
 	defer ctx.Cancel()
 	if ctx.GetTimeout() != 1 {
 		t.Fatal("invalid Timeout value")
@@ -259,7 +259,7 @@ func TestNewSessionWorksAndWeCanClose(t *testing.T) {
 
 func TestSessionGeolocateWithNullSession(t *testing.T) {
 	var sess *oonimkall.Session
-	location, err := sess.Geolocate(oonimkall.NewContext())
+	location, err := sess.Geolocate(oonimkall.NewTaskContext())
 	if !errors.Is(err, oonimkall.ErrNullPointer) {
 		t.Fatal("not the error we expected")
 	}
@@ -284,7 +284,7 @@ func TestSessionGeolocateWithNullContext(t *testing.T) {
 }
 
 func TestSessionGeolocateWithCancelledContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	ctx.Cancel() // cause immediate failure
 	sess, err := NewSession()
 	if err != nil {
@@ -313,7 +313,7 @@ func TestSessionGeolocateWithCancelledContext(t *testing.T) {
 }
 
 func TestSessionGeolocateGood(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -339,7 +339,7 @@ func TestSessionGeolocateGood(t *testing.T) {
 }
 
 func TestNewSubmitTaskGood(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -371,7 +371,7 @@ func TestNewSubmitTaskWithNilContext(t *testing.T) {
 }
 
 func TestNewSubmitTaskWithNilSession(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	submitTask, err := oonimkall.NewSubmitTask(ctx, nil)
 	if !errors.Is(err, oonimkall.ErrNullPointer) {
@@ -383,7 +383,7 @@ func TestNewSubmitTaskWithNilSession(t *testing.T) {
 }
 
 func TestNewSubmitTaskWithCancelledContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	ctx.Cancel() // immediately!!!
 	sess, err := NewSession()
 	if err != nil {
@@ -401,7 +401,7 @@ func TestNewSubmitTaskWithCancelledContext(t *testing.T) {
 
 func TestSubmitWithNilTask(t *testing.T) {
 	var task *oonimkall.SubmitTask
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	result, err := task.Submit(ctx, "{}")
 	if !errors.Is(err, oonimkall.ErrNullPointer) {
@@ -413,7 +413,7 @@ func TestSubmitWithNilTask(t *testing.T) {
 }
 
 func TestSubmitWithNilContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -435,7 +435,7 @@ func TestSubmitWithNilContext(t *testing.T) {
 }
 
 func TestSubmitWithInvalidJSON(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -457,7 +457,7 @@ func TestSubmitWithInvalidJSON(t *testing.T) {
 }
 
 func TestSubmitWithCancelledContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -480,7 +480,7 @@ func TestSubmitWithCancelledContext(t *testing.T) {
 }
 
 func TestSubmitGood(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
@@ -528,7 +528,7 @@ func TestSubmitGood(t *testing.T) {
 }
 
 func TestSubmitTaskCloseWithNullTask(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	var task *oonimkall.SubmitTask
 	if err := task.Close(ctx); !errors.Is(err, oonimkall.ErrNullPointer) {
@@ -537,7 +537,7 @@ func TestSubmitTaskCloseWithNullTask(t *testing.T) {
 }
 
 func TestSubmitTaskCloseWithNullContext(t *testing.T) {
-	ctx := oonimkall.NewContext()
+	ctx := oonimkall.NewTaskContext()
 	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
