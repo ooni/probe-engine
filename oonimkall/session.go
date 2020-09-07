@@ -267,8 +267,8 @@ func (sess *Session) Close() (err error) {
 	return
 }
 
-// Location contains the location of a probe.
-type Location struct {
+// GeolocateResults contains the results of geolocate.
+type GeolocateResults struct {
 	ASN     string
 	Country string
 	IP      string
@@ -277,14 +277,14 @@ type Location struct {
 
 // Geolocate geolocates a probe. This function returns an error if passed
 // a null context or when the sess receiver is null.
-func (sess *Session) Geolocate(ctx *TaskContext) (*Location, error) {
+func (sess *Session) Geolocate(ctx *TaskContext) (*GeolocateResults, error) {
 	if sess == nil || ctx == nil {
 		return nil, ErrNullPointer
 	}
 	if err := sess.s.MaybeLookupLocationContext(ctx.ctx); err != nil {
 		return nil, err
 	}
-	info := &Location{
+	info := &GeolocateResults{
 		ASN:     sess.s.ProbeASNString(),
 		Country: sess.s.ProbeCC(),
 		IP:      sess.s.ProbeIP(),
@@ -298,8 +298,8 @@ type SubmitTask struct {
 	submitter *probeservices.Submitter
 }
 
-// SubmitResult is the result of a measurement submission.
-type SubmitResult struct {
+// SubmitResults contains the results of a measurement submission.
+type SubmitResults struct {
 	UpdatedMeasurement string
 	UpdatedReportID    string
 }
@@ -317,7 +317,7 @@ func NewSubmitTask(ctx *TaskContext, sess *Session) (*SubmitTask, error) {
 }
 
 // Submit submits a measurement to the OONI collector.
-func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitResult, error) {
+func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitResults, error) {
 	if task == nil || ctx == nil {
 		return nil, ErrNullPointer
 	}
@@ -330,7 +330,7 @@ func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitRes
 	}
 	data, err := json.Marshal(mm)
 	runtimex.PanicOnError(err, "json.Marshal should not fail here")
-	return &SubmitResult{
+	return &SubmitResults{
 		UpdatedMeasurement: string(data),
 		UpdatedReportID:    mm.ReportID,
 	}, nil
