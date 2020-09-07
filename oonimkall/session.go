@@ -198,14 +198,6 @@ func (ctx *Context) Cancel() {
 	}
 }
 
-// Close releases the resources allocated by the SessionContext. This
-// method is idempotent; only its first invocation has side effects. It
-// is also thread safe and might be called from any thread.
-func (ctx *Context) Close() error {
-	ctx.Cancel() // calling Cancel which handles nil gracefully
-	return nil
-}
-
 // ErrNullPointer indicates that you passed to any API within the
 // oonimkall package a null pointer. We generally don't bother with
 // handling this error condition in Go or Java, but across the

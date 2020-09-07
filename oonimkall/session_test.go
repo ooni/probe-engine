@@ -132,11 +132,8 @@ func TestNewLoggerVerboseLogger(t *testing.T) {
 
 func TestNullContextDoesNotCrash(t *testing.T) {
 	var ctx *oonimkall.Context
-	defer ctx.Close()
+	defer ctx.Cancel()
 	ctx.Cancel()
-	if err := ctx.Close(); err != nil {
-		t.Fatal(err)
-	}
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -144,7 +141,7 @@ func TestNullContextDoesNotCrash(t *testing.T) {
 
 func TestNewContext(t *testing.T) {
 	ctx := oonimkall.NewContext()
-	defer ctx.Close()
+	defer ctx.Cancel()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -157,7 +154,7 @@ func TestNewContext(t *testing.T) {
 
 func TestNewContextWithNegativeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(-1)
-	defer ctx.Close()
+	defer ctx.Cancel()
 	if ctx.GetTimeout() != 0 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -170,7 +167,7 @@ func TestNewContextWithNegativeTimeout(t *testing.T) {
 
 func TestNewContextWithHugeTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(oonimkall.MaxContextTimeout + 1)
-	defer ctx.Close()
+	defer ctx.Cancel()
 	if ctx.GetTimeout() != oonimkall.MaxContextTimeout {
 		t.Fatal("invalid Timeout value")
 	}
@@ -183,7 +180,7 @@ func TestNewContextWithHugeTimeout(t *testing.T) {
 
 func TestNewContextWithReasonableTimeout(t *testing.T) {
 	ctx := oonimkall.NewContextWithTimeout(1)
-	defer ctx.Close()
+	defer ctx.Cancel()
 	if ctx.GetTimeout() != 1 {
 		t.Fatal("invalid Timeout value")
 	}
@@ -288,7 +285,6 @@ func TestSessionGeolocateWithNullContext(t *testing.T) {
 
 func TestSessionGeolocateWithCancelledContext(t *testing.T) {
 	ctx := oonimkall.NewContext()
-	defer ctx.Close()
 	ctx.Cancel() // cause immediate failure
 	sess, err := NewSession()
 	if err != nil {
@@ -318,7 +314,7 @@ func TestSessionGeolocateWithCancelledContext(t *testing.T) {
 
 func TestSessionGeolocateGood(t *testing.T) {
 	ctx := oonimkall.NewContext()
-	defer ctx.Close()
+	defer ctx.Cancel()
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
