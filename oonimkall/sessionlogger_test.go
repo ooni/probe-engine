@@ -94,7 +94,9 @@ func TestNewLoggerQuietLogger(t *testing.T) {
 	handler := new(RecordingLogger)
 	logger := newLogger(handler, false)
 	LoggerEmitMessages(logger)
-	handler.VerifyNumberOfEntries(0)
+	if err := handler.VerifyNumberOfEntries(0); err != nil {
+		t.Fatal(err)
+	}
 	if err := handler.CheckNonVerboseEntries(); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +106,9 @@ func TestNewLoggerVerboseLogger(t *testing.T) {
 	handler := new(RecordingLogger)
 	logger := newLogger(handler, true)
 	LoggerEmitMessages(logger)
-	handler.VerifyNumberOfEntries(2)
+	if err := handler.VerifyNumberOfEntries(2); err != nil {
+		t.Fatal(err)
+	}
 	if err := handler.CheckNonVerboseEntries(); err != nil {
 		t.Fatal(err)
 	}
