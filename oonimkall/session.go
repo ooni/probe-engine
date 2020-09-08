@@ -244,8 +244,9 @@ func (sub *Submitter) submit(ctx context.Context, m *model.Measurement) error {
 }
 
 // NewSubmitMeasurementTask creates a new SubmitMeasurementTask. You may
-// run several such tasks in parallel as long as you wait for all of them
-// to be complete before calling Submitter.Close. The timeout argument
+// should not run more than one such tasks in parallel because the submitter
+// is not designed for parallel submission. If you wish to do so, then you
+// should better create more than one Submitter. The timeout argument
 // has the same semantics of, e.g., NewGeolocateTask.
 func (sub *Submitter) NewSubmitMeasurementTask(timeout int64) *SubmitMeasurementTask {
 	ctx, cancel := newContext(timeout)
