@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"math"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
@@ -14,7 +12,19 @@ import (
 	"github.com/ooni/probe-engine/probeservices"
 )
 
-// SessionConfig contains configuration for a Session.
+// Logger is the logger used by a Session. You should implement a class
+// compatible with this interface in Java/ObjC and then save a reference
+// to this instance in the SessionConfig object. All log messages that
+// the Session will generate will be routed to this Logger.
+type Logger interface {
+	Debug(msg string)
+	Info(msg string)
+	Warn(msg string)
+}
+
+// SessionConfig contains configuration for a Session. You should
+// fill all the mandatory fields (see below) and could fill some of
+// the optional fields. Then pass this struct to NewSession.
 type SessionConfig struct {
 	// AssetsDir is the mandatory directory where to store assets
 	// required by a Session, e.g. MaxMind DB files.
@@ -26,15 +36,16 @@ type SessionConfig struct {
 	Logger Logger
 
 	// ProbeServicesURL allows you to optionally force the
-	// usage of an alternative probe services.
+	// usage of an alternative probe services. This setting
+	// should only be used to implement integration tests.
 	ProbeServicesURL string
 
 	// SoftwareName is the mandatory name of the application
-	// that is using the OONI Probe Engine.
+	// that will be using the new Session.
 	SoftwareName string
 
 	// SoftwareVersion is the mandatory version of the application
-	// that is using the OONI Probe Engine.
+	// that will be using the new Session.
 	SoftwareVersion string
 
 	// StateDir is the mandatory directory where to store state
@@ -52,171 +63,18 @@ type SessionConfig struct {
 	Verbose bool
 }
 
-// Logger is the logger used by a Session. You should implement a class
-// compatible with this interface in Java/ObjC and then save a reference
-// to this instance in the SessionConfig object. All log messages that
-// the Session will generate will be routed to this Logger.
-type Logger interface {
-	Debug(msg string)
-	Info(msg string)
-	Warn(msg string)
-}
-
-type loggerVerbose struct {
-	Logger
-}
-
-func (slv loggerVerbose) Debugf(format string, v ...interface{}) {
-	slv.Debug(fmt.Sprintf(format, v...))
-}
-func (slv loggerVerbose) Infof(format string, v ...interface{}) {
-	slv.Info(fmt.Sprintf(format, v...))
-}
-func (slv loggerVerbose) Warnf(format string, v ...interface{}) {
-	slv.Warn(fmt.Sprintf(format, v...))
-}
-
-type loggerNormal struct {
-	Logger
-}
-
-func (sln loggerNormal) Debugf(format string, v ...interface{}) {
-	// nothing
-}
-func (sln loggerNormal) Debug(msg string) {
-	// nothing
-}
-func (sln loggerNormal) Infof(format string, v ...interface{}) {
-	sln.Info(fmt.Sprintf(format, v...))
-}
-func (sln loggerNormal) Warnf(format string, v ...interface{}) {
-	sln.Warn(fmt.Sprintf(format, v...))
-}
-
-type loggerQuiet struct{}
-
-func (loggerQuiet) Debugf(format string, v ...interface{}) {
-	// nothing
-}
-func (loggerQuiet) Debug(msg string) {
-	// nothing
-}
-func (loggerQuiet) Infof(format string, v ...interface{}) {
-	// nothing
-}
-func (loggerQuiet) Info(msg string) {
-	// nothing
-}
-func (loggerQuiet) Warnf(format string, v ...interface{}) {
-	// nothing
-}
-func (loggerQuiet) Warn(msg string) {
-	// nothing
-}
-
-// NewLogger creates a new instance of model.Logger from the provided
-// config. This factory function is not available to Java/ObjC because
-// the returned type is not supported. This is intended: it does not
-// make sense to use a model.Logger when not using Go.
-func NewLogger(config *SessionConfig) model.Logger {
-	if config == nil || config.Logger == nil {
-		return loggerQuiet{}
-	}
-	if config.Verbose {
-		return loggerVerbose{Logger: config.Logger}
-	}
-	return loggerNormal{Logger: config.Logger}
-}
-
-// The TaskContext allows the programmer to interrupt long running operations
-// and/or to add specific timeouts to such operations. Make sure you always
-// call Cancel when you are done using a TaskContext.
-type TaskContext struct {
-	cancel  context.CancelFunc
-	ctx     context.Context
-	timeout int64
-}
-
-// NewTaskContext creates a new Context.
-func NewTaskContext() *TaskContext {
-	ctx := new(TaskContext)
-	ctx.ctx, ctx.cancel = context.WithCancel(context.Background())
-	return ctx
-}
-
-// MaxTaskContextTimeout is the maximum timeout that you can set with
-// the NewTaskContextWithTimeout function. Any value greater than this
-// value will be silently clamped down to such a value.
-const MaxTaskContextTimeout = int64(time.Duration(math.MaxInt64) / time.Second)
-
-// NewTaskContextWithTimeout creates a new Context where the operations using
-// such a TaskContext will fail after timeout seconds. If the timeout argument
-// is zero or less, this constructor is equivalent to NewTaskContext. Note that
-// any value that is greater than MaxTaskContextTimeout is clamped down to
-// MaxTaskContextTimeout to avoid overflow errors.
-func NewTaskContextWithTimeout(timeout int64) *TaskContext {
-	ctx := new(TaskContext)
-	if timeout > 0 {
-		if timeout > MaxTaskContextTimeout {
-			timeout = MaxTaskContextTimeout
-		}
-		ctx.ctx, ctx.cancel = context.WithTimeout(
-			context.Background(), time.Duration(timeout)*time.Second,
-		)
-		ctx.timeout = timeout
-	} else {
-		ctx.ctx, ctx.cancel = context.WithCancel(context.Background())
-	}
-	return ctx
-}
-
-// Context returns the underlying context.Context. This method is not
-// exported to Java/ObjC because the context.Context type is an interface
-// containing some fields that cannot be represented in Java/ObjC.
-//
-// Because this method is not exported to Java/ObjC we will not bother
-// with making sure that it behaves with a null pointer receiver.
-func (ctx *TaskContext) Context() context.Context {
-	return ctx.ctx
-}
-
-// GetTimeout returns the timeout (in seconds) configured for the context. A
-// negative or zero value implies there is no timeout.
-func (ctx *TaskContext) GetTimeout() (timeout int64) {
-	if ctx != nil {
-		timeout = ctx.timeout
-	}
-	return
-}
-
-// Cancel cancels any pending operation. This method is idempotent
-// and only its first invocation has side effects. This method is
-// thread safe; it might be called from any thread.
-func (ctx *TaskContext) Cancel() {
-	if ctx != nil {
-		ctx.cancel()
-	}
-}
-
-// ErrNullPointer indicates that you passed to any API within the
-// oonimkall package a null pointer. We generally don't bother with
-// handling this error condition in Go or Java, but across the
-// programming languages boundaries it is more critical to perform
-// these checks. Specifically, the program will crash without any
-// possibility of repair (i.e. panic) when Go receives a null pointer
-// from Java. This will not be a great user experience.
-var ErrNullPointer = errors.New("oonimkall: you passed me a null pointer")
-
 // Session contains shared state for running experiments and/or other
 // OONI related task (e.g. geolocation). Note that the Session isn't
 // mean to be shared across thread. It is also not meant to be a long
 // living object. The workflow is to create a Session, do the operations
 // you need to do with it now, then call Session.Close. All of this is
 // supposed to happen within the same Java thread. If you need to cancel
-// any operation from other threads, please use a TaskContext instead.
+// any operation from other threads, all tasks have a Cancel method.
 type Session struct {
-	s *engine.Session
+	sp *engine.Session
 }
+
+var errNullPointer = errors.New("oonimkall: you passed me a null pointer")
 
 // NewSession creates a new session. You should use a session for running
 // related operation in a relatively short time frame. You should not create
@@ -224,7 +82,7 @@ type Session struct {
 // the Session code is not specifically designed for this use case.
 func NewSession(config *SessionConfig) (*Session, error) {
 	if config == nil {
-		return nil, ErrNullPointer
+		return nil, errNullPointer
 	}
 	kvstore, err := engine.NewFileSystemKVStore(config.StateDir)
 	if err != nil {
@@ -241,7 +99,7 @@ func NewSession(config *SessionConfig) (*Session, error) {
 		AssetsDir:              config.AssetsDir,
 		AvailableProbeServices: availableps,
 		KVStore:                kvstore,
-		Logger:                 NewLogger(config),
+		Logger:                 newLogger(config.Logger, config.Verbose),
 		SoftwareName:           config.SoftwareName,
 		SoftwareVersion:        config.SoftwareVersion,
 		TempDir:                config.TempDir,
@@ -250,24 +108,65 @@ func NewSession(config *SessionConfig) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Session{s: sess}, nil
+	return &Session{sp: sess}, nil
 }
 
-// Close closes the resources used by a Session. Specifically, we close
-// any still open connection and cleanup temporary storage.
-//
-// Bug
-//
-// This method is not idempotent. It may become idempotent in the future
-// but currently you need to invoke it exactly once.
-func (sess *Session) Close() (err error) {
-	if sess != nil {
-		err = sess.s.Close()
-	}
-	return
+func (sess *Session) probeASNString() string {
+	return sess.sp.ProbeASNString()
 }
 
-// GeolocateResults contains the results of geolocate.
+func (sess *Session) probeCC() string {
+	return sess.sp.ProbeCC()
+}
+
+func (sess *Session) probeIP() string {
+	return sess.sp.ProbeIP()
+}
+
+func (sess *Session) probeNetworkName() string {
+	return sess.sp.ProbeNetworkName()
+}
+
+func (sess *Session) maybeLookupLocationContext(ctx context.Context) (err error) {
+	return sess.sp.MaybeLookupLocationContext(ctx)
+}
+
+func (sess *Session) newProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
+	return sess.sp.NewProbeServicesClient(ctx)
+}
+
+// NewGeolocateTask creates a new GeolocateTask. This task will allow you
+// to geolocate the probe. The timeout for the task is in seconds. When
+// the timeout value is zero or negative, there won't be any timeout.
+func (sess *Session) NewGeolocateTask(timeout int64) *GeolocateTask {
+	ctx, cancel := newContext(timeout)
+	return &GeolocateTask{cancel: cancel, ctx: ctx, sess: sess}
+}
+
+// NewMakeSubmitterTask creates a new MakeSubmitterTask. This task will
+// allow you to create a Submitter. The Submitter is an object that allows
+// you to submit measurements to the OONI collector. The timeout for the
+// task has exactly the same semantics of NewGeolocateTask.
+func (sess *Session) NewMakeSubmitterTask(timeout int64) *MakeSubmitterTask {
+	ctx, cancel := newContext(timeout)
+	return &MakeSubmitterTask{cancel: cancel, ctx: ctx, sess: sess}
+}
+
+// Close releases the resources allocated by a Session. This method MAY
+// NOT be thread safe and MAY NOT be idempotent.
+func (sess *Session) Close() error {
+	return sess.sp.Close()
+}
+
+// GeolocateTask allows you to perform geolocations. After the first
+// lookup is done, the result will be memoized by the code.
+type GeolocateTask struct {
+	cancel context.CancelFunc
+	ctx    context.Context
+	sess   *Session
+}
+
+// GeolocateResults contains the results of GeolocateTask.
 type GeolocateResults struct {
 	ASN     string
 	Country string
@@ -275,57 +174,114 @@ type GeolocateResults struct {
 	Org     string
 }
 
-// Geolocate geolocates a probe. This function returns an error if passed
-// a null context or when the sess receiver is null.
-func (sess *Session) Geolocate(ctx *TaskContext) (*GeolocateResults, error) {
-	if sess == nil || ctx == nil {
-		return nil, ErrNullPointer
-	}
-	if err := sess.s.MaybeLookupLocationContext(ctx.ctx); err != nil {
+// Run runs the GeolocateTask and returns either the results of the
+// task, on success, or the error that occurred, on failure.
+func (task *GeolocateTask) Run() (*GeolocateResults, error) {
+	if err := task.sess.maybeLookupLocationContext(task.ctx); err != nil {
 		return nil, err
 	}
 	info := &GeolocateResults{
-		ASN:     sess.s.ProbeASNString(),
-		Country: sess.s.ProbeCC(),
-		IP:      sess.s.ProbeIP(),
-		Org:     sess.s.ProbeNetworkName(),
+		ASN:     task.sess.probeASNString(),
+		Country: task.sess.probeCC(),
+		IP:      task.sess.probeIP(),
+		Org:     task.sess.probeNetworkName(),
 	}
 	return info, nil
 }
 
-// SubmitTask is a task for submitting measurements.
-type SubmitTask struct {
+// Cancel cancels the GeolocateTask. This method is thread safe
+// and idempotent. You can use it to interrupt the task.
+func (task *GeolocateTask) Cancel() {
+	task.cancel()
+}
+
+// Close releases the resources allocated by the task. This method MAY
+// NOT be thread safe and MAY NOT be idempotent.
+func (task *GeolocateTask) Close() error {
+	task.cancel()
+	return nil
+}
+
+// MakeSubmitterTask allows you to construct a Submitter. That is, a struct
+// that you will use to submit measurements to the OONI collector.
+type MakeSubmitterTask struct {
+	cancel context.CancelFunc
+	ctx    context.Context
+	sess   *Session
+}
+
+// Run constructs a Submitter and returns it, on success, or
+// returns the error that occurred, in case of failure.
+func (mst *MakeSubmitterTask) Run() (*Submitter, error) {
+	psc, err := mst.sess.newProbeServicesClient(mst.ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &Submitter{submitter: probeservices.NewSubmitter(psc)}, nil
+}
+
+// Cancel cancels the MakeSubmitterTask. This method is thread safe
+// and idempotent. You can use it to interrupt the task.
+func (mst *MakeSubmitterTask) Cancel() {
+	mst.cancel()
+}
+
+// Close releases the resources allocated by the task. This method MAY
+// NOT be thread safe and MAY NOT be idempotent.
+func (mst *MakeSubmitterTask) Close() error {
+	mst.cancel()
+	return nil
+}
+
+// Submitter allows you to create SubmitTasks. As SubmitTask is a task
+// allowing to submit a single measurements to OONI's collector.
+type Submitter struct {
 	submitter *probeservices.Submitter
 }
 
-// SubmitResults contains the results of a measurement submission.
+func (sub *Submitter) submit(ctx context.Context, m *model.Measurement) error {
+	return sub.submitter.Submit(ctx, m)
+}
+
+// NewSubmitMeasurementTask creates a new SubmitMeasurementTask. You may
+// run several such tasks in parallel as long as you wait for all of them
+// to be complete before calling Submitter.Close. The timeout argument
+// has the same semantics of, e.g., NewGeolocateTask.
+func (sub *Submitter) NewSubmitMeasurementTask(timeout int64) *SubmitMeasurementTask {
+	ctx, cancel := newContext(timeout)
+	return &SubmitMeasurementTask{cancel: cancel, ctx: ctx, sub: sub}
+}
+
+// Close releases the resources allocated by the submitter. This method MAY
+// NOT be thread safe and MAY NOT be idempotent.
+func (sub *Submitter) Close() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+	return sub.submitter.Close(ctx)
+}
+
+// SubmitMeasurementTask submits measurements to the OONI collector API.
+type SubmitMeasurementTask struct {
+	cancel context.CancelFunc
+	ctx    context.Context
+	sub    *Submitter
+}
+
+// SubmitResults contains the results of a single measurement submission
+// to the OONI backends using the OONI collector API.
 type SubmitResults struct {
 	UpdatedMeasurement string
 	UpdatedReportID    string
 }
 
-// NewSubmitTask creates a new SubmitTask instance.
-func NewSubmitTask(ctx *TaskContext, sess *Session) (*SubmitTask, error) {
-	if ctx == nil || sess == nil {
-		return nil, ErrNullPointer
-	}
-	psc, err := sess.s.NewProbeServicesClient(ctx.ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &SubmitTask{submitter: probeservices.NewSubmitter(psc)}, nil
-}
-
-// Submit submits a measurement to the OONI collector.
-func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitResults, error) {
-	if task == nil || ctx == nil {
-		return nil, ErrNullPointer
-	}
+// Run submits the selected measurement to the OONI collector and returns the
+// results, in case of success, or an error, in case of failure.
+func (task *SubmitMeasurementTask) Run(measurement string) (*SubmitResults, error) {
 	var mm model.Measurement
 	if err := json.Unmarshal([]byte(measurement), &mm); err != nil {
 		return nil, err
 	}
-	if err := task.submitter.Submit(ctx.ctx, &mm); err != nil {
+	if err := task.sub.submit(task.ctx, &mm); err != nil {
 		return nil, err
 	}
 	data, err := json.Marshal(mm)
@@ -336,10 +292,15 @@ func (task *SubmitTask) Submit(ctx *TaskContext, measurement string) (*SubmitRes
 	}, nil
 }
 
-// Close releases the resources used by the SubmitTask.
-func (task *SubmitTask) Close(ctx *TaskContext) error {
-	if task == nil || ctx == nil {
-		return ErrNullPointer
-	}
-	return task.submitter.Close(ctx.ctx)
+// Cancel cancels the SubmitMeasurementTask. This method is thread safe
+// and idempotent. You can use it to interrupt the task.
+func (task *SubmitMeasurementTask) Cancel() {
+	task.cancel()
+}
+
+// Close releases the resources allocated by the task. This method MAY
+// NOT be thread safe and MAY NOT be idempotent.
+func (task *SubmitMeasurementTask) Close() error {
+	task.cancel()
+	return nil
 }
