@@ -1,9 +1,12 @@
-# OONI Measurement Engine
+# Replacing Measurement Kit
 
 | Author       | Simone Basso |
 |--------------|--------------|
-| Last-Updated | 2020-02-24   |
-| Status       | under review |
+| Last-Updated | 2020-07-09   |
+| Status       | historical   |
+
+*Abstract* we describe our plan of replacing Measurement Kit for OONI
+Probe Android and iOS (in particular) and (also) the CLI.
 
 ## Introduction
 
@@ -121,7 +124,9 @@ a few lines of C allow to implement an ABI compatible replacement.
 
 ## Other APIs of interest
 
-We currently don't have plans for replacing other APIs.
+We currently don't have plans for replacing other MK APIs. We will introduce
+new APIs specifically tailored for our OONI needs, but they will be out of
+scope with respect to the main goal of this design document.
 
 ## History
 
