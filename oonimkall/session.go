@@ -23,7 +23,7 @@ type Logger interface {
 }
 
 // SessionConfig contains configuration for a Session. You should
-// fill all the mandatory fields (see below) and could fill some of
+// fill all the mandatory fields and could also optionally fill some of
 // the optional fields. Then pass this struct to NewSession.
 type SessionConfig struct {
 	// AssetsDir is the mandatory directory where to store assets
@@ -36,8 +36,8 @@ type SessionConfig struct {
 	Logger Logger
 
 	// ProbeServicesURL allows you to optionally force the
-	// usage of an alternative probe services. This setting
-	// should only be used to implement integration tests.
+	// usage of an alternative probe service instance. This setting
+	// should only be used for implementing integration tests.
 	ProbeServicesURL string
 
 	// SoftwareName is the mandatory name of the application
@@ -54,7 +54,7 @@ type SessionConfig struct {
 
 	// TempDir is the mandatory directory where the Session shall
 	// store temporary files. Among other tasks, Session.Close will
-	// ensure that temporary files have been removed.
+	// remove any temporary file created within this Session.
 	TempDir string
 
 	// Verbose is optional. If there is a non-null Logger and this
@@ -65,11 +65,19 @@ type SessionConfig struct {
 
 // Session contains shared state for running experiments and/or other
 // OONI related task (e.g. geolocation). Note that the Session isn't
-// mean to be shared across thread. It is also not meant to be a long
+// mean to be shared across threads. It is also not meant to be a long
 // living object. The workflow is to create a Session, do the operations
 // you need to do with it now, then call Session.Close. All of this is
-// supposed to happen within the same Java thread. If you need to cancel
+// supposed to happen within the same Java/ObjC thread. If wanna cancel
 // any operation from other threads, all tasks have a Cancel method.
+//
+// Future directions
+//
+// We will eventually rewrite the code for running new experiments such
+// that a Task will be created from a Session, such that experiments
+// could share the same Session and save geolookups, etc. For now, we
+// are in the suboptimal situations where Tasks create, use, and close
+// their own session, thus running more lookups than needed.
 type Session struct {
 	sp *engine.Session
 }
@@ -144,8 +152,8 @@ func (sess *Session) NewGeolocateTask(timeout int64) *GeolocateTask {
 }
 
 // NewMakeSubmitterTask creates a new MakeSubmitterTask. This task will
-// allow you to create a Submitter. The Submitter is an object that allows
-// you to submit measurements to the OONI collector. The timeout for the
+// allow you to create a Submitter. The Submitter is an object that knows
+// how to submit measurements to the OONI collector. The timeout for the
 // task has exactly the same semantics of NewGeolocateTask.
 func (sess *Session) NewMakeSubmitterTask(timeout int64) *MakeSubmitterTask {
 	ctx, cancel := newContext(timeout)
@@ -158,20 +166,33 @@ func (sess *Session) Close() error {
 	return sess.sp.Close()
 }
 
-// GeolocateTask allows you to perform geolocations. After the first
-// lookup is done, the result will be memoized by the code.
+// GeolocateTask allows you to geolocation the probe.
+//
+// Bug
+//
+// After the first lookup is done, the result will be memoized
+// by the Session. Therefore, to obtain fresh geolocate results
+// you actually need to create a new Session. This is poised
+// to change in a future release of probe-engine.
 type GeolocateTask struct {
 	cancel context.CancelFunc
 	ctx    context.Context
 	sess   *Session
 }
 
-// GeolocateResults contains the results of GeolocateTask.
+// GeolocateResults contains the GeolocateTask results.
 type GeolocateResults struct {
-	ASN     string
+	// ASN is the autonomous system number.
+	ASN string
+
+	// Country is the country code.
 	Country string
-	IP      string
-	Org     string
+
+	// IP is the IP address.
+	IP string
+
+	// Org is the commercial name of the ASN.
+	Org string
 }
 
 // Run runs the GeolocateTask and returns either the results of the
@@ -202,8 +223,8 @@ func (task *GeolocateTask) Close() error {
 	return nil
 }
 
-// MakeSubmitterTask allows you to construct a Submitter. That is, a struct
-// that you will use to submit measurements to the OONI collector.
+// MakeSubmitterTask allows you to construct a Submitter. That is, an
+// abstraction that knows how to submit measurements to the OONI collector.
 type MakeSubmitterTask struct {
 	cancel context.CancelFunc
 	ctx    context.Context
@@ -233,8 +254,15 @@ func (mst *MakeSubmitterTask) Close() error {
 	return nil
 }
 
-// Submitter allows you to create SubmitTasks. As SubmitTask is a task
+// Submitter allows you to create SubmitMeasurementTask tasks. That is, tasks
 // allowing to submit a single measurements to OONI's collector.
+//
+// Bug
+//
+// The Submitter is not designed to submit measurements in parallel. Doing
+// this may work but could also cause unnecessary open/close report operations
+// if the measurements are unrelated. You should typically only have a single
+// SubmitMeasurementTask using this Submitter at any given time.
 type Submitter struct {
 	submitter *probeservices.Submitter
 }
@@ -261,23 +289,24 @@ func (sub *Submitter) Close() error {
 	return sub.submitter.Close(ctx)
 }
 
-// SubmitMeasurementTask submits measurements to the OONI collector API.
+// SubmitMeasurementTask submits measurements to the OONI collector API using
+// the specific Submitter from which this task was created.
 type SubmitMeasurementTask struct {
 	cancel context.CancelFunc
 	ctx    context.Context
 	sub    *Submitter
 }
 
-// SubmitResults contains the results of a single measurement submission
+// SubmitMeasurementResults contains the results of a single measurement submission
 // to the OONI backends using the OONI collector API.
-type SubmitResults struct {
+type SubmitMeasurementResults struct {
 	UpdatedMeasurement string
 	UpdatedReportID    string
 }
 
 // Run submits the selected measurement to the OONI collector and returns the
 // results, in case of success, or an error, in case of failure.
-func (task *SubmitMeasurementTask) Run(measurement string) (*SubmitResults, error) {
+func (task *SubmitMeasurementTask) Run(measurement string) (*SubmitMeasurementResults, error) {
 	var mm model.Measurement
 	if err := json.Unmarshal([]byte(measurement), &mm); err != nil {
 		return nil, err
@@ -287,7 +316,7 @@ func (task *SubmitMeasurementTask) Run(measurement string) (*SubmitResults, erro
 	}
 	data, err := json.Marshal(mm)
 	runtimex.PanicOnError(err, "json.Marshal should not fail here")
-	return &SubmitResults{
+	return &SubmitMeasurementResults{
 		UpdatedMeasurement: string(data),
 		UpdatedReportID:    mm.ReportID,
 	}, nil
