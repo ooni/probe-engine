@@ -7,12 +7,12 @@ We expose two APIs: the task API, which is derived from the
 API originally exposed by Measurement Kit, and the session API,
 which is a Go API that mobile apps can use via `gomobile`.
 
-This package is named oonimkall because it's a ooni/probe-engine
-mplementation of the mkall API implemented by Measurement Kit
+This package is named oonimkall because it contains a partial
+reimplementation of the mkall API implemented by Measurement Kit
 in, e.g., [mkall-ios](https://github.com/measurement-kit/mkall-ios).
 
 The basic tenet of the task API is that you define an experiment
-task you wanna run using a JSON, then you start such task, and
+task you wanna run using a JSON, then you start a task for it, and
 you receive events as serialized JSONs. In addition to this
 functionality, we also include extra APIs used by OONI mobile.
 

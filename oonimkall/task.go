@@ -5,14 +5,14 @@
 // API originally exposed by Measurement Kit, and the session API,
 // which is a Go API that mobile apps can use via `gomobile`.
 //
-// This package is named oonimkall because it's a ooni/probe-engine
-// implementation of the mkall API implemented by Measurement Kit
+// This package is named oonimkall because it contains a partial
+// reimplementation of the mkall API implemented by Measurement Kit
 // in, e.g., https://github.com/measurement-kit/mkall-ios.
 //
 // Task API
 //
 // The basic tenet of the task API is that you define an experiment
-// task you wanna run using a JSON, then you start such task, and
+// task you wanna run using a JSON, then you start a task for it, and
 // you receive events as serialized JSONs. In addition to this
 // functionality, we also include extra APIs used by OONI mobile.
 //
@@ -27,7 +27,7 @@
 // design document describing the task API.
 //
 // See also https://github.com/ooni/probe-engine/blob/master/DESIGN.md,
-// which explains why we implemented to oonimkall API.
+// which explains why we implemented the oonimkall API.
 //
 // Session API
 //
@@ -48,7 +48,17 @@ import (
 	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
-// Task is an asynchronous task.
+// Task is an asynchronous task running an experiment. It mimics the
+// namesake concept initially implemented in Measurement Kit.
+//
+// Future directions
+//
+// Currently Task and Session are two unrelated APIs. As part of
+// evolving the APIs with which apps interact with the engine, we
+// will modify Task to run in the context of a Session. We will
+// do that to save extra lookups and to allow several experiments
+// running as subsequent Tasks to reuse the Session connections
+// created with the OONI probe services backends.
 type Task struct {
 	cancel    context.CancelFunc
 	isdone    *atomicx.Int64
