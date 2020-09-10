@@ -227,7 +227,9 @@ func Summarize(tk *TestKeys) (out Summary) {
 			out.Status |= StatusAnomalyTLSHandshake
 		default:
 			// We have not been able to classify the error. Could this perhaps be
-			// caused by a programmer's error? Let us be conservative.
+			// caused by a programmer error? Let us be conservative. But let us also
+			// set a specific status for this error condition.
+			out.Status |= StatusAnomalyUnknown
 		}
 		// So, good that we have classified the error. Yet, how long is the
 		// redirect chain? If it's exactly one and we have determined that we
