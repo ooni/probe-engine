@@ -16,7 +16,7 @@ import (
 
 const (
 	// ndt7URLPath is the URL path to be used for ndt
-	ndt7URLPath = "v2beta1/query/ndt/ndt7"
+	ndt7URLPath = "v2/nearest/ndt/ndt7"
 )
 
 var (
