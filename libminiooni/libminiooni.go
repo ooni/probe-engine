@@ -237,8 +237,14 @@ func loadFileInputs(opts *Options) {
 		}
 		content, err := ioutil.ReadFile(opts.InputFilePath)
 		fatalOnError(err, "cannot read input file")
-
-		opts.Inputs = strings.Split(string(content), "\n")
+		// Implementation note: when you save file with vim, you have newline at
+		// end of file and you don't want to consider that an input line. While there
+		// ignore any other empty line that may occur inside the file.
+		for _, input := range strings.Split(string(content), "\n") {
+			if input != "" {
+				opts.Inputs = append(opts.Inputs, input)
+			}
+		}
 	}
 }
 
