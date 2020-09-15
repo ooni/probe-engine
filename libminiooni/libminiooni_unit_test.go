@@ -36,7 +36,9 @@ func TestInputFile(t *testing.T) {
 	// create test input file
 	input1 := "my input 1"
 	input2 := "my input 2"
-	file_contents := []byte(input1 + "\n" + input2)
+	// add newline at end of file like vim does; while there also allow blank
+	// lines in the middle of the file
+	file_contents := []byte(input1 + "\n\n" + input2 + "\n")
 	inputfile, err := ioutil.TempFile("", "myinput")
 	if err != nil {
 		t.Fatal(err)
