@@ -26,7 +26,7 @@ func newclient() *probeservices.Client {
 			MockableLogger:     log.Log,
 		},
 		model.Service{
-			Address: "https://ps-test.ooni.io/",
+			Address: "https://ams-pg.ooni.org/",
 			Type:    "https",
 		},
 	)
