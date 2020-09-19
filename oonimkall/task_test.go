@@ -522,27 +522,35 @@ func TestIntegrationPrivacySettings(t *testing.T) {
 	}
 	asn, cc, ip = do(false, false, true)
 	if asn != "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf("unexpected result: ip was supposed to be %+v and instead is 127.0.0.1", ip)
 	}
 	asn, cc, ip = do(false, true, false)
 	if asn != "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf("unexpected result: cc was supposed to be %+v and instead is ZZ", cc)
 	}
 	asn, cc, ip = do(true, false, false)
 	if asn == "AS0" || cc != "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf("unexpected result: asn was supposed to be %+v and instead is AS0", asn)
 	}
 	asn, cc, ip = do(true, false, true)
 	if asn == "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf(`unexpected result: asn and ip were supposed to be %+v and %+v
+			, respectively. instead are AS0 and/or 127.0.0.1`, asn, ip)
 	}
 	asn, cc, ip = do(true, true, false)
 	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf(`unexpected result: asn and cc were supposed to be %+v and %+v
+			, respectively. instead are AS0 and/or ZZ`, asn, cc)
+	}
+	asn, cc, ip = do(false, true, true)
+	if asn != "AS0" || cc == "ZZ" || ip == "127.0.0.1" {
+		t.Fatalf(`unexpected result: cc and ip were supposed to be %+v and %+v
+			, respectively. instead are ZZ and/or 127.0.0.1`, cc, ip)
 	}
 	asn, cc, ip = do(true, true, true)
 	if asn == "AS0" || cc == "ZZ" || ip == "127.0.0.1" {
-		t.Fatal("unexpected result")
+		t.Fatalf(`unexpected result: asn, cc and ip were supposed to be %+v, %+v and %+v
+			, respectively. instead are AS0, ZZ and/or 127.0.0.1`, asn, cc, ip)
 	}
 }
 
