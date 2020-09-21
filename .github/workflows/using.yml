@@ -1,6 +1,6 @@
 name: using
 on:
-  pull_request:
+  push:
   schedule:
     - cron: "14 17 * * 3"
 jobs:
