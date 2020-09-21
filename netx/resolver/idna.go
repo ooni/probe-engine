@@ -7,7 +7,7 @@ import (
 )
 
 // IDNAResolver is to support resolving Internationalized Domain Names.
-// see RFC3492
+// See RFC3492 for more information.
 type IDNAResolver struct {
 	Resolver
 }
@@ -22,12 +22,12 @@ func (r IDNAResolver) LookupHost(ctx context.Context, hostname string) ([]string
 	return r.Resolver.LookupHost(ctx, host)
 }
 
-// Network returns the transport network (e.g., doh, dot)
+// Network implements Resolver.Network.
 func (r IDNAResolver) Network() string {
 	return "idna"
 }
 
-// Address returns the upstream server address.
+// Address implements Resolver.Address.
 func (r IDNAResolver) Address() string {
 	return ""
 }
