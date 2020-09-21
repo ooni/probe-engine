@@ -7,7 +7,7 @@ set -ex
 case $1 in
   darwin)
     export GOOS=darwin GOARCH=amd64
-    go build -o ./CLI/darwin/amd64 -ldflags="-s -w" -tags $DISABLE_QUIC ./cmd/miniooni;;
+    go build -o ./CLI/darwin/amd64 -tags $DISABLE_QUIC -ldflags="-s -w" ./cmd/miniooni;;
   linux)
     export GOOS=linux GOARCH=amd64
     go build -o ./CLI/linux/amd64 -tags $DISABLE_QUIC,netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
