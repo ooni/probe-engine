@@ -1,8 +1,11 @@
 #!/bin/sh
 set -e
 DISABLE_QUIC=""
-if [ ! -z "$(go version | grep go1.15)" ]; then DISABLE_QUIC="DISABLE_QUIC"; fi
-
+if [ ! -z "`go version | grep go1.15`" ]; then
+  echo "Warning: disabling QUIC when using Go 1.15."
+  echo "See https://github.com/ooni/probe-engine/issues/866 for more info."
+  DISABLE_QUIC="DISABLE_QUIC"
+fi
 set -ex
 case $1 in
   darwin)
