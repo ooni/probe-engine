@@ -1127,3 +1127,22 @@ func TestNewDNSClientDoTDNSSaver(t *testing.T) {
 	}
 	dnsclient.CloseIdleConnections()
 }
+
+func TestNewDNSCLientDoTWithoutPort(t *testing.T) {
+	c, err := netx.NewDNSClientWithOverrides(
+		netx.Config{}, "dot://8.8.8.8", "", "8.8.8.8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Resolver.Address() != "8.8.8.8:853" {
+		t.Fatal("expected default port to be added")
+	}
+}
+
+func TestNewDNSClientBadDoTEndpoint(t *testing.T) {
+	_, err := netx.NewDNSClient(
+		netx.Config{}, "dot://bad:endpoint:53")
+	if err == nil || !strings.Contains(err.Error(), "too many colons in address") {
+		t.Fatal("expected error with bad endpoint")
+	}
+}

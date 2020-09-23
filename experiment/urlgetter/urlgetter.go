@@ -19,6 +19,8 @@ const (
 // Config contains the experiment's configuration.
 type Config struct {
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
+	DNSHTTPHost       string `ooni: Force using specific HTTP Host header for DNS requests`
+	DNSTLSServerName  string `ooni: Force TLS to using a specific SNI for encrypted DNS requests`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`

@@ -19,7 +19,7 @@
 // The purpose of this algorithm is to make sure we measure whether each
 // possible IP address for the domain is working or not.
 //
-// By default, we resolver `example.org`. There is an experiment option
+// By default, we resolve `example.org`. There is an experiment option
 // called TargetDomain allowing you to change that.
 //
 // Input URL format
@@ -42,16 +42,6 @@
 //
 // The map key is the TCP or UDP destination endpoint being used. The map
 // value is the measurement for such endpoint.
-//
-// For example, let us assume we're measuring `dns.quad9.net` using DNS
-// over TLS (DoT). The default port for DoT is 853 and `dns.quad9.net` maps
-// to `149.112.112.112` and `9.9.9.9` (currently). Therefore, in such a
-// case the whole r
-//
-//     {
-//
-//     }
-//
 package dnscheck
 
 import (
@@ -72,8 +62,9 @@ import (
 )
 
 const (
-	testName    = "dnscheck"
-	testVersion = "0.0.1"
+	testName      = "dnscheck"
+	testVersion   = "0.0.1"
+	defaultDomain = "example.org"
 )
 
 // Config contains the experiment's configuration.
@@ -81,7 +72,7 @@ type Config struct {
 	Domain string `ooni:"domain to resolve using the specified resolver"`
 }
 
-// TestKeys is an alias for urlgetter's test keys.
+// TestKeys contains the results of the dnscheck experiment.
 type TestKeys struct {
 	Domain           string                        `json:"domain"`
 	Bootstrap        *urlgetter.TestKeys           `json:"bootstrap"`
@@ -108,8 +99,9 @@ func (m Measurer) ExperimentVersion() string {
 // errors are in addition to any other errors returned by the low level packages
 // that are used by this experiment to implement its functionality.
 var (
-	ErrInputRequired = errors.New("this experiment needs input")
-	ErrInvalidURL    = errors.New("the input URL is invalid")
+	ErrInputRequired        = errors.New("this experiment needs input")
+	ErrInvalidURL           = errors.New("the input URL is invalid")
+	ErrUnsupportedURLScheme = errors.New("unsupported URL scheme")
 )
 
 // Run implements model.ExperimentSession.Run
@@ -122,16 +114,18 @@ func (m Measurer) Run(
 	tk.Lookups = make(map[string]urlgetter.TestKeys)
 	measurement.TestKeys = tk
 	urlgetter.RegisterExtensions(measurement)
+
 	// 2. make sure the runtime is bounded
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
+
 	// 3. select the domain to resolve or use default
-	const defaultDomain = "example.org"
 	domain := m.Config.Domain
 	if domain == "" {
 		domain = defaultDomain
 	}
 	tk.Domain = domain
+
 	// 4. parse the input URL describing the resolver to use
 	input := string(measurement.Input)
 	if input == "" {
@@ -145,8 +139,9 @@ func (m Measurer) Run(
 	case "https", "dot", "udp", "tcp":
 		// all good
 	default:
-		return fmt.Errorf("%w: %s", ErrInvalidURL, "unhandled URL scheme")
+		return ErrUnsupportedURLScheme
 	}
+
 	// 5. possibly expand a domain to a list of IP addresses
 	//
 	// implementation note: because the resolver we constructed also deals
@@ -167,28 +162,30 @@ func (m Measurer) Run(
 		// the address resolver doesn't generate events
 		tk.Bootstrap = &urlgetter.TestKeys{Queries: queries}
 	}
-	// determine all the domain lookups we need to perform
+
+	// 6. determine all the domain lookups we need to perform
 	var inputs []urlgetter.MultiInput
 	multi := urlgetter.Multi{Begin: begin, Session: sess}
 	for _, addr := range addrs {
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
-				HTTPHost:        URL.Host, // use original host (and optional port)
-				RejectDNSBogons: true,     // bogons are errors in this context
-				ResolverURL:     MakeResolverURL(URL, addr),
-				TLSServerName:   URL.Hostname(), // just the domain/IP for SNI
+				DNSHTTPHost:      URL.Host, // use original host (and optional port)
+				RejectDNSBogons:  true,     // bogons are errors in this context
+				ResolverURL:      makeResolverURL(URL, addr),
+				DNSTLSServerName: URL.Hostname(), // just the domain/IP for SNI
 			},
 			Target: fmt.Sprintf("dnslookup://%s", domain), // urlgetter wants a URL
 		})
 	}
-	// perform all the required resolutions
+
+	// 7. perform all the required resolutions
 	for output := range Collect(ctx, multi, inputs, callbacks) {
 		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
 	}
 	return nil
 }
 
-// Collect prints on the output channel the result of running urlgetter
+// Collect prints on the output channel the result of running dnscheck
 // on every provided input. It closes the output channel when done.
 func Collect(ctx context.Context, multi urlgetter.Multi, inputs []urlgetter.MultiInput,
 	callbacks model.ExperimentCallbacks) <-chan urlgetter.MultiOutput {
@@ -211,17 +208,17 @@ func Collect(ctx context.Context, multi urlgetter.Multi, inputs []urlgetter.Mult
 	return outputch
 }
 
-// MakeResolverURL rewrites the input URL to replace the domain in
+// makeResolverURL rewrites the input URL to replace the domain in
 // the input URL with the given addr. When the input URL already contains
 // an addr, this operation will return the same URL.
-func MakeResolverURL(URL *url.URL, addr string) string {
+func makeResolverURL(URL *url.URL, addr string) string {
 	// 1. determine the hostname in the resulting URL
 	hostname := URL.Hostname()
 	if net.ParseIP(hostname) == nil {
 		hostname = addr
 	}
 	// 2. adjust hostname if we also have a port
-	if hasPort := URL.Host != URL.Hostname(); hasPort {
+	if hasPort := URL.Port() != ""; hasPort {
 		_, port, err := net.SplitHostPort(URL.Host)
 		// We say this cannot fail because we already parsed the URL to validate
 		// its scheme and hence the URL hostname should be well formed.

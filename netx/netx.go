@@ -255,8 +255,13 @@ func (c DNSClient) CloseIdleConnections() {
 //
 // If config.ResolveSaver is not nil and we're creating an underlying
 // resolver where this is possible, we will also save events.
-func NewDNSClient(config Config, URL, host, SNI string) (DNSClient, error) {
-	config.TLSConfig = &tls.Config{ServerName: SNI} // XXX
+func NewDNSClient(config Config, URL string) (DNSClient, error) {
+	return NewDNSClientWithOverrides(config, URL, "", "")
+}
+
+// NewDNSClientWithOverrides creates a new DNS client, similar to NewDNSClient,
+// with the option to override the default Hostname and SNI.
+func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride string) (DNSClient, error) {
 	var c DNSClient
 	switch URL {
 	case "doh://powerdns":
@@ -272,14 +277,17 @@ func NewDNSClient(config Config, URL, host, SNI string) (DNSClient, error) {
 	if err != nil {
 		return c, err
 	}
+	if SNIOverride != "" {
+		config.TLSConfig = &tls.Config{ServerName: SNIOverride}
+	}
 	switch resolverURL.Scheme {
 	case "system":
 		c.Resolver = resolver.SystemResolver{}
 		return c, nil
 	case "https":
 		c.httpClient = &http.Client{Transport: NewHTTPTransport(config)}
-		var txp resolver.RoundTripper = resolver.NewDNSOverHTTPS(
-			c.httpClient, URL, host)
+		var txp resolver.RoundTripper = resolver.NewDNSOverHTTPSWithHostOverride(
+			c.httpClient, URL, hostOverride)
 		if config.ResolveSaver != nil {
 			txp = resolver.SaverDNSTransport{
 				RoundTripper: txp,
@@ -305,7 +313,6 @@ func NewDNSClient(config Config, URL, host, SNI string) (DNSClient, error) {
 		if err != nil {
 			return c, err
 		}
-		// XXX: here we should also set the SNI
 		var txp resolver.RoundTripper = resolver.NewDNSOverTLS(
 			tlsDialer.DialTLSContext, endpoint)
 		if config.ResolveSaver != nil {
