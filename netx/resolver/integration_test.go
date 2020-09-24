@@ -18,9 +18,7 @@ func testresolverquick(t *testing.T, reso resolver.Resolver) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
-	reso = resolver.IDNAResolver{
-		resolver.LoggingResolver{Logger: log.Log, Resolver: reso},
-	}
+	reso = resolver.LoggingResolver{Logger: log.Log, Resolver: reso}
 	addrs, err := reso.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
 		t.Fatal(err)
@@ -40,7 +38,7 @@ func testresolverquick(t *testing.T, reso resolver.Resolver) {
 }
 
 // Ensuring we can handle Internationalized Domain Names (IDNs) without issues
-func testresolverquickutf8(t *testing.T, reso resolver.Resolver) {
+func testresolverquickidna(t *testing.T, reso resolver.Resolver) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -59,54 +57,54 @@ func testresolverquickutf8(t *testing.T, reso resolver.Resolver) {
 func TestIntegrationNewResolverSystem(t *testing.T) {
 	reso := resolver.SystemResolver{}
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverUDPAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverUDP(new(net.Dialer), "8.8.8.8:53"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverUDPDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverUDP(new(net.Dialer), "dns.google.com:53"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverTCPAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTCP(new(net.Dialer).DialContext, "8.8.8.8:53"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverTCPDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTCP(new(net.Dialer).DialContext, "dns.google.com:53"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverDoTAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverDoTDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTLS(resolver.DialTLSContext, "dns.google.com:853"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
 
 func TestIntegrationNewResolverDoH(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://doh.powerdns.org/"))
 	testresolverquick(t, reso)
-	testresolverquickutf8(t, reso)
+	testresolverquickidna(t, reso)
 }
