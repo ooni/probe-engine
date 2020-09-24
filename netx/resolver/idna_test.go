@@ -65,7 +65,7 @@ func TestIDNAResolverFailure(t *testing.T) {
 	}
 }
 
-func TestUnitIDNAResolverTransportOK(t *testing.T) {
+func TestIDNAResolverTransportOK(t *testing.T) {
 	resolv := resolver.IDNAResolver{Resolver: CheckIDNAResolver{}}
 	if resolv.Network() != "idna" {
 		t.Fatal("invalid network")
