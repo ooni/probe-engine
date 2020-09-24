@@ -14,7 +14,6 @@ type IDNAResolver struct {
 
 // LookupHost implements Resolver.LookupHost
 func (r IDNAResolver) LookupHost(ctx context.Context, hostname string) ([]string, error) {
-	// convert i18n names to punycode
 	host, err := idna.ToASCII(hostname)
 	if err != nil {
 		return nil, err
