@@ -198,6 +198,13 @@ type GeolocateResults struct {
 	Org string
 }
 
+// MaybeUpdateResources ensures that resources are up to date.
+func (sess *Session) MaybeUpdateResources(ctx *Context) error {
+	sess.mtx.Lock()
+	defer sess.mtx.Unlock()
+	return sess.sessp.MaybeUpdateResources(ctx.ctx)
+}
+
 // Geolocate performs a geolocate operation and returns the results. This method
 // is (in Java terminology) synchronized with the session instance.
 func (sess *Session) Geolocate(ctx *Context) (*GeolocateResults, error) {

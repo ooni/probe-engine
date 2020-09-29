@@ -416,7 +416,8 @@ func (s *Session) UserAgent() (useragent string) {
 	return
 }
 
-func (s *Session) fetchResourcesIdempotent(ctx context.Context) error {
+// MaybeUpdateResources updates the resources if needed.
+func (s *Session) MaybeUpdateResources(ctx context.Context) error {
 	return (&resources.Client{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
@@ -517,7 +518,7 @@ func (s *Session) LookupLocationContext(ctx context.Context) (out *model.Locatio
 		resolverIP  string = model.DefaultResolverIP
 		resolverOrg string
 	)
-	err = s.fetchResourcesIdempotent(ctx)
+	err = s.MaybeUpdateResources(ctx)
 	runtimex.PanicOnError(err, "s.fetchResourcesIdempotent failed")
 	probeIP, err = s.lookupProbeIP(ctx)
 	runtimex.PanicOnError(err, "s.lookupProbeIP failed")
