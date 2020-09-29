@@ -540,7 +540,7 @@ func newsession(t *testing.T) model.ExperimentSession {
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir: "../../testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ps-test.ooni.io",
+			Address: "https://ams-pg.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,

@@ -500,51 +500,62 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	return nil
 }
 
-// MaybeLookupLocationContext is like MaybeLookupLocation but with a context
-// that can be used to interrupt this long running operation.
-func (s *Session) MaybeLookupLocationContext(ctx context.Context) (err error) {
-	if s.location == nil {
-		defer func() {
-			if recover() != nil {
-				// JUST KNOW WE'VE BEEN HERE
-			}
-		}()
-		var (
-			probeIP     string
-			asn         uint
-			org         string
-			cc          string
-			resolverASN uint   = model.DefaultResolverASN
-			resolverIP  string = model.DefaultResolverIP
-			resolverOrg string
+// LookupLocationContext performs a location lookup. If you want memoisation
+// of the results, you should use MaybeLookupLocationContext.
+func (s *Session) LookupLocationContext(ctx context.Context) (out *model.LocationInfo, err error) {
+	defer func() {
+		if recover() != nil {
+			// JUST KNOW WE'VE BEEN HERE
+		}
+	}()
+	var (
+		probeIP     string
+		asn         uint
+		org         string
+		cc          string
+		resolverASN uint   = model.DefaultResolverASN
+		resolverIP  string = model.DefaultResolverIP
+		resolverOrg string
+	)
+	err = s.fetchResourcesIdempotent(ctx)
+	runtimex.PanicOnError(err, "s.fetchResourcesIdempotent failed")
+	probeIP, err = s.lookupProbeIP(ctx)
+	runtimex.PanicOnError(err, "s.lookupProbeIP failed")
+	asn, org, err = s.lookupASN(s.ASNDatabasePath(), probeIP)
+	runtimex.PanicOnError(err, "s.lookupASN #1 failed")
+	cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
+	runtimex.PanicOnError(err, "s.lookupProbeCC failed")
+	if s.proxyURL == nil {
+		resolverIP, err = s.lookupResolverIP(ctx)
+		runtimex.PanicOnError(err, "s.lookupResolverIP failed")
+		resolverASN, resolverOrg, err = s.lookupASN(
+			s.ASNDatabasePath(), resolverIP,
 		)
-		err = s.fetchResourcesIdempotent(ctx)
-		runtimex.PanicOnError(err, "s.fetchResourcesIdempotent failed")
-		probeIP, err = s.lookupProbeIP(ctx)
-		runtimex.PanicOnError(err, "s.lookupProbeIP failed")
-		asn, org, err = s.lookupASN(s.ASNDatabasePath(), probeIP)
-		runtimex.PanicOnError(err, "s.lookupASN #1 failed")
-		cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
-		runtimex.PanicOnError(err, "s.lookupProbeCC failed")
-		if s.proxyURL == nil {
-			resolverIP, err = s.lookupResolverIP(ctx)
-			runtimex.PanicOnError(err, "s.lookupResolverIP failed")
-			resolverASN, resolverOrg, err = s.lookupASN(
-				s.ASNDatabasePath(), resolverIP,
-			)
-			runtimex.PanicOnError(err, "s.lookupASN #2 failed")
-		}
-		s.location = &model.LocationInfo{
-			ASN:                 asn,
-			CountryCode:         cc,
-			NetworkName:         org,
-			ProbeIP:             probeIP,
-			ResolverASN:         resolverASN,
-			ResolverIP:          resolverIP,
-			ResolverNetworkName: resolverOrg,
-		}
+		runtimex.PanicOnError(err, "s.lookupASN #2 failed")
+	}
+	out = &model.LocationInfo{
+		ASN:                 asn,
+		CountryCode:         cc,
+		NetworkName:         org,
+		ProbeIP:             probeIP,
+		ResolverASN:         resolverASN,
+		ResolverIP:          resolverIP,
+		ResolverNetworkName: resolverOrg,
 	}
 	return
+}
+
+// MaybeLookupLocationContext is like MaybeLookupLocation but with a context
+// that can be used to interrupt this long running operation.
+func (s *Session) MaybeLookupLocationContext(ctx context.Context) error {
+	if s.location == nil {
+		location, err := s.LookupLocationContext(ctx)
+		if err != nil {
+			return err
+		}
+		s.location = location
+	}
+	return nil
 }
 
 var _ model.ExperimentSession = &Session{}

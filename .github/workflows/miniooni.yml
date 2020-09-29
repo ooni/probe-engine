@@ -1,6 +1,6 @@
 name: miniooni
 on:
-  push:
+  pull_request:
   schedule:
     - cron: "14 17 * * 3"
 jobs:
@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: ./build-cli.sh linux
+      - run: ./CLI/linux/amd64/miniooni -nNi https://example.com web_connectivity
       - uses: actions/upload-artifact@v1
         with:
           name: miniooni-linux-amd64

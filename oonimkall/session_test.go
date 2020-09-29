@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
@@ -15,22 +17,12 @@ import (
 func NewSession() (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
 		AssetsDir:        "../testdata/oonimkall/assets",
-		ProbeServicesURL: "https://ps-test.ooni.io/",
+		ProbeServicesURL: "https://ams-pg.ooni.org/",
 		SoftwareName:     "oonimkall-test",
 		SoftwareVersion:  "0.1.0",
 		StateDir:         "../testdata/oonimkall/state",
 		TempDir:          "../testdata/",
 	})
-}
-
-func TestNewSessionWithNilConfig(t *testing.T) {
-	sess, err := oonimkall.NewSession(nil)
-	if !errors.Is(err, oonimkall.ErrNullPointer) {
-		t.Fatal("not the error we expected")
-	}
-	if sess != nil {
-		t.Fatal("expected a nil Session here")
-	}
 }
 
 func TestNewSessionWithInvalidStateDir(t *testing.T) {
@@ -57,16 +49,6 @@ func TestNewSessionWithMissingSoftwareName(t *testing.T) {
 	}
 }
 
-func TestNewSessionWorksAndWeCanClose(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.Close(); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func ReduceErrorForGeolocate(err error) error {
 	if err == nil {
 		return errors.New("we expected an error here")
@@ -85,11 +67,9 @@ func TestGeolocateWithCancelledContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer sess.Close()
-	task := sess.NewGeolocateTask(-1)
-	defer task.Close()
-	task.Cancel() // cause immediate failure
-	location, err := task.Run()
+	ctx := sess.NewContext()
+	ctx.Cancel() // cause immediate failure
+	location, err := sess.Geolocate(ctx)
 	if err := ReduceErrorForGeolocate(err); err != nil {
 		t.Fatal(err)
 	}
@@ -103,10 +83,8 @@ func TestGeolocateGood(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer sess.Close()
-	task := sess.NewGeolocateTask(-1)
-	defer task.Close()
-	location, err := task.Run()
+	ctx := sess.NewContext()
+	location, err := sess.Geolocate(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,59 +115,15 @@ func ReduceErrorForSubmitter(err error) error {
 	return fmt.Errorf("not the error we expected: %w", err)
 }
 
-func TestSubmitterWithCancelledContext(t *testing.T) {
+func TestSubmitWithCancelledContext(t *testing.T) {
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer sess.Close()
-	task := sess.NewMakeSubmitterTask(-1)
-	defer task.Close()
-	task.Cancel() // cause immediate failure
-	submitter, err := task.Run()
+	ctx := sess.NewContext()
+	ctx.Cancel() // cause immediate failure
+	result, err := sess.Submit(ctx, "{}")
 	if err := ReduceErrorForSubmitter(err); err != nil {
-		t.Fatal(err)
-	}
-	if submitter != nil {
-		t.Fatal("expected nil submitter here")
-	}
-}
-
-func TestSubmitterGood(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	task := sess.NewMakeSubmitterTask(-1)
-	defer task.Close()
-	submitter, err := task.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := submitter.Close(); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestSubmitMeasurementWithCancelledContext(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	task := sess.NewMakeSubmitterTask(-1)
-	defer task.Close()
-	submitter, err := task.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer submitter.Close()
-	smt := submitter.NewSubmitMeasurementTask(-1)
-	defer smt.Close()
-	smt.Cancel() // cause immediate failure
-	result, err := smt.Run("{}")
-	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if result != nil {
@@ -197,22 +131,13 @@ func TestSubmitMeasurementWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestSubmitMeasurementWithInvalidJSON(t *testing.T) {
+func TestSubmitWithInvalidJSON(t *testing.T) {
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer sess.Close()
-	task := sess.NewMakeSubmitterTask(-1)
-	defer task.Close()
-	submitter, err := task.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer submitter.Close()
-	smt := submitter.NewSubmitMeasurementTask(-1)
-	defer smt.Close()
-	result, err := smt.Run("{")
+	ctx := sess.NewContext()
+	result, err := sess.Submit(ctx, "{")
 	if err == nil || err.Error() != "unexpected end of JSON input" {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -221,21 +146,7 @@ func TestSubmitMeasurementWithInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestSubmitMeasurementGood(t *testing.T) {
-	sess, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sess.Close()
-	task := sess.NewMakeSubmitterTask(-1)
-	defer task.Close()
-	submitter, err := task.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer submitter.Close()
-	smt := submitter.NewSubmitMeasurementTask(-1)
-	defer smt.Close()
+func DoSubmission(ctx *oonimkall.Context, sess *oonimkall.Session) error {
 	inputm := model.Measurement{
 		DataFormatVersion:    "0.2.0",
 		MeasurementStartTime: "2019-10-28 12:51:07",
@@ -253,20 +164,65 @@ func TestSubmitMeasurementGood(t *testing.T) {
 	}
 	inputd, err := json.Marshal(inputm)
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
-	result, err := smt.Run(string(inputd))
+	result, err := sess.Submit(ctx, string(inputd))
+	if err != nil {
+		return fmt.Errorf("session_test.go: submit failed: %w", err)
+	}
+	if result.UpdatedMeasurement == "" {
+		return errors.New("expected non empty measurement")
+	}
+	if result.UpdatedReportID == "" {
+		return errors.New("expected non empty report ID")
+	}
+	var outputm model.Measurement
+	return json.Unmarshal([]byte(result.UpdatedMeasurement), &outputm)
+}
+
+func TestSubmitMeasurementGood(t *testing.T) {
+	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.UpdatedMeasurement == "" {
-		t.Fatal("expected non empty measurement")
-	}
-	if result.UpdatedReportID == "" {
-		t.Fatal("expected non empty report ID")
-	}
-	var outputm model.Measurement
-	if err := json.Unmarshal([]byte(result.UpdatedMeasurement), &outputm); err != nil {
+	ctx := sess.NewContext()
+	if err := DoSubmission(ctx, sess); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestSubmitCancelContextAfterFirstSubmission(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := sess.NewContext()
+	if err := DoSubmission(ctx, sess); err != nil {
+		t.Fatal(err)
+	}
+	ctx.Cancel() // fail second submission
+	err = DoSubmission(ctx, sess)
+	if err == nil || !strings.HasPrefix(err.Error(), "session_test.go: submit failed") {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+}
+
+func TestMain(m *testing.M) {
+	// Here we're basically testing whether eventually the finalizers
+	// will run and the number of active sessions and cancels will become
+	// balanced. Especially for the number of active cancels, this is an
+	// indication that we've correctly cleaned them up in the session.
+	exitcode := m.Run()
+	for {
+		m, n := oonimkall.ActiveContexts.Load(), oonimkall.ActiveSessions.Load()
+		fmt.Printf("./oonimkall: ActiveContexts: %d; ActiveSessions: %d\n", m, n)
+		if m == 0 && n == 0 {
+			break
+		}
+		time.Sleep(1)
+	}
+	os.Exit(exitcode)
 }

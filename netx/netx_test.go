@@ -19,7 +19,11 @@ import (
 
 func TestNewResolverVanilla(t *testing.T) {
 	r := netx.NewResolver(netx.Config{})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -39,7 +43,11 @@ func TestNewResolverSpecificResolver(t *testing.T) {
 			// not initialized because it doesn't matter in this context
 		},
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -57,7 +65,11 @@ func TestNewResolverWithBogonFilter(t *testing.T) {
 	r := netx.NewResolver(netx.Config{
 		BogonIsError: true,
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -79,7 +91,11 @@ func TestNewResolverWithLogging(t *testing.T) {
 	r := netx.NewResolver(netx.Config{
 		Logger: log.Log,
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -105,7 +121,11 @@ func TestNewResolverWithSaver(t *testing.T) {
 	r := netx.NewResolver(netx.Config{
 		ResolveSaver: saver,
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -130,7 +150,11 @@ func TestNewResolverWithReadWriteCache(t *testing.T) {
 	r := netx.NewResolver(netx.Config{
 		CacheResolutions: true,
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -157,7 +181,11 @@ func TestNewResolverWithPrefilledReadonlyCache(t *testing.T) {
 			"dns.google.com": {"8.8.8.8"},
 		},
 	})
-	ar, ok := r.(resolver.AddressResolver)
+	ir, ok := r.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	ar, ok := ir.Resolver.(resolver.AddressResolver)
 	if !ok {
 		t.Fatal("not the resolver we expected")
 	}
@@ -201,7 +229,11 @@ func TestNewDialerVanilla(t *testing.T) {
 	if dnsd.Resolver == nil {
 		t.Fatal("not the resolver we expected")
 	}
-	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
+	ir, ok := dnsd.Resolver.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := ir.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
 	ewd, ok := dnsd.Dialer.(dialer.ErrorWrapperDialer)
@@ -279,7 +311,11 @@ func TestNewDialerWithLogger(t *testing.T) {
 	if dnsd.Resolver == nil {
 		t.Fatal("not the resolver we expected")
 	}
-	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
+	ir, ok := dnsd.Resolver.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := ir.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
 	ld, ok := dnsd.Dialer.(dialer.LoggingDialer)
@@ -325,7 +361,11 @@ func TestNewDialerWithDialSaver(t *testing.T) {
 	if dnsd.Resolver == nil {
 		t.Fatal("not the resolver we expected")
 	}
-	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
+	ir, ok := dnsd.Resolver.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := ir.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
 	sad, ok := dnsd.Dialer.(dialer.SaverDialer)
@@ -371,7 +411,11 @@ func TestNewDialerWithReadWriteSaver(t *testing.T) {
 	if dnsd.Resolver == nil {
 		t.Fatal("not the resolver we expected")
 	}
-	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
+	ir, ok := dnsd.Resolver.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := ir.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
 	scd, ok := dnsd.Dialer.(dialer.SaverConnDialer)
@@ -420,7 +464,11 @@ func TestNewDialerWithContextByteCounting(t *testing.T) {
 	if dnsd.Resolver == nil {
 		t.Fatal("not the resolver we expected")
 	}
-	if _, ok := dnsd.Resolver.(resolver.AddressResolver); !ok {
+	ir, ok := dnsd.Resolver.(resolver.IDNAResolver)
+	if !ok {
+		t.Fatal("not the resolver we expected")
+	}
+	if _, ok := ir.Resolver.(resolver.AddressResolver); !ok {
 		t.Fatal("not the resolver we expected")
 	}
 	ewd, ok := dnsd.Dialer.(dialer.ErrorWrapperDialer)

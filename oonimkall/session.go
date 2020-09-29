@@ -3,13 +3,23 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"runtime"
+	"sync"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
+)
+
+// The following two variables contain metrics pertaining to the number
+// of Sessions and Contexts that are currently being used.
+var (
+	ActiveSessions = atomicx.NewInt64()
+	ActiveContexts = atomicx.NewInt64()
 )
 
 // Logger is the logger used by a Session. You should implement a class
@@ -23,7 +33,7 @@ type Logger interface {
 }
 
 // SessionConfig contains configuration for a Session. You should
-// fill all the mandatory fields (see below) and could fill some of
+// fill all the mandatory fields and could also optionally fill some of
 // the optional fields. Then pass this struct to NewSession.
 type SessionConfig struct {
 	// AssetsDir is the mandatory directory where to store assets
@@ -36,8 +46,8 @@ type SessionConfig struct {
 	Logger Logger
 
 	// ProbeServicesURL allows you to optionally force the
-	// usage of an alternative probe services. This setting
-	// should only be used to implement integration tests.
+	// usage of an alternative probe service instance. This setting
+	// should only be used for implementing integration tests.
 	ProbeServicesURL string
 
 	// SoftwareName is the mandatory name of the application
@@ -54,7 +64,7 @@ type SessionConfig struct {
 
 	// TempDir is the mandatory directory where the Session shall
 	// store temporary files. Among other tasks, Session.Close will
-	// ensure that temporary files have been removed.
+	// remove any temporary file created within this Session.
 	TempDir string
 
 	// Verbose is optional. If there is a non-null Logger and this
@@ -65,25 +75,29 @@ type SessionConfig struct {
 
 // Session contains shared state for running experiments and/or other
 // OONI related task (e.g. geolocation). Note that the Session isn't
-// mean to be shared across thread. It is also not meant to be a long
-// living object. The workflow is to create a Session, do the operations
-// you need to do with it now, then call Session.Close. All of this is
-// supposed to happen within the same Java thread. If you need to cancel
-// any operation from other threads, all tasks have a Cancel method.
+// mean to be a long living object. The workflow is to create a Session,
+// do the operations you need to do with it now, then make sure it is
+// not referenced by other variables, so the Go GC can finalize it.
+//
+// Future directions
+//
+// We will eventually rewrite the code for running new experiments such
+// that a Task will be created from a Session, such that experiments
+// could share the same Session and save geolookups, etc. For now, we
+// are in the suboptimal situations where Tasks create, use, and close
+// their own session, thus running more lookups than needed.
 type Session struct {
-	sp *engine.Session
+	cl        []context.CancelFunc
+	mtx       sync.Mutex
+	submitter *probeservices.Submitter
+	sessp     *engine.Session
 }
 
-var errNullPointer = errors.New("oonimkall: you passed me a null pointer")
-
 // NewSession creates a new session. You should use a session for running
-// related operation in a relatively short time frame. You should not create
+// a set of operations in a relatively short time frame. You SHOULD NOT create
 // a single session and keep it all alive for the whole app lifecyle, since
 // the Session code is not specifically designed for this use case.
 func NewSession(config *SessionConfig) (*Session, error) {
-	if config == nil {
-		return nil, errNullPointer
-	}
 	kvstore, err := engine.NewFileSystemKVStore(config.StateDir)
 	if err != nil {
 		return nil, err
@@ -104,204 +118,133 @@ func NewSession(config *SessionConfig) (*Session, error) {
 		SoftwareVersion:        config.SoftwareVersion,
 		TempDir:                config.TempDir,
 	}
-	sess, err := engine.NewSession(engineConfig)
+	sessp, err := engine.NewSession(engineConfig)
 	if err != nil {
 		return nil, err
 	}
-	return &Session{sp: sess}, nil
+	sess := &Session{sessp: sessp}
+	runtime.SetFinalizer(sess, sessionFinalizer)
+	ActiveSessions.Add(1)
+	return sess, nil
 }
 
-func (sess *Session) probeASNString() string {
-	return sess.sp.ProbeASNString()
+// sessionFinalizer finalizes a Session. While in general in Go code using a
+// finalizer is probably unclean, it seems that using a finalizer when binding
+// with Java/ObjC code is actually useful to simplify the apps.
+func sessionFinalizer(sess *Session) {
+	for _, fn := range sess.cl {
+		fn()
+	}
+	if sess.submitter != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+		defer cancel()
+		sess.submitter.Close(ctx) // ignore return value
+	}
+	sess.sessp.Close() // ignore return value
+	ActiveSessions.Add(-1)
 }
 
-func (sess *Session) probeCC() string {
-	return sess.sp.ProbeCC()
-}
-
-func (sess *Session) probeIP() string {
-	return sess.sp.ProbeIP()
-}
-
-func (sess *Session) probeNetworkName() string {
-	return sess.sp.ProbeNetworkName()
-}
-
-func (sess *Session) maybeLookupLocationContext(ctx context.Context) (err error) {
-	return sess.sp.MaybeLookupLocationContext(ctx)
-}
-
-func (sess *Session) newProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
-	return sess.sp.NewProbeServicesClient(ctx)
-}
-
-// NewGeolocateTask creates a new GeolocateTask. This task will allow you
-// to geolocate the probe. The timeout for the task is in seconds. When
-// the timeout value is zero or negative, there won't be any timeout.
-func (sess *Session) NewGeolocateTask(timeout int64) *GeolocateTask {
-	ctx, cancel := newContext(timeout)
-	return &GeolocateTask{cancel: cancel, ctx: ctx, sess: sess}
-}
-
-// NewMakeSubmitterTask creates a new MakeSubmitterTask. This task will
-// allow you to create a Submitter. The Submitter is an object that allows
-// you to submit measurements to the OONI collector. The timeout for the
-// task has exactly the same semantics of NewGeolocateTask.
-func (sess *Session) NewMakeSubmitterTask(timeout int64) *MakeSubmitterTask {
-	ctx, cancel := newContext(timeout)
-	return &MakeSubmitterTask{cancel: cancel, ctx: ctx, sess: sess}
-}
-
-// Close releases the resources allocated by a Session. This method MAY
-// NOT be thread safe and MAY NOT be idempotent.
-func (sess *Session) Close() error {
-	return sess.sp.Close()
-}
-
-// GeolocateTask allows you to perform geolocations. After the first
-// lookup is done, the result will be memoized by the code.
-type GeolocateTask struct {
+// Context is the context of an operation. You use this context
+// to cancel a long running operation by calling Cancel(). Because
+// you create a Context from a Session and because the Session is
+// keeping track of the Context instances it owns, you do don't
+// need to call the Cancel method when you're done.
+type Context struct {
 	cancel context.CancelFunc
 	ctx    context.Context
-	sess   *Session
 }
 
-// GeolocateResults contains the results of GeolocateTask.
+// Cancel cancels pending operations using this context.
+func (ctx *Context) Cancel() {
+	ctx.cancel()
+}
+
+// NewContext creates an new interruptible Context.
+func (sess *Session) NewContext() *Context {
+	return sess.NewContextWithTimeout(-1)
+}
+
+// NewContextWithTimeout creates an new interruptible Context that will automatically
+// cancel itself after the given timeout. Setting a zero or negative timeout implies
+// there is no actual timeout configured for the Context.
+func (sess *Session) NewContextWithTimeout(timeout int64) *Context {
+	sess.mtx.Lock()
+	defer sess.mtx.Unlock()
+	ctx, origcancel := newContext(timeout)
+	ActiveContexts.Add(1)
+	var once sync.Once
+	cancel := func() {
+		once.Do(func() {
+			ActiveContexts.Add(-1)
+			origcancel()
+		})
+	}
+	sess.cl = append(sess.cl, cancel)
+	return &Context{cancel: cancel, ctx: ctx}
+}
+
+// GeolocateResults contains the GeolocateTask results.
 type GeolocateResults struct {
-	ASN     string
+	// ASN is the autonomous system number.
+	ASN string
+
+	// Country is the country code.
 	Country string
-	IP      string
-	Org     string
+
+	// IP is the IP address.
+	IP string
+
+	// Org is the commercial name of the ASN.
+	Org string
 }
 
-// Run runs the GeolocateTask and returns either the results of the
-// task, on success, or the error that occurred, on failure.
-func (task *GeolocateTask) Run() (*GeolocateResults, error) {
-	if err := task.sess.maybeLookupLocationContext(task.ctx); err != nil {
-		return nil, err
-	}
-	info := &GeolocateResults{
-		ASN:     task.sess.probeASNString(),
-		Country: task.sess.probeCC(),
-		IP:      task.sess.probeIP(),
-		Org:     task.sess.probeNetworkName(),
-	}
-	return info, nil
-}
-
-// Cancel cancels the GeolocateTask. This method is thread safe
-// and idempotent. You can use it to interrupt the task.
-func (task *GeolocateTask) Cancel() {
-	task.cancel()
-}
-
-// Close releases the resources allocated by the task. This method MAY
-// NOT be thread safe and MAY NOT be idempotent.
-func (task *GeolocateTask) Close() error {
-	task.cancel()
-	return nil
-}
-
-// MakeSubmitterTask allows you to construct a Submitter. That is, a struct
-// that you will use to submit measurements to the OONI collector.
-type MakeSubmitterTask struct {
-	cancel context.CancelFunc
-	ctx    context.Context
-	sess   *Session
-}
-
-// Run constructs a Submitter and returns it, on success, or
-// returns the error that occurred, in case of failure.
-func (mst *MakeSubmitterTask) Run() (*Submitter, error) {
-	psc, err := mst.sess.newProbeServicesClient(mst.ctx)
+// Geolocate performs a geolocate operation and returns the results. This method
+// is (in Java terminology) synchronized with the session instance.
+func (sess *Session) Geolocate(ctx *Context) (*GeolocateResults, error) {
+	sess.mtx.Lock()
+	defer sess.mtx.Unlock()
+	info, err := sess.sessp.LookupLocationContext(ctx.ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &Submitter{submitter: probeservices.NewSubmitter(psc)}, nil
+	return &GeolocateResults{
+		ASN:     fmt.Sprintf("AS%d", info.ASN),
+		Country: info.CountryCode,
+		IP:      info.ProbeIP,
+		Org:     info.NetworkName,
+	}, nil
 }
 
-// Cancel cancels the MakeSubmitterTask. This method is thread safe
-// and idempotent. You can use it to interrupt the task.
-func (mst *MakeSubmitterTask) Cancel() {
-	mst.cancel()
-}
-
-// Close releases the resources allocated by the task. This method MAY
-// NOT be thread safe and MAY NOT be idempotent.
-func (mst *MakeSubmitterTask) Close() error {
-	mst.cancel()
-	return nil
-}
-
-// Submitter allows you to create SubmitTasks. As SubmitTask is a task
-// allowing to submit a single measurements to OONI's collector.
-type Submitter struct {
-	submitter *probeservices.Submitter
-}
-
-func (sub *Submitter) submit(ctx context.Context, m *model.Measurement) error {
-	return sub.submitter.Submit(ctx, m)
-}
-
-// NewSubmitMeasurementTask creates a new SubmitMeasurementTask. You may
-// should not run more than one such tasks in parallel because the submitter
-// is not designed for parallel submission. If you wish to do so, then you
-// should better create more than one Submitter. The timeout argument
-// has the same semantics of, e.g., NewGeolocateTask.
-func (sub *Submitter) NewSubmitMeasurementTask(timeout int64) *SubmitMeasurementTask {
-	ctx, cancel := newContext(timeout)
-	return &SubmitMeasurementTask{cancel: cancel, ctx: ctx, sub: sub}
-}
-
-// Close releases the resources allocated by the submitter. This method MAY
-// NOT be thread safe and MAY NOT be idempotent.
-func (sub *Submitter) Close() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-	defer cancel()
-	return sub.submitter.Close(ctx)
-}
-
-// SubmitMeasurementTask submits measurements to the OONI collector API.
-type SubmitMeasurementTask struct {
-	cancel context.CancelFunc
-	ctx    context.Context
-	sub    *Submitter
-}
-
-// SubmitResults contains the results of a single measurement submission
+// SubmitMeasurementResults contains the results of a single measurement submission
 // to the OONI backends using the OONI collector API.
-type SubmitResults struct {
+type SubmitMeasurementResults struct {
 	UpdatedMeasurement string
 	UpdatedReportID    string
 }
 
-// Run submits the selected measurement to the OONI collector and returns the
-// results, in case of success, or an error, in case of failure.
-func (task *SubmitMeasurementTask) Run(measurement string) (*SubmitResults, error) {
+// Submit submits the given measurement and returns the results. This method is (in
+// Java terminology) synchronized with the Session instance.
+func (sess *Session) Submit(ctx *Context, measurement string) (*SubmitMeasurementResults, error) {
+	sess.mtx.Lock()
+	defer sess.mtx.Unlock()
+	if sess.submitter == nil {
+		psc, err := sess.sessp.NewProbeServicesClient(ctx.ctx)
+		if err != nil {
+			return nil, err
+		}
+		sess.submitter = probeservices.NewSubmitter(psc)
+	}
 	var mm model.Measurement
 	if err := json.Unmarshal([]byte(measurement), &mm); err != nil {
 		return nil, err
 	}
-	if err := task.sub.submit(task.ctx, &mm); err != nil {
+	if err := sess.submitter.Submit(ctx.ctx, &mm); err != nil {
 		return nil, err
 	}
 	data, err := json.Marshal(mm)
 	runtimex.PanicOnError(err, "json.Marshal should not fail here")
-	return &SubmitResults{
+	return &SubmitMeasurementResults{
 		UpdatedMeasurement: string(data),
 		UpdatedReportID:    mm.ReportID,
 	}, nil
-}
-
-// Cancel cancels the SubmitMeasurementTask. This method is thread safe
-// and idempotent. You can use it to interrupt the task.
-func (task *SubmitMeasurementTask) Cancel() {
-	task.cancel()
-}
-
-// Close releases the resources allocated by the task. This method MAY
-// NOT be thread safe and MAY NOT be idempotent.
-func (task *SubmitMeasurementTask) Close() error {
-	task.cancel()
-	return nil
 }

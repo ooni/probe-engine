@@ -1,15 +1,22 @@
 #!/bin/sh
+set -e
+DISABLE_QUIC=""
+if [ ! -z "`go version | grep go1.15`" ]; then
+  echo "Warning: disabling QUIC when using Go 1.15."
+  echo "See https://github.com/ooni/probe-engine/issues/866 for more info."
+  DISABLE_QUIC="DISABLE_QUIC"
+fi
 set -ex
 case $1 in
   darwin)
     export GOOS=darwin GOARCH=amd64
-    go build -o ./CLI/darwin/amd64 -ldflags="-s -w" ./cmd/miniooni;;
+    go build -o ./CLI/darwin/amd64 -tags $DISABLE_QUIC -ldflags="-s -w" ./cmd/miniooni;;
   linux)
     export GOOS=linux GOARCH=amd64
-    go build -o ./CLI/linux/amd64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
+    go build -o ./CLI/linux/amd64 -tags $DISABLE_QUIC,netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
   windows)
     export GOOS=windows GOARCH=amd64
-    go build -o ./CLI/windows/amd64 -ldflags="-s -w" ./cmd/miniooni;;
+    go build -o ./CLI/windows/amd64 -tags $DISABLE_QUIC -ldflags="-s -w" ./cmd/miniooni;;
   *)
     echo "usage: $0 darwin|linux|windows" 1>&2
     exit 1
