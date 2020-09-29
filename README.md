@@ -73,16 +73,6 @@ pod 'oonimkall', :podspec => 'https://dl.bintray.com/ooni/ios/oonimkall-VERSION.
 Where VERSION is like `2020.03.30-231914` corresponding to the
 time when the build occurred.
 
-## Release procedure
-
-1. make sure that dependencies are up to date
-
-2. make sure that resources are up to date
-
-3. commit, tag, and push
-
-4. create new release on GitHub
-
 ## Updating dependencies
 
 1. update direct dependencies using:
