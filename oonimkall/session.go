@@ -15,8 +15,8 @@ import (
 	"github.com/ooni/probe-engine/probeservices"
 )
 
-// The following two variables contains metrics pertaining to the number
-// of object that are currently being used.
+// The following two variables contain metrics pertaining to the number
+// of Sessions and Contexts that are currently being used.
 var (
 	ActiveSessions = atomicx.NewInt64()
 	ActiveContexts = atomicx.NewInt64()
@@ -97,9 +97,6 @@ type Session struct {
 // a set of operations in a relatively short time frame. You SHOULD NOT create
 // a single session and keep it all alive for the whole app lifecyle, since
 // the Session code is not specifically designed for this use case.
-//
-// This function will abort if config is a null pointer. This function will
-// register a finalizer for the returned Session instance.
 func NewSession(config *SessionConfig) (*Session, error) {
 	kvstore, err := engine.NewFileSystemKVStore(config.StateDir)
 	if err != nil {

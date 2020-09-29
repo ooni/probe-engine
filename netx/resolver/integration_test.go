@@ -28,12 +28,13 @@ func testresolverquick(t *testing.T, reso resolver.Resolver) {
 	}
 	var foundquad8 bool
 	for _, addr := range addrs {
-		if addr == "8.8.8.8" {
+		// See https://github.com/ooni/probe-engine/pull/954/checks?check_run_id=1182269025
+		if addr == "8.8.8.8" || addr == "2001:4860:4860::8888" {
 			foundquad8 = true
 		}
 	}
 	if !foundquad8 {
-		t.Fatal("did not find 8.8.8.8 in ouput")
+		t.Fatalf("did not find 8.8.8.8 in ouput; output=%+v", addrs)
 	}
 }
 
