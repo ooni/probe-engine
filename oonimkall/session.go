@@ -9,9 +9,17 @@ import (
 	"time"
 
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
+)
+
+// The following two variables contains metrics pertaining to the number
+// of object that are currently being used.
+var (
+	ActiveSessions = atomicx.NewInt64()
+	ActiveContexts = atomicx.NewInt64()
 )
 
 // Logger is the logger used by a Session. You should implement a class
@@ -119,6 +127,7 @@ func NewSession(config *SessionConfig) (*Session, error) {
 	}
 	sess := &Session{sessp: sessp}
 	runtime.SetFinalizer(sess, sessionFinalizer)
+	ActiveSessions.Add(1)
 	return sess, nil
 }
 
@@ -135,6 +144,7 @@ func sessionFinalizer(sess *Session) {
 		sess.submitter.Close(ctx) // ignore return value
 	}
 	sess.sessp.Close() // ignore return value
+	ActiveSessions.Add(-1)
 }
 
 // Context is the context of an operation. You use this context
@@ -148,8 +158,8 @@ type Context struct {
 }
 
 // Cancel cancels pending operations using this context.
-func (oc *Context) Cancel() {
-	oc.cancel()
+func (ctx *Context) Cancel() {
+	ctx.cancel()
 }
 
 // NewContext creates an new interruptible Context.
@@ -163,7 +173,15 @@ func (sess *Session) NewContext() *Context {
 func (sess *Session) NewContextWithTimeout(timeout int64) *Context {
 	sess.mtx.Lock()
 	defer sess.mtx.Unlock()
-	ctx, cancel := newContext(timeout)
+	ctx, origcancel := newContext(timeout)
+	ActiveContexts.Add(1)
+	var once sync.Once
+	cancel := func() {
+		once.Do(func() {
+			ActiveContexts.Add(-1)
+			origcancel()
+		})
+	}
 	sess.cl = append(sess.cl, cancel)
 	return &Context{cancel: cancel, ctx: ctx}
 }
@@ -185,10 +203,10 @@ type GeolocateResults struct {
 
 // Geolocate performs a geolocate operation and returns the results. This method
 // is (in Java terminology) synchronized with the session instance.
-func (sess *Session) Geolocate(oc *Context) (*GeolocateResults, error) {
+func (sess *Session) Geolocate(ctx *Context) (*GeolocateResults, error) {
 	sess.mtx.Lock()
 	defer sess.mtx.Unlock()
-	info, err := sess.sessp.LookupLocationContext(oc.ctx)
+	info, err := sess.sessp.LookupLocationContext(ctx.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -209,11 +227,11 @@ type SubmitMeasurementResults struct {
 
 // Submit submits the given measurement and returns the results. This method is (in
 // Java terminology) synchronized with the Session instance.
-func (sess *Session) Submit(oc *Context, measurement string) (*SubmitMeasurementResults, error) {
+func (sess *Session) Submit(ctx *Context, measurement string) (*SubmitMeasurementResults, error) {
 	sess.mtx.Lock()
 	defer sess.mtx.Unlock()
 	if sess.submitter == nil {
-		psc, err := sess.sessp.NewProbeServicesClient(oc.ctx)
+		psc, err := sess.sessp.NewProbeServicesClient(ctx.ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +241,7 @@ func (sess *Session) Submit(oc *Context, measurement string) (*SubmitMeasurement
 	if err := json.Unmarshal([]byte(measurement), &mm); err != nil {
 		return nil, err
 	}
-	if err := sess.submitter.Submit(oc.ctx, &mm); err != nil {
+	if err := sess.submitter.Submit(ctx.ctx, &mm); err != nil {
 		return nil, err
 	}
 	data, err := json.Marshal(mm)

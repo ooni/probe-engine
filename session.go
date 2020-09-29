@@ -500,7 +500,7 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 	return nil
 }
 
-// LookupLocationContext perform a location lookup. If we want memoisation
+// LookupLocationContext performs a location lookup. If you want memoisation
 // of the results, you should use MaybeLookupLocationContext.
 func (s *Session) LookupLocationContext(ctx context.Context) (out *model.LocationInfo, err error) {
 	defer func() {

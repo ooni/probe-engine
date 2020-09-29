@@ -20,7 +20,7 @@ func testresolverquick(t *testing.T, network, address string) {
 	}
 	addrs, err := resolver.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("legacy/netx/resolver_test.go: %+v", err)
 	}
 	if addrs == nil {
 		t.Fatal("expected non-nil addrs here")
@@ -32,7 +32,7 @@ func testresolverquick(t *testing.T, network, address string) {
 		}
 	}
 	if !foundquad8 {
-		t.Fatal("did not find 8.8.8.8 in ouput")
+		t.Fatalf("did not find 8.8.8.8 in ouput; output=%+v", addrs)
 	}
 }
 

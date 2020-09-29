@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
@@ -206,4 +208,21 @@ func TestSubmitCancelContextAfterFirstSubmission(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
+}
+
+func TestMain(m *testing.M) {
+	// Here we're basically testing whether eventually the finalizers
+	// will run and the number of active sessions and cancels will become
+	// balanced. Especially for the number of active cancels, this is an
+	// indication that we've correctly cleaned them up in the session.
+	exitcode := m.Run()
+	for {
+		m, n := oonimkall.ActiveContexts.Load(), oonimkall.ActiveSessions.Load()
+		fmt.Printf("./oonimkall: ActiveContexts: %d; ActiveSessions: %d\n", m, n)
+		if m == 0 && n == 0 {
+			break
+		}
+		time.Sleep(1)
+	}
+	os.Exit(exitcode)
 }
