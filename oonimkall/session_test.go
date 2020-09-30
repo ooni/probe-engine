@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -14,15 +15,19 @@ import (
 	"github.com/ooni/probe-engine/oonimkall"
 )
 
-func NewSession() (*oonimkall.Session, error) {
+func NewSessionWithAssetsDir(assetsDir string) (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
-		AssetsDir:        "../testdata/oonimkall/assets",
+		AssetsDir:        assetsDir,
 		ProbeServicesURL: "https://ams-pg.ooni.org/",
 		SoftwareName:     "oonimkall-test",
 		SoftwareVersion:  "0.1.0",
 		StateDir:         "../testdata/oonimkall/state",
 		TempDir:          "../testdata/",
 	})
+}
+
+func NewSession() (*oonimkall.Session, error) {
+	return NewSessionWithAssetsDir("../testdata/oonimkall/assets")
 }
 
 func TestNewSessionWithInvalidStateDir(t *testing.T) {
@@ -46,6 +51,24 @@ func TestNewSessionWithMissingSoftwareName(t *testing.T) {
 	}
 	if sess != nil {
 		t.Fatal("expected a nil Session here")
+	}
+}
+
+func TestMaybeUpdateResourcesWithCancelledContext(t *testing.T) {
+	dir, err := ioutil.TempDir("", "xx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	sess, err := NewSessionWithAssetsDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := sess.NewContext()
+	ctx.Cancel() // cause immediate failure
+	err = sess.MaybeUpdateResources(ctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("not the error we expected: %+v", err)
 	}
 }
 
@@ -215,7 +238,9 @@ func TestMain(m *testing.M) {
 	// will run and the number of active sessions and cancels will become
 	// balanced. Especially for the number of active cancels, this is an
 	// indication that we've correctly cleaned them up in the session.
-	exitcode := m.Run()
+	if exitcode := m.Run(); exitcode != 0 {
+		os.Exit(exitcode)
+	}
 	for {
 		m, n := oonimkall.ActiveContexts.Load(), oonimkall.ActiveSessions.Load()
 		fmt.Printf("./oonimkall: ActiveContexts: %d; ActiveSessions: %d\n", m, n)
@@ -224,5 +249,5 @@ func TestMain(m *testing.M) {
 		}
 		time.Sleep(1)
 	}
-	os.Exit(exitcode)
+	os.Exit(0)
 }

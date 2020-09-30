@@ -10,10 +10,6 @@ func (s *Session) SetAssetsDir(assetsDir string) {
 	s.assetsDir = assetsDir
 }
 
-func (s *Session) FetchResourcesIdempotent(ctx context.Context) error {
-	return s.fetchResourcesIdempotent(ctx)
-}
-
 func (s *Session) GetAvailableProbeServices() []model.Service {
 	return s.getAvailableProbeServices()
 }

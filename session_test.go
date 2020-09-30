@@ -317,7 +317,7 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	sess.SetAssetsDir(tmpdir)
-	err = sess.FetchResourcesIdempotent(ctx)
+	err = sess.MaybeUpdateResources(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
