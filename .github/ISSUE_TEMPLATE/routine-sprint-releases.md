@@ -13,6 +13,7 @@ assignees: bassosimone
 - [ ] Update resources/assets.go
 - [ ] Run go generate ./...
 - [ ] Tag a new version of ooni/probe-engine
+- [ ] Update again version.go to be alpha
 - [ ] Create release at GitHub
 - [ ] Update ooni/probe-engine mobile-staging branch
 - [ ] Pin ooni/probe-cli to ooni/probe-engine

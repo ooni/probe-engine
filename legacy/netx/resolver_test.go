@@ -3,6 +3,7 @@ package netx_test
 import (
 	"context"
 	"io"
+	"os"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ func testresolverquick(t *testing.T, network, address string) {
 	}
 	addrs, err := resolver.LookupHost(context.Background(), "dns.google.com")
 	if err != nil {
-		t.Fatalf("legacy/netx/resolver_test.go: %+v", err)
+		t.Fatalf("legacy/netx/resolver_test.go: %+v with %s/%s", err, network, address)
 	}
 	if addrs == nil {
 		t.Fatal("expected non-nil addrs here")
@@ -74,18 +75,30 @@ func TestIntegrationNewResolverTCPDomainNoPort(t *testing.T) {
 }
 
 func TestIntegrationNewResolverDoTAddress(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("this test is not reliable in GitHub actions")
+	}
 	testresolverquick(t, "dot", "9.9.9.9:853")
 }
 
 func TestIntegrationNewResolverDoTAddressNoPort(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("this test is not reliable in GitHub actions")
+	}
 	testresolverquick(t, "dot", "9.9.9.9")
 }
 
 func TestIntegrationNewResolverDoTDomain(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("this test is not reliable in GitHub actions")
+	}
 	testresolverquick(t, "dot", "dns.quad9.net:853")
 }
 
 func TestIntegrationNewResolverDoTDomainNoPort(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("this test is not reliable in GitHub actions")
+	}
 	testresolverquick(t, "dot", "dns.quad9.net")
 }
 
