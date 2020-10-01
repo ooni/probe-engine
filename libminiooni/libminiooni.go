@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -43,6 +44,7 @@ type Options struct {
 	ExtraOptions     []string
 	HomeDir          string
 	Inputs           []string
+	InputFilePath    string
 	NoBouncer        bool
 	NoGeoIP          bool
 	NoJSON           bool
@@ -74,6 +76,10 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.ExtraOptions, "option", 'O',
 		"Pass an option to the experiment", "KEY=VALUE",
+	)
+	getopt.FlagLong(
+		&globalOptions.InputFilePath, "file", 'f',
+		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
 		&globalOptions.HomeDir, "home", 0,
@@ -224,6 +230,24 @@ func gethomedir(optionsHome string) string {
 	return os.Getenv("HOME")
 }
 
+func loadFileInputs(opts *Options) {
+	if len(opts.InputFilePath) != 0 {
+		if len(opts.Inputs) != 0 {
+			fatalWithString("inputs can either be supplied through file or command line, but not both")
+		}
+		content, err := ioutil.ReadFile(opts.InputFilePath)
+		fatalOnError(err, "cannot read input file")
+		// Implementation note: when you save file with vim, you have newline at
+		// end of file and you don't want to consider that an input line. While there
+		// ignore any other empty line that may occur inside the file.
+		for _, input := range strings.Split(string(content), "\n") {
+			if input != "" {
+				opts.Inputs = append(opts.Inputs, input)
+			}
+		}
+	}
+}
+
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
 //
@@ -319,6 +343,10 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
+
+	// load inputs from file, if present
+	loadFileInputs(&currentOptions)
+
 	if builder.InputPolicy() == engine.InputRequired {
 		if len(currentOptions.Inputs) <= 0 {
 			log.Info("Fetching test lists")

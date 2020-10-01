@@ -70,7 +70,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ps-test.ooni.io",
+			Address: "https://ams-pg.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -108,7 +108,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ps-test.ooni.io",
+			Address: "https://ams-pg.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -175,7 +175,7 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ps-test.ooni.io/",
+		Address: "https://ams-pg.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -197,7 +197,7 @@ func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ps-test.ooni.io/",
+		Address: "https://ams-pg.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -317,7 +317,7 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	sess.SetAssetsDir(tmpdir)
-	err = sess.FetchResourcesIdempotent(ctx)
+	err = sess.MaybeUpdateResources(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

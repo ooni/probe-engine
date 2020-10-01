@@ -1,6 +1,6 @@
 name: libooniffi
 on:
-  push:
+  pull_request:
   schedule:
     - cron: "14 17 * * 3"
 jobs:

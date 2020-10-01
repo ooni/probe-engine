@@ -84,7 +84,7 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 		return nil, sess.MockableOrchestraClientError
 	}
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ps-test.ooni.io/",
+		Address: "https://ams-pg.ooni.org/",
 		Type:    "https",
 	})
 	runtimex.PanicOnError(err, "orchestra.NewClient should not fail here")
