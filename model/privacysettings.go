@@ -24,12 +24,16 @@ type PrivacySettings struct {
 func (ps PrivacySettings) Apply(m *Measurement, probeIP string) (err error) {
 	if ps.IncludeASN == false {
 		m.ProbeASN = DefaultProbeASNString
+		m.ResolverNetworkName = DefaultResolverNetworkName
+		m.ProbeNetworkName = DefaultProbeNetworkName
+		m.ResolverASN = DefaultResolverASNString
 	}
 	if ps.IncludeCountry == false {
 		m.ProbeCC = DefaultProbeCC
 	}
 	if ps.IncludeIP == false {
 		m.ProbeIP = DefaultProbeIP
+		m.ResolverIP = DefaultResolverIP
 		err = ps.MaybeRewriteTestKeys(m, probeIP, json.Marshal)
 	}
 	return

@@ -58,15 +58,29 @@ func TestAddAnnotations(t *testing.T) {
 	}
 }
 
-func makeMeasurement(probeIP, probeASN, probeCC string) model.Measurement {
+type makeMeasurementConfig struct {
+	ProbeIP             string
+	ProbeASN            string
+	ProbeNetworkName    string
+	ProbeCC             string
+	ResolverIP          string
+	ResolverNetworkName string
+	ResolverASN         string
+}
+
+func makeMeasurement(config makeMeasurementConfig) model.Measurement {
 	return model.Measurement{
 		DataFormatVersion:    "0.3.0",
 		ID:                   "bdd20d7a-bba5-40dd-a111-9863d7908572",
 		MeasurementStartTime: "2018-11-01 15:33:20",
-		ProbeIP:              probeIP,
-		ProbeASN:             probeASN,
-		ProbeCC:              probeCC,
+		ProbeIP:              config.ProbeIP,
+		ProbeASN:             config.ProbeASN,
+		ProbeNetworkName:     config.ProbeNetworkName,
+		ProbeCC:              config.ProbeCC,
 		ReportID:             "",
+		ResolverIP:           config.ResolverIP,
+		ResolverNetworkName:  config.ResolverNetworkName,
+		ResolverASN:          config.ResolverASN,
 		SoftwareName:         "probe-engine",
 		SoftwareVersion:      "0.1.0",
 		TestKeys: fakeTestKeys{
@@ -74,7 +88,7 @@ func makeMeasurement(probeIP, probeASN, probeCC string) model.Measurement {
 			Body: fmt.Sprintf(`
 				<HTML><HEAD><TITLE>Your IP is %s</TITLE></HEAD>
 				<BODY><P>Hey you, I see your IP and it's %s!</P></BODY>
-			`, probeIP, probeIP),
+			`, config.ProbeIP, config.ProbeIP),
 		},
 		TestName:           "dummy",
 		MeasurementRuntime: 5.0565230846405,
@@ -84,32 +98,98 @@ func makeMeasurement(probeIP, probeASN, probeCC string) model.Measurement {
 }
 
 func TestScrubCommonCase(t *testing.T) {
-	const probeIP = "130.192.91.211"
-	const probeASN = "AS137"
-	const probeCC = "IT"
-	m := makeMeasurement(probeIP, probeASN, probeCC)
+	config := makeMeasurementConfig{
+		ProbeIP:             "130.192.91.211",
+		ProbeASN:            "AS137",
+		ProbeCC:             "IT",
+		ProbeNetworkName:    "Vodafone Italia S.p.A.",
+		ResolverIP:          "8.8.8.8",
+		ResolverNetworkName: "Google LLC",
+		ResolverASN:         "AS12345",
+	}
+	m := makeMeasurement(config)
 	privacy := model.PrivacySettings{
 		IncludeCountry: true,
 		IncludeASN:     true,
 	}
-	err := privacy.Apply(&m, probeIP)
+	err := privacy.Apply(&m, config.ProbeIP)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.ProbeASN != probeASN {
+	if m.ProbeASN != config.ProbeASN {
 		t.Fatal("ProbeASN has been scrubbed")
 	}
-	if m.ProbeCC != probeCC {
+	if m.ProbeCC != config.ProbeCC {
 		t.Fatal("ProbeCC has been scrubbed")
 	}
-	if m.ProbeIP == probeIP {
+	if m.ProbeIP == config.ProbeIP {
 		t.Fatal("ProbeIP has not been scrubbed")
+	}
+	if m.ProbeNetworkName != config.ProbeNetworkName {
+		t.Fatal("ProbeNetworkName has been scrubbed")
+	}
+	if m.ResolverIP == config.ResolverIP {
+		t.Fatal("ResolverIP has not been scrubbed")
+	}
+	if m.ResolverNetworkName != config.ResolverNetworkName {
+		t.Fatal("ResolverNetworkName has been scrubbed")
+	}
+	if m.ResolverASN != config.ResolverASN {
+		t.Fatal("ResolverASN has been scrubbed")
 	}
 	data, err := json.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Count(data, []byte(probeIP)) != 0 {
+	if bytes.Count(data, []byte(config.ProbeIP)) != 0 {
+		t.Fatal("ProbeIP not fully redacted")
+	}
+}
+
+func TestScrubDoNotShareASN(t *testing.T) {
+	config := makeMeasurementConfig{
+		ProbeIP:             "130.192.91.211",
+		ProbeASN:            "AS137",
+		ProbeCC:             "IT",
+		ProbeNetworkName:    "Vodafone Italia S.p.A.",
+		ResolverIP:          "8.8.8.8",
+		ResolverNetworkName: "Google LLC",
+		ResolverASN:         "AS12345",
+	}
+	m := makeMeasurement(config)
+	privacy := model.PrivacySettings{
+		IncludeCountry: true,
+	}
+	err := privacy.Apply(&m, config.ProbeIP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.ProbeASN == config.ProbeASN {
+		t.Fatal("ProbeASN has not been scrubbed")
+	}
+	if m.ProbeCC != config.ProbeCC {
+		t.Fatal("ProbeCC has been scrubbed")
+	}
+	if m.ProbeIP == config.ProbeIP {
+		t.Fatal("ProbeIP has not been scrubbed")
+	}
+	if m.ProbeNetworkName == config.ProbeNetworkName {
+		t.Fatal("ProbeNetworkName has not been scrubbed")
+	}
+	if m.ResolverIP == config.ResolverIP {
+		t.Fatal("ResolverIP has not been scrubbed")
+	}
+	if m.ResolverNetworkName == config.ResolverNetworkName {
+		t.Fatal("ResolverNetworkName has not been scrubbed")
+	}
+	if m.ResolverASN == config.ResolverASN {
+		t.Fatal("ResolverASN has not been scrubbed")
+	}
+	data, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Count(data, []byte(config.ProbeIP)) != 0 {
 		t.Fatal("ProbeIP not fully redacted")
 	}
 }
@@ -173,7 +253,11 @@ func TestMakeGenericTestKeysIdempotent(t *testing.T) {
 }
 
 func TestMakeGenericTestKeysSuccess(t *testing.T) {
-	m := makeMeasurement("127.0.0.1", "AS137", "IT")
+	m := makeMeasurement(makeMeasurementConfig{
+		ProbeIP:  "127.0.0.1",
+		ProbeASN: "AS137",
+		ProbeCC:  "IT",
+	})
 	out, err := m.MakeGenericTestKeys()
 	if err != nil {
 		t.Fatal(err)
