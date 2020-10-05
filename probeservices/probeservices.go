@@ -25,6 +25,7 @@ package probeservices
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
 
 	"github.com/ooni/probe-engine/atomicx"
@@ -53,6 +54,15 @@ var (
 	ErrInvalidMetadata = errors.New("invalid metadata")
 )
 
+// Session is how this package sees a Session.
+type Session interface {
+	DefaultHTTPClient() *http.Client
+	KeyValueStore() model.KeyValueStore
+	Logger() model.Logger
+	ProxyURL() *url.URL
+	UserAgent() string
+}
+
 // Client is a client for the OONI probe services API.
 type Client struct {
 	httpx.Client
@@ -79,7 +89,7 @@ func (c Client) GetCredsAndAuth() (*LoginCredentials, *LoginAuth, error) {
 
 // NewClient creates a new client for the specified probe services endpoint. This
 // function fails, e.g., we don't support the specified endpoint.
-func NewClient(sess model.ExperimentSession, endpoint model.Service) (*Client, error) {
+func NewClient(sess Session, endpoint model.Service) (*Client, error) {
 	client := &Client{
 		Client: httpx.Client{
 			BaseURL:    endpoint.Address,

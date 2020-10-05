@@ -77,7 +77,7 @@ type Candidate struct {
 	TestHelpers map[string][]model.Service
 }
 
-func (c *Candidate) try(ctx context.Context, sess model.ExperimentSession) {
+func (c *Candidate) try(ctx context.Context, sess Session) {
 	client, err := NewClient(sess, c.Endpoint)
 	if err != nil {
 		c.Err = err
@@ -91,7 +91,7 @@ func (c *Candidate) try(ctx context.Context, sess model.ExperimentSession) {
 	sess.Logger().Debugf("probe services: %+v: %+v %s", c.Endpoint, err, c.Duration)
 }
 
-func try(ctx context.Context, sess model.ExperimentSession, svc model.Service) *Candidate {
+func try(ctx context.Context, sess Session, svc model.Service) *Candidate {
 	candidate := &Candidate{Endpoint: svc}
 	candidate.try(ctx, sess)
 	return candidate
@@ -107,7 +107,7 @@ func try(ctx context.Context, sess model.ExperimentSession, svc model.Service) *
 // such case, you will see a list of N failing HTTPS candidates, followed by a single
 // successful fallback candidate (e.g. cloudfronted). If all candidates fail, you
 // see in output a list containing all entries where Err is not nil.
-func TryAll(ctx context.Context, sess model.ExperimentSession, in []model.Service) (out []*Candidate) {
+func TryAll(ctx context.Context, sess Session, in []model.Service) (out []*Candidate) {
 	var found bool
 	for _, svc := range OnlyHTTPS(in) {
 		candidate := try(ctx, sess, svc)
