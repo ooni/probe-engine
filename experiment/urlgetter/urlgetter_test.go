@@ -24,7 +24,7 @@ func TestMeasurer(t *testing.T) {
 	measurement := new(model.Measurement)
 	measurement.Input = "https://www.google.com"
 	err := m.Run(
-		ctx, &mockable.ExperimentSession{},
+		ctx, &mockable.Session{},
 		measurement, model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
@@ -54,7 +54,7 @@ func TestMeasurerDNSCache(t *testing.T) {
 	measurement := new(model.Measurement)
 	measurement.Input = "https://www.google.com"
 	err := m.Run(
-		ctx, &mockable.ExperimentSession{},
+		ctx, &mockable.Session{},
 		measurement, model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {

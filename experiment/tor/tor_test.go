@@ -39,7 +39,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	}
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -61,7 +61,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	}
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -83,7 +83,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		measurement,
@@ -110,7 +110,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 	}
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -224,7 +224,7 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	measurer := new(Measurer)
 	measurer.measureTargets(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		&measurement,
@@ -243,7 +243,7 @@ func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	measurer := new(Measurer)
 	measurer.measureTargets(
 		ctx,
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		&measurement,
@@ -274,7 +274,7 @@ func wrapTestingTarget(tt model.TorTarget) keytarget {
 
 func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -308,7 +308,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 
 func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -345,7 +345,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -367,7 +367,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -392,7 +392,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -417,7 +417,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 
 func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	rc := newResultsCollector(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		new(model.Measurement),
@@ -550,8 +550,8 @@ func TestUnitFillToplevelKeys(t *testing.T) {
 	}
 }
 
-func newsession() *mockable.ExperimentSession {
-	return &mockable.ExperimentSession{
+func newsession() *mockable.Session {
+	return &mockable.Session{
 		MockableLogger:     log.Log,
 		MockableHTTPClient: http.DefaultClient,
 	}

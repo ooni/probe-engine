@@ -51,7 +51,7 @@ func TestTunnelNil(t *testing.T) {
 func TestStartWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tun, err := torx.Start(ctx, &mockable.ExperimentSession{})
+	tun, err := torx.Start(ctx, &mockable.Session{})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
@@ -64,7 +64,7 @@ func TestStartWithConfigStartFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return nil, expected
 		},
@@ -81,7 +81,7 @@ func TestStartWithConfigEnableNetworkFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},
@@ -101,7 +101,7 @@ func TestStartWithConfigGetInfoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},
@@ -123,7 +123,7 @@ func TestStartWithConfigGetInfoFailure(t *testing.T) {
 func TestStartWithConfigGetInfoInvalidNumberOfKeys(t *testing.T) {
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},
@@ -145,7 +145,7 @@ func TestStartWithConfigGetInfoInvalidNumberOfKeys(t *testing.T) {
 func TestStartWithConfigGetInfoInvalidKey(t *testing.T) {
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},
@@ -167,7 +167,7 @@ func TestStartWithConfigGetInfoInvalidKey(t *testing.T) {
 func TestStartWithConfigGetInfoInvalidProxyType(t *testing.T) {
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},
@@ -189,7 +189,7 @@ func TestStartWithConfigGetInfoInvalidProxyType(t *testing.T) {
 func TestStartWithConfigSuccess(t *testing.T) {
 	ctx := context.Background()
 	tun, err := torx.StartWithConfig(ctx, torx.StartConfig{
-		Sess: &mockable.ExperimentSession{},
+		Sess: &mockable.Session{},
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
 			return &tor.Tor{}, nil
 		},

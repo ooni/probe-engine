@@ -183,7 +183,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	cancel() // immediately cancel the context
 	result := new(Measurer).measureone(
 		ctx,
-		&mockable.ExperimentSession{MockableLogger: log.Log},
+		&mockable.Session{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
@@ -235,7 +235,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
 	result := new(Measurer).measureone(
 		context.Background(),
-		&mockable.ExperimentSession{MockableLogger: log.Log},
+		&mockable.Session{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443\t\t\t", // cause URL parse error
@@ -287,7 +287,7 @@ func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
 func TestUnitMeasureoneSuccess(t *testing.T) {
 	result := new(Measurer).measureone(
 		context.Background(),
-		&mockable.ExperimentSession{MockableLogger: log.Log},
+		&mockable.Session{MockableLogger: log.Log},
 		time.Now(),
 		"kernel.org",
 		"example.com:443",
@@ -343,7 +343,7 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 		measurer.measureonewithcache(
 			context.Background(),
 			output,
-			&mockable.ExperimentSession{MockableLogger: log.Log},
+			&mockable.Session{MockableLogger: log.Log},
 			time.Now(),
 			"kernel.org",
 			"example.com:443",
@@ -423,5 +423,5 @@ func TestUnitMaybeURLToSNI(t *testing.T) {
 }
 
 func newsession() model.ExperimentSession {
-	return &mockable.ExperimentSession{MockableLogger: log.Log}
+	return &mockable.Session{MockableLogger: log.Log}
 }

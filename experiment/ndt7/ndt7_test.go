@@ -25,7 +25,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 
 func TestUnitDiscoverCancelledContext(t *testing.T) {
 	m := new(Measurer)
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 		MockableUserAgent:  "miniooni/0.1.0-dev",
@@ -54,7 +54,7 @@ func (txp *verifyRequestTransport) RoundTrip(req *http.Request) (*http.Response,
 
 func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 		MockableUserAgent:  "miniooni/0.1.0-dev",
@@ -71,7 +71,7 @@ func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 
 func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 		MockableUserAgent:  "miniooni/0.1.0-dev",
@@ -88,7 +88,7 @@ func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 
 func TestUnitRunWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 		MockableUserAgent:  "miniooni/0.1.0-dev",
@@ -104,7 +104,7 @@ func TestUnitRunWithCancelledContext(t *testing.T) {
 func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
 	m := new(Measurer)
 	expected := errors.New("mocked error")
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient:          http.DefaultClient,
 		MockableMaybeStartTunnelErr: expected,
 		MockableLogger:              log.Log,
@@ -119,7 +119,7 @@ func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
 
 func TestUnitRunWithProxyURL(t *testing.T) {
 	m := new(Measurer)
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 		MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
@@ -141,7 +141,7 @@ func TestIntegration(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
@@ -162,7 +162,7 @@ func TestIntegrationFailDownload(t *testing.T) {
 	}
 	err := measurer.Run(
 		ctx,
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
@@ -183,7 +183,7 @@ func TestIntegrationFailUpload(t *testing.T) {
 	}
 	err := measurer.Run(
 		ctx,
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
@@ -205,7 +205,7 @@ func TestIntegrationDownloadJSONUnmarshalFail(t *testing.T) {
 	}
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
