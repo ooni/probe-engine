@@ -10,7 +10,7 @@ import (
 
 //go:generate go run generate_experiment.go
 
-func TestExperimentNewMeasurementProbeIPWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeIPWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ProbeIP: "8.8.8.8",
 	}}
@@ -39,7 +39,7 @@ func TestExperimentNewMeasurementProbeIPWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentNewMeasurementProbeASNStringWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ASN: 30722,
 	}}
@@ -68,7 +68,7 @@ func TestExperimentNewMeasurementProbeASNStringWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentOpenReportProbeASNStringWorksAsIntended(t *testing.T) {
+func TestExperimentOpenReportIncludeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ASN: 30722,
 	}}
@@ -97,7 +97,7 @@ func TestExperimentOpenReportProbeASNStringWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentNewMeasurementProbeCCWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeCountryWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		CountryCode: "IT",
 	}}
@@ -126,7 +126,7 @@ func TestExperimentNewMeasurementProbeCCWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentOpenReportProbeCCWorksAsIntended(t *testing.T) {
+func TestExperimentOpenReportIncludeCountryWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		CountryCode: "IT",
 	}}
@@ -155,7 +155,7 @@ func TestExperimentOpenReportProbeCCWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentNewMeasurementProbeNetworkNameWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		NetworkName: "Vodafone Italia",
 	}}
@@ -184,7 +184,7 @@ func TestExperimentNewMeasurementProbeNetworkNameWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentNewMeasurementResolverIPWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeIPWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverIP: "9.9.9.9",
 	}}
@@ -213,7 +213,7 @@ func TestExperimentNewMeasurementResolverIPWorksAsIntended(t *testing.T) {
 	})
 }
 
-func TestExperimentNewMeasurementResolverASNStringWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverASN: 44,
 	}}
@@ -242,7 +242,7 @@ func TestExperimentNewMeasurementResolverASNStringWorksAsIntended(t *testing.T) 
 	})
 }
 
-func TestExperimentNewMeasurementResolverNetworkNameWorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurementIncludeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverNetworkName: "Google LLC",
 	}}

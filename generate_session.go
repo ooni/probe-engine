@@ -21,7 +21,7 @@ func (s *Session) Maybe{{ .Name }}() {{ .Type }} {
 }`))
 
 var sessionTestTemplate = template.Must(template.New("test").Parse(`
-func TestSession{{ .Name }}WorksAsIntended(t *testing.T) {
+func TestSession{{ .Setting }}WorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		{{ .LocationInfoName }}: {{ .LocationInfoValue }},
 	}}

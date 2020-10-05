@@ -9,7 +9,7 @@ import (
 )
 
 var newMeasurementTemplate = template.Must(template.New("open_report").Parse(`
-func TestExperimentNewMeasurement{{ .Name }}WorksAsIntended(t *testing.T) {
+func TestExperimentNewMeasurement{{ .Setting }}WorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		{{ .LocationInfoName }}: {{ .LocationInfoValue }},
 	}}
@@ -39,7 +39,7 @@ func TestExperimentNewMeasurement{{ .Name }}WorksAsIntended(t *testing.T) {
 }`))
 
 var openReportTemplate = template.Must(template.New("new_measurement").Parse(`
-func TestExperimentOpenReport{{ .Name }}WorksAsIntended(t *testing.T) {
+func TestExperimentOpenReport{{ .Setting }}WorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		{{ .LocationInfoName }}: {{ .LocationInfoValue }},
 	}}
