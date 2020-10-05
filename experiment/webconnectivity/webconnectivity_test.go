@@ -37,7 +37,9 @@ func TestIntegrationSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if tk.ControlFailure != nil {
@@ -65,7 +67,9 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if *tk.ControlFailure != errorx.FailureInterrupted {
@@ -93,7 +97,9 @@ func TestMeasureWithNoInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if tk.ControlFailure != nil {
@@ -121,7 +127,9 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if tk.ControlFailure != nil {
@@ -149,7 +157,9 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if tk.ControlFailure != nil {
@@ -177,7 +187,9 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	if tk.ClientResolver == "" || tk.ClientResolver == model.DefaultResolverIP {
+	// By default we don't want to publish the IP of the client resolver
+	// because now we have already its ASN and CC.
+	if tk.ClientResolver != model.DefaultResolverIP {
 		t.Fatal("unexpected client_resolver")
 	}
 	if tk.ControlFailure != nil {
