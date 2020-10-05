@@ -76,7 +76,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tmpl.Execute(fp, struct {
+	err = tmpl.Execute(fp, struct {
 		Timestamp time.Time
 		URL       string
 		Bundle    string
@@ -85,6 +85,9 @@ func main() {
 		URL:       url,
 		Bundle:    string(bundle),
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := fp.Close(); err != nil {
 		log.Fatal(err)
