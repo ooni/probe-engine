@@ -24,6 +24,7 @@ type Session struct {
 	MockableTestHelpers          map[string][]model.Service
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
+	MockableMaybeResolverIP      string
 	MockableMaybeStartTunnelErr  error
 	MockableOrchestraClient      model.ExperimentOrchestraClient
 	MockableOrchestraClientError error
@@ -71,6 +72,11 @@ func (sess *Session) KeyValueStore() model.KeyValueStore {
 // Logger implements ExperimentSession.Logger
 func (sess *Session) Logger() model.Logger {
 	return sess.MockableLogger
+}
+
+// MaybeResolverIP implements ExperimentSession.MaybeResolverIP.
+func (sess *Session) MaybeResolverIP() string {
+	return sess.MockableMaybeResolverIP
 }
 
 // MaybeStartTunnel implements ExperimentSession.MaybeStartTunnel

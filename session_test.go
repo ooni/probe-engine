@@ -591,3 +591,20 @@ func TestNewOrchestraClientProbeServicesNewClientFailure(t *testing.T) {
 		t.Fatal("expected nil client here")
 	}
 }
+
+func TestMaybeResolverIPWithSharingDisabled(t *testing.T) {
+	sess := newSessionForTesting(t)
+	ip := sess.MaybeResolverIP()
+	if ip != model.DefaultResolverIP {
+		t.Fatal("not the IP we expected")
+	}
+}
+
+func TestMaybeResolverIPWithSharingEnabled(t *testing.T) {
+	sess := newSessionForTesting(t)
+	sess.privacySettings.IncludeIP = true
+	ip := sess.MaybeResolverIP()
+	if ip != sess.ResolverIP() {
+		t.Fatal("not the IP we expected")
+	}
+}
