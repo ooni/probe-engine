@@ -186,14 +186,14 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
-		ProbeIP:                   e.session.ProbeIP(),
-		ProbeASN:                  e.session.ProbeASNString(),
-		ProbeCC:                   e.session.ProbeCC(),
-		ProbeNetworkName:          e.session.ProbeNetworkName(),
+		ProbeIP:                   e.session.MaybeProbeIP(),
+		ProbeASN:                  e.session.MaybeProbeASNString(),
+		ProbeCC:                   e.session.MaybeProbeCC(),
+		ProbeNetworkName:          e.session.MaybeProbeNetworkName(),
 		ReportID:                  e.ReportID(),
-		ResolverASN:               e.session.ResolverASNString(),
-		ResolverIP:                e.session.ResolverIP(),
-		ResolverNetworkName:       e.session.ResolverNetworkName(),
+		ResolverASN:               e.session.MaybeResolverASNString(),
+		ResolverIP:                e.session.MaybeResolverIP(),
+		ResolverNetworkName:       e.session.MaybeResolverNetworkName(),
 		SoftwareName:              e.session.SoftwareName(),
 		SoftwareVersion:           e.session.SoftwareVersion(),
 		TestName:                  e.testName,
@@ -227,23 +227,27 @@ func (e *Experiment) openReport(ctx context.Context) error {
 		return err
 	}
 	client.HTTPClient = httpClient // patch HTTP client to use
-	template := probeservices.ReportTemplate{
-		DataFormatVersion: probeservices.DefaultDataFormatVersion,
-		Format:            probeservices.DefaultFormat,
-		ProbeASN:          e.session.ProbeASNString(),
-		ProbeCC:           e.session.ProbeCC(),
-		SoftwareName:      e.session.SoftwareName(),
-		SoftwareVersion:   e.session.SoftwareVersion(),
-		TestName:          e.testName,
-		TestStartTime:     e.testStartTime,
-		TestVersion:       e.testVersion,
-	}
+	template := e.newReportTemplate()
 	e.report, err = client.OpenReport(ctx, template)
 	if err != nil {
 		e.session.logger.Debugf("experiment: probe services error: %s", err.Error())
 		return err
 	}
 	return nil
+}
+
+func (e *Experiment) newReportTemplate() probeservices.ReportTemplate {
+	return probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          e.session.MaybeProbeASNString(),
+		ProbeCC:           e.session.MaybeProbeCC(),
+		SoftwareName:      e.session.SoftwareName(),
+		SoftwareVersion:   e.session.SoftwareVersion(),
+		TestName:          e.testName,
+		TestStartTime:     e.testStartTime,
+		TestVersion:       e.testVersion,
+	}
 }
 
 func (e *Experiment) saveMeasurement(
