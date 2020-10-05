@@ -16,7 +16,7 @@ func TestIntegrationSuccess(t *testing.T) {
 		SleepTime: int64(2 * time.Second),
 	}, "example")
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableLogger: log.Log,
 	}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
@@ -32,7 +32,7 @@ func TestIntegrationFailure(t *testing.T) {
 		ReturnError: true,
 	}, "example")
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableLogger: log.Log,
 	}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())

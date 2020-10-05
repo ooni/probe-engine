@@ -15,7 +15,7 @@ func TestNoTunnel(t *testing.T) {
 	cancel()
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 		Name: "",
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 	})
@@ -32,7 +32,7 @@ func TestPsiphonTunnel(t *testing.T) {
 	cancel()
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 		Name: "psiphon",
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 	})
@@ -49,7 +49,7 @@ func TestTorTunnel(t *testing.T) {
 	cancel()
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 		Name: "tor",
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 	})
@@ -66,7 +66,7 @@ func TestInvalidTunnel(t *testing.T) {
 	cancel()
 	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 		Name: "antani",
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 	})

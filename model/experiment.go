@@ -20,21 +20,14 @@ type ExperimentOrchestraClient interface {
 // ExperimentSession is the experiment's view of a session.
 type ExperimentSession interface {
 	ASNDatabasePath() string
-	CABundlePath() string
 	GetTestHelpersByName(name string) ([]Service, bool)
 	DefaultHTTPClient() *http.Client
 	Logger() Logger
 	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
-	KeyValueStore() KeyValueStore
-	ProbeASNString() string
 	ProbeCC() string
-	ProbeIP() string
-	ProbeNetworkName() string
 	ProxyURL() *url.URL
 	ResolverIP() string
-	SoftwareName() string
-	SoftwareVersion() string
 	TempDir() string
 	TunnelBootstrapTime() time.Duration
 	UserAgent() string

@@ -18,7 +18,7 @@ func TestGetterWithCancelledContextVanilla(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	g := urlgetter.Getter{
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
@@ -86,7 +86,7 @@ func TestGetterWithCancelledContextAndMethod(t *testing.T) {
 	cancel()
 	g := urlgetter.Getter{
 		Config:  urlgetter.Config{Method: "POST"},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
@@ -156,7 +156,7 @@ func TestGetterWithCancelledContextNoFollowRedirects(t *testing.T) {
 		Config: urlgetter.Config{
 			NoFollowRedirects: true,
 		},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
@@ -223,7 +223,7 @@ func TestGetterWithCancelledContextCannotStartTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	g := urlgetter.Getter{
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableMaybeStartTunnelErr: io.EOF,
 		},
 		Target: "https://www.google.com",
@@ -281,7 +281,7 @@ func TestGetterWithCancelledContextWithTunnel(t *testing.T) {
 		Config: urlgetter.Config{
 			Tunnel: "psiphon",
 		},
-		Session: &mockable.ExperimentSession{
+		Session: &mockable.Session{
 			MockableProxyURL:            tunnelURL,
 			MockableTunnelBootstrapTime: 10 * time.Second,
 		},
@@ -354,7 +354,7 @@ func TestGetterWithCancelledContextUnknownResolverURL(t *testing.T) {
 		Config: urlgetter.Config{
 			ResolverURL: "antani://8.8.8.8:53",
 		},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
@@ -408,7 +408,7 @@ func TestGetterIntegrationHTTPS(t *testing.T) {
 		Config: urlgetter.Config{
 			NoFollowRedirects: true, // reduce number of events
 		},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "https://www.google.com",
 	}
 	tk, err := g.Get(ctx)
@@ -525,7 +525,7 @@ func TestGetterIntegrationRedirect(t *testing.T) {
 	ctx := context.Background()
 	g := urlgetter.Getter{
 		Config:  urlgetter.Config{NoFollowRedirects: true},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "http://web.whatsapp.com",
 	}
 	tk, err := g.Get(ctx)
@@ -549,7 +549,7 @@ func TestGetterIntegrationTLSHandshake(t *testing.T) {
 		Config: urlgetter.Config{
 			NoFollowRedirects: true, // reduce number of events
 		},
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 		Target:  "tlshandshake://www.google.com:443",
 	}
 	tk, err := g.Get(ctx)

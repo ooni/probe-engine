@@ -35,7 +35,7 @@ func TestIntegrationRun(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
@@ -64,7 +64,7 @@ func TestIntegrationRunCustomInput(t *testing.T) {
 	measurement.Input = model.MeasurementTarget(input)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
@@ -93,7 +93,7 @@ func TestCancelledContext(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		ctx,
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
@@ -126,7 +126,7 @@ func TestNewClientFailure(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
@@ -160,7 +160,7 @@ func TestStartFailure(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
@@ -195,7 +195,7 @@ func TestReadFailure(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{},
+		&mockable.Session{},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)

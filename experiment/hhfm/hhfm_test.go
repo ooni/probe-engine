@@ -242,7 +242,7 @@ func TestIntegrationCancelledContext(t *testing.T) {
 func TestNoHelpers(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{}
+	sess := &mockable.Session{}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -288,7 +288,7 @@ func TestNoHelpers(t *testing.T) {
 func TestNoActualHelpersInList(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"http-return-json-headers": nil,
 		},
@@ -338,7 +338,7 @@ func TestNoActualHelpersInList(t *testing.T) {
 func TestWrongTestHelperType(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"http-return-json-headers": {{
 				Address: "http://127.0.0.1",
@@ -391,7 +391,7 @@ func TestWrongTestHelperType(t *testing.T) {
 func TestNewRequestFailure(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"http-return-json-headers": {{
 				Address: "http://127.0.0.1\t\t\t", // invalid
@@ -448,7 +448,7 @@ func TestInvalidJSONBody(t *testing.T) {
 	defer server.Close()
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"http-return-json-headers": {{
 				Address: server.URL,

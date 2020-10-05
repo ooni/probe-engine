@@ -59,7 +59,7 @@ func TestIntegrationStartStop(t *testing.T) {
 
 func TestUnitNewOrchestraClientFailure(t *testing.T) {
 	expected := errors.New("mocked error")
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableOrchestraClientError: expected,
 	}
 	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{})
@@ -76,7 +76,7 @@ func TestUnitFetchPsiphonConfigFailure(t *testing.T) {
 	clnt := mockable.ExperimentOrchestraClient{
 		MockableFetchPsiphonConfigErr: expected,
 	}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableOrchestraClient: clnt,
 	}
 	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{})
@@ -96,7 +96,7 @@ func TestUnitMakeMkdirAllFailure(t *testing.T) {
 	clnt := mockable.ExperimentOrchestraClient{
 		MockableFetchPsiphonConfigResult: []byte(`{}`),
 	}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableOrchestraClient: clnt,
 	}
 	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{
@@ -118,7 +118,7 @@ func TestUnitMakeRemoveAllFailure(t *testing.T) {
 	clnt := mockable.ExperimentOrchestraClient{
 		MockableFetchPsiphonConfigResult: []byte(`{}`),
 	}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableOrchestraClient: clnt,
 	}
 	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{
@@ -140,7 +140,7 @@ func TestUnitMakeStartFailure(t *testing.T) {
 	clnt := mockable.ExperimentOrchestraClient{
 		MockableFetchPsiphonConfigResult: []byte(`{}`),
 	}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableOrchestraClient: clnt,
 	}
 	tunnel, err := psiphonx.Start(context.Background(), sess, psiphonx.Config{

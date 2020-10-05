@@ -28,7 +28,7 @@ func TestIntegration(t *testing.T) {
 	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableLogger: log.Log,
 		},
 		measurement,
@@ -283,7 +283,7 @@ func TestWeConfigureWebChecksToFailOnHTTPError(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableLogger: log.Log,
 	}
 	measurement := new(model.Measurement)

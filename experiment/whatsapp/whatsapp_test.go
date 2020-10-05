@@ -29,7 +29,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestIntegrationSuccess(t *testing.T) {
 	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
+	sess := &mockable.Session{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -64,7 +64,7 @@ func TestIntegrationFailureAllEndpoints(t *testing.T) {
 	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	sess := &mockable.ExperimentSession{MockableLogger: log.Log}
+	sess := &mockable.Session{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -580,7 +580,7 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableLogger: log.Log,
 	}
 	measurement := new(model.Measurement)

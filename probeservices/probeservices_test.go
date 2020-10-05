@@ -21,7 +21,7 @@ import (
 
 func newclient() *probeservices.Client {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
@@ -38,7 +38,7 @@ func newclient() *probeservices.Client {
 
 func TestNewClientHTTPS(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://x.org",
 			Type:    "https",
 		})
@@ -52,7 +52,7 @@ func TestNewClientHTTPS(t *testing.T) {
 
 func TestNewClientUnsupportedEndpoint(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://x.org",
 			Type:    "onion",
 		})
@@ -66,7 +66,7 @@ func TestNewClientUnsupportedEndpoint(t *testing.T) {
 
 func TestNewClientCloudfrontInvalidURL(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "\t\t\t",
 			Type:    "cloudfront",
 		})
@@ -80,7 +80,7 @@ func TestNewClientCloudfrontInvalidURL(t *testing.T) {
 
 func TestNewClientCloudfrontInvalidURLScheme(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "http://x.org",
 			Type:    "cloudfront",
 		})
@@ -94,7 +94,7 @@ func TestNewClientCloudfrontInvalidURLScheme(t *testing.T) {
 
 func TestNewClientCloudfrontInvalidURLWithPort(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://x.org:54321",
 			Type:    "cloudfront",
 		})
@@ -108,7 +108,7 @@ func TestNewClientCloudfrontInvalidURLWithPort(t *testing.T) {
 
 func TestNewClientCloudfrontInvalidFront(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://x.org",
 			Type:    "cloudfront",
 			Front:   "\t\t\t",
@@ -123,7 +123,7 @@ func TestNewClientCloudfrontInvalidFront(t *testing.T) {
 
 func TestNewClientCloudfrontGood(t *testing.T) {
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://x.org",
 			Type:    "cloudfront",
 			Front:   "google.com",
@@ -144,7 +144,7 @@ func TestIntegrationCloudfront(t *testing.T) {
 		t.Skip("skipping test in short mode")
 	}
 	client, err := probeservices.NewClient(
-		&mockable.ExperimentSession{}, model.Service{
+		&mockable.Session{}, model.Service{
 			Address: "https://meek.azureedge.net",
 			Type:    "cloudfront",
 			Front:   "ajax.aspnetcdn.com",
@@ -179,7 +179,7 @@ func TestDefaultProbeServicesWorkAsIntended(t *testing.T) {
 		t.Skip("skipping test in short mode")
 	}
 	for _, e := range probeservices.Default() {
-		client, err := probeservices.NewClient(&mockable.ExperimentSession{
+		client, err := probeservices.NewClient(&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		}, e)
@@ -316,7 +316,7 @@ func TestTryAllCanceledContext(t *testing.T) {
 	}}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel and cause every attempt to fail
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 	}
@@ -418,7 +418,7 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 		Type:    "https",
 		Address: "https://ps3.ooni.io",
 	}}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 	}
@@ -489,7 +489,7 @@ func TestTryAllIntegrationWeFallback(t *testing.T) {
 		Type:    "https",
 		Address: "https://mia-ps2-nonexistent.ooni.nu",
 	}}
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
 		MockableLogger:     log.Log,
 	}
