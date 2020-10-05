@@ -13,11 +13,9 @@ import (
 
 // Session is the way in which this package sees a Session.
 type Session interface {
+	psiphonx.Session
+	torx.Session
 	Logger() model.Logger
-	NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error)
-	TempDir() string
-	TorArgs() []string
-	TorBinary() string
 }
 
 // Tunnel is a tunnel used by the session
