@@ -193,16 +193,6 @@ func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
 }
 
-// MaybeResolverIP returns the resolver IP, if we have been given the
-// permission to share IPs. Otherwise it returns a canary value.
-func (s *Session) MaybeResolverIP() string {
-	ip := model.DefaultResolverIP
-	if s.privacySettings.IncludeIP {
-		ip = s.ResolverIP()
-	}
-	return ip
-}
-
 // ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
 // a specific name because we already configured a proxy.
 var ErrAlreadyUsingProxy = errors.New(
