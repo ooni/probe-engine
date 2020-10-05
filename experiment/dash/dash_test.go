@@ -28,7 +28,7 @@ func TestUnitRunnerLoopLocateFailure(t *testing.T) {
 			},
 		},
 		saver: new(trace.Saver),
-		sess: &mockable.ExperimentSession{
+		sess: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 		tk: new(TestKeys),
@@ -58,7 +58,7 @@ func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 			},
 		},
 		saver: new(trace.Saver),
-		sess: &mockable.ExperimentSession{
+		sess: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 		tk: new(TestKeys),
@@ -95,7 +95,7 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 			},
 		},
 		saver: new(trace.Saver),
-		sess: &mockable.ExperimentSession{
+		sess: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 		tk: new(TestKeys),
@@ -140,7 +140,7 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 			},
 		},
 		saver: saver,
-		sess: &mockable.ExperimentSession{
+		sess: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 		tk: new(TestKeys),
@@ -189,7 +189,7 @@ func TestUnitRunnerLoopSuccess(t *testing.T) {
 			},
 		},
 		saver: saver,
-		sess: &mockable.ExperimentSession{
+		sess: &mockable.Session{
 			MockableLogger: log.Log,
 		},
 		tk: new(TestKeys),
@@ -273,7 +273,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	m := &Measurer{}
 	err := m.Run(
 		ctx,
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
@@ -292,7 +292,7 @@ func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	err := m.Run(
 		context.Background(),
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient:          http.DefaultClient,
 			MockableMaybeStartTunnelErr: expected,
 			MockableLogger:              log.Log,
@@ -312,7 +312,7 @@ func TestUnitMeasureWithProxyURL(t *testing.T) {
 	measurement := &model.Measurement{}
 	err := m.Run(
 		ctx,
-		&mockable.ExperimentSession{
+		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 			MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},

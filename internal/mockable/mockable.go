@@ -8,19 +8,23 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/kvstore"
+	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/runtimex"
+	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/torx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
-// ExperimentSession is a mockable ExperimentSession.
-type ExperimentSession struct {
+// Session allows to mock sessions.
+type Session struct {
 	MockableASNDatabasePath      string
 	MockableCABundlePath         string
 	MockableTestHelpers          map[string][]model.Service
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
+	MockableMaybeResolverIP      string
 	MockableMaybeStartTunnelErr  error
 	MockableOrchestraClient      model.ExperimentOrchestraClient
 	MockableOrchestraClientError error
@@ -40,43 +44,48 @@ type ExperimentSession struct {
 }
 
 // ASNDatabasePath implements ExperimentSession.ASNDatabasePath
-func (sess *ExperimentSession) ASNDatabasePath() string {
+func (sess *Session) ASNDatabasePath() string {
 	return sess.MockableASNDatabasePath
 }
 
 // CABundlePath implements ExperimentSession.CABundlePath
-func (sess *ExperimentSession) CABundlePath() string {
+func (sess *Session) CABundlePath() string {
 	return sess.MockableCABundlePath
 }
 
 // GetTestHelpersByName implements ExperimentSession.GetTestHelpersByName
-func (sess *ExperimentSession) GetTestHelpersByName(name string) ([]model.Service, bool) {
+func (sess *Session) GetTestHelpersByName(name string) ([]model.Service, bool) {
 	services, okay := sess.MockableTestHelpers[name]
 	return services, okay
 }
 
 // DefaultHTTPClient implements ExperimentSession.DefaultHTTPClient
-func (sess *ExperimentSession) DefaultHTTPClient() *http.Client {
+func (sess *Session) DefaultHTTPClient() *http.Client {
 	return sess.MockableHTTPClient
 }
 
 // KeyValueStore returns the configured key-value store.
-func (sess *ExperimentSession) KeyValueStore() model.KeyValueStore {
+func (sess *Session) KeyValueStore() model.KeyValueStore {
 	return kvstore.NewMemoryKeyValueStore()
 }
 
 // Logger implements ExperimentSession.Logger
-func (sess *ExperimentSession) Logger() model.Logger {
+func (sess *Session) Logger() model.Logger {
 	return sess.MockableLogger
 }
 
+// MaybeResolverIP implements ExperimentSession.MaybeResolverIP.
+func (sess *Session) MaybeResolverIP() string {
+	return sess.MockableMaybeResolverIP
+}
+
 // MaybeStartTunnel implements ExperimentSession.MaybeStartTunnel
-func (sess *ExperimentSession) MaybeStartTunnel(ctx context.Context, name string) error {
+func (sess *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 	return sess.MockableMaybeStartTunnelErr
 }
 
 // NewOrchestraClient implements ExperimentSession.NewOrchestraClient
-func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
+func (sess *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
 	if sess.MockableOrchestraClient != nil {
 		return sess.MockableOrchestraClient, nil
 	}
@@ -99,71 +108,75 @@ func (sess *ExperimentSession) NewOrchestraClient(ctx context.Context) (model.Ex
 }
 
 // ProbeASNString implements ExperimentSession.ProbeASNString
-func (sess *ExperimentSession) ProbeASNString() string {
+func (sess *Session) ProbeASNString() string {
 	return sess.MockableProbeASNString
 }
 
 // ProbeCC implements ExperimentSession.ProbeCC
-func (sess *ExperimentSession) ProbeCC() string {
+func (sess *Session) ProbeCC() string {
 	return sess.MockableProbeCC
 }
 
 // ProbeIP implements ExperimentSession.ProbeIP
-func (sess *ExperimentSession) ProbeIP() string {
+func (sess *Session) ProbeIP() string {
 	return sess.MockableProbeIP
 }
 
 // ProbeNetworkName implements ExperimentSession.ProbeNetworkName
-func (sess *ExperimentSession) ProbeNetworkName() string {
+func (sess *Session) ProbeNetworkName() string {
 	return sess.MockableProbeNetworkName
 }
 
 // ProxyURL implements ExperimentSession.ProxyURL
-func (sess *ExperimentSession) ProxyURL() *url.URL {
+func (sess *Session) ProxyURL() *url.URL {
 	return sess.MockableProxyURL
 }
 
 // ResolverIP implements ExperimentSession.ResolverIP
-func (sess *ExperimentSession) ResolverIP() string {
+func (sess *Session) ResolverIP() string {
 	return sess.MockableResolverIP
 }
 
 // SoftwareName implements ExperimentSession.SoftwareName
-func (sess *ExperimentSession) SoftwareName() string {
+func (sess *Session) SoftwareName() string {
 	return sess.MockableSoftwareName
 }
 
 // SoftwareVersion implements ExperimentSession.SoftwareVersion
-func (sess *ExperimentSession) SoftwareVersion() string {
+func (sess *Session) SoftwareVersion() string {
 	return sess.MockableSoftwareVersion
 }
 
 // TempDir implements ExperimentSession.TempDir
-func (sess *ExperimentSession) TempDir() string {
+func (sess *Session) TempDir() string {
 	return sess.MockableTempDir
 }
 
 // TorArgs implements ExperimentSession.TorArgs.
-func (sess *ExperimentSession) TorArgs() []string {
+func (sess *Session) TorArgs() []string {
 	return sess.MockableTorArgs
 }
 
 // TorBinary implements ExperimentSession.TorBinary.
-func (sess *ExperimentSession) TorBinary() string {
+func (sess *Session) TorBinary() string {
 	return sess.MockableTorBinary
 }
 
 // TunnelBootstrapTime implements ExperimentSession.TunnelBootstrapTime
-func (sess *ExperimentSession) TunnelBootstrapTime() time.Duration {
+func (sess *Session) TunnelBootstrapTime() time.Duration {
 	return sess.MockableTunnelBootstrapTime
 }
 
 // UserAgent implements ExperimentSession.UserAgent
-func (sess *ExperimentSession) UserAgent() string {
+func (sess *Session) UserAgent() string {
 	return sess.MockableUserAgent
 }
 
-var _ model.ExperimentSession = &ExperimentSession{}
+var _ model.ExperimentSession = &Session{}
+var _ probeservices.Session = &Session{}
+var _ psiphonx.Session = &Session{}
+var _ sessiontunnel.Session = &Session{}
+var _ torx.Session = &Session{}
 
 // ExperimentOrchestraClient is the experiment's view of
 // a client for querying the OONI orchestra.

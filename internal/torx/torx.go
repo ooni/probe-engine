@@ -11,8 +11,14 @@ import (
 
 	"github.com/cretz/bine/control"
 	"github.com/cretz/bine/tor"
-	"github.com/ooni/probe-engine/model"
 )
+
+// Session is the way in which this package sees a Session.
+type Session interface {
+	TempDir() string
+	TorArgs() []string
+	TorBinary() string
+}
 
 // TorProcess is a running tor process
 type TorProcess interface {
@@ -51,14 +57,14 @@ func (tt *Tunnel) Stop() {
 
 // StartConfig contains the configuration for StartWithConfig
 type StartConfig struct {
-	Sess          model.ExperimentSession
+	Sess          Session
 	Start         func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error)
 	EnableNetwork func(ctx context.Context, tor *tor.Tor, wait bool) error
 	GetInfo       func(ctrl *control.Conn, keys ...string) ([]*control.KeyVal, error)
 }
 
 // Start starts the tor tunnel
-func Start(ctx context.Context, sess model.ExperimentSession) (*Tunnel, error) {
+func Start(ctx context.Context, sess Session) (*Tunnel, error) {
 	return StartWithConfig(ctx, StartConfig{
 		Sess: sess,
 		Start: func(ctx context.Context, conf *tor.StartConf) (*tor.Tor, error) {
@@ -126,6 +132,6 @@ func StartWithConfig(ctx context.Context, config StartConfig) (*Tunnel, error) {
 
 // LogFile returns the name of tor logs given a specific session. The file
 // is always located somewhere inside the sess.TempDir() directory.
-func LogFile(sess model.ExperimentSession) string {
+func LogFile(sess Session) string {
 	return path.Join(sess.TempDir(), "tor.log")
 }

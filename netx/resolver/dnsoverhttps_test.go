@@ -138,3 +138,28 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 		t.Fatal("did not see correct user agent")
 	}
 }
+
+func TestUnitDNSOverHTTPSHostOverride(t *testing.T) {
+	var correct bool
+	expected := errors.New("mocked error")
+
+	hostOverride := "test.com"
+	txp := resolver.DNSOverHTTPS{
+		Do: func(req *http.Request) (*http.Response, error) {
+			correct = req.Host == hostOverride
+			return nil, expected
+		},
+		URL:          "https://doh.powerdns.org/",
+		HostOverride: hostOverride,
+	}
+	data, err := txp.RoundTrip(context.Background(), nil)
+	if !errors.Is(err, expected) {
+		t.Fatal("expected an error here")
+	}
+	if data != nil {
+		t.Fatal("expected no response here")
+	}
+	if !correct {
+		t.Fatal("did not see correct host override")
+	}
+}

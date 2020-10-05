@@ -13,7 +13,7 @@ import (
 )
 
 func TestMultiIntegration(t *testing.T) {
-	multi := urlgetter.Multi{Session: &mockable.ExperimentSession{}}
+	multi := urlgetter.Multi{Session: &mockable.Session{}}
 	inputs := []urlgetter.MultiInput{{
 		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
 		Target: "https://www.google.com",
@@ -73,7 +73,7 @@ func TestMultiIntegrationWithBaseTime(t *testing.T) {
 	begin := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	multi := urlgetter.Multi{
 		Begin:   begin,
-		Session: &mockable.ExperimentSession{},
+		Session: &mockable.Session{},
 	}
 	inputs := []urlgetter.MultiInput{{
 		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
@@ -119,7 +119,7 @@ func TestMultiIntegrationWithBaseTime(t *testing.T) {
 func TestMultiIntegrationWithoutBaseTime(t *testing.T) {
 	// We use the default beginning of time and then fail the test
 	// if we see any T smaller than 60 seconds.
-	multi := urlgetter.Multi{Session: &mockable.ExperimentSession{}}
+	multi := urlgetter.Multi{Session: &mockable.Session{}}
 	inputs := []urlgetter.MultiInput{{
 		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
 		Target: "https://www.google.com",
@@ -162,7 +162,7 @@ func TestMultiIntegrationWithoutBaseTime(t *testing.T) {
 }
 
 func TestMultiContextCanceled(t *testing.T) {
-	multi := urlgetter.Multi{Session: &mockable.ExperimentSession{}}
+	multi := urlgetter.Multi{Session: &mockable.Session{}}
 	inputs := []urlgetter.MultiInput{{
 		Config: urlgetter.Config{Method: "HEAD", NoFollowRedirects: true},
 		Target: "https://www.google.com",

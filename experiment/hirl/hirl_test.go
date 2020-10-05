@@ -157,7 +157,7 @@ func TestWithFakeMethods(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"tcp-echo": {{
 				Address: "127.0.0.1",
@@ -218,7 +218,7 @@ func TestWithNoMethods(t *testing.T) {
 		Methods: []hirl.Method{},
 	}
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"tcp-echo": {{
 				Address: "127.0.0.1",
@@ -253,7 +253,7 @@ func TestWithNoMethods(t *testing.T) {
 func TestNoHelpers(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{}
+	sess := &mockable.Session{}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -281,7 +281,7 @@ func TestNoHelpers(t *testing.T) {
 func TestNoActualHelperInList(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"tcp-echo": nil,
 		},
@@ -313,7 +313,7 @@ func TestNoActualHelperInList(t *testing.T) {
 func TestWrongTestHelperType(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
-	sess := &mockable.ExperimentSession{
+	sess := &mockable.Session{
 		MockableTestHelpers: map[string][]model.Service{
 			"tcp-echo": {{
 				Address: "127.0.0.1",

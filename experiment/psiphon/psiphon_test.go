@@ -101,5 +101,5 @@ func (d observerCallbacks) OnProgress(percentage float64, message string) {
 }
 
 func newfakesession() model.ExperimentSession {
-	return &mockable.ExperimentSession{MockableLogger: log.Log}
+	return &mockable.Session{MockableLogger: log.Log}
 }
