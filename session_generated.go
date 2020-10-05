@@ -4,7 +4,7 @@ package engine
 
 import "github.com/ooni/probe-engine/model"
 
-//go:generate go run generate.go
+//go:generate go run generate_session.go
 
 // MaybeProbeIP is like ProbeIP except that we return the real
 // value only if the privacy settings allows us. Otherwise, we just

@@ -8,9 +8,9 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-//go:generate go run generate.go
+//go:generate go run generate_session.go
 
-func TestProbeIPWorks(t *testing.T) {
+func TestSessionProbeIPWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ProbeIP: "8.8.8.8",
 	}}
@@ -30,7 +30,7 @@ func TestProbeIPWorks(t *testing.T) {
 	})
 }
 
-func TestProbeASNWorks(t *testing.T) {
+func TestSessionProbeASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ASN: 30722,
 	}}
@@ -50,7 +50,7 @@ func TestProbeASNWorks(t *testing.T) {
 	})
 }
 
-func TestProbeASNStringWorks(t *testing.T) {
+func TestSessionProbeASNStringWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ASN: 30722,
 	}}
@@ -70,7 +70,7 @@ func TestProbeASNStringWorks(t *testing.T) {
 	})
 }
 
-func TestProbeCCWorks(t *testing.T) {
+func TestSessionProbeCCWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		CountryCode: "IT",
 	}}
@@ -90,7 +90,7 @@ func TestProbeCCWorks(t *testing.T) {
 	})
 }
 
-func TestProbeNetworkNameWorks(t *testing.T) {
+func TestSessionProbeNetworkNameWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		NetworkName: "Vodafone Italia",
 	}}
@@ -110,7 +110,7 @@ func TestProbeNetworkNameWorks(t *testing.T) {
 	})
 }
 
-func TestResolverIPWorks(t *testing.T) {
+func TestSessionResolverIPWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverIP: "9.9.9.9",
 	}}
@@ -130,7 +130,7 @@ func TestResolverIPWorks(t *testing.T) {
 	})
 }
 
-func TestResolverASNWorks(t *testing.T) {
+func TestSessionResolverASNWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverASN: 44,
 	}}
@@ -150,7 +150,7 @@ func TestResolverASNWorks(t *testing.T) {
 	})
 }
 
-func TestResolverASNStringWorks(t *testing.T) {
+func TestSessionResolverASNStringWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverASN: 44,
 	}}
@@ -170,7 +170,7 @@ func TestResolverASNStringWorks(t *testing.T) {
 	})
 }
 
-func TestResolverNetworkNameWorks(t *testing.T) {
+func TestSessionResolverNetworkNameWorksAsIntended(t *testing.T) {
 	sess := &Session{location: &model.LocationInfo{
 		ResolverNetworkName: "Google LLC",
 	}}
