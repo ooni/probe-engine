@@ -11,6 +11,15 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+// Session is the way in which this package sees a Session.
+type Session interface {
+	Logger() model.Logger
+	NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error)
+	TempDir() string
+	TorArgs() []string
+	TorBinary() string
+}
+
 // Tunnel is a tunnel used by the session
 type Tunnel interface {
 	BootstrapTime() time.Duration
@@ -21,7 +30,7 @@ type Tunnel interface {
 // Config contains config for the session tunnel.
 type Config struct {
 	Name    string
-	Session model.ExperimentSession
+	Session Session
 }
 
 // Start starts a new tunnel by name or returns an error. Note that if you

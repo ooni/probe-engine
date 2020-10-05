@@ -14,6 +14,12 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+// Session is the way in which this package sees a Session.
+type Session interface {
+	NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error)
+	TempDir() string
+}
+
 // Dependencies contains dependencies for Start
 type Dependencies interface {
 	MkdirAll(path string, perm os.FileMode) error
@@ -69,7 +75,7 @@ func makeworkingdir(config Config) (string, error) {
 
 // Start starts the psiphon tunnel.
 func Start(
-	ctx context.Context, sess model.ExperimentSession, config Config) (*Tunnel, error) {
+	ctx context.Context, sess Session, config Config) (*Tunnel, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err() // simplifies unit testing this code
