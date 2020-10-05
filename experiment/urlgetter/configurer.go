@@ -70,8 +70,9 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			entry[0]: addresses,
 		}
 	}
-	dnsclient, err := netx.NewDNSClient(
+	dnsclient, err := netx.NewDNSClientWithOverrides(
 		configuration.HTTPConfig, c.Config.ResolverURL,
+		c.Config.DNSHTTPHost, c.Config.DNSTLSServerName,
 	)
 	if err != nil {
 		return configuration, err
