@@ -36,8 +36,6 @@ type ExperimentSession interface {
 	SoftwareName() string
 	SoftwareVersion() string
 	TempDir() string
-	TorArgs() []string
-	TorBinary() string
 	TunnelBootstrapTime() time.Duration
 	UserAgent() string
 }
