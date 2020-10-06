@@ -9,7 +9,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        experiment: ["fbmessenger", "hhfm", "hirl", "telegram", "webconnectivity", "whatsapp"]
+        experiment:
+        - "fbmessenger"
+        - "hhfm"
+        - "hirl"
+        - "probeasn"
+        - "telegram"
+        - "webconnectivity"
+        - "whatsapp"
     steps:
       - uses: actions/setup-go@v1
         with:
