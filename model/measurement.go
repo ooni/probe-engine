@@ -67,7 +67,7 @@ type Measurement struct {
 	ProbeIP string `json:"probe_ip,omitempty"`
 
 	// ProbeNetworkName contains the probe network name
-	ProbeNetworkName string `json:"probe_network_name,omitempty"`
+	ProbeNetworkName string `json:"probe_network_name"`
 
 	// ReportID contains the report ID
 	ReportID string `json:"report_id"`

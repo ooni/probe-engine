@@ -1,3 +1,4 @@
+/*.jsonl
 /.vscode
 /asn.mmdb
 /badproxy.pem
@@ -5,15 +6,8 @@
 /cmd/jafar/badproxy.pem
 /country.mmdb
 /example.org
-/fbmessenger.jsonl
-/hhfm.jsonl
-/hirl.jsonl
 /jafar
 /jafar.exe
 /miniooni
 /miniooni.exe
 /oonipsiphon/
-/report.jsonl
-/telegram.jsonl
-/webconnectivity.jsonl
-/whatsapp.jsonl
