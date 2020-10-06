@@ -94,7 +94,7 @@ func init() {
 	)
 	getopt.FlagLong(
 		&globalOptions.NoGeoIP, "no-geoip", 'g',
-		"Unsupported option that used to disable GeoIP lookup",
+		"Disable including ASN information into the report",
 	)
 	getopt.FlagLong(
 		&globalOptions.NoJSON, "no-json", 'N', "Disable writing to disk",
@@ -291,7 +291,8 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		KVStore:   kvstore,
 		Logger:    logger,
 		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
+			// See https://github.com/ooni/explorer/issues/495#issuecomment-704101604
+			IncludeASN:     currentOptions.NoGeoIP == false,
 			IncludeCountry: true,
 		},
 		ProxyURL:        proxyURL,
@@ -326,11 +327,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		err := sess.MaybeLookupBackends()
 		fatalOnError(err, "cannot lookup OONI backends")
 	}
-	// See https://github.com/ooni/probe-engine/issues/297
-	fatalIfFalse(
-		currentOptions.NoGeoIP == false,
-		"Sorry, the -g option is not implemented.",
-	)
 	log.Info("Looking up your location; please be patient...")
 	err = sess.MaybeLookupLocation()
 	fatalOnError(err, "cannot lookup your location")
