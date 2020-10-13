@@ -277,9 +277,7 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 	if err != nil {
 		return c, err
 	}
-	if SNIOverride != "" {
-		config.TLSConfig = &tls.Config{ServerName: SNIOverride}
-	}
+	config.TLSConfig = &tls.Config{ServerName: SNIOverride}
 	switch resolverURL.Scheme {
 	case "system":
 		c.Resolver = resolver.SystemResolver{}
@@ -308,6 +306,7 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		c.Resolver = resolver.NewSerialResolver(txp)
 		return c, nil
 	case "dot":
+		config.TLSConfig.NextProtos = []string{"dot"}
 		tlsDialer := NewTLSDialer(config)
 		endpoint, err := makeEndpointForDoT(resolverURL)
 		if err != nil {
