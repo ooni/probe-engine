@@ -2,13 +2,10 @@ package resources
 
 const (
 	// Version contains the assets version.
-	Version = 20200929203018
+	Version = 20201023140148
 
 	// ASNDatabaseName is the ASN-DB file name
 	ASNDatabaseName = "asn.mmdb"
-
-	// CABundleName is the name of the CA bundle file
-	CABundleName = "ca-bundle.pem"
 
 	// CountryDatabaseName is country-DB file name
 	CountryDatabaseName = "country.mmdb"
@@ -33,18 +30,13 @@ type ResourceInfo struct {
 // All contains info on all known assets.
 var All = map[string]ResourceInfo{
 	"asn.mmdb": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200929203018/asn.mmdb.gz",
-		GzSHA256: "abfed7750af355c2e75feed73cb5a4cf44f4ecb9866199900c65a1e3cb58bda9",
-		SHA256:   "3958d1248b13b5aedc5f03e528a3ef2f2ef4ebdc4449bcd6667d03f722988dc9",
-	},
-	"ca-bundle.pem": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200929203018/ca-bundle.pem.gz",
-		GzSHA256: "3a99970bc782e5f7899de9011618bbadde5057d380e8fc7dc58ee96335bc1c30",
-		SHA256:   "2782f0f8e89c786f40240fc1916677be660fb8d8e25dede50c9f6f7b0c2c2178",
+		URLPath:  "/ooni/probe-assets/releases/download/20201023140148/asn.mmdb.gz",
+		GzSHA256: "b02ff7444835e8d09c5e496f67f304ad9d7bea961da88cc8631d9ffaabec7ed8",
+		SHA256:   "3dda76ad582dbb18e6652c8b4ed6c252564625b29973ce8324d7d9e4b487e418",
 	},
 	"country.mmdb": {
-		URLPath:  "/ooni/probe-assets/releases/download/20200929203018/country.mmdb.gz",
-		GzSHA256: "d76b387d25c5fd408392a28c02938de149116ad7338d4677aec0835d32cd017c",
-		SHA256:   "36bbb5057022934ed51c6fe1e093b42be15388e0adc1760250f030df21f6f501",
+		URLPath:  "/ooni/probe-assets/releases/download/20201023140148/country.mmdb.gz",
+		GzSHA256: "c6e71c3d192cab2d18d3f1822698b977ce2d458a3f2df93c20a5a30c95f9ed1b",
+		SHA256:   "efc19fe493276f8cdd6df8488ae2f65978ec48529e7524451491ecd7aea8162b",
 	},
 }
