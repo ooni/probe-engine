@@ -11,7 +11,7 @@ require (
 	github.com/Psiphon-Labs/goarista v0.0.0-20160825065156-d002785f4c67 // indirect
 	github.com/Psiphon-Labs/goptlib v0.0.0-20200406165125-c0e32a7a3464 // indirect
 	github.com/Psiphon-Labs/net v0.0.0-20191204183604-f5d60dada742 // indirect
-	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.13-0.20200924225012-3a44f293ada3+incompatible
+	github.com/Psiphon-Labs/psiphon-tunnel-core v2.0.13-0.20201016152350-3e8b87ee47cf+incompatible
 	github.com/Psiphon-Labs/quic-go v0.14.1-0.20200306193310-474e74c89fab // indirect
 	github.com/Psiphon-Labs/tls-tris v0.0.0-20200610161156-7d791789810f // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/google/go-cmp v0.5.2
 	github.com/google/gopacket v1.1.19-0.20200831200443-df1bbd09a561 // indirect
 	github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 // indirect
-	github.com/google/martian/v3 v3.0.0
+	github.com/google/martian/v3 v3.1.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
@@ -41,9 +41,10 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/juju/ratelimit v1.0.2-0.20191002062651-f60b32039441 // indirect
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
-	github.com/miekg/dns v1.1.31
+	github.com/miekg/dns v1.1.34
 	github.com/montanaflynn/stats v0.6.3
 	github.com/oschwald/geoip2-golang v1.4.0
+	github.com/oschwald/maxminddb-golang v1.7.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pion/stun v0.3.5
@@ -61,5 +62,7 @@ require (
 	go.uber.org/atomic v1.3.3-0.20180806045314-ca680462431f // indirect
 	go.uber.org/multierr v1.1.1-0.20180122172545-ddea229ff1df // indirect
 	go.uber.org/zap v1.9.2-0.20180814183419-67bc79d13d15 // indirect
-	golang.org/x/net v0.0.0-20200927032502-5d4f70055728
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
+	golang.org/x/net v0.0.0-20201022231255-08b38378de70
+	golang.org/x/sys v0.0.0-20201022201747-fb209a7c41cd // indirect
 )
