@@ -382,15 +382,15 @@ func makeValidEndpoint(URL *url.URL) (string, error) {
 	//
 	// In the first three cases, appending a port leads us to a
 	// good endpoint. The fourth case does not.
+	//
+	// For this reason we check again whether we can split it using
+	// net.SplitHostPort. If we cannot, we were in case four.
 	host := URL.Host
 	if URL.Scheme == "dot" {
 		host += ":853"
 	} else {
 		host += ":53"
 	}
-	//
-	// For this reason we check again whether we can split it using
-	// net.SplitHostPort. If we cannot, we were in case four.
 	if _, _, err := net.SplitHostPort(host); err != nil {
 		return "", err
 	}
