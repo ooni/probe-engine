@@ -332,6 +332,7 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 }
 
 func TestIntegrationInterruptExampleWithInput(t *testing.T) {
+	t.Skip("Skipping broken test; see https://github.com/ooni/probe-engine/issues/992")
 	// We cannot use WebConnectivity until it's written in Go since
 	// measurement-kit may not always be available
 	task, err := oonimkall.StartTask(`{
