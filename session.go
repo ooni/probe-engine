@@ -40,6 +40,7 @@ type SessionConfig struct {
 	TempDir                string
 	TorArgs                []string
 	TorBinary              string
+	HTTP3Enabled		   bool
 }
 
 // Session is a measurement session
@@ -49,6 +50,7 @@ type Session struct {
 	availableTestHelpers     map[string][]model.Service
 	byteCounter              *bytecounter.Counter
 	httpDefaultTransport     netx.HTTPRoundTripper
+	httpExperimentTransport	 netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
 	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
@@ -112,11 +114,23 @@ func NewSession(config SessionConfig) (*Session, error) {
 		ByteCounter:  sess.byteCounter,
 		BogonIsError: true,
 		Logger:       sess.logger,
+		HTTP3Enabled: false,
+	}
+
+	httpConfigExperiment := netx.Config{
+		ByteCounter:  sess.byteCounter,
+		BogonIsError: true,
+		Logger:       sess.logger,
+		HTTP3Enabled: config.HTTP3Enabled,
 	}
 	sess.resolver = sessionresolver.New(httpConfig)
 	httpConfig.FullResolver = sess.resolver
 	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
 	sess.httpDefaultTransport = netx.NewHTTPTransport(httpConfig)
+	
+	netx.HTTP3Enabled = config.HTTP3Enabled
+	sess.httpExperimentTransport = netx.NewHTTPTransport(httpConfigExperiment)
+	
 	return sess, nil
 }
 
@@ -149,6 +163,7 @@ func (s *Session) CABundlePath() string {
 // as well as excessive usage of disk space.
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
+	s.httpExperimentTransport.CloseIdleConnections()
 	s.resolver.CloseIdleConnections()
 	if s.tunnel != nil {
 		s.tunnel.Stop()
@@ -171,6 +186,10 @@ func (s *Session) GetTestHelpersByName(name string) ([]model.Service, bool) {
 // DefaultHTTPClient returns the session's default HTTP client.
 func (s *Session) DefaultHTTPClient() *http.Client {
 	return &http.Client{Transport: s.httpDefaultTransport}
+}
+// ExperimentHTTPClient returns the session's experiment client (possibly HTTP3).
+func (s *Session) ExperimentHTTPClient() *http.Client {
+	return &http.Client{Transport: s.httpExperimentTransport}
 }
 
 // KeyValueStore returns the configured key-value store.

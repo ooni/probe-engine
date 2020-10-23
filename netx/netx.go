@@ -40,6 +40,8 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
+var HTTP3Enabled bool = false
+
 // Logger is the logger assumed by this package
 type Logger interface {
 	Debugf(format string, v ...interface{})
@@ -92,7 +94,8 @@ type Config struct {
 	ResolveSaver        *trace.Saver         // default: not saving resolves
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
-	TLSSaver            *trace.Saver         // defaukt: not saving TLS
+	TLSSaver            *trace.Saver         // default: not saving TLS
+	HTTP3Enabled		bool				 
 }
 
 type tlsHandshaker interface {
@@ -191,9 +194,18 @@ func NewTLSDialer(config Config) TLSDialer {
 	}
 }
 
+
+func NewHTTPTransport(config Config) HTTPRoundTripper {
+	if HTTP3Enabled {
+		return newHTTPTransport(config, true)
+	} else {
+		return newHTTPTransport(config, false)
+	}
+}
+
 // NewHTTPTransport creates a new HTTPRoundTripper. You can further extend the returned
 // HTTPRoundTripper before wrapping it into an http.Client.
-func NewHTTPTransport(config Config) HTTPRoundTripper {
+func newHTTPTransport(config Config, http3 bool) HTTPRoundTripper {
 	if config.Dialer == nil {
 		config.Dialer = NewDialer(config)
 	}
@@ -201,7 +213,11 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 	var txp HTTPRoundTripper
-	txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
+	if(http3){
+		txp = httptransport.NewHTTP3Transport(config.Dialer, config.TLSDialer)
+	} else {
+		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
+	}
 	if config.ByteCounter != nil {
 		txp = httptransport.ByteCountingTransport{
 			Counter: config.ByteCounter, RoundTripper: txp}
