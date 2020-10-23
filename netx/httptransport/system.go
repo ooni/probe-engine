@@ -28,7 +28,7 @@ func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer) *http.Transport {
 
 type HTTP3Transport struct {
 	http3.RoundTripper
-
+	// fields which are not implemented by http3.Roundtripper, used to mimic http.Transport
 	DialContext func(ctx context.Context, network, addr string) (net.Conn, error)
     DialTLSContext func(ctx context.Context, network, addr string) (net.Conn, error) 
     DisableCompression bool
@@ -52,15 +52,3 @@ func NewHTTP3Transport(dialer Dialer, tlsDialer TLSDialer) *HTTP3Transport {
 }
 
 var _ RoundTripper = &http.Transport{}
-
-// Dial func(network, addr string) (net.Conn, error)
-// DialTLS func(network, addr string) (net.Conn, error) // Go 1.4
-// MaxIdleConns int // Go 1.7
-// MaxIdleConnsPerHost int
-// IdleConnTimeout time.Duration // Go 1.7
-// ResponseHeaderTimeout time.Duration // Go 1.1
-// ExpectContinueTimeout time.Duration // Go 1.6
-// ProxyConnectHeader http.Header // Go 1.8
-// MaxResponseHeaderBytes int64 // Go 1.7
-// WriteBufferSize int // Go 1.13
-// ReadBufferSize int // Go 1.13

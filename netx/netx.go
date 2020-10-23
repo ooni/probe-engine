@@ -40,7 +40,6 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-var HTTP3Enabled bool = false
 
 // Logger is the logger assumed by this package
 type Logger interface {
@@ -196,7 +195,7 @@ func NewTLSDialer(config Config) TLSDialer {
 
 
 func NewHTTPTransport(config Config) HTTPRoundTripper {
-	if HTTP3Enabled {
+	if config.HTTP3Enabled {
 		return newHTTPTransport(config, true)
 	} else {
 		return newHTTPTransport(config, false)

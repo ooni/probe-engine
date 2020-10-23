@@ -133,9 +133,6 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
 	)
-	getopt.FlagLong(
-		&globalOptions.HTTP3Enabled, "http3", 0, "Use HTTP3 transport over QUIC for experiments",
-	)
 }
 
 func fatalWithString(msg string) {
@@ -304,7 +301,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		SoftwareVersion: softwareVersion,
 		TorArgs:         currentOptions.TorArgs,
 		TorBinary:       currentOptions.TorBinary,
-		HTTP3Enabled:	 currentOptions.HTTP3Enabled,
 	}
 	if currentOptions.ProbeServicesURL != "" {
 		config.AvailableProbeServices = []model.Service{{

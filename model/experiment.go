@@ -22,7 +22,6 @@ type ExperimentSession interface {
 	ASNDatabasePath() string
 	GetTestHelpersByName(name string) ([]Service, bool)
 	DefaultHTTPClient() *http.Client
-	ExperimentHTTPClient() *http.Client
 	Logger() Logger
 	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
