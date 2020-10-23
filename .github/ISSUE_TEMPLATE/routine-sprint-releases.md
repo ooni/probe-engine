@@ -1,21 +1,24 @@
 ---
 name: Routine sprint releases
-about: Weekly releases of probe-engine, etc.
+about: Bi-weekly releases of probe-engine, etc.
 title: ''
 labels: effort/S, priority/medium
 assignees: bassosimone
 
 ---
 
-- [ ] Update dependencies
-- [ ] Update internal/httpheader/useragent.go
-- [ ] Update version.go
-- [ ] Update resources/assets.go
-- [ ] Run go generate ./...
-- [ ] Tag a new version of ooni/probe-engine
-- [ ] Update again version.go to be alpha
-- [ ] Create release at GitHub
-- [ ] Update ooni/probe-engine mobile-staging branch
-- [ ] Pin ooni/probe-cli to ooni/probe-engine
-- [ ] Pin ooni/probe-android to latest mobile-staging
-- [ ] Pin ooni/probe-ios to latest mobile-staging
+- [ ] engine: update dependencies
+- [ ] engine: update internal/httpheader/useragent.go
+- [ ] engine: update version.go
+- [ ] engine: update resources/assets.go
+- [ ] engine: run go generate ./...
+- [ ] engine: tag a new version
+- [ ] engine: update again version.go to be alpha
+- [ ] engine: create release at GitHub
+- [ ] engine: update mobile-staging branch to create oonimkall
+- [ ] cli: pin to latest engine
+- [ ] cli: update version/version.go
+- [ ] cli: tag a new version
+- [ ] cli: update version/version.go again to be alpha
+- [ ] android: pin to latest oonimkall
+- [ ] ios: pin to latest oonimkall
