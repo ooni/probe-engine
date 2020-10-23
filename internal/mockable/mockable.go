@@ -20,7 +20,6 @@ import (
 // Session allows to mock sessions.
 type Session struct {
 	MockableASNDatabasePath      string
-	MockableCABundlePath         string
 	MockableTestHelpers          map[string][]model.Service
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
@@ -46,11 +45,6 @@ type Session struct {
 // ASNDatabasePath implements ExperimentSession.ASNDatabasePath
 func (sess *Session) ASNDatabasePath() string {
 	return sess.MockableASNDatabasePath
-}
-
-// CABundlePath implements ExperimentSession.CABundlePath
-func (sess *Session) CABundlePath() string {
-	return sess.MockableCABundlePath
 }
 
 // GetTestHelpersByName implements ExperimentSession.GetTestHelpersByName

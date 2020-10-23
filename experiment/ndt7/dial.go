@@ -30,9 +30,9 @@ func newDialManager(
 		ndt7URL:         ndt7URL,
 		logger:          logger,
 		proxyURL:        proxyURL,
-		readBufferSize:  paramMaxMessageSize,
+		readBufferSize:  paramMaxBufferSize,
 		userAgent:       userAgent,
-		writeBufferSize: paramMaxMessageSize,
+		writeBufferSize: paramMaxBufferSize,
 	}
 }
 

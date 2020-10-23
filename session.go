@@ -137,11 +137,6 @@ func (s *Session) KibiBytesSent() float64 {
 	return s.byteCounter.KibiBytesSent()
 }
 
-// CABundlePath is like ASNDatabasePath but for the CA bundle path.
-func (s *Session) CABundlePath() string {
-	return filepath.Join(s.assetsDir, resources.CABundleName)
-}
-
 // Close ensures that we close all the idle connections that the HTTP clients
 // we are currently using may have created. It will also remove the temp dir
 // that contains data from this session. Not calling this function may likely
