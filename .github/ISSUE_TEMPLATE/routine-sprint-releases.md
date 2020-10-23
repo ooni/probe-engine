@@ -11,7 +11,7 @@ assignees: bassosimone
 - [ ] engine: update internal/httpheader/useragent.go
 - [ ] engine: update version.go
 - [ ] engine: update resources/assets.go
-- [ ] engine: run go generate ./...
+- [ ] engine: update bundled certs (using `go generate ./...`)
 - [ ] engine: tag a new version
 - [ ] engine: update again version.go to be alpha
 - [ ] engine: create release at GitHub
