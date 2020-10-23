@@ -47,7 +47,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			ReadWriteSaver:      c.Saver,
 			ResolveSaver:        c.Saver,
 			TLSSaver:            c.Saver,
-			HTTP3Enabled:		 c.Config.HTTP3Enabled,
+			HTTP3Enabled:        c.Config.HTTP3Enabled,
 		},
 	}
 	// fill DNS cache

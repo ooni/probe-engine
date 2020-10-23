@@ -1,11 +1,12 @@
 package httptransport
 
 import (
-	"net/http"
-	"github.com/lucas-clemente/quic-go"
-	"github.com/lucas-clemente/quic-go/http3"
 	"context"
 	"net"
+	"net/http"
+
+	"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/http3"
 )
 
 // NewSystemTransport creates a new "system" HTTP transport. That is a transport
@@ -25,18 +26,18 @@ func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer) *http.Transport {
 	return txp
 }
 
-
+// HTTP3Transport consists of a http3. RoundTripper
+// and fields which are not implemented by http3.Roundtripper, to mimic http.Transport
 type HTTP3Transport struct {
 	http3.RoundTripper
-	// fields which are not implemented by http3.Roundtripper, used to mimic http.Transport
-	DialContext func(ctx context.Context, network, addr string) (net.Conn, error)
-    DialTLSContext func(ctx context.Context, network, addr string) (net.Conn, error) 
-    DisableCompression bool
-	MaxConnsPerHost int	
+	DialContext        func(ctx context.Context, network, addr string) (net.Conn, error)
+	DialTLSContext     func(ctx context.Context, network, addr string) (net.Conn, error)
+	DisableCompression bool
+	MaxConnsPerHost    int
 }
 
-func(t *HTTP3Transport) CloseIdleConnections() {
-	// TODO
+// CloseIdleConnections TODO
+func (t *HTTP3Transport) CloseIdleConnections() {
 }
 
 // NewHTTP3Transport creates a new http3 transport. That is a transport

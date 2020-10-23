@@ -40,7 +40,6 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-
 // Logger is the logger assumed by this package
 type Logger interface {
 	Debugf(format string, v ...interface{})
@@ -94,7 +93,7 @@ type Config struct {
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
 	TLSSaver            *trace.Saver         // default: not saving TLS
-	HTTP3Enabled		bool				 
+	HTTP3Enabled        bool
 }
 
 type tlsHandshaker interface {
@@ -193,7 +192,8 @@ func NewTLSDialer(config Config) TLSDialer {
 	}
 }
 
-
+// NewHTTPTransport creates a new HTTPRoundTripper.
+// If the corresponsing config flag is set, it returns a HTTP3 Transport.
 func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.HTTP3Enabled {
 		return newHTTPTransport(config, true)
@@ -202,7 +202,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 }
 
-// NewHTTPTransport creates a new HTTPRoundTripper. You can further extend the returned
+// newHTTPTransport creates a new HTTPRoundTripper. You can further extend the returned
 // HTTPRoundTripper before wrapping it into an http.Client.
 func newHTTPTransport(config Config, http3 bool) HTTPRoundTripper {
 	if config.Dialer == nil {
@@ -212,7 +212,7 @@ func newHTTPTransport(config Config, http3 bool) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 	var txp HTTPRoundTripper
-	if(http3){
+	if http3 {
 		txp = httptransport.NewHTTP3Transport(config.Dialer, config.TLSDialer)
 	} else {
 		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)

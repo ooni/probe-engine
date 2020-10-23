@@ -57,7 +57,7 @@ type Options struct {
 	TorBinary        string
 	Tunnel           string
 	Verbose          bool
-	HTTP3Enabled	 bool
+	HTTP3Enabled     bool
 }
 
 const (

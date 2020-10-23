@@ -40,7 +40,7 @@ type SessionConfig struct {
 	TempDir                string
 	TorArgs                []string
 	TorBinary              string
-	HTTP3Enabled		   bool
+	HTTP3Enabled           bool
 }
 
 // Session is a measurement session
@@ -120,7 +120,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	httpConfig.FullResolver = sess.resolver
 	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
 	sess.httpDefaultTransport = netx.NewHTTPTransport(httpConfig)
-	
+
 	return sess, nil
 }
 
