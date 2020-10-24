@@ -30,7 +30,7 @@ type EipService struct {
 	Gateways []GatewayV3
 }
 
-//GatewayV3 json obj Version 3
+// GatewayV3 json obj Version 3
 type GatewayV3 struct {
 	Capabilities struct {
 		Transport []TransportV3
@@ -39,7 +39,7 @@ type GatewayV3 struct {
 	IPAddress string `json:"ip_address"`
 }
 
-//TransportV3 json obj Version 3
+// TransportV3 json obj Version 3
 type TransportV3 struct {
 	Type      string
 	Protocols []string
@@ -206,7 +206,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		testkeys.Update(entry)
 	}
 
-	//test gateways now
+	// test gateways now
 	gateways := parseGateways(testkeys)
 	openvpnEndpoints := generateMultiInputs(gateways, "openvpn")
 	obfs4Endpoints := generateMultiInputs(gateways, "obfs4")
@@ -264,7 +264,7 @@ func parseGateways(testKeys *TestKeys) []GatewayV3 {
 	return nil
 }
 
-//DecodeEIP3 decodes eip-service.json version 3
+// DecodeEIP3 decodes eip-service.json version 3
 func DecodeEIP3(body string) (*EipService, error) {
 	var eip EipService
 	err := json.Unmarshal([]byte(body), &eip)
