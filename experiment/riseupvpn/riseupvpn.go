@@ -174,8 +174,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		return nil
 	}
 
-	ok := netx.CertPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody))
-	if !ok {
+	if ok := netx.CertPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody)); !ok {
 		testkeys.RiseupVPNCACertStatus = false
 		testkeys.RiseupVPNApiStatus = "blocked"
 		errorValue := "invalid_ca"
