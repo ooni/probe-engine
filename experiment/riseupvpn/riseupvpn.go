@@ -47,9 +47,10 @@ type TransportV3 struct {
 	Options   map[string]string
 }
 
-type gatewayConnection struct {
-	IP            string
-	Port          int
+// GatewayConnection describes the connection to a riseupvpn gateway
+type GatewayConnection struct {
+	IP            string `json:"ip"`
+	Port          int    `json:"port"`
 	TransportType string `json:"transport_type"`
 }
 
@@ -64,7 +65,7 @@ type TestKeys struct {
 	RiseupVPNApiFailure      *string             `json:"riseupvpn_api_failure"`
 	RiseupVPNApiStatus       string              `json:"riseupvpn_api_status"`
 	RiseupVPNCACertStatus    bool                `json:"riseupvpn_ca_cert_status"`
-	RiseupVPNFailingGateways []gatewayConnection `json:"riseupvpn_failing_gateways"`
+	RiseupVPNFailingGateways []GatewayConnection `json:"riseupvpn_failing_gateways"`
 }
 
 // NewTestKeys creates new riseupvpn TestKeys.
@@ -107,8 +108,8 @@ func (tk *TestKeys) AddGatewayConnectTestKeys(v urlgetter.MultiOutput, transport
 	return
 }
 
-func newGatewayConnection(tcpConnect archival.TCPConnectEntry, transportType string) *gatewayConnection {
-	return &gatewayConnection{
+func newGatewayConnection(tcpConnect archival.TCPConnectEntry, transportType string) *GatewayConnection {
+	return &GatewayConnection{
 		IP:            tcpConnect.IP,
 		Port:          tcpConnect.Port,
 		TransportType: transportType,
