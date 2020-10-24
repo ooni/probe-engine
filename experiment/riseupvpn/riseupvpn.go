@@ -78,8 +78,8 @@ func NewTestKeys() *TestKeys {
 	}
 }
 
-// Update updates the TestKeys using the given MultiOutput result.
-func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
+// UpdateProviderAPITestKeys updates the TestKeys using the given MultiOutput result.
+func (tk *TestKeys) UpdateProviderAPITestKeys(v urlgetter.MultiOutput) {
 	tk.NetworkEvents = append(tk.NetworkEvents, v.TestKeys.NetworkEvents...)
 	tk.Queries = append(tk.Queries, v.TestKeys.Queries...)
 	tk.Requests = append(tk.Requests, v.TestKeys.Requests...)
@@ -157,6 +157,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	defer cancel()
 	testkeys := NewTestKeys()
 	measurement.TestKeys = testkeys
+	urlgetter.RegisterExtensions(measurement)
 
 	caTarget := "https://black.riseup.net/ca.crt"
 	caGetter := urlgetter.Getter{
@@ -182,7 +183,6 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		return nil
 	}
 
-	urlgetter.RegisterExtensions(measurement)
 	inputs := []urlgetter.MultiInput{
 
 		// Here we need to provide the method explicitly. See
@@ -203,7 +203,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
 
 	for entry := range multi.Collect(ctx, inputs, "riseupvpn", callbacks) {
-		testkeys.Update(entry)
+		testkeys.UpdateProviderAPITestKeys(entry)
 	}
 
 	// test gateways now
@@ -212,13 +212,13 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	obfs4Endpoints := generateMultiInputs(gateways, "obfs4")
 
 	// measure openvpn in parallel
-	multi = urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
+	multi = urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
 	for entry := range multi.Collect(ctx, openvpnEndpoints, "riseupvpn", callbacks) {
 		testkeys.AddGatewayConnectTestKeys(entry, "openvpn")
 	}
 
 	// measure obfs4 in parallel
-	multi = urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
+	multi = urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
 	for entry := range multi.Collect(ctx, obfs4Endpoints, "riseupvpn", callbacks) {
 		testkeys.AddGatewayConnectTestKeys(entry, "obfs4")
 	}
@@ -269,10 +269,9 @@ func DecodeEIP3(body string) (*EipService, error) {
 	var eip EipService
 	err := json.Unmarshal([]byte(body), &eip)
 	if err != nil {
-		log.Error(err.Error())
+		return nil, err
 	}
-
-	return &eip, err
+	return &eip, nil
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
