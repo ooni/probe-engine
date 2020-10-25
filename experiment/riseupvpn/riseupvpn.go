@@ -1,6 +1,5 @@
 // Package riseupvpn contains the RiseupVPN network experiment.
-// API testing based on telegram experiment
-
+//
 // See https://github.com/ooni/spec/blob/master/nettests/ts-026-riseupvpn.md
 package riseupvpn
 
