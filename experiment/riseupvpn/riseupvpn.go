@@ -62,19 +62,19 @@ type Config struct {
 // TestKeys contains riseupvpn test keys.
 type TestKeys struct {
 	urlgetter.TestKeys
-	RiseupVPNApiFailure      *string             `json:"riseupvpn_api_failure"`
-	RiseupVPNApiStatus       string              `json:"riseupvpn_api_status"`
-	RiseupVPNCACertStatus    bool                `json:"riseupvpn_ca_cert_status"`
-	RiseupVPNFailingGateways []GatewayConnection `json:"riseupvpn_failing_gateways"`
+	ApiFailure      *string             `json:"api_failure"`
+	ApiStatus       string              `json:"api_status"`
+	CACertStatus    bool                `json:"ca_cert_status"`
+	FailingGateways []GatewayConnection `json:"failing_gateways"`
 }
 
 // NewTestKeys creates new riseupvpn TestKeys.
 func NewTestKeys() *TestKeys {
 	return &TestKeys{
-		RiseupVPNApiFailure:      nil,
-		RiseupVPNApiStatus:       "ok",
-		RiseupVPNCACertStatus:    true,
-		RiseupVPNFailingGateways: nil,
+		ApiFailure:      nil,
+		ApiStatus:       "ok",
+		CACertStatus:    true,
+		FailingGateways: nil,
 	}
 }
 
@@ -85,12 +85,12 @@ func (tk *TestKeys) UpdateProviderAPITestKeys(v urlgetter.MultiOutput) {
 	tk.Requests = append(tk.Requests, v.TestKeys.Requests...)
 	tk.TCPConnect = append(tk.TCPConnect, v.TestKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, v.TestKeys.TLSHandshakes...)
-	if tk.RiseupVPNApiStatus != "ok" {
+	if tk.ApiStatus != "ok" {
 		return // we already flipped the state
 	}
 	if v.TestKeys.Failure != nil {
-		tk.RiseupVPNApiStatus = "blocked"
-		tk.RiseupVPNApiFailure = v.TestKeys.Failure
+		tk.ApiStatus = "blocked"
+		tk.ApiFailure = v.TestKeys.Failure
 		return
 	}
 }
@@ -102,7 +102,7 @@ func (tk *TestKeys) AddGatewayConnectTestKeys(v urlgetter.MultiOutput, transport
 	for _, tcpConnect := range v.TestKeys.TCPConnect {
 		if !tcpConnect.Status.Success {
 			gatewayConnection := newGatewayConnection(tcpConnect, transportType)
-			tk.RiseupVPNFailingGateways = append(tk.RiseupVPNFailingGateways, *gatewayConnection)
+			tk.FailingGateways = append(tk.FailingGateways, *gatewayConnection)
 		}
 	}
 	return
@@ -124,9 +124,9 @@ func (tk *TestKeys) AddCACertFetchTestKeys(testKeys urlgetter.TestKeys) {
 	tk.TCPConnect = append(tk.TCPConnect, testKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, testKeys.TLSHandshakes...)
 	if testKeys.Failure != nil {
-		tk.RiseupVPNApiStatus = "blocked"
-		tk.RiseupVPNApiFailure = tk.Failure
-		tk.RiseupVPNCACertStatus = false
+		tk.ApiStatus = "blocked"
+		tk.ApiFailure = tk.Failure
+		tk.CACertStatus = false
 	}
 }
 
@@ -176,10 +176,10 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	}
 
 	if ok := netx.CertPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody)); !ok {
-		testkeys.RiseupVPNCACertStatus = false
-		testkeys.RiseupVPNApiStatus = "blocked"
+		testkeys.CACertStatus = false
+		testkeys.ApiStatus = "blocked"
 		errorValue := "invalid_ca"
-		testkeys.RiseupVPNApiFailure = &errorValue
+		testkeys.ApiFailure = &errorValue
 		return nil
 	}
 

@@ -71,22 +71,22 @@ func TestIntegration(t *testing.T) {
 	if len(tk.TLSHandshakes) <= 0 {
 		t.Fatal("no TLSHandshakes?!")
 	}
-	if tk.RiseupVPNApiFailure != nil {
-		t.Fatal("unexpected RiseupVPNApiFailure")
+	if tk.ApiFailure != nil {
+		t.Fatal("unexpected ApiFailure")
 	}
-	if tk.RiseupVPNApiStatus != "ok" {
-		t.Fatal("unexpected RiseupvpnStatus")
+	if tk.ApiStatus != "ok" {
+		t.Fatal("unexpected ApiStatus")
 	}
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("unexpected RiseupvPNCaCertStatus")
+	if tk.CACertStatus != true {
+		t.Fatal("unexpected CaCertStatus")
 	}
-	if tk.RiseupVPNFailingGateways != nil {
-		t.Fatal("unexpected RiseupVPNFailingGateways value")
+	if tk.FailingGateways != nil {
+		t.Fatal("unexpected FailingGateways value")
 	}
 }
 
 // TestUpdateWithMixedResults tests if one operation failed
-// RiseupVPNApiStatus is considered as blocked
+// ApiStatus is considered as blocked
 func TestUpdateWithMixedResults(t *testing.T) {
 	tk := riseupvpn.NewTestKeys()
 	tk.UpdateProviderAPITestKeys(urlgetter.MultiOutput{
@@ -123,11 +123,11 @@ func TestUpdateWithMixedResults(t *testing.T) {
 			HTTPResponseStatus: 200,
 		},
 	})
-	if tk.RiseupVPNApiStatus != "blocked" {
-		t.Fatal("RiseupVPNApiStatus should be blocked")
+	if tk.ApiStatus != "blocked" {
+		t.Fatal("ApiStatus should be blocked")
 	}
-	if *tk.RiseupVPNApiFailure != errorx.FailureEOFError {
-		t.Fatal("invalid RiseupVPNApiFailure")
+	if *tk.ApiFailure != errorx.FailureEOFError {
+		t.Fatal("invalid ApiFailure")
 	}
 }
 
@@ -144,15 +144,15 @@ func TestIntegrationFailureCaCertFetch(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.RiseupVPNCACertStatus != false {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != false {
+		t.Fatal("invalid CACertStatus ")
 	}
-	if tk.RiseupVPNApiStatus != "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus != "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure != nil {
-		t.Fatal("RiseupVPNApiFailure should be null")
+	if tk.ApiFailure != nil {
+		t.Fatal("ApiFailure should be null")
 	}
 	if len(tk.Requests) > 1 {
 		t.Fatal("Unexpected requests")
@@ -173,8 +173,8 @@ func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != true {
+		t.Fatal("invalid CACertStatus ")
 	}
 
 	for _, entry := range tk.Requests {
@@ -185,12 +185,12 @@ func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
 		}
 	}
 
-	if tk.RiseupVPNApiStatus != "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus != "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure == nil {
-		t.Fatal("RiseupVPNApiFailure should not be null")
+	if tk.ApiFailure == nil {
+		t.Fatal("ApiFailure should not be null")
 	}
 
 	cancel()
@@ -218,15 +218,15 @@ func TestIntegrationFailureProviderUrlBlocked(t *testing.T) {
 		}
 	}
 
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != true {
+		t.Fatal("invalid CACertStatus ")
 	}
-	if tk.RiseupVPNApiStatus != "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus != "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure == nil {
-		t.Fatal("RiseupVPNApiFailure should not be null")
+	if tk.ApiFailure == nil {
+		t.Fatal("ApiFailure should not be null")
 	}
 	cancel()
 }
@@ -244,8 +244,8 @@ func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != true {
+		t.Fatal("invalid CACertStatus ")
 	}
 
 	for _, entry := range tk.Requests {
@@ -256,12 +256,12 @@ func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
 		}
 	}
 
-	if tk.RiseupVPNApiStatus != "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus != "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure == nil {
-		t.Fatal("RiseupVPNApiFailure should not be null")
+	if tk.ApiFailure == nil {
+		t.Fatal("ApiFailure should not be null")
 	}
 
 	cancel()
@@ -343,25 +343,25 @@ func TestIntegrationFailureOpenvpnGateway(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != true {
+		t.Fatal("invalid CACertStatus ")
 	}
 
-	if tk.RiseupVPNFailingGateways == nil || len(tk.RiseupVPNFailingGateways) != 1 {
+	if tk.FailingGateways == nil || len(tk.FailingGateways) != 1 {
 		t.Fatal("unexpected amount of failing gateways")
 	}
 
-	entry := tk.RiseupVPNFailingGateways[0]
+	entry := tk.FailingGateways[0]
 	if entry.IP != IP || fmt.Sprint(entry.Port) != port {
 		t.Fatal("unexpected failed gateway configuration")
 	}
 
-	if tk.RiseupVPNApiStatus == "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus == "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure != nil {
-		t.Fatal("RiseupVPNApiFailure should be null")
+	if tk.ApiFailure != nil {
+		t.Fatal("ApiFailure should be null")
 	}
 
 	cancel()
@@ -455,25 +455,25 @@ func TestIntegrationFailureObfs4Gateway(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.RiseupVPNCACertStatus != true {
-		t.Fatal("invalid RiseupVPNCACertStatus ")
+	if tk.CACertStatus != true {
+		t.Fatal("invalid CACertStatus ")
 	}
 
-	if tk.RiseupVPNFailingGateways == nil || len(tk.RiseupVPNFailingGateways) != 1 {
+	if tk.FailingGateways == nil || len(tk.FailingGateways) != 1 {
 		t.Fatal("unexpected amount of failing gateways")
 	}
 
-	entry := tk.RiseupVPNFailingGateways[0]
+	entry := tk.FailingGateways[0]
 	if !strings.Contains(selfcensoredGateways[randomIndex], entry.IP) || !strings.Contains(selfcensoredGateways[randomIndex], strconv.Itoa(entry.Port)) {
 		t.Fatal("unexpected failed gateway configuration")
 	}
 
-	if tk.RiseupVPNApiStatus == "blocked" {
-		t.Fatal("invalid RiseupVPNApiStatus")
+	if tk.ApiStatus == "blocked" {
+		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.RiseupVPNApiFailure != nil {
-		t.Fatal("RiseupVPNApiFailure should be null")
+	if tk.ApiFailure != nil {
+		t.Fatal("ApiFailure should be null")
 	}
 
 	cancel()
