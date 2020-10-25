@@ -89,7 +89,7 @@ func TestIntegration(t *testing.T) {
 // RiseupVPNApiStatus is considered as blocked
 func TestUpdateWithMixedResults(t *testing.T) {
 	tk := riseupvpn.NewTestKeys()
-	tk.Update(urlgetter.MultiOutput{
+	tk.UpdateProviderAPITestKeys(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "https://api.black.riseup.net:443/3/config/eip-service.json",
@@ -98,7 +98,7 @@ func TestUpdateWithMixedResults(t *testing.T) {
 			HTTPResponseStatus: 200,
 		},
 	})
-	tk.Update(urlgetter.MultiOutput{
+	tk.UpdateProviderAPITestKeys(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "https://riseup.net/provider.json",
@@ -114,7 +114,7 @@ func TestUpdateWithMixedResults(t *testing.T) {
 			})(),
 		},
 	})
-	tk.Update(urlgetter.MultiOutput{
+	tk.UpdateProviderAPITestKeys(urlgetter.MultiOutput{
 		Input: urlgetter.MultiInput{
 			Config: urlgetter.Config{Method: "GET"},
 			Target: "https://api.black.riseup.net:9001/json",
