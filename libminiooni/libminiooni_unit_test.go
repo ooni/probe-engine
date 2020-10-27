@@ -38,14 +38,14 @@ func TestInputFile(t *testing.T) {
 	input2 := "my input 2"
 	// add newline at end of file like vim does; while there also allow blank
 	// lines in the middle of the file
-	file_contents := []byte(input1 + "\n\n" + input2 + "\n")
+	fileContents := []byte(input1 + "\n\n" + input2 + "\n")
 	inputfile, err := ioutil.TempFile("", "myinput")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(inputfile.Name())
 
-	if _, err := inputfile.Write(file_contents); err != nil {
+	if _, err := inputfile.Write(fileContents); err != nil {
 		t.Fatal(err)
 	}
 	if err := inputfile.Close(); err != nil {
