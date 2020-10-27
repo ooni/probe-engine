@@ -15,11 +15,17 @@ import (
 	"github.com/ooni/probe-engine/probeservices"
 )
 
+// AtomicInt64 allows us to export atomicx.Int64 variables to
+// mobile libraries so we can use them in testing.
+type AtomicInt64 struct {
+	*atomicx.Int64
+}
+
 // The following two variables contain metrics pertaining to the number
 // of Sessions and Contexts that are currently being used.
 var (
-	ActiveSessions = atomicx.NewInt64()
-	ActiveContexts = atomicx.NewInt64()
+	ActiveSessions = &AtomicInt64{atomicx.NewInt64()}
+	ActiveContexts = &AtomicInt64{atomicx.NewInt64()}
 )
 
 // Logger is the logger used by a Session. You should implement a class

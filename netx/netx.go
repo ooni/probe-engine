@@ -277,14 +277,13 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 	if err != nil {
 		return c, err
 	}
-	if SNIOverride != "" {
-		config.TLSConfig = &tls.Config{ServerName: SNIOverride}
-	}
+	config.TLSConfig = &tls.Config{ServerName: SNIOverride}
 	switch resolverURL.Scheme {
 	case "system":
 		c.Resolver = resolver.SystemResolver{}
 		return c, nil
 	case "https":
+		config.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
 		c.httpClient = &http.Client{Transport: NewHTTPTransport(config)}
 		var txp resolver.RoundTripper = resolver.NewDNSOverHTTPSWithHostOverride(
 			c.httpClient, URL, hostOverride)
@@ -298,7 +297,11 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		return c, nil
 	case "udp":
 		dialer := NewDialer(config)
-		var txp resolver.RoundTripper = resolver.NewDNSOverUDP(dialer, resolverURL.Host)
+		endpoint, err := makeValidEndpoint(resolverURL)
+		if err != nil {
+			return c, err
+		}
+		var txp resolver.RoundTripper = resolver.NewDNSOverUDP(dialer, endpoint)
 		if config.ResolveSaver != nil {
 			txp = resolver.SaverDNSTransport{
 				RoundTripper: txp,
@@ -308,8 +311,9 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		c.Resolver = resolver.NewSerialResolver(txp)
 		return c, nil
 	case "dot":
+		config.TLSConfig.NextProtos = []string{"dot"}
 		tlsDialer := NewTLSDialer(config)
-		endpoint, err := makeEndpointForDoT(resolverURL)
+		endpoint, err := makeValidEndpoint(resolverURL)
 		if err != nil {
 			return c, err
 		}
@@ -325,8 +329,12 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		return c, nil
 	case "tcp":
 		dialer := NewDialer(config)
+		endpoint, err := makeValidEndpoint(resolverURL)
+		if err != nil {
+			return c, err
+		}
 		var txp resolver.RoundTripper = resolver.NewDNSOverTCP(
-			dialer.DialContext, resolverURL.Host)
+			dialer.DialContext, endpoint)
 		if config.ResolveSaver != nil {
 			txp = resolver.SaverDNSTransport{
 				RoundTripper: txp,
@@ -340,11 +348,12 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 	}
 }
 
-// makeEndpointForDoT makes a valid endpoint for DoT given the
+// makeValidEndpoint makes a valid endpoint for DoT and Do53 given the
 // input URL representing such endpoint. Specifically, we are
 // concerned with the case where the port is missing. In such a
-// case, we ensure that we are using the default port 853.
-func makeEndpointForDoT(URL *url.URL) (string, error) {
+// case, we ensure that we are using the default port 853 for DoT
+// and default port 53 for TCP and UDP.
+func makeValidEndpoint(URL *url.URL) (string, error) {
 	// Implementation note: when we're using a quoted IPv6
 	// address, URL.Host contains the quotes but instead the
 	// return value from URL.Hostname() does not.
@@ -376,7 +385,12 @@ func makeEndpointForDoT(URL *url.URL) (string, error) {
 	//
 	// For this reason we check again whether we can split it using
 	// net.SplitHostPort. If we cannot, we were in case four.
-	host := URL.Host + ":853"
+	host := URL.Host
+	if URL.Scheme == "dot" {
+		host += ":853"
+	} else {
+		host += ":53"
+	}
 	if _, _, err := net.SplitHostPort(host); err != nil {
 		return "", err
 	}

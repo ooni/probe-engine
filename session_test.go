@@ -328,9 +328,6 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	if err := readfile(sess.ASNDatabasePath()); err != nil {
 		t.Fatal(err)
 	}
-	if err := readfile(sess.CABundlePath()); err != nil {
-		t.Fatal(err)
-	}
 	if err := readfile(sess.CountryDatabasePath()); err != nil {
 		t.Fatal(err)
 	}

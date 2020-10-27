@@ -20,7 +20,7 @@
 // possible IP address for the domain is working or not.
 //
 // By default, we resolve `example.org`. There is an experiment option
-// called TargetDomain allowing you to change that.
+// called Domain allowing you to change that.
 //
 // Input URL format
 //
