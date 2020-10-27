@@ -199,7 +199,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 			FailOnHTTPError: true,
 		}},
 	}
-	multi := urlgetter.Multi{Begin: time.Now(), Getter: m.Getter, Session: sess}
+	multi := urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
 
 	for entry := range multi.Collect(ctx, inputs, "riseupvpn", callbacks) {
 		testkeys.UpdateProviderAPITestKeys(entry)
