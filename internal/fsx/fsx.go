@@ -21,12 +21,12 @@ type FS interface {
 	Open(name string) (File, error)
 }
 
-// Open is a wrapper for os.Open
+// Open is a wrapper for os.Open that ensures that we're opening a file.
 func Open(pathname string) (File, error) {
 	return OpenWithFS(filesystem{}, pathname)
 }
 
-// OpenWithFS is to ensure that we're not attempting to open a directory.
+// OpenWithFS is like Open but with explicit file system argument.
 func OpenWithFS(fs FS, pathname string) (File, error) {
 	file, err := fs.Open(pathname)
 	if err != nil {
