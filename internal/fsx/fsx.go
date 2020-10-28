@@ -7,12 +7,16 @@ import (
 	"syscall"
 )
 
+// File is a generic file. This interface is taken from the draft
+// iofs golang design. We'll use fs.File when available.
 type File interface {
 	Stat() (os.FileInfo, error)
 	Read([]byte) (int, error)
 	Close() error
 }
 
+// FS is a generic file system. Like File, it's adapted from
+// the draft iofs golang design document.
 type FS interface {
 	Open(name string) (File, error)
 }
