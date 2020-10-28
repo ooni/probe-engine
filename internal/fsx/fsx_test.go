@@ -40,6 +40,7 @@ func (fs FailingStatFile) Close() error {
 func (FailingStatFile) Read([]byte) (int, error) {
 	return 0, nil
 }
+
 func TestOpenWithFailingStat(t *testing.T) {
 	var count int32
 	_, err := fsx.OpenWithFS(FailingStatFS{CloseCount: &count}, StateBaseDir+"testfile.txt")
