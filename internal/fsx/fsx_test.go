@@ -54,8 +54,8 @@ func TestOpenWithFailingStat(t *testing.T) {
 
 func TestOpenNonexistentFile(t *testing.T) {
 	_, err := fsx.Open(StateBaseDir + "invalidtestfile.txt")
-	if err == nil {
-		t.Errorf("expected error with invalid input file")
+	if !errors.Is(err, syscall.ENOENT) {
+		t.Errorf("not the error we expected")
 	}
 }
 
