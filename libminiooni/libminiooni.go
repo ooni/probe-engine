@@ -57,7 +57,6 @@ type Options struct {
 	TorBinary        string
 	Tunnel           string
 	Verbose          bool
-	HTTP3Enabled     bool
 }
 
 const (
@@ -353,9 +352,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 				CountryCode: sess.ProbeCC(),
 				Limit:       17,
 			})
-			list = []model.URLInfo{}
-			list = append(list, model.URLInfo{CategoryCode: "0", CountryCode: "0", URL: "https://google.com"})
-			list = append(list, model.URLInfo{CategoryCode: "0", CountryCode: "0", URL: "https://ooni.org"})
 			fatalOnError(err, "cannot fetch test lists")
 			for _, entry := range list {
 				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
