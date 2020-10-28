@@ -46,7 +46,6 @@ func OpenWithFS(fs FS, pathname string) (File, error) {
 
 type filesystem struct{}
 
-// Open with filesystem uses os.Open directly
 func (filesystem) Open(pathname string) (File, error) {
 	return os.Open(pathname)
 }
