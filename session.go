@@ -40,7 +40,6 @@ type SessionConfig struct {
 	TempDir                string
 	TorArgs                []string
 	TorBinary              string
-	HTTP3Enabled           bool
 }
 
 // Session is a measurement session
@@ -113,7 +112,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 		ByteCounter:  sess.byteCounter,
 		BogonIsError: true,
 		Logger:       sess.logger,
-		HTTP3Enabled: false,
 	}
 
 	sess.resolver = sessionresolver.New(httpConfig)
