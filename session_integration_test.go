@@ -564,13 +564,15 @@ func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
 		txp: sess.httpDefaultTransport,
 		st:  5 * time.Second,
 	}
-	// the transport sleeps for five seconds, so the context should be expired by
-	// the time in which we attempt at looking up the clocation
+	// The transport sleeps for five seconds, so the context should be expired by
+	// the time in which we attempt at looking up the location. Because the
+	// implementation performs the round-trip and _then_ sleeps, it means we'll
+	// see the context expired error when performing the location lookup.
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 	client, err := sess.NewOrchestraClient(ctx)
 	if err == nil || err.Error() != "All IP lookuppers failed" {
-		t.Fatal("not the error we expected")
+		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if client != nil {
 		t.Fatal("expected nil client here")
