@@ -1,6 +1,5 @@
 name: alltests
 on:
-  push:
   schedule:
     - cron: "0 7 * * */1"
 jobs:
