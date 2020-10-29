@@ -16,22 +16,6 @@ func TestFileInputFailWithOtherInputs(t *testing.T) {
 	t.Errorf("expected panic when inputs are specified in multiple ways.")
 }
 
-func TestFileInputInvalidFile(t *testing.T) {
-	dir, err := ioutil.TempDir("", "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	// test function panics with invalid file
-	defer func() { recover() }()
-
-	opts := Options{InputFilePath: dir}
-	loadFileInputs(&opts)
-
-	t.Errorf("expected panic with invalid input file")
-}
-
 func TestInputFile(t *testing.T) {
 	// create test input file
 	input1 := "my input 1"
