@@ -15,11 +15,11 @@
 package libminiooni
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -32,6 +32,7 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
@@ -235,14 +236,17 @@ func loadFileInputs(opts *Options) {
 		if len(opts.Inputs) != 0 {
 			fatalWithString("inputs can either be supplied through file or command line, but not both")
 		}
-		content, err := ioutil.ReadFile(opts.InputFilePath)
+		file, err := fsx.Open(opts.InputFilePath)
 		fatalOnError(err, "cannot read input file")
+		defer file.Close()
 		// Implementation note: when you save file with vim, you have newline at
 		// end of file and you don't want to consider that an input line. While there
 		// ignore any other empty line that may occur inside the file.
-		for _, input := range strings.Split(string(content), "\n") {
-			if input != "" {
-				opts.Inputs = append(opts.Inputs, input)
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line != "" {
+				opts.Inputs = append(opts.Inputs, line)
 			}
 		}
 	}
