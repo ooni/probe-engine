@@ -13,10 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/ooni/probe-engine/cmd/jafar/resolver"
 	"github.com/ooni/probe-engine/cmd/jafar/shellx"
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
+
+func init() {
+	log.SetLevel(log.ErrorLevel)
+}
 
 func newCensoringPolicy() *CensoringPolicy {
 	policy := NewCensoringPolicy()
@@ -62,7 +67,7 @@ func TestIntegrationDropIP(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "1.1.1.1:853")
 	if err == nil {
@@ -86,7 +91,7 @@ func TestIntegrationDropKeyword(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
 	if err != nil {
@@ -114,7 +119,7 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
 	if err != nil {
