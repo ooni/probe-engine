@@ -35,6 +35,9 @@ func TestStartWithCancelledContext(t *testing.T) {
 }
 
 func TestIntegrationStartStop(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir:       "../../testdata",
 		Logger:          log.Log,

@@ -7,5 +7,8 @@ import (
 )
 
 func TestIntegrationSimple(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	libminiooni.MainWithConfiguration("example", libminiooni.Options{})
 }
