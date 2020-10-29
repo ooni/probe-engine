@@ -328,6 +328,10 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 	// 1. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263788
 	//
 	// 2. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263855
+	//
+	// In case there are further timeouts, e.g. in the sessionresolver, the
+	// time used by the experiment will be much more. This is for example the
+	// case in https://github.com/ooni/probe-engine/issues/1005.
 	if time.Now().Sub(begin) > 10*time.Second {
 		t.Fatal("expected shorter runtime")
 	}
