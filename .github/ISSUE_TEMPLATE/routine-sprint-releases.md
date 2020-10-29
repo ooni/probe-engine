@@ -12,6 +12,7 @@ assignees: bassosimone
 - [ ] engine: update version.go
 - [ ] engine: update resources/assets.go
 - [ ] engine: update bundled certs (using `go generate ./...`)
+- [ ] engine: make sure all workflows are green
 - [ ] engine: tag a new version
 - [ ] engine: update again version.go to be alpha
 - [ ] engine: create release at GitHub
