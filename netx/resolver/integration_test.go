@@ -105,7 +105,7 @@ func TestIntegrationNewResolverDoTDomain(t *testing.T) {
 
 func TestIntegrationNewResolverDoH(t *testing.T) {
 	reso := resolver.NewSerialResolver(
-		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://doh.powerdns.org/"))
+		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://cloudflare-dns.com/dns-query"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
