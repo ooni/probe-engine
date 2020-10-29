@@ -35,8 +35,15 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestIntegrationSuccess(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx := context.Background()
-	// we need a real session because we need the tcp-echo helper
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"http-return-json-headers": []model.Service{{
+				Address: "http://37.218.241.94:80",
+				Type:    "legacy",
+			}},
+		},
+	}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -139,8 +146,15 @@ func TestIntegrationCancelledContext(t *testing.T) {
 	measurer := hhfm.NewExperimentMeasurer(hhfm.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"http-return-json-headers": []model.Service{{
+				Address: "http://37.218.241.94:80",
+				Type:    "legacy",
+			}},
+		},
+	}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)

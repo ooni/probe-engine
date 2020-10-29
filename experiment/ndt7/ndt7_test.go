@@ -138,6 +138,9 @@ func TestUnitRunWithProxyURL(t *testing.T) {
 }
 
 func TestIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
@@ -177,7 +180,7 @@ func TestIntegrationFailDownload(t *testing.T) {
 func TestIntegrationFailUpload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
+	measurer := NewExperimentMeasurer(Config{noDownload: true}).(*Measurer)
 	measurer.preUploadHook = func() {
 		cancel()
 	}
@@ -196,7 +199,7 @@ func TestIntegrationFailUpload(t *testing.T) {
 }
 
 func TestIntegrationDownloadJSONUnmarshalFail(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
+	measurer := NewExperimentMeasurer(Config{noUpload: true}).(*Measurer)
 	var seenError bool
 	expected := errors.New("expected error")
 	measurer.jsonUnmarshal = func(data []byte, v interface{}) error {

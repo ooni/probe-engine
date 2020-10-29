@@ -24,7 +24,9 @@ const (
 
 // Config contains the experiment settings
 type Config struct {
-	Tunnel string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+	Tunnel     string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
+	noDownload bool
+	noUpload   bool
 }
 
 // Summary is the measurement summary
@@ -122,6 +124,9 @@ func (m *Measurer) doDownload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	URL string,
 ) error {
+	if m.config.noDownload == true {
+		return nil // useful to make tests faster
+	}
 	conn, err := newDialManager(URL, sess.ProxyURL(),
 		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
@@ -189,6 +194,9 @@ func (m *Measurer) doUpload(
 	callbacks model.ExperimentCallbacks, tk *TestKeys,
 	URL string,
 ) error {
+	if m.config.noUpload == true {
+		return nil // useful to make tests faster
+	}
 	conn, err := newDialManager(URL, sess.ProxyURL(),
 		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
