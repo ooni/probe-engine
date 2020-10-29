@@ -2,7 +2,7 @@ name: jafar
 on:
   pull_request:
   schedule:
-    - cron: "14 17 * * 3"
+    - cron: "0 5 * * 3"
 jobs:
   test:
     runs-on: ubuntu-latest

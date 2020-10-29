@@ -2,7 +2,7 @@ name: go115
 on:
   pull_request:
   schedule:
-    - cron: "14 17 * * 3"
+    - cron: "0 0 * * */1"
 jobs:
   test:
     runs-on: ubuntu-latest
