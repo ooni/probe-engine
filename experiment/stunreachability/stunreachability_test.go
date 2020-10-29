@@ -184,6 +184,9 @@ func TestStartFailure(t *testing.T) {
 }
 
 func TestReadFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	config := &stunreachability.Config{}
 	expected := errors.New("mocked error")
 	config.SetDialContext(
