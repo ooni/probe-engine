@@ -26,6 +26,9 @@ func TestNewExperimentMeasurer(t *testing.T) {
 }
 
 func TestIntegrationSuccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	measurer := fbmessenger.NewExperimentMeasurer(fbmessenger.Config{})
 	ctx := context.Background()
 	// we need a real session because we need the ASN database
