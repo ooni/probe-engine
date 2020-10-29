@@ -1,9 +1,7 @@
-name: golang
+name: shorttests
 on:
   pull_request:
   push:
-  schedule:
-    - cron: "14 17 * * 3"
 jobs:
   test:
     runs-on: ubuntu-latest
