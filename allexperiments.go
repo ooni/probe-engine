@@ -9,6 +9,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
+	"github.com/ooni/probe-engine/experiment/httphostheader"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
@@ -136,6 +137,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:      &hhfm.Config{},
 			inputPolicy: InputNone,
+		}
+	},
+
+	"http_host_header": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, httphostheader.NewExperimentMeasurer(
+					*config.(*httphostheader.Config),
+				))
+			},
+			config:      &httphostheader.Config{},
+			inputPolicy: InputRequired,
 		}
 	},
 
