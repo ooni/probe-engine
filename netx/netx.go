@@ -192,19 +192,9 @@ func NewTLSDialer(config Config) TLSDialer {
 	}
 }
 
-// NewHTTPTransport creates a new HTTPRoundTripper.
-// If the corresponsing config flag is set, it returns a HTTP3 Transport.
-func NewHTTPTransport(config Config) HTTPRoundTripper {
-	if config.HTTP3Enabled {
-		return newHTTPTransport(config, true)
-	} else {
-		return newHTTPTransport(config, false)
-	}
-}
-
-// newHTTPTransport creates a new HTTPRoundTripper. You can further extend the returned
+// NewHTTPTransport creates a new HTTPRoundTripper. You can further extend the returned
 // HTTPRoundTripper before wrapping it into an http.Client.
-func newHTTPTransport(config Config, http3 bool) HTTPRoundTripper {
+func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.Dialer == nil {
 		config.Dialer = NewDialer(config)
 	}
@@ -212,7 +202,7 @@ func newHTTPTransport(config Config, http3 bool) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 	var txp HTTPRoundTripper
-	if http3 {
+	if config.HTTP3Enabled {
 		txp = httptransport.NewHTTP3Transport(config.Dialer, config.TLSDialer)
 	} else {
 		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
