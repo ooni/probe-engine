@@ -36,7 +36,7 @@ func TestUnitHTTP3TransportFailure(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.ooni.org", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,9 @@ func TestUnitHTTP3TransportFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error here")
 	}
-	if !(errors.Is(err, context.Canceled) || strings.HasSuffix(err.Error(), ": Handshake did not complete in time")) {
+	// context.Canceled error occurs if the test host supports QUIC
+	// timeout error ("Handshake did not complete in time") occurs if the test host does not support QUIC
+	if !(errors.Is(err, context.Canceled) || strings.HasSuffix(err.Error(), "Handshake did not complete in time")) {
 		t.Fatal("not the error we expected", err)
 	}
 	if resp != nil {
