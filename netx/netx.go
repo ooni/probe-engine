@@ -202,8 +202,10 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 	var txp HTTPRoundTripper
+	transport := "tcp"
 	if config.HTTP3Enabled {
 		txp = httptransport.NewHTTP3Transport(config.Dialer, config.TLSDialer)
+		transport = "http3"
 	} else {
 		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
 	}
@@ -216,7 +218,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 	if config.HTTPSaver != nil {
 		txp = httptransport.SaverMetadataHTTPTransport{
-			RoundTripper: txp, Saver: config.HTTPSaver}
+			RoundTripper: txp, Saver: config.HTTPSaver, Transport: transport}
 		txp = httptransport.SaverBodyHTTPTransport{
 			RoundTripper: txp, Saver: config.HTTPSaver}
 		txp = httptransport.SaverPerformanceHTTPTransport{

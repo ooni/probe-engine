@@ -264,6 +264,7 @@ type HTTPRequest struct {
 	Method          string                      `json:"method"`
 	Tor             HTTPTor                     `json:"tor"`
 	URL             string                      `json:"url"`
+	Transport       string                      `json:"transport"`
 }
 
 // HTTPResponse contains an HTTP response.
@@ -346,6 +347,7 @@ func newRequestList(begin time.Time, events []trace.Event) []RequestEntry {
 				ev.HTTPHeaders, &entry.Request.HeadersList, &entry.Request.Headers)
 			entry.Request.Method = ev.HTTPMethod
 			entry.Request.URL = ev.HTTPURL
+			entry.Request.Transport = ev.Transport
 		case "http_response_metadata":
 			entry.Response.Headers = make(map[string]MaybeBinaryValue)
 			addheaders(
