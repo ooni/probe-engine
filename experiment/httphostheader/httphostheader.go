@@ -1,8 +1,7 @@
-// Package httphost contains the httphost network experiment.
+// Package httphostheader contains the HTTP host header network experiment.
 //
 // This experiment has not been specified yet. It is nonetheless available for testing
 // and as a building block that other experiments could reuse.
-
 package httphostheader
 
 import (
@@ -60,7 +59,6 @@ func (m *Measurer) Run(
 		m.config.TestHelperURL = "http://www.example.com"
 	}
 	urlgetter.RegisterExtensions(measurement)
-	// perform the measurement
 	g := urlgetter.Getter{
 		Begin: measurement.MeasurementStartTimeSaved,
 		Config: urlgetter.Config{
@@ -69,9 +67,9 @@ func (m *Measurer) Run(
 		Session: sess,
 		Target:  fmt.Sprintf(m.config.TestHelperURL),
 	}
-	tk, err := g.Get(ctx)
+	tk, _ := g.Get(ctx)
 	measurement.TestKeys = tk
-	return err
+	return nil
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.

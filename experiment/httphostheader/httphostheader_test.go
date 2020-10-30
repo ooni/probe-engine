@@ -16,7 +16,7 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
+func TestNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "http_host_header" {
 		t.Fatal("unexpected name")
@@ -26,7 +26,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
+func TestMeasurerMeasureNoMeasurementInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{
 		TestHelperURL: "http://www.google.com",
 	})
@@ -36,15 +36,14 @@ func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 		new(model.Measurement),
 		model.NewPrinterCallbacks(log.Log),
 	)
-	if err.Error() != "Experiment requires measurement.Input" {
+	if err == nil || err.Error() != "Experiment requires measurement.Input" {
 		t.Fatal("not the error we expected")
 	}
 }
 
-func TestUnitMeasurerMeasureNoTestHelper(t *testing.T) {
+func TestMeasurerMeasureNoTestHelper(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	measurement := &model.Measurement{Input: "x.org"}
-
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
@@ -63,26 +62,21 @@ func TestRunnerHTTPSetHostHeader(t *testing.T) {
 		w.WriteHeader(200)
 	}))
 	defer server.Close()
-
 	measurer := NewExperimentMeasurer(Config{
 		TestHelperURL: server.URL,
 	})
-
 	measurement := &model.Measurement{
 		Input: "x.org",
 	}
-
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if host != "x.org" {
 		t.Fatal("not the host we expected")
 	}
-
 	if err != nil {
 		t.Fatal(err)
 	}
