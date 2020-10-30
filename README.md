@@ -1,6 +1,6 @@
 # OONI probe measurement engine
 
-[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Short Tests Status](https://github.com/ooni/probe-engine/workflows/shorttests/badge.svg) ![All Tests Status](https://github.com/ooni/probe-engine/workflows/alltests/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
+[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) [![Short Tests Status](https://github.com/ooni/probe-engine/workflows/shorttests/badge.svg)](https://github.com/ooni/probe-engine/actions?query=workflow%3Ashorttests) [![All Tests Status](https://github.com/ooni/probe-engine/workflows/alltests/badge.svg)](https://github.com/ooni/probe-engine/actions?query=workflow%3Aalltests) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
 
 This repository contains OONI probe's [measurement engine](
 https://github.com/ooni/spec/tree/master/probe#engine). That is, the
