@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestUnitSaverResolverFailure(t *testing.T) {
+func TestSaverResolverFailure(t *testing.T) {
 	expected := errors.New("no such host")
 	saver := &trace.Saver{}
 	reso := resolver.SaverResolver{
@@ -61,7 +61,7 @@ func TestUnitSaverResolverFailure(t *testing.T) {
 	}
 }
 
-func TestUnitSaverResolverSuccess(t *testing.T) {
+func TestSaverResolverSuccess(t *testing.T) {
 	expected := []string{"8.8.8.8", "8.8.4.4"}
 	saver := &trace.Saver{}
 	reso := resolver.SaverResolver{
@@ -110,7 +110,7 @@ func TestUnitSaverResolverSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitSaverDNSTransportFailure(t *testing.T) {
+func TestSaverDNSTransportFailure(t *testing.T) {
 	expected := errors.New("no such host")
 	saver := &trace.Saver{}
 	txp := resolver.SaverDNSTransport{
@@ -160,7 +160,7 @@ func TestUnitSaverDNSTransportFailure(t *testing.T) {
 	}
 }
 
-func TestUnitSaverDNSTransportSuccess(t *testing.T) {
+func TestSaverDNSTransportSuccess(t *testing.T) {
 	expected := []byte("def")
 	saver := &trace.Saver{}
 	txp := resolver.SaverDNSTransport{

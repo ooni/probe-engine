@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestUnitCollectJSONMarshalError(t *testing.T) {
+func TestCollectJSONMarshalError(t *testing.T) {
 	expected := errors.New("mocked error")
 	deps := FakeDeps{jsonMarshalErr: expected}
 	err := collect(context.Background(), "", "", nil, deps)
@@ -20,7 +20,7 @@ func TestUnitCollectJSONMarshalError(t *testing.T) {
 	}
 }
 
-func TestUnitCollectNewHTTPRequestFailure(t *testing.T) {
+func TestCollectNewHTTPRequestFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	deps := FakeDeps{newHTTPRequestErr: expected}
 	err := collect(context.Background(), "", "", nil, deps)
@@ -29,7 +29,7 @@ func TestUnitCollectNewHTTPRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCollectHTTPClientDoFailure(t *testing.T) {
+func TestCollectHTTPClientDoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := FakeHTTPTransport{err: expected}
 	deps := FakeDeps{httpTransport: txp, newHTTPRequestResult: &http.Request{
@@ -42,7 +42,7 @@ func TestUnitCollectHTTPClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCollectInternalError(t *testing.T) {
+func TestCollectInternalError(t *testing.T) {
 	txp := FakeHTTPTransport{resp: &http.Response{StatusCode: 500}}
 	deps := FakeDeps{httpTransport: txp, newHTTPRequestResult: &http.Request{
 		Header: http.Header{},
@@ -54,7 +54,7 @@ func TestUnitCollectInternalError(t *testing.T) {
 	}
 }
 
-func TestUnitCollectReadAllFailure(t *testing.T) {
+func TestCollectReadAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := FakeHTTPTransport{resp: &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
@@ -74,7 +74,7 @@ func TestUnitCollectReadAllFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCollectInvalidJSON(t *testing.T) {
+func TestCollectInvalidJSON(t *testing.T) {
 	txp := FakeHTTPTransport{resp: &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
 		StatusCode: 200,
@@ -93,7 +93,7 @@ func TestUnitCollectInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestUnitCollectSuccess(t *testing.T) {
+func TestCollectSuccess(t *testing.T) {
 	txp := FakeHTTPTransport{resp: &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
 		StatusCode: 200,

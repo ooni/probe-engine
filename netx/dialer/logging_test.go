@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func TestUnitLoggingDialerFailure(t *testing.T) {
+func TestLoggingDialerFailure(t *testing.T) {
 	d := dialer.LoggingDialer{
 		Dialer: dialer.EOFDialer{},
 		Logger: log.Log,
@@ -25,7 +25,7 @@ func TestUnitLoggingDialerFailure(t *testing.T) {
 	}
 }
 
-func TestUnitLoggingTLSHandshakerFailure(t *testing.T) {
+func TestLoggingTLSHandshakerFailure(t *testing.T) {
 	h := dialer.LoggingTLSHandshaker{
 		TLSHandshaker: dialer.EOFTLSHandshaker{},
 		Logger:        log.Log,

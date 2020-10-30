@@ -8,32 +8,32 @@ import (
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
 
-func TestIntegrationPass(t *testing.T) {
+func TestPass(t *testing.T) {
 	server := newresolver(t, []string{"ooni.io"}, []string{"ooni.nu"}, nil)
 	checkrequest(t, server, "example.com", "success", nil)
 	killserver(t, server)
 }
 
-func TestIntegrationBlock(t *testing.T) {
+func TestBlock(t *testing.T) {
 	server := newresolver(t, []string{"ooni.io"}, []string{"ooni.nu"}, nil)
 	checkrequest(t, server, "mia-ps.ooni.io", "blocked", nil)
 	killserver(t, server)
 }
 
-func TestIntegrationRedirect(t *testing.T) {
+func TestRedirect(t *testing.T) {
 	server := newresolver(t, []string{"ooni.io"}, []string{"ooni.nu"}, nil)
 	checkrequest(t, server, "hkgmetadb.ooni.nu", "hijacked", nil)
 	killserver(t, server)
 }
 
-func TestIntegrationIgnore(t *testing.T) {
+func TestIgnore(t *testing.T) {
 	server := newresolver(t, nil, nil, []string{"ooni.nu"})
 	iotimeout := "i/o timeout"
 	checkrequest(t, server, "hkgmetadb.ooni.nu", "hijacked", &iotimeout)
 	killserver(t, server)
 }
 
-func TestIntegrationLookupFailure(t *testing.T) {
+func TestLookupFailure(t *testing.T) {
 	server := newresolver(t, nil, nil, nil)
 	// we should receive same response as when we're blocked
 	checkrequest(t, server, "example.antani", "blocked", nil)

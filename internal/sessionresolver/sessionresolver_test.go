@@ -9,7 +9,7 @@ import (
 	"github.com/ooni/probe-engine/netx"
 )
 
-func TestIntegrationFallbackWorks(t *testing.T) {
+func TestFallbackWorks(t *testing.T) {
 	reso := sessionresolver.New(netx.Config{})
 	defer reso.CloseIdleConnections()
 	if reso.Network() != "sessionresolver" {

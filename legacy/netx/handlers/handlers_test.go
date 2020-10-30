@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	handlers.NoHandler.OnMeasurement(modelx.Measurement{})
 	handlers.StdoutHandler.OnMeasurement(modelx.Measurement{})
 	saver := handlers.SavingHandler{}

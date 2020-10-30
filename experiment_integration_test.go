@@ -1,5 +1,3 @@
-// +build integration
-
 package engine
 
 import (
@@ -20,6 +18,9 @@ import (
 )
 
 func TestCreateAll(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	for _, name := range AllExperiments() {
@@ -36,6 +37,9 @@ func TestCreateAll(t *testing.T) {
 }
 
 func TestRunDASH(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("dash")
@@ -49,6 +53,9 @@ func TestRunDASH(t *testing.T) {
 }
 
 func TestRunExample(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -59,6 +66,9 @@ func TestRunExample(t *testing.T) {
 }
 
 func TestRunNdt7(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("ndt7")
@@ -72,6 +82,9 @@ func TestRunNdt7(t *testing.T) {
 }
 
 func TestRunPsiphon(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("psiphon")
@@ -82,6 +95,9 @@ func TestRunPsiphon(t *testing.T) {
 }
 
 func TestRunSNIBlocking(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("sni_blocking")
@@ -92,6 +108,9 @@ func TestRunSNIBlocking(t *testing.T) {
 }
 
 func TestRunTelegram(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("telegram")
@@ -102,6 +121,9 @@ func TestRunTelegram(t *testing.T) {
 }
 
 func TestRunTor(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("tor")
@@ -112,6 +134,9 @@ func TestRunTor(t *testing.T) {
 }
 
 func TestNeedsInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("web_connectivity")
@@ -124,6 +149,9 @@ func TestNeedsInput(t *testing.T) {
 }
 
 func TestSetCallbacks(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -156,6 +184,9 @@ func (c *registerCallbacksCalled) OnProgress(percentage float64, message string)
 }
 
 func TestCreateInvalidExperiment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("antani")
@@ -168,6 +199,9 @@ func TestCreateInvalidExperiment(t *testing.T) {
 }
 
 func TestMeasurementFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -190,6 +224,9 @@ func TestMeasurementFailure(t *testing.T) {
 }
 
 func TestUseOptions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -269,6 +306,9 @@ func TestUseOptions(t *testing.T) {
 }
 
 func TestRunHHFM(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("http_header_field_manipulation")
@@ -322,6 +362,9 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 }
 
 func TestOptions(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	t.Run("when config is not a pointer", func(t *testing.T) {
 		b := &ExperimentBuilder{
 			config: 17,
@@ -350,6 +393,9 @@ func TestOptions(t *testing.T) {
 }
 
 func TestSetOption(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	t.Run("when config is not a pointer", func(t *testing.T) {
 		b := &ExperimentBuilder{
 			config: 17,
@@ -418,6 +464,9 @@ func TestSetOption(t *testing.T) {
 }
 
 func TestLoadMeasurement(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -471,6 +520,9 @@ func TestLoadMeasurement(t *testing.T) {
 }
 
 func TestSaveMeasurementErrors(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -517,6 +569,9 @@ func TestSaveMeasurementErrors(t *testing.T) {
 }
 
 func TestOpenReportIdempotent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -549,6 +604,9 @@ func TestOpenReportIdempotent(t *testing.T) {
 }
 
 func TestOpenReportFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	server := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
@@ -573,6 +631,9 @@ func TestOpenReportFailure(t *testing.T) {
 }
 
 func TestOpenReportNewClientFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoBackendsLookup(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -591,6 +652,9 @@ func TestOpenReportNewClientFailure(t *testing.T) {
 }
 
 func TestSubmitAndUpdateMeasurementWithClosedReport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	builder, err := sess.NewExperimentBuilder("example")
@@ -606,6 +670,9 @@ func TestSubmitAndUpdateMeasurementWithClosedReport(t *testing.T) {
 }
 
 func TestMeasureLookupLocationFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	exp := NewExperiment(sess, new(antaniMeasurer))
@@ -617,6 +684,9 @@ func TestMeasureLookupLocationFailure(t *testing.T) {
 }
 
 func TestOpenReportNonHTTPS(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	sess.availableProbeServices = []model.Service{

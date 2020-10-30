@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitLoggingResolver(t *testing.T) {
+func TestLoggingResolver(t *testing.T) {
 	r := resolver.LoggingResolver{
 		Logger:   log.Log,
 		Resolver: resolver.NewFakeResolverThatFails(),

@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitErrorWrapperSuccess(t *testing.T) {
+func TestErrorWrapperSuccess(t *testing.T) {
 	orig := []string{"8.8.8.8"}
 	r := resolver.ErrorWrapperResolver{
 		Resolver: resolver.NewFakeResolverWithResult(orig),
@@ -25,7 +25,7 @@ func TestUnitErrorWrapperSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitErrorWrapperFailure(t *testing.T) {
+func TestErrorWrapperFailure(t *testing.T) {
 	r := resolver.ErrorWrapperResolver{
 		Resolver: resolver.NewFakeResolverThatFails(),
 	}

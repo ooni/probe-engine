@@ -25,9 +25,9 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := fbmessenger.NewExperimentMeasurer(fbmessenger.Config{})
 	ctx := context.Background()
@@ -90,7 +90,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationWithCancelledContext(t *testing.T) {
+func TestWithCancelledContext(t *testing.T) {
 	measurer := fbmessenger.NewExperimentMeasurer(fbmessenger.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately

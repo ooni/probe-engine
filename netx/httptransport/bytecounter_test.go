@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
-func TestUnitByteCounterFailure(t *testing.T) {
+func TestByteCounterFailure(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,
@@ -42,7 +42,7 @@ func TestUnitByteCounterFailure(t *testing.T) {
 	}
 }
 
-func TestUnitByteCounterSuccess(t *testing.T) {
+func TestByteCounterSuccess(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,
@@ -84,7 +84,7 @@ func TestUnitByteCounterSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitByteCounterSuccessWithEOF(t *testing.T) {
+func TestByteCounterSuccessWithEOF(t *testing.T) {
 	counter := bytecounter.New()
 	txp := httptransport.ByteCountingTransport{
 		Counter: counter,

@@ -25,7 +25,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
 	sess := &mockable.Session{
@@ -73,7 +73,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationCancelledContext(t *testing.T) {
+func TestCancelledContext(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

@@ -13,7 +13,7 @@ import (
 
 func TestDNSLookup(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	config := webconnectivity.DNSLookupConfig{
 		Session: newsession(t, true),

@@ -38,75 +38,75 @@ func testresolverquick(t *testing.T, network, address string) {
 	}
 }
 
-func TestIntegrationNewResolverUDPAddress(t *testing.T) {
+func TestNewResolverUDPAddress(t *testing.T) {
 	testresolverquick(t, "udp", "8.8.8.8:53")
 }
 
-func TestIntegrationNewResolverUDPAddressNoPort(t *testing.T) {
+func TestNewResolverUDPAddressNoPort(t *testing.T) {
 	testresolverquick(t, "udp", "8.8.8.8")
 }
 
-func TestIntegrationNewResolverUDPDomain(t *testing.T) {
+func TestNewResolverUDPDomain(t *testing.T) {
 	testresolverquick(t, "udp", "dns.google.com:53")
 }
 
-func TestIntegrationNewResolverUDPDomainNoPort(t *testing.T) {
+func TestNewResolverUDPDomainNoPort(t *testing.T) {
 	testresolverquick(t, "udp", "dns.google.com")
 }
 
-func TestIntegrationNewResolverSystem(t *testing.T) {
+func TestNewResolverSystem(t *testing.T) {
 	testresolverquick(t, "system", "")
 }
 
-func TestIntegrationNewResolverTCPAddress(t *testing.T) {
+func TestNewResolverTCPAddress(t *testing.T) {
 	testresolverquick(t, "tcp", "8.8.8.8:53")
 }
 
-func TestIntegrationNewResolverTCPAddressNoPort(t *testing.T) {
+func TestNewResolverTCPAddressNoPort(t *testing.T) {
 	testresolverquick(t, "tcp", "8.8.8.8")
 }
 
-func TestIntegrationNewResolverTCPDomain(t *testing.T) {
+func TestNewResolverTCPDomain(t *testing.T) {
 	testresolverquick(t, "tcp", "dns.google.com:53")
 }
 
-func TestIntegrationNewResolverTCPDomainNoPort(t *testing.T) {
+func TestNewResolverTCPDomainNoPort(t *testing.T) {
 	testresolverquick(t, "tcp", "dns.google.com")
 }
 
-func TestIntegrationNewResolverDoTAddress(t *testing.T) {
+func TestNewResolverDoTAddress(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("this test is not reliable in GitHub actions")
 	}
 	testresolverquick(t, "dot", "9.9.9.9:853")
 }
 
-func TestIntegrationNewResolverDoTAddressNoPort(t *testing.T) {
+func TestNewResolverDoTAddressNoPort(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("this test is not reliable in GitHub actions")
 	}
 	testresolverquick(t, "dot", "9.9.9.9")
 }
 
-func TestIntegrationNewResolverDoTDomain(t *testing.T) {
+func TestNewResolverDoTDomain(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("this test is not reliable in GitHub actions")
 	}
 	testresolverquick(t, "dot", "dns.quad9.net:853")
 }
 
-func TestIntegrationNewResolverDoTDomainNoPort(t *testing.T) {
+func TestNewResolverDoTDomainNoPort(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip("this test is not reliable in GitHub actions")
 	}
 	testresolverquick(t, "dot", "dns.quad9.net")
 }
 
-func TestIntegrationNewResolverDoH(t *testing.T) {
+func TestNewResolverDoH(t *testing.T) {
 	testresolverquick(t, "doh", "https://cloudflare-dns.com/dns-query")
 }
 
-func TestIntegrationNewResolverInvalid(t *testing.T) {
+func TestNewResolverInvalid(t *testing.T) {
 	resolver, err := netx.NewResolver(
 		"antani", "https://cloudflare-dns.com/dns-query",
 	)
@@ -124,7 +124,7 @@ func (failingResolver) LookupHost(ctx context.Context, hostname string) ([]strin
 	return nil, io.EOF
 }
 
-func TestIntegrationChainResolvers(t *testing.T) {
+func TestChainResolvers(t *testing.T) {
 	fallback, err := netx.NewResolver("udp", "1.1.1.1:53")
 	if err != nil {
 		t.Fatal(err)
@@ -139,7 +139,7 @@ func TestIntegrationChainResolvers(t *testing.T) {
 	defer conn.Close()
 }
 
-func TestUnitNewHTTPClientForDoH(t *testing.T) {
+func TestNewHTTPClientForDoH(t *testing.T) {
 	first := netx.NewHTTPClientForDoH(
 		time.Now(), handlers.NoHandler,
 	)
@@ -157,7 +157,7 @@ func TestUnitNewHTTPClientForDoH(t *testing.T) {
 	}
 }
 
-func TestUnitChainWrapperResolver(t *testing.T) {
+func TestChainWrapperResolver(t *testing.T) {
 	r := netx.ChainWrapperResolver{}
 	if r.Address() != "" {
 		t.Fatal("invalid Address")

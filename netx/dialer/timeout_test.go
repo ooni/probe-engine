@@ -22,7 +22,7 @@ func (SlowDialer) DialContext(ctx context.Context, network, address string) (net
 	}
 }
 
-func TestUnitTimeoutDialer(t *testing.T) {
+func TestTimeoutDialer(t *testing.T) {
 	d := dialer.TimeoutDialer{Dialer: SlowDialer{}, ConnectTimeout: time.Second}
 	conn, err := d.DialContext(context.Background(), "tcp", "www.google.com:443")
 	if !errors.Is(err, context.DeadlineExceeded) {

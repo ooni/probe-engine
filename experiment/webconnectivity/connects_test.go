@@ -10,7 +10,7 @@ import (
 
 func TestConnectsSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	ctx := context.Background()
 	r := webconnectivity.Connects(ctx, webconnectivity.ConnectsConfig{
@@ -35,7 +35,7 @@ func TestConnectsSuccess(t *testing.T) {
 
 func TestConnectsNoInput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	ctx := context.Background()
 	r := webconnectivity.Connects(ctx, webconnectivity.ConnectsConfig{

@@ -30,18 +30,18 @@ func dowithclient(t *testing.T, client *netx.HTTPClient) {
 	}
 }
 
-func TestIntegrationHTTPClient(t *testing.T) {
+func TestHTTPClient(t *testing.T) {
 	client := netx.NewHTTPClient()
 	dowithclient(t, client)
 }
 
-func TestIntegrationHTTPClientAndTransport(t *testing.T) {
+func TestHTTPClientAndTransport(t *testing.T) {
 	client := netx.NewHTTPClient()
 	client.Transport = netx.NewHTTPTransport()
 	dowithclient(t, client)
 }
 
-func TestIntegrationHTTPClientConfigureDNS(t *testing.T) {
+func TestHTTPClientConfigureDNS(t *testing.T) {
 	client := netx.NewHTTPClientWithoutProxy()
 	err := client.ConfigureDNS("udp", "1.1.1.1:53")
 	if err != nil {
@@ -50,13 +50,13 @@ func TestIntegrationHTTPClientConfigureDNS(t *testing.T) {
 	dowithclient(t, client)
 }
 
-func TestIntegrationHTTPClientSetResolver(t *testing.T) {
+func TestHTTPClientSetResolver(t *testing.T) {
 	client := netx.NewHTTPClientWithoutProxy()
 	client.SetResolver(new(net.Resolver))
 	dowithclient(t, client)
 }
 
-func TestIntegrationHTTPClientSetCABundle(t *testing.T) {
+func TestHTTPClientSetCABundle(t *testing.T) {
 	client := netx.NewHTTPClientWithoutProxy()
 	err := client.SetCABundle("testdata/cacert.pem")
 	if err != nil {
@@ -72,7 +72,7 @@ func TestIntegrationHTTPClientSetCABundle(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPClientForceSpecificSNI(t *testing.T) {
+func TestHTTPClientForceSpecificSNI(t *testing.T) {
 	client := netx.NewHTTPClientWithoutProxy()
 	err := client.ForceSpecificSNI("www.facebook.com")
 	if err != nil {
@@ -88,7 +88,7 @@ func TestIntegrationHTTPClientForceSpecificSNI(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPClientForceSkipVerify(t *testing.T) {
+func TestHTTPClientForceSkipVerify(t *testing.T) {
 	client := netx.NewHTTPClientWithoutProxy()
 	client.ForceSkipVerify()
 	resp, err := client.HTTPClient.Get("https://self-signed.badssl.com/")
@@ -135,7 +135,7 @@ func httpProxyTestMain(t *testing.T, client *http.Client, expect int) {
 	}
 }
 
-func TestIntegrationHTTPTransportTimeout(t *testing.T) {
+func TestHTTPTransportTimeout(t *testing.T) {
 	client := &http.Client{Transport: netx.NewHTTPTransport()}
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
@@ -156,7 +156,7 @@ func TestIntegrationHTTPTransportTimeout(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPTransportFailure(t *testing.T) {
+func TestHTTPTransportFailure(t *testing.T) {
 	client := &http.Client{Transport: netx.NewHTTPTransport()}
 	// This fails the request because we attempt to speak cleartext HTTP with
 	// a server that instead is expecting TLS.

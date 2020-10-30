@@ -25,9 +25,9 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx := context.Background()
@@ -60,7 +60,7 @@ func TestIntegrationSuccess(t *testing.T) {
 
 func TestMeasureWithCancelledContext(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -93,7 +93,7 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 
 func TestMeasureWithNoInput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -126,7 +126,7 @@ func TestMeasureWithNoInput(t *testing.T) {
 
 func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -159,7 +159,7 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 
 func TestMeasureWithUnsupportedInput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
@@ -192,7 +192,7 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 
 func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())

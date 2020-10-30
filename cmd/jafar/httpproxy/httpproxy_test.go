@@ -11,7 +11,7 @@ import (
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
 
-func TestIntegrationPass(t *testing.T) {
+func TestPass(t *testing.T) {
 	server, addr := newproxy(t, "ooni.io")
 	// We're filtering ooni.io, so we expect example.com to pass
 	// through the proxy with 200 and we also expect to see the
@@ -20,7 +20,7 @@ func TestIntegrationPass(t *testing.T) {
 	killproxy(t, server)
 }
 
-func TestIntegrationBlock(t *testing.T) {
+func TestBlock(t *testing.T) {
 	server, addr := newproxy(t, "ooni.io")
 	// Here we're filtering any domain containing ooni.io, so we
 	// expect the proxy to send 451 without actually proxing, thus
@@ -29,7 +29,7 @@ func TestIntegrationBlock(t *testing.T) {
 	killproxy(t, server)
 }
 
-func TestIntegrationLoop(t *testing.T) {
+func TestLoop(t *testing.T) {
 	server, addr := newproxy(t, "ooni.io")
 	// Here we're forcing the proxy to connect to itself. It does
 	// does that and recognizes itself because of the Via header
@@ -41,7 +41,7 @@ func TestIntegrationLoop(t *testing.T) {
 	killproxy(t, server)
 }
 
-func TestIntegrationListenError(t *testing.T) {
+func TestListenError(t *testing.T) {
 	proxy := NewCensoringProxy([]string{""}, uncensored.DefaultClient)
 	server, addr, err := proxy.Start("8.8.8.8:80")
 	if err == nil {

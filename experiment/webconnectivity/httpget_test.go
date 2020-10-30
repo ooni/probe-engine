@@ -10,7 +10,7 @@ import (
 
 func TestHTTPGet(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	ctx := context.Background()
 	r := webconnectivity.HTTPGet(ctx, webconnectivity.HTTPGetConfig{

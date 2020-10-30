@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitDecoderUnpackError(t *testing.T) {
+func TestDecoderUnpackError(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(dns.TypeA, nil)
 	if err == nil {
@@ -19,7 +19,7 @@ func TestUnitDecoderUnpackError(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderNXDOMAIN(t *testing.T) {
+func TestDecoderNXDOMAIN(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(dns.TypeA, resolver.GenReplyError(t, dns.RcodeNameError))
 	if err == nil || !strings.HasSuffix(err.Error(), "no such host") {
@@ -30,7 +30,7 @@ func TestUnitDecoderNXDOMAIN(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderOtherError(t *testing.T) {
+func TestDecoderOtherError(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(dns.TypeA, resolver.GenReplyError(t, dns.RcodeRefused))
 	if err == nil || !strings.HasSuffix(err.Error(), "query failed") {
@@ -41,7 +41,7 @@ func TestUnitDecoderOtherError(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderNoAddress(t *testing.T) {
+func TestDecoderNoAddress(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(dns.TypeA, resolver.GenReplySuccess(t, dns.TypeA))
 	if err == nil || !strings.HasSuffix(err.Error(), "no response returned") {
@@ -52,7 +52,7 @@ func TestUnitDecoderNoAddress(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderDecodeA(t *testing.T) {
+func TestDecoderDecodeA(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(
 		dns.TypeA, resolver.GenReplySuccess(t, dns.TypeA, "1.1.1.1", "8.8.8.8"))
@@ -70,7 +70,7 @@ func TestUnitDecoderDecodeA(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderDecodeAAAA(t *testing.T) {
+func TestDecoderDecodeAAAA(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(
 		dns.TypeAAAA, resolver.GenReplySuccess(t, dns.TypeAAAA, "::1", "fe80::1"))
@@ -88,7 +88,7 @@ func TestUnitDecoderDecodeAAAA(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderUnexpectedAReply(t *testing.T) {
+func TestDecoderUnexpectedAReply(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(
 		dns.TypeA, resolver.GenReplySuccess(t, dns.TypeAAAA, "::1", "fe80::1"))
@@ -100,7 +100,7 @@ func TestUnitDecoderUnexpectedAReply(t *testing.T) {
 	}
 }
 
-func TestUnitDecoderUnexpectedAAAAReply(t *testing.T) {
+func TestDecoderUnexpectedAAAAReply(t *testing.T) {
 	d := resolver.MiekgDecoder{}
 	data, err := d.Decode(
 		dns.TypeAAAA, resolver.GenReplySuccess(t, dns.TypeA, "1.1.1.1", "8.8.4.4."))

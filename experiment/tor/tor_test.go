@@ -21,7 +21,7 @@ import (
 	"github.com/ooni/probe-engine/probeservices"
 )
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
+func TestNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "tor" {
 		t.Fatal("unexpected name")
@@ -31,7 +31,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
+func TestMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
@@ -50,7 +50,7 @@ func TestUnitMeasurerMeasureNewOrchestraClientError(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
+func TestMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	measurer := NewMeasurer(Config{})
 	expected := errors.New("mocked error")
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
@@ -72,7 +72,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsError(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
+func TestMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	measurer := NewMeasurer(Config{})
 	measurer.newOrchestraClient = func(ctx context.Context, sess model.ExperimentSession) (model.ExperimentOrchestraClient, error) {
 		return new(probeservices.Client), nil
@@ -98,7 +98,7 @@ func TestUnitMeasurerMeasureFetchTorTargetsEmptyList(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureGood(t *testing.T) {
+func TestMeasurerMeasureGoodWithMockedOrchestra(t *testing.T) {
 	// This test mocks orchestra to return a nil list of targets, so the code runs
 	// but we don't perform any actualy network actions.
 	measurer := NewMeasurer(Config{})
@@ -123,7 +123,7 @@ func TestUnitMeasurerMeasureGood(t *testing.T) {
 
 func TestMeasurerMeasureGood(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := NewMeasurer(Config{})
 	sess := newsession()
@@ -154,7 +154,7 @@ var staticPrivateTestingTarget = model.TorTarget{
 
 func TestMeasurerMeasureSanitiseOutput(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	measurer := NewMeasurer(Config{})
 	sess := newsession()
@@ -219,7 +219,7 @@ var staticTestingTargets = []model.TorTarget{
 	},
 }
 
-func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
+func TestMeasurerMeasureTargetsNoInput(t *testing.T) {
 	var measurement model.Measurement
 	measurer := new(Measurer)
 	measurer.measureTargets(
@@ -236,7 +236,7 @@ func TestUnitMeasurerMeasureTargetsNoInput(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureTargetsCanceledContext(t *testing.T) {
+func TestMeasurerMeasureTargetsCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we don't actually do anything
 	var measurement model.Measurement
@@ -272,7 +272,7 @@ func wrapTestingTarget(tt model.TorTarget) keytarget {
 	}
 }
 
-func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
+func TestResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -306,7 +306,7 @@ func TestUnitResultsCollectorMeasureSingleTargetGood(t *testing.T) {
 	}
 }
 
-func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
+func TestResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -343,7 +343,7 @@ func TestUnitResultsCollectorMeasureSingleTargetWithFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
+func TestDefautFlexibleConnectDirPort(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -365,7 +365,7 @@ func TestUnitDefautFlexibleConnectDirPort(t *testing.T) {
 	}
 }
 
-func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
+func TestDefautFlexibleConnectOrPort(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -390,7 +390,7 @@ func TestUnitDefautFlexibleConnectOrPort(t *testing.T) {
 	}
 }
 
-func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
+func TestDefautFlexibleConnectOBFS4(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -415,7 +415,7 @@ func TestUnitDefautFlexibleConnectOBFS4(t *testing.T) {
 	}
 }
 
-func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
+func TestDefautFlexibleConnectDefault(t *testing.T) {
 	rc := newResultsCollector(
 		&mockable.Session{
 			MockableLogger: log.Log,
@@ -437,7 +437,7 @@ func TestUnitDefautFlexibleConnectDefault(t *testing.T) {
 	}
 }
 
-func TestUnitErrString(t *testing.T) {
+func TestErrString(t *testing.T) {
 	if errString(nil) != "success" {
 		t.Fatal("not working with nil")
 	}
@@ -446,7 +446,7 @@ func TestUnitErrString(t *testing.T) {
 	}
 }
 
-func TestUnitSummary(t *testing.T) {
+func TestSummary(t *testing.T) {
 	t.Run("without any piece of data", func(t *testing.T) {
 		tr := new(TargetResults)
 		tr.fillSummary()
@@ -538,7 +538,7 @@ func TestUnitSummary(t *testing.T) {
 	})
 }
 
-func TestUnitFillToplevelKeys(t *testing.T) {
+func TestFillToplevelKeys(t *testing.T) {
 	var tr TargetResults
 	tr.TargetProtocol = "or_port"
 	tk := new(TestKeys)

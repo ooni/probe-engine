@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestUnitDownloadNewHTTPRequestFailure(t *testing.T) {
+func TestDownloadNewHTTPRequestFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	_, err := download(context.Background(), downloadConfig{
 		deps: FakeDeps{newHTTPRequestErr: expected},
@@ -20,7 +20,7 @@ func TestUnitDownloadNewHTTPRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadHTTPClientDoFailure(t *testing.T) {
+func TestDownloadHTTPClientDoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := FakeHTTPTransport{err: expected}
 	_, err := download(context.Background(), downloadConfig{
@@ -34,7 +34,7 @@ func TestUnitDownloadHTTPClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadInternalError(t *testing.T) {
+func TestDownloadInternalError(t *testing.T) {
 	txp := FakeHTTPTransport{resp: &http.Response{StatusCode: 500}}
 	_, err := download(context.Background(), downloadConfig{
 		deps: FakeDeps{httpTransport: txp, newHTTPRequestResult: &http.Request{
@@ -47,7 +47,7 @@ func TestUnitDownloadInternalError(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadReadAllFailure(t *testing.T) {
+func TestDownloadReadAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := FakeHTTPTransport{resp: &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
@@ -68,7 +68,7 @@ func TestUnitDownloadReadAllFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadSuccess(t *testing.T) {
+func TestDownloadSuccess(t *testing.T) {
 	txp := FakeHTTPTransport{resp: &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
 		StatusCode: 200,
