@@ -53,7 +53,7 @@ func (m *Measurer) Run(
 	callbacks model.ExperimentCallbacks,
 ) error {
 	if measurement.Input == "" {
-		return errors.New("Experiment requires measurement.Input")
+		return errors.New("experiment requires input")
 	}
 	if m.config.TestHelperURL == "" {
 		m.config.TestHelperURL = "http://www.example.com"

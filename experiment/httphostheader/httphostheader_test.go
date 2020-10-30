@@ -36,7 +36,7 @@ func TestMeasurerMeasureNoMeasurementInput(t *testing.T) {
 		new(model.Measurement),
 		model.NewPrinterCallbacks(log.Log),
 	)
-	if err == nil || err.Error() != "Experiment requires measurement.Input" {
+	if err == nil || err.Error() != "experiment requires input" {
 		t.Fatal("not the error we expected")
 	}
 }
