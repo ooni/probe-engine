@@ -1,6 +1,8 @@
 package httptransport_test
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -12,13 +14,12 @@ import (
 
 func TestUnitHTTP3TransportSuccess(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(selfcensor.SystemDialer{}, dialer.TLSDialer{})
-	client := &http.Client{Transport: txp}
-	req, err := http.NewRequest(
-		"GET", "https://www.google.com", nil)
+
+	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Do(req)
+	resp, err := txp.RoundTrip(req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,18 +33,19 @@ func TestUnitHTTP3TransportSuccess(t *testing.T) {
 
 func TestUnitHTTP3TransportFailure(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(selfcensor.SystemDialer{}, dialer.TLSDialer{})
-	client := &http.Client{Transport: txp}
-	req, err := http.NewRequest(
-		"GET", "https://www.ooni.org", nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.ooni.org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := client.Do(req)
+	resp, err := txp.RoundTrip(req)
 	if err == nil {
 		t.Fatal("expected error here")
 	}
-	if !strings.HasSuffix(err.Error(), ": Handshake did not complete in time") {
-		t.Fatal("not the error we expected")
+	if !(errors.Is(err, context.Canceled) || strings.HasSuffix(err.Error(), ": Handshake did not complete in time")) {
+		t.Fatal("not the error we expected", err)
 	}
 	if resp != nil {
 		t.Fatal("expected nil response here")
