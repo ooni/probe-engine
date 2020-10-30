@@ -1,9 +1,7 @@
 package httptransport
 
 import (
-	"context"
 	"crypto/tls"
-	"net"
 	"net/http"
 
 	"github.com/lucas-clemente/quic-go"
@@ -14,14 +12,11 @@ import (
 // and possibly fields which are not implemented by http3.Roundtripper, to mimic http.Transport
 type HTTP3Transport struct {
 	http3.RoundTripper
-	DialContext        func(ctx context.Context, network, addr string) (net.Conn, error)
-	DialTLSContext     func(ctx context.Context, network, addr string) (net.Conn, error)
-	DisableCompression bool
-	MaxConnsPerHost    int
 }
 
-// CloseIdleConnections TODO (necessary for interface compliance)
+// CloseIdleConnections closes all the connections opened by this transport.
 func (t *HTTP3Transport) CloseIdleConnections() {
+	// TODO(kelmenhorst): implement
 }
 
 // NewHTTP3Transport creates a new http3 transport.
