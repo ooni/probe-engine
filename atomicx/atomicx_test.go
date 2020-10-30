@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/probe-engine/atomicx"
 )
 
-func TestIntegrationInt64(t *testing.T) {
+func TestInt64(t *testing.T) {
 	// TODO(bassosimone): how to write tests with race conditions
 	// and be confident that they're WAI? Here I hope this test is
 	// run with `-race` and I'm doing something that AFAICT will
@@ -28,7 +28,7 @@ func TestIntegrationInt64(t *testing.T) {
 	}
 }
 
-func TestIntegrationFloat64(t *testing.T) {
+func TestFloat64(t *testing.T) {
 	// TODO(bassosimone): how to write tests with race conditions
 	// and be confident that they're WAI? Here I hope this test is
 	// run with `-race` and I'm doing something that AFAICT will

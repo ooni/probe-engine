@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
-func TestUnitUserAgentWithDefault(t *testing.T) {
+func TestUserAgentWithDefault(t *testing.T) {
 	txp := httptransport.UserAgentTransport{
 		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{StatusCode: 200},
@@ -29,7 +29,7 @@ func TestUnitUserAgentWithDefault(t *testing.T) {
 	}
 }
 
-func TestUnitUserAgentWithExplicitValue(t *testing.T) {
+func TestUserAgentWithExplicitValue(t *testing.T) {
 	txp := httptransport.UserAgentTransport{
 		RoundTripper: httptransport.FakeTransport{
 			Resp: &http.Response{StatusCode: 200},

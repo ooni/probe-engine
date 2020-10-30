@@ -15,7 +15,7 @@ import (
 	"github.com/ooni/probe-engine/netx/errorx"
 )
 
-func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {
+func TestSystemTLSHandshakerEOFError(t *testing.T) {
 	h := dialer.SystemTLSHandshaker{}
 	conn, _, err := h.Handshake(context.Background(), dialer.EOFConn{}, &tls.Config{
 		ServerName: "x.org",
@@ -28,7 +28,7 @@ func TestUnitSystemTLSHandshakerEOFError(t *testing.T) {
 	}
 }
 
-func TestUnitTimeoutTLSHandshakerSetDeadlineError(t *testing.T) {
+func TestTimeoutTLSHandshakerSetDeadlineError(t *testing.T) {
 	h := dialer.TimeoutTLSHandshaker{
 		TLSHandshaker:    dialer.SystemTLSHandshaker{},
 		HandshakeTimeout: 200 * time.Millisecond,
@@ -45,7 +45,7 @@ func TestUnitTimeoutTLSHandshakerSetDeadlineError(t *testing.T) {
 	}
 }
 
-func TestUnitTimeoutTLSHandshakerEOFError(t *testing.T) {
+func TestTimeoutTLSHandshakerEOFError(t *testing.T) {
 	h := dialer.TimeoutTLSHandshaker{
 		TLSHandshaker:    dialer.SystemTLSHandshaker{},
 		HandshakeTimeout: 200 * time.Millisecond,
@@ -60,7 +60,7 @@ func TestUnitTimeoutTLSHandshakerEOFError(t *testing.T) {
 	}
 }
 
-func TestUnitTimeoutTLSHandshakerCallsSetDeadline(t *testing.T) {
+func TestTimeoutTLSHandshakerCallsSetDeadline(t *testing.T) {
 	h := dialer.TimeoutTLSHandshaker{
 		TLSHandshaker:    dialer.SystemTLSHandshaker{},
 		HandshakeTimeout: 200 * time.Millisecond,
@@ -95,7 +95,7 @@ func (c *SetDeadlineConn) SetDeadline(t time.Time) error {
 	return nil
 }
 
-func TestUnitErrorWrapperTLSHandshakerFailure(t *testing.T) {
+func TestErrorWrapperTLSHandshakerFailure(t *testing.T) {
 	h := dialer.ErrorWrapperTLSHandshaker{TLSHandshaker: dialer.EOFTLSHandshaker{}}
 	conn, _, err := h.Handshake(
 		context.Background(), dialer.EOFConn{}, new(tls.Config))
@@ -120,7 +120,7 @@ func TestUnitErrorWrapperTLSHandshakerFailure(t *testing.T) {
 	}
 }
 
-func TestUnitEmitterTLSHandshakerFailure(t *testing.T) {
+func TestEmitterTLSHandshakerFailure(t *testing.T) {
 	saver := &handlers.SavingHandler{}
 	ctx := modelx.WithMeasurementRoot(context.Background(), &modelx.MeasurementRoot{
 		Beginning: time.Now(),
@@ -163,7 +163,7 @@ func TestUnitEmitterTLSHandshakerFailure(t *testing.T) {
 	}
 }
 
-func TestUnitTLSDialerFailureSplitHostPort(t *testing.T) {
+func TestTLSDialerFailureSplitHostPort(t *testing.T) {
 	dialer := dialer.TLSDialer{}
 	conn, err := dialer.DialTLSContext(
 		context.Background(), "tcp", "www.google.com") // missing port
@@ -175,7 +175,7 @@ func TestUnitTLSDialerFailureSplitHostPort(t *testing.T) {
 	}
 }
 
-func TestUnitTLSDialerFailureDialing(t *testing.T) {
+func TestTLSDialerFailureDialing(t *testing.T) {
 	dialer := dialer.TLSDialer{Dialer: dialer.EOFDialer{}}
 	conn, err := dialer.DialTLSContext(
 		context.Background(), "tcp", "www.google.com:443")
@@ -187,7 +187,7 @@ func TestUnitTLSDialerFailureDialing(t *testing.T) {
 	}
 }
 
-func TestUnitTLSDialerFailureHandshaking(t *testing.T) {
+func TestTLSDialerFailureHandshaking(t *testing.T) {
 	rec := &RecorderTLSHandshaker{TLSHandshaker: dialer.SystemTLSHandshaker{}}
 	dialer := dialer.TLSDialer{
 		Dialer:        dialer.EOFConnDialer{},
@@ -206,7 +206,7 @@ func TestUnitTLSDialerFailureHandshaking(t *testing.T) {
 	}
 }
 
-func TestUnitTLSDialerFailureHandshakingOverrideSNI(t *testing.T) {
+func TestTLSDialerFailureHandshakingOverrideSNI(t *testing.T) {
 	rec := &RecorderTLSHandshaker{TLSHandshaker: dialer.SystemTLSHandshaker{}}
 	dialer := dialer.TLSDialer{
 		Config: &tls.Config{
@@ -240,7 +240,7 @@ func (h *RecorderTLSHandshaker) Handshake(
 	return h.TLSHandshaker.Handshake(ctx, conn, config)
 }
 
-func TestIntegrationDialTLSContextGood(t *testing.T) {
+func TestDialTLSContextGood(t *testing.T) {
 	dialer := dialer.TLSDialer{
 		Config:        &tls.Config{ServerName: "google.com"},
 		Dialer:        new(net.Dialer),
@@ -256,7 +256,7 @@ func TestIntegrationDialTLSContextGood(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialTLSContextTimeout(t *testing.T) {
+func TestDialTLSContextTimeout(t *testing.T) {
 	dialer := dialer.TLSDialer{
 		Config: &tls.Config{ServerName: "google.com"},
 		Dialer: new(net.Dialer),

@@ -26,7 +26,7 @@ func TestMeasurerExperimentNameVersion(t *testing.T) {
 	}
 }
 
-func TestIntegrationRun(t *testing.T) {
+func TestRun(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		// See https://github.com/ooni/probe-engine/issues/874#issuecomment-679850652
 		t.Skip("skipping broken test on GitHub Actions")
@@ -57,7 +57,7 @@ func TestIntegrationRun(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunCustomInput(t *testing.T) {
+func TestRunCustomInput(t *testing.T) {
 	input := "stun.ekiga.net:3478"
 	measurer := stunreachability.NewExperimentMeasurer(stunreachability.Config{})
 	measurement := new(model.Measurement)
@@ -185,7 +185,7 @@ func TestStartFailure(t *testing.T) {
 
 func TestReadFailure(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	config := &stunreachability.Config{}
 	expected := errors.New("mocked error")

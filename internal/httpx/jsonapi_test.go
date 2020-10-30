@@ -215,7 +215,7 @@ type httpbinheaders struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func TestIntegrationReadJSONSuccess(t *testing.T) {
+func TestReadJSONSuccess(t *testing.T) {
 	var headers httpbinheaders
 	err := newClient().GetJSON(context.Background(), "/headers", &headers)
 	if err != nil {
@@ -233,7 +233,7 @@ type httpbinpost struct {
 	Data string `json:"data"`
 }
 
-func TestIntegrationCreateJSONSuccess(t *testing.T) {
+func TestCreateJSONSuccess(t *testing.T) {
 	headers := httpbinheaders{
 		Headers: map[string]string{
 			"Foo": "bar",
@@ -253,7 +253,7 @@ type httpbinput struct {
 	Data string `json:"data"`
 }
 
-func TestIntegrationUpdateJSONSuccess(t *testing.T) {
+func TestUpdateJSONSuccess(t *testing.T) {
 	headers := httpbinheaders{
 		Headers: map[string]string{
 			"Foo": "bar",
@@ -269,7 +269,7 @@ func TestIntegrationUpdateJSONSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitReadJSONFailure(t *testing.T) {
+func TestReadJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
@@ -279,7 +279,7 @@ func TestUnitReadJSONFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCreateJSONFailure(t *testing.T) {
+func TestCreateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"
@@ -289,7 +289,7 @@ func TestUnitCreateJSONFailure(t *testing.T) {
 	}
 }
 
-func TestUnitUpdateJSONFailure(t *testing.T) {
+func TestUpdateJSONFailure(t *testing.T) {
 	var headers httpbinheaders
 	client := newClient()
 	client.BaseURL = "\t\t\t\t"

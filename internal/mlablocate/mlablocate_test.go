@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mlablocate"
 )
 
-func TestIntegrationWithoutProxy(t *testing.T) {
+func TestWithoutProxy(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -27,7 +27,7 @@ func TestIntegrationWithoutProxy(t *testing.T) {
 	}
 }
 
-func TestIntegration404Response(t *testing.T) {
+func Test404Response(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -42,7 +42,7 @@ func TestIntegration404Response(t *testing.T) {
 	}
 }
 
-func TestUnitNewRequestFailure(t *testing.T) {
+func TestNewRequestFailure(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -58,7 +58,7 @@ func TestUnitNewRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitHTTPClientDoFailure(t *testing.T) {
+func TestHTTPClientDoFailure(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -85,7 +85,7 @@ func (txp *roundTripFails) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, txp.Error
 }
 
-func TestUnitCannotReadBody(t *testing.T) {
+func TestCannotReadBody(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -127,7 +127,7 @@ func (b *readingBodyFailsBody) Close() error {
 	return nil
 }
 
-func TestUnitInvalidJSON(t *testing.T) {
+func TestInvalidJSON(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,
@@ -168,7 +168,7 @@ func (b *invalidJSONBody) Close() error {
 	return nil
 }
 
-func TestUnitEmptyFQDN(t *testing.T) {
+func TestEmptyFQDN(t *testing.T) {
 	client := mlablocate.NewClient(
 		http.DefaultClient,
 		log.Log,

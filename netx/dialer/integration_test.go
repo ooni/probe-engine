@@ -10,9 +10,9 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func TestIntegrationTLSDialerSuccess(t *testing.T) {
+func TestTLSDialerSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	log.SetLevel(log.DebugLevel)
 	dialer := dialer.TLSDialer{Dialer: new(net.Dialer),
@@ -35,9 +35,9 @@ func TestIntegrationTLSDialerSuccess(t *testing.T) {
 	resp.Body.Close()
 }
 
-func TestIntegrationDNSDialerSuccess(t *testing.T) {
+func TestDNSDialerSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	log.SetLevel(log.DebugLevel)
 	dialer := dialer.DNSDialer{

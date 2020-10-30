@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 )
 
-func TestUnit(t *testing.T) {
+func TestGood(t *testing.T) {
 	counter := bytecounter.New()
 	counter.CountBytesReceived(16384)
 	counter.CountKibiBytesReceived(10)

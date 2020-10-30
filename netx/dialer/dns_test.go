@@ -14,7 +14,7 @@ import (
 	"github.com/ooni/probe-engine/netx/errorx"
 )
 
-func TestUnitDNSDialerNoPort(t *testing.T) {
+func TestDNSDialerNoPort(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "antani.ooni.nu")
 	if err == nil {
@@ -25,7 +25,7 @@ func TestUnitDNSDialerNoPort(t *testing.T) {
 	}
 }
 
-func TestUnitDNSDialerLookupHostAddress(t *testing.T) {
+func TestDNSDialerLookupHostAddress(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: MockableResolver{
 		Err: errors.New("mocked error"),
 	}}
@@ -38,7 +38,7 @@ func TestUnitDNSDialerLookupHostAddress(t *testing.T) {
 	}
 }
 
-func TestUnitDNSDialerLookupHostFailure(t *testing.T) {
+func TestDNSDialerLookupHostFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	dialer := dialer.DNSDialer{Dialer: new(net.Dialer), Resolver: MockableResolver{
 		Err: expected,
@@ -61,7 +61,7 @@ func (r MockableResolver) LookupHost(ctx context.Context, host string) ([]string
 	return r.Addresses, r.Err
 }
 
-func TestUnitDNSDialerDialForSingleIPFails(t *testing.T) {
+func TestDNSDialerDialForSingleIPFails(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: dialer.EOFDialer{}, Resolver: new(net.Resolver)}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "1.1.1.1:853")
 	if !errors.Is(err, io.EOF) {
@@ -72,7 +72,7 @@ func TestUnitDNSDialerDialForSingleIPFails(t *testing.T) {
 	}
 }
 
-func TestUnitDNSDialerDialForManyIPFails(t *testing.T) {
+func TestDNSDialerDialForManyIPFails(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: dialer.EOFDialer{}, Resolver: MockableResolver{
 		Addresses: []string{"1.1.1.1", "8.8.8.8"},
 	}}
@@ -85,7 +85,7 @@ func TestUnitDNSDialerDialForManyIPFails(t *testing.T) {
 	}
 }
 
-func TestUnitDNSDialerDialForManyIPSuccess(t *testing.T) {
+func TestDNSDialerDialForManyIPSuccess(t *testing.T) {
 	dialer := dialer.DNSDialer{Dialer: dialer.EOFConnDialer{}, Resolver: MockableResolver{
 		Addresses: []string{"1.1.1.1", "8.8.8.8"},
 	}}
@@ -99,7 +99,7 @@ func TestUnitDNSDialerDialForManyIPSuccess(t *testing.T) {
 	conn.Close()
 }
 
-func TestUnitDNSDialerDialSetsDialID(t *testing.T) {
+func TestDNSDialerDialSetsDialID(t *testing.T) {
 	saver := &handlers.SavingHandler{}
 	ctx := modelx.WithMeasurementRoot(context.Background(), &modelx.MeasurementRoot{
 		Beginning: time.Now(),
@@ -129,7 +129,7 @@ func TestUnitDNSDialerDialSetsDialID(t *testing.T) {
 	}
 }
 
-func TestUnitReduceErrors(t *testing.T) {
+func TestReduceErrors(t *testing.T) {
 	t.Run("no errors", func(t *testing.T) {
 		result := dialer.ReduceErrors(nil)
 		if result != nil {

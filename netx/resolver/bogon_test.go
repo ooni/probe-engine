@@ -9,7 +9,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitResolverIsBogon(t *testing.T) {
+func TestResolverIsBogon(t *testing.T) {
 	if resolver.IsBogon("antani") != true {
 		t.Fatal("unexpected result")
 	}
@@ -24,7 +24,7 @@ func TestUnitResolverIsBogon(t *testing.T) {
 	}
 }
 
-func TestUnitBogonAwareResolverWithBogon(t *testing.T) {
+func TestBogonAwareResolverWithBogon(t *testing.T) {
 	r := resolver.BogonResolver{
 		Resolver: resolver.NewFakeResolverWithResult([]string{"127.0.0.1"}),
 	}
@@ -37,7 +37,7 @@ func TestUnitBogonAwareResolverWithBogon(t *testing.T) {
 	}
 }
 
-func TestUnitBogonAwareResolverWithoutBogon(t *testing.T) {
+func TestBogonAwareResolverWithoutBogon(t *testing.T) {
 	orig := []string{"8.8.8.8"}
 	r := resolver.BogonResolver{
 		Resolver: resolver.NewFakeResolverWithResult(orig),

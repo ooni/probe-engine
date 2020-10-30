@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestIntegrationSystemResolverLookupHost(t *testing.T) {
+func TestSystemResolverLookupHost(t *testing.T) {
 	r := resolver.SystemResolver{}
 	if r.Network() != "system" {
 		t.Fatal("invalid Network")

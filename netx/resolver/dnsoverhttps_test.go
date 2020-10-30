@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
+func TestDNSOverHTTPSNewRequestFailure(t *testing.T) {
 	const invalidURL = "\t"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, invalidURL)
 	data, err := txp.RoundTrip(context.Background(), nil)
@@ -25,7 +25,7 @@ func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
+func TestDNSOverHTTPSClientDoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
@@ -42,7 +42,7 @@ func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
+func TestDNSOverHTTPSHTTPFailure(t *testing.T) {
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -61,7 +61,7 @@ func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
+func TestDNSOverHTTPSMissingContentType(t *testing.T) {
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -80,7 +80,7 @@ func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
+func TestDNSOverHTTPSSuccess(t *testing.T) {
 	body := []byte("AAA")
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
@@ -103,7 +103,7 @@ func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
+func TestDNSOverHTTPTransportOK(t *testing.T) {
 	const queryURL = "https://cloudflare-dns.com/dns-query"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, queryURL)
 	if txp.Network() != "doh" {
@@ -117,7 +117,7 @@ func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
+func TestDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 	expected := errors.New("mocked error")
 	var correct bool
 	txp := resolver.DNSOverHTTPS{
@@ -139,7 +139,7 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSHostOverride(t *testing.T) {
+func TestDNSOverHTTPSHostOverride(t *testing.T) {
 	var correct bool
 	expected := errors.New("mocked error")
 

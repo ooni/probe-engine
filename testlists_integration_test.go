@@ -1,12 +1,13 @@
-// +build integration
-
 package engine
 
 import (
 	"testing"
 )
 
-func TestIntegrationQueryTestListsURLs(t *testing.T) {
+func TestQueryTestListsURLs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	config := &TestListsURLsConfig{}
@@ -42,7 +43,10 @@ func TestIntegrationQueryTestListsURLs(t *testing.T) {
 	}
 }
 
-func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
+func TestQueryTestListsURLsQueryFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	config := &TestListsURLsConfig{BaseURL: "\t"}
@@ -55,7 +59,10 @@ func TestUnitQueryTestListsURLsQueryFailure(t *testing.T) {
 	}
 }
 
-func TestUnitQueryTestListsURLsNilConfig(t *testing.T) {
+func TestQueryTestListsURLsNilConfig(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTesting(t)
 	defer sess.Close()
 	result, err := sess.QueryTestListsURLs(nil)

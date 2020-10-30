@@ -154,7 +154,7 @@ func TestToFailureString(t *testing.T) {
 	})
 }
 
-func TestUnitToOperationString(t *testing.T) {
+func TestToOperationString(t *testing.T) {
 	t.Run("for connect", func(t *testing.T) {
 		// You're doing HTTP and connect fails. You want to know
 		// that connect failed not that HTTP failed.

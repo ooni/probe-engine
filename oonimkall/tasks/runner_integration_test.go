@@ -1,5 +1,3 @@
-// +build integration
-
 package tasks_test
 
 import (
@@ -14,7 +12,10 @@ import (
 	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
-func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
+func TestRunnerMaybeLookupBackendsFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 	}))
@@ -51,7 +52,10 @@ func TestIntegrationRunnerMaybeLookupBackendsFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
+func TestRunnerOpenReportFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	var (
 		nreq int64
 		mu   sync.Mutex
@@ -105,7 +109,10 @@ func TestIntegrationRunnerOpenReportFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerGood(t *testing.T) {
+func TestRunnerGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -132,7 +139,10 @@ func TestIntegrationRunnerGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithUnsupportedSettings(t *testing.T) {
+func TestRunnerWithUnsupportedSettings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -160,7 +170,10 @@ func TestIntegrationRunnerWithUnsupportedSettings(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithInvalidKVStorePath(t *testing.T) {
+func TestRunnerWithInvalidKVStorePath(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -187,7 +200,10 @@ func TestIntegrationRunnerWithInvalidKVStorePath(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithInvalidExperimentName(t *testing.T) {
+func TestRunnerWithInvalidExperimentName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -214,7 +230,10 @@ func TestIntegrationRunnerWithInvalidExperimentName(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithInconsistentGeolookupSettings(t *testing.T) {
+func TestRunnerWithInconsistentGeolookupSettings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -243,7 +262,10 @@ func TestIntegrationRunnerWithInconsistentGeolookupSettings(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithNoGeolookup(t *testing.T) {
+func TestRunnerWithNoGeolookup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -272,7 +294,10 @@ func TestIntegrationRunnerWithNoGeolookup(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithMissingInput(t *testing.T) {
+func TestRunnerWithMissingInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -301,7 +326,10 @@ func TestIntegrationRunnerWithMissingInput(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithMaxRuntime(t *testing.T) {
+func TestRunnerWithMaxRuntime(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -344,7 +372,10 @@ func TestIntegrationRunnerWithMaxRuntime(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithMaxRuntimeNonInterruptible(t *testing.T) {
+func TestRunnerWithMaxRuntimeNonInterruptible(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",
@@ -387,7 +418,10 @@ func TestIntegrationRunnerWithMaxRuntimeNonInterruptible(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerWithFailedMeasurement(t *testing.T) {
+func TestRunnerWithFailedMeasurement(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	out := make(chan *tasks.Event)
 	settings := &tasks.Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",

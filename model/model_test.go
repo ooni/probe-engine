@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestUnitMeasurementTargetMarshalJSON(t *testing.T) {
+func TestMeasurementTargetMarshalJSON(t *testing.T) {
 	var mt model.MeasurementTarget
 	data, err := json.Marshal(mt)
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitEncoderEncodeA(t *testing.T) {
+func TestEncoderEncodeA(t *testing.T) {
 	e := resolver.MiekgEncoder{}
 	data, err := e.Encode("x.org", dns.TypeA, false)
 	if err != nil {
@@ -17,7 +17,7 @@ func TestUnitEncoderEncodeA(t *testing.T) {
 	validate(t, data, byte(dns.TypeA))
 }
 
-func TestUnitEncoderEncodeAAAA(t *testing.T) {
+func TestEncoderEncodeAAAA(t *testing.T) {
 	e := resolver.MiekgEncoder{}
 	data, err := e.Encode("x.org", dns.TypeAAAA, false)
 	if err != nil {
@@ -64,7 +64,7 @@ func validate(t *testing.T, data []byte, qtype byte) {
 	}
 }
 
-func TestUnitEncoderPadding(t *testing.T) {
+func TestEncoderPadding(t *testing.T) {
 	// The purpose of this unit test is to make sure that for a wide
 	// array of values we obtain the right query size.
 	getquerylen := func(domainlen int, padding bool) int {

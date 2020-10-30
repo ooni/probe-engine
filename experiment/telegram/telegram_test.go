@@ -23,7 +23,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	measurer := telegram.NewExperimentMeasurer(telegram.Config{})
 	measurement := new(model.Measurement)
 	err := measurer.Run(

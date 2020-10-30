@@ -1,5 +1,3 @@
-// +build integration
-
 package libminiooni_test
 
 import (
@@ -8,6 +6,9 @@ import (
 	"github.com/ooni/probe-engine/libminiooni"
 )
 
-func TestIntegrationSimple(t *testing.T) {
+func TestSimple(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	libminiooni.MainWithConfiguration("example", libminiooni.Options{})
 }

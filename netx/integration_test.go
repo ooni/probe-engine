@@ -14,9 +14,9 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	log.SetLevel(log.DebugLevel)
 	counter := bytecounter.New()
@@ -67,9 +67,9 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationBogonResolutionNotBroken(t *testing.T) {
+func TestBogonResolutionNotBroken(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := new(trace.Saver)
 	r := netx.NewResolver(netx.Config{

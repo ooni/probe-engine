@@ -9,7 +9,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	txp := netx.NewHTTPTransport(netx.Config{
 		Dialer: dialer.ShapingDialer{
 			Dialer: new(net.Dialer),

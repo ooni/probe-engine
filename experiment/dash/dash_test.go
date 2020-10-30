@@ -18,7 +18,7 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestUnitRunnerLoopLocateFailure(t *testing.T) {
+func TestRunnerLoopLocateFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
 		callbacks: model.NewPrinterCallbacks(log.Log),
@@ -39,7 +39,7 @@ func TestUnitRunnerLoopLocateFailure(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
+func TestRunnerLoopNegotiateFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
 		callbacks: model.NewPrinterCallbacks(log.Log),
@@ -69,7 +69,7 @@ func TestUnitRunnerLoopNegotiateFailure(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
+func TestRunnerLoopMeasureFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	r := runner{
 		callbacks: model.NewPrinterCallbacks(log.Log),
@@ -106,7 +106,7 @@ func TestUnitRunnerLoopMeasureFailure(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerLoopCollectFailure(t *testing.T) {
+func TestRunnerLoopCollectFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := new(trace.Saver)
 	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
@@ -151,7 +151,7 @@ func TestUnitRunnerLoopCollectFailure(t *testing.T) {
 	}
 }
 
-func TestUnitRunnerLoopSuccess(t *testing.T) {
+func TestRunnerLoopSuccess(t *testing.T) {
 	saver := new(trace.Saver)
 	saver.Write(trace.Event{Name: errorx.ConnectOperation, Duration: 150 * time.Millisecond})
 	r := runner{
@@ -200,7 +200,7 @@ func TestUnitRunnerLoopSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitTestKeysAnalyzeWithNoData(t *testing.T) {
+func TestTestKeysAnalyzeWithNoData(t *testing.T) {
 	tk := &TestKeys{}
 	err := tk.analyze()
 	if !errors.Is(err, stats.EmptyInputErr) {
@@ -208,7 +208,7 @@ func TestUnitTestKeysAnalyzeWithNoData(t *testing.T) {
 	}
 }
 
-func TestUnitTestKeysAnalyzeMedian(t *testing.T) {
+func TestTestKeysAnalyzeMedian(t *testing.T) {
 	tk := &TestKeys{
 		ReceiverData: []clientResults{
 			{
@@ -231,7 +231,7 @@ func TestUnitTestKeysAnalyzeMedian(t *testing.T) {
 	}
 }
 
-func TestUnitTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
+func TestTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
 	tk := &TestKeys{
 		ReceiverData: []clientResults{
 			{
@@ -257,7 +257,7 @@ func TestUnitTestKeysAnalyzeMinPlayoutDelay(t *testing.T) {
 	}
 }
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
+func TestNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "dash" {
 		t.Fatal("unexpected name")
@@ -267,7 +267,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureWithCancelledContext(t *testing.T) {
+func TestMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
 	m := &Measurer{}
@@ -285,7 +285,7 @@ func TestUnitMeasureWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
+func TestMeasurerMaybeStartTunnelFailure(t *testing.T) {
 	m := &Measurer{config: Config{
 		Tunnel: "psiphon",
 	}}
@@ -305,7 +305,7 @@ func TestUnitMeasurerMaybeStartTunnelFailure(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureWithProxyURL(t *testing.T) {
+func TestMeasureWithProxyURL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
 	m := &Measurer{}

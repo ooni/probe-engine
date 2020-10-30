@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
@@ -47,7 +47,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegration404Response(t *testing.T) {
+func Test404Response(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
@@ -61,7 +61,7 @@ func TestIntegration404Response(t *testing.T) {
 	}
 }
 
-func TestUnitNewRequestFailure(t *testing.T) {
+func TestNewRequestFailure(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	client.Hostname = "\t"
 	result, err := client.Query(context.Background(), "nonexistent")
@@ -73,7 +73,7 @@ func TestUnitNewRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitHTTPClientDoFailure(t *testing.T) {
+func TestHTTPClientDoFailure(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	expected := errors.New("mocked error")
 	client.HTTPClient = &http.Client{
@@ -88,7 +88,7 @@ func TestUnitHTTPClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCannotReadBody(t *testing.T) {
+func TestCannotReadBody(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	expected := errors.New("mocked error")
 	client.HTTPClient = &http.Client{
@@ -110,7 +110,7 @@ func TestUnitCannotReadBody(t *testing.T) {
 	}
 }
 
-func TestUnitInvalidJSON(t *testing.T) {
+func TestInvalidJSON(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	client.HTTPClient = &http.Client{
 		Transport: mlablocatev2.FakeTransport{
@@ -132,7 +132,7 @@ func TestUnitInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestUnitEmptyResponse(t *testing.T) {
+func TestEmptyResponse(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	client.HTTPClient = &http.Client{
 		Transport: mlablocatev2.FakeTransport{
@@ -154,7 +154,7 @@ func TestUnitEmptyResponse(t *testing.T) {
 	}
 }
 
-func TestUnitNDT7QueryFails(t *testing.T) {
+func TestNDT7QueryFails(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	client.HTTPClient = &http.Client{
 		Transport: mlablocatev2.FakeTransport{
@@ -173,7 +173,7 @@ func TestUnitNDT7QueryFails(t *testing.T) {
 	}
 }
 
-func TestUnitNDT7InvalidURLs(t *testing.T) {
+func TestNDT7InvalidURLs(t *testing.T) {
 	client := mlablocatev2.NewClient(http.DefaultClient, log.Log, "miniooni/0.1.0-dev")
 	client.HTTPClient = &http.Client{
 		Transport: mlablocatev2.FakeTransport{
@@ -196,7 +196,7 @@ func TestUnitNDT7InvalidURLs(t *testing.T) {
 	}
 }
 
-func TestUnitEntryRecordSite(t *testing.T) {
+func TestEntryRecordSite(t *testing.T) {
 	type fields struct {
 		Machine string
 		URLs    map[string]string

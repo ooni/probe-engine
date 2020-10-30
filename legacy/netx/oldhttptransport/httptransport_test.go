@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	client := &http.Client{
 		Transport: New(http.DefaultTransport),
 	}
@@ -22,7 +22,7 @@ func TestIntegration(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestFailure(t *testing.T) {
 	client := &http.Client{
 		Transport: New(http.DefaultTransport),
 	}

@@ -2,7 +2,7 @@ package shellx
 
 import "testing"
 
-func TestIntegrationRun(t *testing.T) {
+func TestRun(t *testing.T) {
 	if err := Run("whoami"); err != nil {
 		t.Fatal(err)
 	}
@@ -11,7 +11,7 @@ func TestIntegrationRun(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunCommandline(t *testing.T) {
+func TestRunCommandline(t *testing.T) {
 	t.Run("when the command does not parse", func(t *testing.T) {
 		if err := RunCommandline(`"foobar`); err == nil {
 			t.Fatal("expected an error here")

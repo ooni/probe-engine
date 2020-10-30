@@ -17,7 +17,7 @@ const (
 	softwareVersion = "0.0.1"
 )
 
-func TestUnitTestKeysClassify(t *testing.T) {
+func TestTestKeysClassify(t *testing.T) {
 	asStringPtr := func(s string) *string {
 		return &s
 	}
@@ -100,7 +100,7 @@ func TestUnitTestKeysClassify(t *testing.T) {
 	})
 }
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
+func TestNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
@@ -110,7 +110,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
+func TestMeasurerMeasureNoControlSNI(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
@@ -123,7 +123,7 @@ func TestUnitMeasurerMeasureNoControlSNI(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
+func TestMeasurerMeasureNoMeasurementInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "example.com",
 	})
@@ -138,7 +138,7 @@ func TestUnitMeasurerMeasureNoMeasurementInput(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
+func TestMeasurerMeasureWithInvalidInput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{
@@ -158,7 +158,7 @@ func TestUnitMeasurerMeasureWithInvalidInput(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
+func TestMeasurerMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{
@@ -178,7 +178,7 @@ func TestUnitMeasurerMeasureWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureoneCancelledContext(t *testing.T) {
+func TestMeasureoneCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	result := new(Measurer).measureone(
@@ -232,7 +232,7 @@ func TestUnitMeasureoneCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
+func TestMeasureoneWithPreMeasurementFailure(t *testing.T) {
 	result := new(Measurer).measureone(
 		context.Background(),
 		&mockable.Session{MockableLogger: log.Log},
@@ -284,7 +284,7 @@ func TestUnitMeasureoneWithPreMeasurementFailure(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureoneSuccess(t *testing.T) {
+func TestMeasureoneSuccess(t *testing.T) {
 	result := new(Measurer).measureone(
 		context.Background(),
 		&mockable.Session{MockableLogger: log.Log},
@@ -336,7 +336,7 @@ func TestUnitMeasureoneSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitMeasureonewithcacheWorks(t *testing.T) {
+func TestMeasureonewithcacheWorks(t *testing.T) {
 	measurer := &Measurer{cache: make(map[string]Subresult)}
 	output := make(chan Subresult, 2)
 	for i := 0; i < 2; i++ {
@@ -363,7 +363,7 @@ func TestUnitMeasureonewithcacheWorks(t *testing.T) {
 	}
 }
 
-func TestUnitProcessallPanicsIfInvalidSNI(t *testing.T) {
+func TestProcessallPanicsIfInvalidSNI(t *testing.T) {
 	defer func() {
 		panicdata := recover()
 		if panicdata == nil {
@@ -392,7 +392,7 @@ func TestUnitProcessallPanicsIfInvalidSNI(t *testing.T) {
 	)
 }
 
-func TestUnitMaybeURLToSNI(t *testing.T) {
+func TestMaybeURLToSNI(t *testing.T) {
 	t.Run("for invalid URL", func(t *testing.T) {
 		parsed, err := maybeURLToSNI("\t")
 		if err == nil {

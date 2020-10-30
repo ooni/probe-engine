@@ -16,7 +16,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
-func TestIntegrationTraceTripperSuccess(t *testing.T) {
+func TestTraceTripperSuccess(t *testing.T) {
 	client := &http.Client{
 		Transport: NewTraceTripper(http.DefaultTransport),
 	}
@@ -45,7 +45,7 @@ func (h *roundTripHandler) OnMeasurement(m modelx.Measurement) {
 	}
 }
 
-func TestIntegrationTraceTripperReadAllFailure(t *testing.T) {
+func TestTraceTripperReadAllFailure(t *testing.T) {
 	transport := NewTraceTripper(http.DefaultTransport)
 	transport.readAll = func(r io.Reader) ([]byte, error) {
 		return nil, io.EOF
@@ -67,7 +67,7 @@ func TestIntegrationTraceTripperReadAllFailure(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationTraceTripperFailure(t *testing.T) {
+func TestTraceTripperFailure(t *testing.T) {
 	client := &http.Client{
 		Transport: NewTraceTripper(http.DefaultTransport),
 	}
@@ -83,7 +83,7 @@ func TestIntegrationTraceTripperFailure(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationTraceTripperWithClientTrace(t *testing.T) {
+func TestTraceTripperWithClientTrace(t *testing.T) {
 	client := &http.Client{
 		Transport: NewTraceTripper(http.DefaultTransport),
 	}
@@ -105,7 +105,7 @@ func TestIntegrationTraceTripperWithClientTrace(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationTraceTripperWithCorrectSnaps(t *testing.T) {
+func TestTraceTripperWithCorrectSnaps(t *testing.T) {
 	// Prepare a DNS query for dns.google.com A, for which we
 	// know the answer in terms of well know IP addresses
 	query := new(dns.Msg)
@@ -209,7 +209,7 @@ func TestIntegrationTraceTripperWithCorrectSnaps(t *testing.T) {
 	}
 }
 
-func TestIntegrationTraceTripperWithReadAllFailingForBody(t *testing.T) {
+func TestTraceTripperWithReadAllFailingForBody(t *testing.T) {
 	// Prepare a DNS query for dns.google.com A, for which we
 	// know the answer in terms of well know IP addresses
 	query := new(dns.Msg)

@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func TestUnitProxyDialerDialContextNoProxyURL(t *testing.T) {
+func TestProxyDialerDialContextNoProxyURL(t *testing.T) {
 	expected := errors.New("mocked error")
 	d := dialer.ProxyDialer{
 		Dialer: dialer.FakeDialer{Err: expected},
@@ -24,7 +24,7 @@ func TestUnitProxyDialerDialContextNoProxyURL(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerContextTakesPrecedence(t *testing.T) {
+func TestProxyDialerContextTakesPrecedence(t *testing.T) {
 	expected := errors.New("mocked error")
 	d := dialer.ProxyDialer{
 		Dialer:   dialer.FakeDialer{Err: expected},
@@ -41,7 +41,7 @@ func TestUnitProxyDialerContextTakesPrecedence(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerDialContextInvalidScheme(t *testing.T) {
+func TestProxyDialerDialContextInvalidScheme(t *testing.T) {
 	d := dialer.ProxyDialer{
 		Dialer:   dialer.FakeDialer{},
 		ProxyURL: &url.URL{Scheme: "antani"},
@@ -55,7 +55,7 @@ func TestUnitProxyDialerDialContextInvalidScheme(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerDialContextWithEOF(t *testing.T) {
+func TestProxyDialerDialContextWithEOF(t *testing.T) {
 	d := dialer.ProxyDialer{
 		Dialer: dialer.FakeDialer{
 			Err: io.EOF,
@@ -71,7 +71,7 @@ func TestUnitProxyDialerDialContextWithEOF(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerDialContextWithContextCanceled(t *testing.T) {
+func TestProxyDialerDialContextWithContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately fail
 	d := dialer.ProxyDialer{
@@ -89,7 +89,7 @@ func TestUnitProxyDialerDialContextWithContextCanceled(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerDialContextWithDialerSuccess(t *testing.T) {
+func TestProxyDialerDialContextWithDialerSuccess(t *testing.T) {
 	d := dialer.ProxyDialer{
 		Dialer: dialer.FakeDialer{
 			Conn: &dialer.FakeConn{
@@ -109,7 +109,7 @@ func TestUnitProxyDialerDialContextWithDialerSuccess(t *testing.T) {
 	conn.Close()
 }
 
-func TestUnitProxyDialerDialContextWithDialerCanceledContext(t *testing.T) {
+func TestProxyDialerDialContextWithDialerCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	// Stop immediately. The FakeDialer sleeps for some microseconds so
 	// it is much more likely we immediately exit with done context. The
@@ -136,7 +136,7 @@ func TestUnitProxyDialerDialContextWithDialerCanceledContext(t *testing.T) {
 	}
 }
 
-func TestUnitProxyDialerWrapper(t *testing.T) {
+func TestProxyDialerWrapper(t *testing.T) {
 	d := dialer.ProxyDialerWrapper{
 		Dialer: dialer.FakeDialer{
 			Err: io.EOF,

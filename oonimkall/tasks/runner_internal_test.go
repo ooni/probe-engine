@@ -12,7 +12,7 @@ import (
 	engine "github.com/ooni/probe-engine"
 )
 
-func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
+func TestRunnerHasUnsupportedSettings(t *testing.T) {
 	out := make(chan *Event)
 	var falsebool bool
 	var zerodotzero float64
@@ -128,7 +128,7 @@ func TestUnitRunnerHasUnsupportedSettings(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurementSubmissionEventName(t *testing.T) {
+func TestMeasurementSubmissionEventName(t *testing.T) {
 	if measurementSubmissionEventName(nil) != statusMeasurementSubmission {
 		t.Fatal("unexpected submission event name")
 	}
@@ -137,7 +137,7 @@ func TestUnitMeasurementSubmissionEventName(t *testing.T) {
 	}
 }
 
-func TestUnitMeasurementSubmissionFailure(t *testing.T) {
+func TestMeasurementSubmissionFailure(t *testing.T) {
 	if measurementSubmissionFailure(nil) != "" {
 		t.Fatal("unexpected submission failure")
 	}
@@ -146,7 +146,7 @@ func TestUnitMeasurementSubmissionFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerMaybeLookupLocationFailure(t *testing.T) {
+func TestRunnerMaybeLookupLocationFailure(t *testing.T) {
 	out := make(chan *Event)
 	settings := &Settings{
 		AssetsDir: "../../testdata/oonimkall/assets",

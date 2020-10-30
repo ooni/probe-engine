@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
 		SleepTime: int64(2 * time.Millisecond),
 	}, "example")
@@ -31,7 +31,7 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestFailure(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
 		SleepTime:   int64(2 * time.Millisecond),
 		ReturnError: true,

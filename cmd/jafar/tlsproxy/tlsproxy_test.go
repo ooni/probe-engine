@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
 
-func TestIntegrationPass(t *testing.T) {
+func TestPass(t *testing.T) {
 	listener := newproxy(t, "ooni.io")
 	checkdialtls(t, listener.Addr().String(), true, &tls.Config{
 		ServerName: "example.com",
@@ -18,7 +18,7 @@ func TestIntegrationPass(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationBlock(t *testing.T) {
+func TestBlock(t *testing.T) {
 	listener := newproxy(t, "ooni.io")
 	checkdialtls(t, listener.Addr().String(), false, &tls.Config{
 		ServerName: "mia-ps.ooni.io",
@@ -26,7 +26,7 @@ func TestIntegrationBlock(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationNoSNI(t *testing.T) {
+func TestNoSNI(t *testing.T) {
 	listener := newproxy(t, "ooni.io")
 	checkdialtls(t, listener.Addr().String(), false, &tls.Config{
 		ServerName: "",
@@ -34,7 +34,7 @@ func TestIntegrationNoSNI(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationInvalidDomain(t *testing.T) {
+func TestInvalidDomain(t *testing.T) {
 	listener := newproxy(t, "ooni.io")
 	checkdialtls(t, listener.Addr().String(), false, &tls.Config{
 		ServerName: "antani.local",
@@ -42,7 +42,7 @@ func TestIntegrationInvalidDomain(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationFailHandshake(t *testing.T) {
+func TestFailHandshake(t *testing.T) {
 	listener := newproxy(t, "ooni.io")
 	checkdialtls(t, listener.Addr().String(), false, &tls.Config{
 		ServerName: "expired.badssl.com",
@@ -92,7 +92,7 @@ func TestFailWriteAfterConnect(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationListenError(t *testing.T) {
+func TestListenError(t *testing.T) {
 	proxy := NewCensoringProxy(
 		[]string{""}, uncensored.DefaultClient,
 	)

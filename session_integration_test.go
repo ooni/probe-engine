@@ -1,5 +1,3 @@
-// +build integration
-
 package engine
 
 import (
@@ -22,6 +20,9 @@ import (
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	t.Run("with no settings", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{})
 	})
@@ -55,6 +56,9 @@ func TestNewSessionBuilderChecks(t *testing.T) {
 }
 
 func TestNewSessionBuilderGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	newSessionForTesting(t)
 }
 
@@ -69,6 +73,9 @@ func newSessionMustFail(t *testing.T, config SessionConfig) {
 }
 
 func TestSessionTorArgsTorBinary(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
@@ -159,7 +166,10 @@ func newSessionForTesting(t *testing.T) *Session {
 	return sess
 }
 
-func TestIntegrationNewOrchestraClient(t *testing.T) {
+func TestNewOrchestraClient(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := sess.NewOrchestraClient(context.Background())
@@ -171,7 +181,10 @@ func TestIntegrationNewOrchestraClient(t *testing.T) {
 	}
 }
 
-func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
+func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
 	sess := newSessionForTestingNoLookups(t)
@@ -194,7 +207,10 @@ func TestUnitInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	}
 }
 
-func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
+func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	ctx := context.Background()
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
@@ -220,6 +236,9 @@ func TestUnitInitOrchestraClientMaybeLoginError(t *testing.T) {
 }
 
 func TestBouncerError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	// Combine proxy testing with a broken proxy with errors
 	// in reaching out to the bouncer.
 	server := httptest.NewServer(http.HandlerFunc(
@@ -243,6 +262,9 @@ func TestBouncerError(t *testing.T) {
 }
 
 func TestMaybeLookupBackendsNewClientError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	sess.availableProbeServices = []model.Service{{
 		Type:    "onion",
@@ -255,7 +277,10 @@ func TestMaybeLookupBackendsNewClientError(t *testing.T) {
 	}
 }
 
-func TestIntegrationSessionLocationLookup(t *testing.T) {
+func TestSessionLocationLookup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	if err := sess.MaybeLookupLocation(); err != nil {
@@ -296,7 +321,10 @@ func TestIntegrationSessionLocationLookup(t *testing.T) {
 	}
 }
 
-func TestIntegrationSessionCloseCancelsTempDir(t *testing.T) {
+func TestSessionCloseCancelsTempDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	tempDir := sess.TempDir()
 	if _, err := os.Stat(tempDir); err != nil {
@@ -310,7 +338,10 @@ func TestIntegrationSessionCloseCancelsTempDir(t *testing.T) {
 	}
 }
 
-func TestIntegrationSessionDownloadResources(t *testing.T) {
+func TestSessionDownloadResources(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	tmpdir, err := ioutil.TempDir("", "test-download-resources-idempotent")
 	if err != nil {
 		t.Fatal(err)
@@ -335,7 +366,10 @@ func TestIntegrationSessionDownloadResources(t *testing.T) {
 	}
 }
 
-func TestUnitGetAvailableProbeServices(t *testing.T) {
+func TestGetAvailableProbeServices(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -353,7 +387,10 @@ func TestUnitGetAvailableProbeServices(t *testing.T) {
 	}
 }
 
-func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
+func TestMaybeLookupBackendsFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -372,7 +409,10 @@ func TestUnitMaybeLookupBackendsFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
+func TestMaybeLookupTestHelpersIdempotent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -395,7 +435,10 @@ func TestIntegrationMaybeLookupTestHelpersIdempotent(t *testing.T) {
 	}
 }
 
-func TestUnitAllProbeServicesUnsupported(t *testing.T) {
+func TestAllProbeServicesUnsupported(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
 		Logger:          log.Log,
@@ -416,7 +459,10 @@ func TestUnitAllProbeServicesUnsupported(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelGood(t *testing.T) {
+func TestStartTunnelGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
@@ -434,7 +480,10 @@ func TestIntegrationStartTunnelGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelNonexistent(t *testing.T) {
+func TestStartTunnelNonexistent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
@@ -446,7 +495,10 @@ func TestIntegrationStartTunnelNonexistent(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelEmptyString(t *testing.T) {
+func TestStartTunnelEmptyString(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
@@ -458,7 +510,10 @@ func TestIntegrationStartTunnelEmptyString(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelEmptyStringWithProxy(t *testing.T) {
+func TestStartTunnelEmptyStringWithProxy(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	proxyURL := &url.URL{Scheme: "socks5", Host: "127.0.0.1:9050"}
 	sess := newSessionForTestingNoLookups(t)
 	sess.proxyURL = proxyURL
@@ -473,7 +528,10 @@ func TestIntegrationStartTunnelEmptyStringWithProxy(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelWithAlreadyExistingTunnel(t *testing.T) {
+func TestStartTunnelWithAlreadyExistingTunnel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
@@ -492,7 +550,10 @@ func TestIntegrationStartTunnelWithAlreadyExistingTunnel(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelWithAlreadyExistingProxy(t *testing.T) {
+func TestStartTunnelWithAlreadyExistingProxy(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx := context.Background()
@@ -509,7 +570,10 @@ func TestIntegrationStartTunnelWithAlreadyExistingProxy(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
+func TestStartTunnelCanceledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -521,6 +585,9 @@ func TestIntegrationStartTunnelCanceledContext(t *testing.T) {
 }
 
 func TestUserAgentNoProxy(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + Version
 	sess := newSessionForTestingNoLookups(t)
 	ua := sess.UserAgent()
@@ -531,6 +598,9 @@ func TestUserAgentNoProxy(t *testing.T) {
 }
 
 func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
@@ -559,6 +629,9 @@ func (txp httpTransportThatSleeps) CloseIdleConnections() {
 }
 
 func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	sess.httpDefaultTransport = httpTransportThatSleeps{
 		txp: sess.httpDefaultTransport,
@@ -580,6 +653,9 @@ func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
 }
 
 func TestNewOrchestraClientProbeServicesNewClientFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess := newSessionForTestingNoLookups(t)
 	sess.selectedProbeServiceHook = func(svc *model.Service) {
 		svc.Type = "antani" // should really not be supported for a long time

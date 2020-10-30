@@ -12,9 +12,9 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestIntegrationSaverPerformanceNoMultipleEvents(t *testing.T) {
+func TestSaverPerformanceNoMultipleEvents(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	// register twice - do we see events twice?
@@ -58,9 +58,9 @@ func TestIntegrationSaverPerformanceNoMultipleEvents(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverMetadataSuccess(t *testing.T) {
+func TestSaverMetadataSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	txp := httptransport.SaverMetadataHTTPTransport{
@@ -114,7 +114,7 @@ func TestIntegrationSaverMetadataSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitSaverMetadataFailure(t *testing.T) {
+func TestSaverMetadataFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
 	txp := httptransport.SaverMetadataHTTPTransport{
@@ -156,9 +156,9 @@ func TestUnitSaverMetadataFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTransactionSuccess(t *testing.T) {
+func TestSaverTransactionSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	txp := httptransport.SaverTransactionHTTPTransport{
@@ -199,7 +199,7 @@ func TestIntegrationSaverTransactionSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitSaverTransactionFailure(t *testing.T) {
+func TestSaverTransactionFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
 	txp := httptransport.SaverTransactionHTTPTransport{
@@ -240,7 +240,7 @@ func TestUnitSaverTransactionFailure(t *testing.T) {
 	}
 }
 
-func TestUnitSaverBodySuccess(t *testing.T) {
+func TestSaverBodySuccess(t *testing.T) {
 	saver := new(trace.Saver)
 	txp := httptransport.SaverBodyHTTPTransport{
 		RoundTripper: httptransport.FakeTransport{
@@ -311,7 +311,7 @@ func TestUnitSaverBodySuccess(t *testing.T) {
 	}
 }
 
-func TestUnitSaverBodyRequestReadError(t *testing.T) {
+func TestSaverBodyRequestReadError(t *testing.T) {
 	saver := new(trace.Saver)
 	txp := httptransport.SaverBodyHTTPTransport{
 		RoundTripper: httptransport.FakeTransport{
@@ -341,7 +341,7 @@ func TestUnitSaverBodyRequestReadError(t *testing.T) {
 	}
 }
 
-func TestUnitSaverBodyRoundTripError(t *testing.T) {
+func TestSaverBodyRoundTripError(t *testing.T) {
 	saver := new(trace.Saver)
 	expected := errors.New("mocked error")
 	txp := httptransport.SaverBodyHTTPTransport{
@@ -381,7 +381,7 @@ func TestUnitSaverBodyRoundTripError(t *testing.T) {
 	}
 }
 
-func TestUnitSaverBodyResponseReadError(t *testing.T) {
+func TestSaverBodyResponseReadError(t *testing.T) {
 	saver := new(trace.Saver)
 	expected := errors.New("mocked error")
 	txp := httptransport.SaverBodyHTTPTransport{
