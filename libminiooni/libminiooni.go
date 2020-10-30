@@ -403,7 +403,11 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	for _, input := range currentOptions.Inputs {
 		inputCounter++
 		if input != "" {
-			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+			usingQUIC := ""
+			if extraOptions["HTTP3Enabled"] == "true" {
+				usingQUIC = " over HTTP3"
+			}
+			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, usingQUIC, input)
 		}
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
