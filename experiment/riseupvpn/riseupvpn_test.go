@@ -4,12 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -134,6 +133,7 @@ func TestUpdateWithMixedResults(t *testing.T) {
 func TestIntegrationFailureCaCertFetch(t *testing.T) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
+	// we're cancelling immediately so that the CA Cert fetch fails
 	cancel()
 
 	sess := &mockable.Session{MockableLogger: log.Log}
@@ -163,6 +163,7 @@ func TestIntegrationFailureCaCertFetch(t *testing.T) {
 func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	selfcensor.Enable(`{"PoisonSystemDNS":{"api.black.riseup.net":["NXDOMAIN"]}}`)
 
 	sess := &mockable.Session{MockableLogger: log.Log}
@@ -192,13 +193,12 @@ func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
 	if tk.ApiFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
-
-	cancel()
 }
 
 func TestIntegrationFailureProviderUrlBlocked(t *testing.T) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	selfcensor.Enable(`{"BlockedEndpoints":{"198.252.153.70:443":"REJECT"}}`)
 
 	sess := &mockable.Session{MockableLogger: log.Log}
@@ -228,12 +228,12 @@ func TestIntegrationFailureProviderUrlBlocked(t *testing.T) {
 	if tk.ApiFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
-	cancel()
 }
 
 func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	selfcensor.Enable(`{"BlockedEndpoints":{"198.252.153.107:9001":"REJECT"}}`)
 
 	sess := &mockable.Session{MockableLogger: log.Log}
@@ -263,11 +263,38 @@ func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
 	if tk.ApiFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
-
-	cancel()
 }
 
-func TestIntegrationFailureOpenvpnGateway(t *testing.T) {
+func TestIntegrationFailureGateway(t *testing.T) {
+	var testCases = [...]string{"openvpn", "obfs4"}
+	eipService, err := fetchEipService()
+	if err != nil {
+		t.Log("Preconditions for the test are not met. Skipping due to: " + err.Error())
+		t.SkipNow()
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("testing censored transport %s", tc), func(t *testing.T) {
+			censoredGateway, err := selfCensorRandomGateway(eipService, tc)
+			if err == nil {
+				censorString := `{"BlockedEndpoints":{"` + censoredGateway.IP + `:` + censoredGateway.Port + `":"REJECT"}}`
+				selfcensor.Enable(censorString)
+			} else {
+				t.Log("Preconditions for the test are not met. Skipping due to: " + err.Error())
+				t.SkipNow()
+			}
+
+			// - run measurement
+			runGatewayTest(t, censoredGateway)
+		})
+	}
+}
+
+type SelfCensoredGateway struct {
+	IP   string
+	Port string
+}
+
+func fetchEipService() (*riseupvpn.EipService, error) {
 	// - fetch client cert and add to certpool
 	caFetchClient := &http.Client{
 		Timeout: time.Second * 30,
@@ -275,18 +302,21 @@ func TestIntegrationFailureOpenvpnGateway(t *testing.T) {
 
 	caCertResponse, err := caFetchClient.Get("https://black.riseup.net/ca.crt")
 	if err != nil {
-		t.SkipNow()
+		return nil, err
 	}
-	defer caCertResponse.Body.Close()
 
 	var bodyString string
-	if caCertResponse.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(caCertResponse.Body)
-		if err != nil {
-			t.SkipNow()
-		}
-		bodyString = string(bodyBytes)
+
+	if caCertResponse.StatusCode != http.StatusOK {
+		return nil, errors.New("unexpected HTTP response code")
 	}
+	bodyBytes, err := ioutil.ReadAll(caCertResponse.Body)
+	defer caCertResponse.Body.Close()
+
+	if err != nil {
+		return nil, err
+	}
+	bodyString = string(bodyBytes)
 
 	certs := x509.NewCertPool()
 	certs.AppendCertsFromPEM([]byte(bodyString))
@@ -303,154 +333,64 @@ func TestIntegrationFailureOpenvpnGateway(t *testing.T) {
 
 	eipResponse, err := client.Get("https://api.black.riseup.net/3/config/eip-service.json")
 	if err != nil {
-		t.SkipNow()
+		return nil, err
 	}
-	defer eipResponse.Body.Close()
+	if eipResponse.StatusCode != http.StatusOK {
+		return nil, errors.New("Unexpected HTTP response code")
+	}
 
-	if eipResponse.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(eipResponse.Body)
-		if err != nil {
-			return
-		}
-		bodyString = string(bodyBytes)
+	bodyBytes, err = ioutil.ReadAll(eipResponse.Body)
+	defer eipResponse.Body.Close()
+	if err != nil {
+		return nil, err
 	}
+	bodyString = string(bodyBytes)
 
 	eipService, err := riseupvpn.DecodeEIP3(bodyString)
-
-	// - self censor random gateway
-	gateways := eipService.Gateways
-	if gateways == nil || len(gateways) == 0 {
-		t.SkipNow()
-	}
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	min := 0
-	max := len(gateways) - 1
-	randomIndex := rnd.Intn(max-min+1) + min
-
-	IP := gateways[randomIndex].IPAddress
-	port := gateways[randomIndex].Capabilities.Transport[0].Ports[0]
-	selfcensor.Enable(`{"BlockedEndpoints":{"` + IP + `:` + port + `":"REJECT"}}`)
-
-	// - run measurement
-	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
-	ctx, cancel := context.WithCancel(context.Background())
-
-	sess := &mockable.Session{MockableLogger: log.Log}
-	measurement := new(model.Measurement)
-	callbacks := model.NewPrinterCallbacks(log.Log)
-	err = measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	tk := measurement.TestKeys.(*riseupvpn.TestKeys)
-	if tk.CACertStatus != true {
-		t.Fatal("invalid CACertStatus ")
-	}
-
-	if tk.FailingGateways == nil || len(tk.FailingGateways) != 1 {
-		t.Fatal("unexpected amount of failing gateways")
-	}
-
-	entry := tk.FailingGateways[0]
-	if entry.IP != IP || fmt.Sprint(entry.Port) != port {
-		t.Fatal("unexpected failed gateway configuration")
-	}
-
-	if tk.ApiStatus == "blocked" {
-		t.Fatal("invalid ApiStatus")
-	}
-
-	if tk.ApiFailure != nil {
-		t.Fatal("ApiFailure should be null")
-	}
-
-	cancel()
+	return eipService, nil
 }
 
-func TestIntegrationFailureObfs4Gateway(t *testing.T) {
-	// - fetch client cert and add to certpool
-	caFetchClient := &http.Client{
-		Timeout: time.Second * 30,
-	}
-
-	caCertResponse, err := caFetchClient.Get("https://black.riseup.net/ca.crt")
-	if err != nil {
-		t.SkipNow()
-	}
-	defer caCertResponse.Body.Close()
-
-	var bodyString string
-	if caCertResponse.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(caCertResponse.Body)
-		if err != nil {
-			t.SkipNow()
-		}
-		bodyString = string(bodyBytes)
-	}
-
-	certs := x509.NewCertPool()
-	certs.AppendCertsFromPEM([]byte(bodyString))
-
-	// - fetch and parse eip-service.json
-	client := &http.Client{
-		Timeout: time.Second * 30,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: certs,
-			},
-		},
-	}
-
-	eipResponse, err := client.Get("https://api.black.riseup.net/3/config/eip-service.json")
-	if err != nil {
-		t.SkipNow()
-	}
-	defer eipResponse.Body.Close()
-
-	if eipResponse.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(eipResponse.Body)
-		if err != nil {
-			return
-		}
-		bodyString = string(bodyBytes)
-	}
-
-	eipService, err := riseupvpn.DecodeEIP3(bodyString)
+func selfCensorRandomGateway(eipService *riseupvpn.EipService, transportType string) (*SelfCensoredGateway, error) {
 
 	// - self censor random gateway
 	gateways := eipService.Gateways
 	if gateways == nil || len(gateways) == 0 {
-		t.SkipNow()
+		return nil, errors.New("No gateways found")
 	}
 
-	var selfcensoredGateways []string
+	var selfcensoredGateways []SelfCensoredGateway
 	for _, gateway := range gateways {
 		for _, transport := range gateway.Capabilities.Transport {
-			if transport.Type == "obfs4" {
-				selfcensoredGateways = append(selfcensoredGateways, `{"BlockedEndpoints":{"`+gateway.IPAddress+`:`+transport.Ports[0]+`":"REJECT"}}`)
+			if transport.Type == transportType {
+				selfcensoredGateways = append(selfcensoredGateways, SelfCensoredGateway{IP: gateway.IPAddress, Port: transport.Ports[0]})
 			}
 		}
 	}
 
 	if len(selfcensoredGateways) == 0 {
-		t.SkipNow()
+		return nil, errors.New("transport " + transportType + " doesn't seem to be supported.")
 	}
 
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	min := 0
 	max := len(selfcensoredGateways) - 1
 	randomIndex := rnd.Intn(max-min+1) + min
+	return &selfcensoredGateways[randomIndex], nil
 
-	selfcensor.Enable(selfcensoredGateways[randomIndex])
+}
 
-	// - run measurement
+func runGatewayTest(t *testing.T, censoredGateway *SelfCensoredGateway) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	sess := &mockable.Session{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
-	err = measurer.Run(ctx, sess, measurement, callbacks)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -464,7 +404,7 @@ func TestIntegrationFailureObfs4Gateway(t *testing.T) {
 	}
 
 	entry := tk.FailingGateways[0]
-	if !strings.Contains(selfcensoredGateways[randomIndex], entry.IP) || !strings.Contains(selfcensoredGateways[randomIndex], strconv.Itoa(entry.Port)) {
+	if entry.IP != censoredGateway.IP || fmt.Sprint(entry.Port) != censoredGateway.Port {
 		t.Fatal("unexpected failed gateway configuration")
 	}
 
@@ -475,6 +415,4 @@ func TestIntegrationFailureObfs4Gateway(t *testing.T) {
 	if tk.ApiFailure != nil {
 		t.Fatal("ApiFailure should be null")
 	}
-
-	cancel()
 }
