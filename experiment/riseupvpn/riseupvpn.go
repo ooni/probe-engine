@@ -115,7 +115,7 @@ func newGatewayConnection(tcpConnect archival.TCPConnectEntry, transportType str
 	}
 }
 
-// AddCACertFetchTestKeys Adding generic ctx.Get() testKeys to riseupvpn specific test keys
+// AddCACertFetchTestKeys Adding generic urlgetter.Get() testKeys to riseupvpn specific test keys
 func (tk *TestKeys) AddCACertFetchTestKeys(testKeys urlgetter.TestKeys) {
 	tk.NetworkEvents = append(tk.NetworkEvents, testKeys.NetworkEvents...)
 	tk.Queries = append(tk.Queries, testKeys.Queries...)
@@ -164,13 +164,12 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		Session: sess,
 		Target:  caTarget,
 	}
-	log.Info("Getting CA cerificate; please be patient...")
+	log.Info("Getting CA certificate; please be patient...")
 	tk, err := caGetter.Get(ctx)
+	testkeys.AddCACertFetchTestKeys(tk)
 
 	if err != nil {
-		log.Error("Getting CA cerificate failed. Aborting test.")
-		testkeys.AddCACertFetchTestKeys(tk)
-		measurement.TestKeys = testkeys
+		log.Error("Getting CA certificate failed. Aborting test.")
 		return nil
 	}
 
