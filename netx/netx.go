@@ -201,14 +201,11 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.TLSDialer == nil {
 		config.TLSDialer = NewTLSDialer(config)
 	}
-	var txp HTTPRoundTripper
-	transport := "tcp"
-	if config.HTTP3Enabled {
-		txp = httptransport.NewHTTP3Transport(config.Dialer, config.TLSDialer)
-		transport = "http3"
-	} else {
-		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
-	}
+
+	tInfo := allTransportsInfo[config.HTTP3Enabled]
+	txp := tInfo.Factory(config.Dialer, config.TLSDialer)
+	transport := tInfo.TransportName
+
 	if config.ByteCounter != nil {
 		txp = httptransport.ByteCountingTransport{
 			Counter: config.ByteCounter, RoundTripper: txp}
@@ -228,6 +225,24 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 	txp = httptransport.UserAgentTransport{RoundTripper: txp}
 	return txp
+}
+
+// httpTransportInfo contains the constructing function as well as the transport name
+type httpTransportInfo struct {
+	Factory       func(httptransport.Dialer, httptransport.TLSDialer) httptransport.RoundTripper
+	TransportName string
+}
+
+var allTransportsInfo = map[bool]httpTransportInfo{
+	false: httpTransportInfo{
+		Factory: httptransport.NewSystemTransport,
+		// TODO(kelmenhorst): distinguish between h2 / http/1.1
+		TransportName: "h2 / http/1.1",
+	},
+	true: httpTransportInfo{
+		Factory:       httptransport.NewHTTP3Transport,
+		TransportName: "h3",
+	},
 }
 
 // DNSClient is a DNS client. It wraps a Resolver and it possibly
