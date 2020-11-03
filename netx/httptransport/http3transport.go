@@ -1,4 +1,4 @@
-//+build go1.15 DISABLE_QUIC
+//+build go1.15 PSIPHON_DISABLE_QUIC
 
 package httptransport
 
