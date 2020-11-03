@@ -1,3 +1,5 @@
+//+build go1.15 DISABLE_QUIC
+
 package httptransport
 
 import (
