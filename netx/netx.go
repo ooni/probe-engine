@@ -79,6 +79,7 @@ type Config struct {
 	BogonIsError        bool                 // default: bogon is not error
 	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
 	CacheResolutions    bool                 // default: no caching
+	CertPool            *x509.CertPool       // default: use vendored gocertifi
 	ContextByteCounting bool                 // default: no implicit byte counting
 	DNSCache            map[string][]string  // default: cache is empty
 	DialSaver           *trace.Saver         // default: not saving dials
@@ -100,14 +101,15 @@ type tlsHandshaker interface {
 		net.Conn, tls.ConnectionState, error)
 }
 
-// CertPool is the certificate pool we're using by default
-var CertPool *x509.CertPool
-
-func init() {
-	var err error
-	CertPool, err = gocertifi.CACerts()
+// NewDefaultCertPool returns a copy of the default x509
+// certificate pool. This function panics on failure.
+func NewDefaultCertPool() *x509.CertPool {
+	pool, err := gocertifi.CACerts()
 	runtimex.PanicOnError(err, "gocertifi.CACerts() failed")
+	return pool
 }
+
+var defaultCertPool *x509.CertPool = NewDefaultCertPool()
 
 // NewResolver creates a new resolver from the specified config
 func NewResolver(config Config) Resolver {
@@ -182,7 +184,10 @@ func NewTLSDialer(config Config) TLSDialer {
 	if config.TLSConfig == nil {
 		config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
 	}
-	config.TLSConfig.RootCAs = CertPool // always use our own CA
+	if config.CertPool == nil {
+		config.CertPool = defaultCertPool
+	}
+	config.TLSConfig.RootCAs = config.CertPool
 	config.TLSConfig.InsecureSkipVerify = config.NoTLSVerify
 	return dialer.TLSDialer{
 		Config:        config.TLSConfig,

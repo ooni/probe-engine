@@ -496,7 +496,7 @@ func TestNewTLSDialerVanilla(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -536,7 +536,7 @@ func TestNewTLSDialerWithConfig(t *testing.T) {
 	if len(rtd.Config.NextProtos) != 0 {
 		t.Fatal("invalid len(config.NextProtos)")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -579,7 +579,7 @@ func TestNewTLSDialerWithLogging(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -630,7 +630,7 @@ func TestNewTLSDialerWithSaver(t *testing.T) {
 	if rtd.Config.NextProtos[0] != "h2" || rtd.Config.NextProtos[1] != "http/1.1" {
 		t.Fatal("invalid Config.NextProtos")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -681,7 +681,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {
@@ -727,7 +727,7 @@ func TestNewTLSDialerWithNoTLSVerifyAndNoConfig(t *testing.T) {
 	if rtd.Config.InsecureSkipVerify != true {
 		t.Fatal("expected true InsecureSkipVerify")
 	}
-	if rtd.Config.RootCAs != netx.CertPool {
+	if rtd.Config.RootCAs != netx.DefaultCertPool() {
 		t.Fatal("invalid Config.RootCAs")
 	}
 	if rtd.Dialer == nil {

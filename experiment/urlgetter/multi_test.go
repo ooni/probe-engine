@@ -2,7 +2,11 @@ package urlgetter_test
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -215,5 +219,38 @@ func TestMultiContextCanceled(t *testing.T) {
 	}
 	if count != 4 {
 		t.Fatal("invalid number of outputs")
+	}
+}
+
+func TestMultiWithSpecificCertPool(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, client")
+	}))
+	defer server.Close()
+	cert := server.Certificate()
+	certpool := x509.NewCertPool()
+	certpool.AddCert(cert)
+	multi := urlgetter.Multi{Session: &mockable.Session{}}
+	inputs := []urlgetter.MultiInput{{
+		Config: urlgetter.Config{
+			CertPool:          certpool,
+			Method:            "GET",
+			NoFollowRedirects: true,
+		},
+		Target: server.URL,
+	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	outputs := multi.Collect(ctx, inputs, "integration-test",
+		model.NewPrinterCallbacks(log.Log))
+	var count int
+	for result := range outputs {
+		count++
+		if result.Err != nil {
+			t.Fatal(result.Err)
+		}
+	}
+	if count != 1 {
+		t.Fatal("unexpected count value")
 	}
 }
