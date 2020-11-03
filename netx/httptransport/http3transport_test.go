@@ -35,7 +35,7 @@ func TestUnitHTTP3TransportFailure(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(selfcensor.SystemDialer{}, dialer.TLSDialer{})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	cancel() // so that the request immediately fails
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)

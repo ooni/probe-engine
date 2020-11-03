@@ -22,6 +22,7 @@ type Config struct {
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
+	HTTP3Enabled      bool   `ooni:"Force http3"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
@@ -32,7 +33,6 @@ type Config struct {
 	TLSVersion        string `ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 	Tunnel            string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 	UserAgent         string `ooni:"Use the specified User-Agent"`
-	HTTP3Enabled      bool   `ooni:"Force http3"`
 }
 
 // TestKeys contains the experiment's result.

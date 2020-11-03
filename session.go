@@ -113,12 +113,10 @@ func NewSession(config SessionConfig) (*Session, error) {
 		BogonIsError: true,
 		Logger:       sess.logger,
 	}
-
 	sess.resolver = sessionresolver.New(httpConfig)
 	httpConfig.FullResolver = sess.resolver
 	httpConfig.ProxyURL = config.ProxyURL // no need to proxy the resolver
 	sess.httpDefaultTransport = netx.NewHTTPTransport(httpConfig)
-
 	return sess, nil
 }
 

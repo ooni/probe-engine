@@ -84,6 +84,7 @@ type Config struct {
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
+	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
 	NoTLSVerify         bool                 // default: perform TLS verify
@@ -93,7 +94,6 @@ type Config struct {
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
 	TLSSaver            *trace.Saver         // default: not saving TLS
-	HTTP3Enabled        bool
 }
 
 type tlsHandshaker interface {

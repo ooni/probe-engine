@@ -263,8 +263,8 @@ type HTTPRequest struct {
 	Headers         map[string]MaybeBinaryValue `json:"headers"`
 	Method          string                      `json:"method"`
 	Tor             HTTPTor                     `json:"tor"`
+	Transport       string                      `json:"x_transport"`
 	URL             string                      `json:"url"`
-	Transport       string                      `json:"transport"`
 }
 
 // HTTPResponse contains an HTTP response.
