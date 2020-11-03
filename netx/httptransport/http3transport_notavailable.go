@@ -20,10 +20,10 @@ func (t *NilRoundTripper) CloseIdleConnections() {
 }
 
 // NewHTTP3Transport creates a new HTTP3Transport instance.
-func NewHTTP3Transport(dialer Dialer, tlsDialer TLSDialer) NilRoundTripper {
+func NewHTTP3Transport(dialer Dialer, tlsDialer TLSDialer) RoundTripper {
 	log.Errorf("%s", "HTTP3 not available. Please use Go 1.15 and the tag PSIPHON_DISABLE_QUIC")
 	os.Exit(1)
-	return NilRoundTripper{}
+	return &NilRoundTripper{}
 }
 
 var _ RoundTripper = &http.Transport{}
