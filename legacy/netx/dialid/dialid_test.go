@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	ctx := context.Background()
 	id := ContextDialID(ctx)
 	if id != 0 {

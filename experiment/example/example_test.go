@@ -2,6 +2,7 @@ package example_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,14 +12,18 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
-		SleepTime: int64(2 * time.Second),
+		SleepTime: int64(2 * time.Millisecond),
 	}, "example")
-	ctx := context.Background()
-	sess := &mockable.Session{
-		MockableLogger: log.Log,
+	if m.ExperimentName() != "example" {
+		t.Fatal("invalid ExperimentName")
 	}
+	if m.ExperimentVersion() != "0.0.1" {
+		t.Fatal("invalid ExperimentVersion")
+	}
+	ctx := context.Background()
+	sess := &mockable.Session{MockableLogger: log.Log}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
 	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
 	if err != nil {
@@ -26,18 +31,16 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailure(t *testing.T) {
+func TestFailure(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
-		SleepTime:   int64(2 * time.Second),
+		SleepTime:   int64(2 * time.Millisecond),
 		ReturnError: true,
 	}, "example")
 	ctx := context.Background()
-	sess := &mockable.Session{
-		MockableLogger: log.Log,
-	}
+	sess := &mockable.Session{MockableLogger: log.Log}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
 	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
-	if err == nil {
+	if !errors.Is(err, example.ErrFailure) {
 		t.Fatal("expected an error here")
 	}
 }

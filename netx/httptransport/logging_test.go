@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/netx/httptransport"
 )
 
-func TestUnitLoggingFailure(t *testing.T) {
+func TestLoggingFailure(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
 		RoundTripper: httptransport.FakeTransport{
@@ -30,7 +30,7 @@ func TestUnitLoggingFailure(t *testing.T) {
 	}
 }
 
-func TestUnitLoggingFailureWithNoHostHeader(t *testing.T) {
+func TestLoggingFailureWithNoHostHeader(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
 		RoundTripper: httptransport.FakeTransport{
@@ -54,7 +54,7 @@ func TestUnitLoggingFailureWithNoHostHeader(t *testing.T) {
 	}
 }
 
-func TestUnitLoggingSuccess(t *testing.T) {
+func TestLoggingSuccess(t *testing.T) {
 	txp := httptransport.LoggingTransport{
 		Logger: log.Log,
 		RoundTripper: httptransport.FakeTransport{

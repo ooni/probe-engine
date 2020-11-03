@@ -31,6 +31,9 @@ func NewSession() (*oonimkall.Session, error) {
 }
 
 func TestNewSessionWithInvalidStateDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
 		StateDir: "",
 	})
@@ -43,6 +46,9 @@ func TestNewSessionWithInvalidStateDir(t *testing.T) {
 }
 
 func TestNewSessionWithMissingSoftwareName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
 		StateDir: "../testdata/oonimkall/state",
 	})
@@ -55,6 +61,9 @@ func TestNewSessionWithMissingSoftwareName(t *testing.T) {
 }
 
 func TestMaybeUpdateResourcesWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	dir, err := ioutil.TempDir("", "xx")
 	if err != nil {
 		t.Fatal(err)
@@ -86,6 +95,9 @@ func ReduceErrorForGeolocate(err error) error {
 }
 
 func TestGeolocateWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -102,6 +114,9 @@ func TestGeolocateWithCancelledContext(t *testing.T) {
 }
 
 func TestGeolocateGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -139,6 +154,9 @@ func ReduceErrorForSubmitter(err error) error {
 }
 
 func TestSubmitWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -155,6 +173,9 @@ func TestSubmitWithCancelledContext(t *testing.T) {
 }
 
 func TestSubmitWithInvalidJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -204,6 +225,9 @@ func DoSubmission(ctx *oonimkall.Context, sess *oonimkall.Session) error {
 }
 
 func TestSubmitMeasurementGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -215,6 +239,9 @@ func TestSubmitMeasurementGood(t *testing.T) {
 }
 
 func TestSubmitCancelContextAfterFirstSubmission(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)

@@ -34,7 +34,10 @@ func TestStartWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestIntegrationStartStop(t *testing.T) {
+func TestStartStop(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := engine.NewSession(engine.SessionConfig{
 		AssetsDir:       "../../testdata",
 		Logger:          log.Log,
@@ -57,7 +60,7 @@ func TestIntegrationStartStop(t *testing.T) {
 	tunnel.Stop()
 }
 
-func TestUnitNewOrchestraClientFailure(t *testing.T) {
+func TestNewOrchestraClientFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	sess := &mockable.Session{
 		MockableOrchestraClientError: expected,
@@ -71,7 +74,7 @@ func TestUnitNewOrchestraClientFailure(t *testing.T) {
 	}
 }
 
-func TestUnitFetchPsiphonConfigFailure(t *testing.T) {
+func TestFetchPsiphonConfigFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	clnt := mockable.ExperimentOrchestraClient{
 		MockableFetchPsiphonConfigErr: expected,
@@ -88,7 +91,7 @@ func TestUnitFetchPsiphonConfigFailure(t *testing.T) {
 	}
 }
 
-func TestUnitMakeMkdirAllFailure(t *testing.T) {
+func TestMakeMkdirAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	dependencies := FakeDependencies{
 		MkdirAllErr: expected,
@@ -110,7 +113,7 @@ func TestUnitMakeMkdirAllFailure(t *testing.T) {
 	}
 }
 
-func TestUnitMakeRemoveAllFailure(t *testing.T) {
+func TestMakeRemoveAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	dependencies := FakeDependencies{
 		RemoveAllErr: expected,
@@ -132,7 +135,7 @@ func TestUnitMakeRemoveAllFailure(t *testing.T) {
 	}
 }
 
-func TestUnitMakeStartFailure(t *testing.T) {
+func TestMakeStartFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	dependencies := FakeDependencies{
 		StartErr: expected,
@@ -154,7 +157,7 @@ func TestUnitMakeStartFailure(t *testing.T) {
 	}
 }
 
-func TestUnitNilTunnel(t *testing.T) {
+func TestNilTunnel(t *testing.T) {
 	var tunnel *psiphonx.Tunnel
 	if tunnel.BootstrapTime() != 0 {
 		t.Fatal("expected zero bootstrap time")

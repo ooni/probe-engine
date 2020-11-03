@@ -15,14 +15,14 @@ import (
 	"github.com/ooni/probe-engine/netx/errorx"
 )
 
-func TestUnitNewTCPConnectListEmpty(t *testing.T) {
+func TestNewTCPConnectListEmpty(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
-func TestUnitNewTCPConnectListSuccess(t *testing.T) {
+func TestNewTCPConnectListSuccess(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			{
@@ -62,7 +62,7 @@ func TestUnitNewTCPConnectListSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitNewTCPConnectListFailure(t *testing.T) {
+func TestNewTCPConnectListFailure(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			{
@@ -88,7 +88,7 @@ func TestUnitNewTCPConnectListFailure(t *testing.T) {
 	}
 }
 
-func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
+func TestNewTCPConnectListInvalidInput(t *testing.T) {
 	out := NewTCPConnectList(oonitemplates.Results{
 		Connects: []*modelx.ConnectEvent{
 			{
@@ -114,14 +114,14 @@ func TestUnitNewTCPConnectListInvalidInput(t *testing.T) {
 	}
 }
 
-func TestUnitNewRequestsListEmptyList(t *testing.T) {
+func TestNewRequestsListEmptyList(t *testing.T) {
 	out := NewRequestList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
-func TestUnitNewRequestsListGood(t *testing.T) {
+func TestNewRequestsListGood(t *testing.T) {
 	out := NewRequestList(oonitemplates.Results{
 		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 			// need two requests to test that order is inverted
@@ -326,7 +326,7 @@ func TestUnitNewRequestsListGood(t *testing.T) {
 	}
 }
 
-func TestUnitNewRequestsSnaps(t *testing.T) {
+func TestNewRequestsSnaps(t *testing.T) {
 	out := NewRequestList(oonitemplates.Results{
 		HTTPRequests: []*modelx.HTTPRoundTripDoneEvent{
 			{
@@ -401,7 +401,7 @@ func TestMarshalUnmarshalHTTPBodyBinary(t *testing.T) {
 	}
 }
 
-func TestUnitMaybeBinaryValueUnmarshalJSON(t *testing.T) {
+func TestMaybeBinaryValueUnmarshalJSON(t *testing.T) {
 	t.Run("when the code is not a map or string", func(t *testing.T) {
 		var (
 			mbv   MaybeBinaryValue
@@ -529,7 +529,7 @@ func TestMarshalUnmarshalHTTPHeaderBinary(t *testing.T) {
 	}
 }
 
-func TestUnitHTTPHeaderUnmarshalJSON(t *testing.T) {
+func TestHTTPHeaderUnmarshalJSON(t *testing.T) {
 	t.Run("when the code is not a list", func(t *testing.T) {
 		var (
 			hh    HTTPHeader
@@ -631,14 +631,14 @@ func TestUnitHTTPHeaderUnmarshalJSON(t *testing.T) {
 	})
 }
 
-func TestUnitNewDNSQueriesListEmpty(t *testing.T) {
+func TestNewDNSQueriesListEmpty(t *testing.T) {
 	out := NewDNSQueriesList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
-func TestUnitNewDNSQueriesListSuccess(t *testing.T) {
+func TestNewDNSQueriesListSuccess(t *testing.T) {
 	out := NewDNSQueriesList(oonitemplates.Results{
 		Resolves: []*modelx.ResolveDoneEvent{
 			{
@@ -791,21 +791,21 @@ func dnscheckbad(e DNSQueryEntry) error {
 	return nil
 }
 
-func TestUnitDNSQueryTypeIPOfType(t *testing.T) {
+func TestDNSQueryTypeIPOfType(t *testing.T) {
 	qtype := dnsQueryType("ANTANI")
 	if qtype.ipoftype("8.8.8.8") == true {
 		t.Fatal("ipoftype misbehaving")
 	}
 }
 
-func TestUnitNewNetworkEventsListEmpty(t *testing.T) {
+func TestNewNetworkEventsListEmpty(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
-func TestUnitNewNetworkEventsListNoSuitableEvents(t *testing.T) {
+func TestNewNetworkEventsListNoSuitableEvents(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
 			{},
@@ -818,7 +818,7 @@ func TestUnitNewNetworkEventsListNoSuitableEvents(t *testing.T) {
 	}
 }
 
-func TestUnitNewNetworkEventsListGood(t *testing.T) {
+func TestNewNetworkEventsListGood(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
 			{
@@ -925,7 +925,7 @@ func TestUnitNewNetworkEventsListGood(t *testing.T) {
 	}
 }
 
-func TestUnitNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
+func TestNewNetworkEventsListGoodUDPAndErrors(t *testing.T) {
 	out := NewNetworkEventsList(oonitemplates.Results{
 		NetworkEvents: []*modelx.Measurement{
 			{
@@ -1040,14 +1040,14 @@ func floatEquals(a, b float64) bool {
 	return (a-b) < c && (b-a) < c
 }
 
-func TestUnitNewTLSHandshakesListEmpty(t *testing.T) {
+func TestNewTLSHandshakesListEmpty(t *testing.T) {
 	out := NewTLSHandshakesList(oonitemplates.Results{})
 	if len(out) != 0 {
 		t.Fatal("unexpected output length")
 	}
 }
 
-func TestUnitNewTLSHandshakesListSuccess(t *testing.T) {
+func TestNewTLSHandshakesListSuccess(t *testing.T) {
 	out := NewTLSHandshakesList(oonitemplates.Results{
 		TLSHandshakes: []*modelx.TLSHandshakeDoneEvent{
 			{},

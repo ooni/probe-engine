@@ -7,7 +7,7 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	saver := trace.Saver{}
 	var wg sync.WaitGroup
 	const parallel = 10

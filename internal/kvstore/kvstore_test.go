@@ -2,7 +2,7 @@ package kvstore
 
 import "testing"
 
-func TestUnitNoSuchKey(t *testing.T) {
+func TestNoSuchKey(t *testing.T) {
 	kvs := NewMemoryKeyValueStore()
 	value, err := kvs.Get("nonexistent")
 	if err == nil {
@@ -13,7 +13,7 @@ func TestUnitNoSuchKey(t *testing.T) {
 	}
 }
 
-func TestUnitExistingKey(t *testing.T) {
+func TestExistingKey(t *testing.T) {
 	kvs := NewMemoryKeyValueStore()
 	if err := kvs.Set("antani", []byte("mascetti")); err != nil {
 		t.Fatal(err)

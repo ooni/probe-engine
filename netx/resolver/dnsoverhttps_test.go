@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
+func TestDNSOverHTTPSNewRequestFailure(t *testing.T) {
 	const invalidURL = "\t"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, invalidURL)
 	data, err := txp.RoundTrip(context.Background(), nil)
@@ -25,13 +25,13 @@ func TestUnitDNSOverHTTPSNewRequestFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
+func TestDNSOverHTTPSClientDoFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
 			return nil, expected
 		},
-		URL: "https://doh.powerdns.org/",
+		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if !errors.Is(err, expected) {
@@ -42,7 +42,7 @@ func TestUnitDNSOverHTTPSClientDoFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
+func TestDNSOverHTTPSHTTPFailure(t *testing.T) {
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -50,7 +50,7 @@ func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
 				Body:       ioutil.NopCloser(strings.NewReader("")),
 			}, nil
 		},
-		URL: "https://doh.powerdns.org/",
+		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err == nil || err.Error() != "doh: server returned error" {
@@ -61,7 +61,7 @@ func TestUnitDNSOverHTTPSHTTPFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
+func TestDNSOverHTTPSMissingContentType(t *testing.T) {
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
 			return &http.Response{
@@ -69,7 +69,7 @@ func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
 				Body:       ioutil.NopCloser(strings.NewReader("")),
 			}, nil
 		},
-		URL: "https://doh.powerdns.org/",
+		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err == nil || err.Error() != "doh: invalid content-type" {
@@ -80,7 +80,7 @@ func TestUnitDNSOverHTTPSMissingContentType(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
+func TestDNSOverHTTPSSuccess(t *testing.T) {
 	body := []byte("AAA")
 	txp := resolver.DNSOverHTTPS{
 		Do: func(*http.Request) (*http.Response, error) {
@@ -92,7 +92,7 @@ func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
 				},
 			}, nil
 		},
-		URL: "https://doh.powerdns.org/",
+		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if err != nil {
@@ -103,8 +103,8 @@ func TestUnitDNSOverHTTPSSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
-	const queryURL = "https://doh.powerdns.org/"
+func TestDNSOverHTTPTransportOK(t *testing.T) {
+	const queryURL = "https://cloudflare-dns.com/dns-query"
 	txp := resolver.NewDNSOverHTTPS(http.DefaultClient, queryURL)
 	if txp.Network() != "doh" {
 		t.Fatal("invalid network")
@@ -117,7 +117,7 @@ func TestUnitDNSOverHTTPTransportOK(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
+func TestDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 	expected := errors.New("mocked error")
 	var correct bool
 	txp := resolver.DNSOverHTTPS{
@@ -125,7 +125,7 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 			correct = req.Header.Get("User-Agent") == httpheader.UserAgent()
 			return nil, expected
 		},
-		URL: "https://doh.powerdns.org/",
+		URL: "https://cloudflare-dns.com/dns-query",
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)
 	if !errors.Is(err, expected) {
@@ -139,7 +139,7 @@ func TestUnitDNSOverHTTPSClientSetsUserAgent(t *testing.T) {
 	}
 }
 
-func TestUnitDNSOverHTTPSHostOverride(t *testing.T) {
+func TestDNSOverHTTPSHostOverride(t *testing.T) {
 	var correct bool
 	expected := errors.New("mocked error")
 
@@ -149,7 +149,7 @@ func TestUnitDNSOverHTTPSHostOverride(t *testing.T) {
 			correct = req.Host == hostOverride
 			return nil, expected
 		},
-		URL:          "https://doh.powerdns.org/",
+		URL:          "https://cloudflare-dns.com/dns-query",
 		HostOverride: hostOverride,
 	}
 	data, err := txp.RoundTrip(context.Background(), nil)

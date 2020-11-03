@@ -9,10 +9,7 @@ import (
 	"github.com/ooni/probe-engine/netx"
 )
 
-func TestIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+func TestFallbackWorks(t *testing.T) {
 	reso := sessionresolver.New(netx.Config{})
 	defer reso.CloseIdleConnections()
 	if reso.Network() != "sessionresolver" {

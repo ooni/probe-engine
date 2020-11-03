@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/probeservices"
 )
 
-func TestUnitValid(t *testing.T) {
+func TestValid(t *testing.T) {
 	t.Run("fail on probe_cc", func(t *testing.T) {
 		var m probeservices.Metadata
 		if m.Valid() != false {

@@ -14,9 +14,9 @@ func ensureWeStartOverWithIPTables() {
 	iptables.NewCensoringPolicy().Waive()
 }
 
-func TestIntegrationNoCommand(t *testing.T) {
+func TestNoCommand(t *testing.T) {
 	if runtime.GOOS != "linux" {
-		t.Skip("skipping test on non Linux systems")
+		t.Skip("skip test on non Linux systems")
 	}
 	ensureWeStartOverWithIPTables()
 	*dnsProxyAddress = "127.0.0.1:0"
@@ -28,9 +28,9 @@ func TestIntegrationNoCommand(t *testing.T) {
 	main()
 }
 
-func TestIntegrationWithCommand(t *testing.T) {
+func TestWithCommand(t *testing.T) {
 	if runtime.GOOS != "linux" {
-		t.Skip("skipping test on non Linux systems")
+		t.Skip("skip test on non Linux systems")
 	}
 	ensureWeStartOverWithIPTables()
 	*dnsProxyAddress = "127.0.0.1:0"

@@ -73,7 +73,7 @@ func TestErrWrapperPublicAPI(t *testing.T) {
 	}
 }
 
-func TestUnitComputeBodySnapSize(t *testing.T) {
+func TestComputeBodySnapSize(t *testing.T) {
 	if ComputeBodySnapSize(-1) != math.MaxInt64 {
 		t.Fatal("unexpected result")
 	}

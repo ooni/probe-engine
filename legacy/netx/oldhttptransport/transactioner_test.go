@@ -21,7 +21,7 @@ func (t *transactionerCheckTransactionID) RoundTrip(req *http.Request) (*http.Re
 	return t.roundTripper.RoundTrip(req)
 }
 
-func TestIntegrationTransactionerSuccess(t *testing.T) {
+func TestTransactionerSuccess(t *testing.T) {
 	client := &http.Client{
 		Transport: NewTransactioner(&transactionerCheckTransactionID{
 			roundTripper: http.DefaultTransport,
@@ -40,7 +40,7 @@ func TestIntegrationTransactionerSuccess(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationTransactionerFailure(t *testing.T) {
+func TestTransactionerFailure(t *testing.T) {
 	client := &http.Client{
 		Transport: NewTransactioner(http.DefaultTransport),
 	}

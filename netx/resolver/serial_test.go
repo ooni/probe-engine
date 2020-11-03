@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitOONIGettingTransport(t *testing.T) {
+func TestOONIGettingTransport(t *testing.T) {
 	txp := resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853")
 	r := resolver.NewSerialResolver(txp)
 	rtx := r.Transport()
@@ -27,7 +27,7 @@ func TestUnitOONIGettingTransport(t *testing.T) {
 	}
 }
 
-func TestUnitOONIEncodeError(t *testing.T) {
+func TestOONIEncodeError(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853")
 	r := resolver.SerialResolver{Encoder: resolver.FakeEncoder{Err: mocked}, Txp: txp}
@@ -40,7 +40,7 @@ func TestUnitOONIEncodeError(t *testing.T) {
 	}
 }
 
-func TestUnitOONIRoundTripError(t *testing.T) {
+func TestOONIRoundTripError(t *testing.T) {
 	mocked := errors.New("mocked error")
 	txp := resolver.FakeTransport{Err: mocked}
 	r := resolver.NewSerialResolver(txp)
@@ -53,7 +53,7 @@ func TestUnitOONIRoundTripError(t *testing.T) {
 	}
 }
 
-func TestUnitOONIWithEmptyReply(t *testing.T) {
+func TestOONIWithEmptyReply(t *testing.T) {
 	txp := resolver.FakeTransport{Data: resolver.GenReplySuccess(t, dns.TypeA)}
 	r := resolver.NewSerialResolver(txp)
 	addrs, err := r.LookupHost(context.Background(), "www.gogle.com")
@@ -65,7 +65,7 @@ func TestUnitOONIWithEmptyReply(t *testing.T) {
 	}
 }
 
-func TestUnitOONIWithAReply(t *testing.T) {
+func TestOONIWithAReply(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Data: resolver.GenReplySuccess(t, dns.TypeA, "8.8.8.8"),
 	}
@@ -79,7 +79,7 @@ func TestUnitOONIWithAReply(t *testing.T) {
 	}
 }
 
-func TestUnitOONIWithAAAAReply(t *testing.T) {
+func TestOONIWithAAAAReply(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Data: resolver.GenReplySuccess(t, dns.TypeAAAA, "::1"),
 	}
@@ -93,7 +93,7 @@ func TestUnitOONIWithAAAAReply(t *testing.T) {
 	}
 }
 
-func TestUnitOONIWithTimeout(t *testing.T) {
+func TestOONIWithTimeout(t *testing.T) {
 	txp := resolver.FakeTransport{
 		Err: &net.OpError{Err: syscall.ETIMEDOUT, Op: "dial"},
 	}

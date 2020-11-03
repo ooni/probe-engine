@@ -16,7 +16,7 @@ import (
 	obfs4base "gitlab.com/yawning/obfs4.git/transports/base"
 )
 
-func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
+func TestChannelHandlerWriteLateOnChannel(t *testing.T) {
 	handler := newChannelHandler(make(chan modelx.Measurement))
 	var waitgroup sync.WaitGroup
 	waitgroup.Add(1)
@@ -31,7 +31,7 @@ func TestUnitChannelHandlerWriteLateOnChannel(t *testing.T) {
 	}
 }
 
-func TestIntegrationDNSLookupGood(t *testing.T) {
+func TestDNSLookupGood(t *testing.T) {
 	ctx := context.Background()
 	results := DNSLookup(ctx, DNSLookupConfig{
 		Hostname: "ooni.io",
@@ -44,7 +44,7 @@ func TestIntegrationDNSLookupGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationDNSLookupCancellation(t *testing.T) {
+func TestDNSLookupCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(
 		context.Background(), time.Microsecond,
 	)
@@ -63,7 +63,7 @@ func TestIntegrationDNSLookupCancellation(t *testing.T) {
 	}
 }
 
-func TestIntegrationDNSLookupUnknownDNS(t *testing.T) {
+func TestDNSLookupUnknownDNS(t *testing.T) {
 	ctx := context.Background()
 	results := DNSLookup(ctx, DNSLookupConfig{
 		Hostname:      "ooni.io",
@@ -74,7 +74,7 @@ func TestIntegrationDNSLookupUnknownDNS(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPDoGood(t *testing.T) {
+func TestHTTPDoGood(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
 		Accept:         "*/*",
@@ -95,7 +95,7 @@ func TestIntegrationHTTPDoGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPDoUnknownDNS(t *testing.T) {
+func TestHTTPDoUnknownDNS(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
 		URL:              "http://ooni.io",
@@ -106,7 +106,7 @@ func TestIntegrationHTTPDoUnknownDNS(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPDoForceSkipVerify(t *testing.T) {
+func TestHTTPDoForceSkipVerify(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
 		URL:                "https://self-signed.badssl.com/",
@@ -117,7 +117,7 @@ func TestIntegrationHTTPDoForceSkipVerify(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPDoRoundTripError(t *testing.T) {
+func TestHTTPDoRoundTripError(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
 		URL: "http://ooni.io:443", // 443 with http
@@ -127,7 +127,7 @@ func TestIntegrationHTTPDoRoundTripError(t *testing.T) {
 	}
 }
 
-func TestIntegrationHTTPDoBadURL(t *testing.T) {
+func TestHTTPDoBadURL(t *testing.T) {
 	ctx := context.Background()
 	results := HTTPDo(ctx, HTTPDoConfig{
 		URL: "\t",
@@ -137,7 +137,7 @@ func TestIntegrationHTTPDoBadURL(t *testing.T) {
 	}
 }
 
-func TestIntegrationTLSConnectGood(t *testing.T) {
+func TestTLSConnectGood(t *testing.T) {
 	ctx := context.Background()
 	results := TLSConnect(ctx, TLSConnectConfig{
 		Address: "ooni.io:443",
@@ -147,7 +147,7 @@ func TestIntegrationTLSConnectGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationTLSConnectGoodWithDoT(t *testing.T) {
+func TestTLSConnectGoodWithDoT(t *testing.T) {
 	ctx := context.Background()
 	results := TLSConnect(ctx, TLSConnectConfig{
 		Address:          "ooni.io:443",
@@ -159,7 +159,7 @@ func TestIntegrationTLSConnectGoodWithDoT(t *testing.T) {
 	}
 }
 
-func TestIntegrationTLSConnectCancellation(t *testing.T) {
+func TestTLSConnectCancellation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(
 		context.Background(), time.Microsecond,
 	)
@@ -175,7 +175,7 @@ func TestIntegrationTLSConnectCancellation(t *testing.T) {
 	}
 }
 
-func TestIntegrationTLSConnectUnknownDNS(t *testing.T) {
+func TestTLSConnectUnknownDNS(t *testing.T) {
 	ctx := context.Background()
 	results := TLSConnect(ctx, TLSConnectConfig{
 		Address:          "ooni.io:443",
@@ -186,7 +186,7 @@ func TestIntegrationTLSConnectUnknownDNS(t *testing.T) {
 	}
 }
 
-func TestIntegrationTLSConnectForceSkipVerify(t *testing.T) {
+func TestTLSConnectForceSkipVerify(t *testing.T) {
 	ctx := context.Background()
 	results := TLSConnect(ctx, TLSConnectConfig{
 		Address:            "self-signed.badssl.com:443",
@@ -197,7 +197,7 @@ func TestIntegrationTLSConnectForceSkipVerify(t *testing.T) {
 	}
 }
 
-func TestIntegrationBodySnapSizes(t *testing.T) {
+func TestBodySnapSizes(t *testing.T) {
 	const (
 		maxEventsBodySnapSize   = 1 << 7
 		maxResponseBodySnapSize = 1 << 8
@@ -233,7 +233,7 @@ func TestIntegrationBodySnapSizes(t *testing.T) {
 	}
 }
 
-func TestIntegrationTCPConnectGood(t *testing.T) {
+func TestTCPConnectGood(t *testing.T) {
 	ctx := context.Background()
 	results := TCPConnect(ctx, TCPConnectConfig{
 		Address: "ooni.io:443",
@@ -243,7 +243,7 @@ func TestIntegrationTCPConnectGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationTCPConnectGoodWithDoT(t *testing.T) {
+func TestTCPConnectGoodWithDoT(t *testing.T) {
 	ctx := context.Background()
 	results := TCPConnect(ctx, TCPConnectConfig{
 		Address:          "ooni.io:443",
@@ -255,7 +255,7 @@ func TestIntegrationTCPConnectGoodWithDoT(t *testing.T) {
 	}
 }
 
-func TestIntegrationTCPConnectUnknownDNS(t *testing.T) {
+func TestTCPConnectUnknownDNS(t *testing.T) {
 	ctx := context.Background()
 	results := TCPConnect(ctx, TCPConnectConfig{
 		Address:          "ooni.io:443",
@@ -282,7 +282,7 @@ func obfs4config() OBFS4ConnectConfig {
 	}
 }
 
-func TestIntegrationOBFS4ConnectGood(t *testing.T) {
+func TestOBFS4ConnectGood(t *testing.T) {
 	ctx := context.Background()
 	results := OBFS4Connect(ctx, obfs4config())
 	if results.Error != nil {
@@ -290,7 +290,7 @@ func TestIntegrationOBFS4ConnectGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4ConnectGoodWithDoT(t *testing.T) {
+func TestOBFS4ConnectGoodWithDoT(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	config.DNSServerNetwork = "dot"
@@ -301,7 +301,7 @@ func TestIntegrationOBFS4ConnectGoodWithDoT(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4ConnectUnknownDNS(t *testing.T) {
+func TestOBFS4ConnectUnknownDNS(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	config.DNSServerNetwork = "antani"
@@ -311,7 +311,7 @@ func TestIntegrationOBFS4ConnectUnknownDNS(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4IoutilTempDirError(t *testing.T) {
+func TestOBFS4IoutilTempDirError(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	expected := errors.New("mocked error")
@@ -324,7 +324,7 @@ func TestIntegrationOBFS4IoutilTempDirError(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4ClientFactoryError(t *testing.T) {
+func TestOBFS4ClientFactoryError(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	config.transportsGet = func(name string) obfs4base.Transport {
@@ -340,7 +340,7 @@ func TestIntegrationOBFS4ClientFactoryError(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4ParseArgsError(t *testing.T) {
+func TestOBFS4ParseArgsError(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	config.Params = make(map[string][]string) // cause ParseArgs error
@@ -350,7 +350,7 @@ func TestIntegrationOBFS4ParseArgsError(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4DialContextError(t *testing.T) {
+func TestOBFS4DialContextError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // should cause DialContex to fail
 	config := obfs4config()
@@ -360,7 +360,7 @@ func TestIntegrationOBFS4DialContextError(t *testing.T) {
 	}
 }
 
-func TestIntegrationOBFS4SetDeadlineError(t *testing.T) {
+func TestOBFS4SetDeadlineError(t *testing.T) {
 	ctx := context.Background()
 	config := obfs4config()
 	config.setDeadline = func(net.Conn, time.Time) error {
@@ -388,7 +388,7 @@ func (txp *faketransport) ServerFactory(stateDir string, args *goptlib.Args) (ob
 	return txp.ServerFactory(stateDir, args)
 }
 
-func TestUnitConnmapper(t *testing.T) {
+func TestConnmapper(t *testing.T) {
 	var mapper connmapper
 	if mapper.scramble(-1) >= 0 {
 		t.Fatal("unexpected value for negative input")

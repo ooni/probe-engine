@@ -9,6 +9,9 @@ import (
 )
 
 func TestHTTPGet(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	ctx := context.Background()
 	r := webconnectivity.HTTPGet(ctx, webconnectivity.HTTPGetConfig{
 		Addresses: []string{"104.16.249.249", "104.16.248.249"},

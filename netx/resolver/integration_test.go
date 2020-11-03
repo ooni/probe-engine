@@ -16,7 +16,7 @@ func init() {
 
 func testresolverquick(t *testing.T, reso resolver.Resolver) {
 	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	reso = resolver.LoggingResolver{Logger: log.Log, Resolver: reso}
 	addrs, err := reso.LookupHost(context.Background(), "dns.google.com")
@@ -41,7 +41,7 @@ func testresolverquick(t *testing.T, reso resolver.Resolver) {
 // Ensuring we can handle Internationalized Domain Names (IDNs) without issues
 func testresolverquickidna(t *testing.T, reso resolver.Resolver) {
 	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	reso = resolver.IDNAResolver{
 		resolver.LoggingResolver{Logger: log.Log, Resolver: reso},
@@ -55,57 +55,57 @@ func testresolverquickidna(t *testing.T, reso resolver.Resolver) {
 	}
 }
 
-func TestIntegrationNewResolverSystem(t *testing.T) {
+func TestNewResolverSystem(t *testing.T) {
 	reso := resolver.SystemResolver{}
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverUDPAddress(t *testing.T) {
+func TestNewResolverUDPAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverUDP(new(net.Dialer), "8.8.8.8:53"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverUDPDomain(t *testing.T) {
+func TestNewResolverUDPDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverUDP(new(net.Dialer), "dns.google.com:53"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverTCPAddress(t *testing.T) {
+func TestNewResolverTCPAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTCP(new(net.Dialer).DialContext, "8.8.8.8:53"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverTCPDomain(t *testing.T) {
+func TestNewResolverTCPDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTCP(new(net.Dialer).DialContext, "dns.google.com:53"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverDoTAddress(t *testing.T) {
+func TestNewResolverDoTAddress(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTLS(resolver.DialTLSContext, "8.8.8.8:853"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverDoTDomain(t *testing.T) {
+func TestNewResolverDoTDomain(t *testing.T) {
 	reso := resolver.NewSerialResolver(
 		resolver.NewDNSOverTLS(resolver.DialTLSContext, "dns.google.com:853"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }
 
-func TestIntegrationNewResolverDoH(t *testing.T) {
+func TestNewResolverDoH(t *testing.T) {
 	reso := resolver.NewSerialResolver(
-		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://doh.powerdns.org/"))
+		resolver.NewDNSOverHTTPS(http.DefaultClient, "https://cloudflare-dns.com/dns-query"))
 	testresolverquick(t, reso)
 	testresolverquickidna(t, reso)
 }

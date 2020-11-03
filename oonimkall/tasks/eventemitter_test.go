@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
-func TestUnitDisabledEvents(t *testing.T) {
+func TestDisabledEvents(t *testing.T) {
 	out := make(chan *tasks.Event)
 	emitter := tasks.NewEventEmitter([]string{"log"}, out)
 	go func() {
@@ -24,7 +24,7 @@ func TestUnitDisabledEvents(t *testing.T) {
 	}
 }
 
-func TestUnitEmitFailureStartup(t *testing.T) {
+func TestEmitFailureStartup(t *testing.T) {
 	out := make(chan *tasks.Event)
 	emitter := tasks.NewEventEmitter([]string{}, out)
 	go func() {
@@ -45,7 +45,7 @@ func TestUnitEmitFailureStartup(t *testing.T) {
 	}
 }
 
-func TestUnitEmitStatusProgress(t *testing.T) {
+func TestEmitStatusProgress(t *testing.T) {
 	out := make(chan *tasks.Event)
 	emitter := tasks.NewEventEmitter([]string{}, out)
 	go func() {

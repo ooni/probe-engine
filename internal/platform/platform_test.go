@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	var expected bool
 	switch Name() {
 	case "android", "ios", "linux", "macos", "windows":
@@ -16,7 +16,7 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-func TestUnitPuregoname(t *testing.T) {
+func TestPuregoname(t *testing.T) {
 	var runtimevariables = []struct {
 		expected string
 		goarch   string

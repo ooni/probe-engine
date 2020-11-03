@@ -54,7 +54,7 @@ func TestMaybeLogin(t *testing.T) {
 	})
 }
 
-func TestIntegrationMaybeLoginIdempotent(t *testing.T) {
+func TestMaybeLoginIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
 	metadata := testorchestra.MetadataFixture()

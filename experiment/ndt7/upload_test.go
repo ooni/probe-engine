@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func TestUnitUploadSetWriteDeadlineFailure(t *testing.T) {
+func TestUploadSetWriteDeadlineFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newUploadManager(
 		&mockableConnMock{
@@ -23,7 +23,7 @@ func TestUnitUploadSetWriteDeadlineFailure(t *testing.T) {
 	}
 }
 
-func TestUnitUploadNewMessageFailure(t *testing.T) {
+func TestUploadNewMessageFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newUploadManager(
 		&mockableConnMock{},
@@ -38,7 +38,7 @@ func TestUnitUploadNewMessageFailure(t *testing.T) {
 	}
 }
 
-func TestUnitUploadWritePreparedMessageFailure(t *testing.T) {
+func TestUploadWritePreparedMessageFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newUploadManager(
 		&mockableConnMock{
@@ -52,7 +52,7 @@ func TestUnitUploadWritePreparedMessageFailure(t *testing.T) {
 	}
 }
 
-func TestUnitUploadWritePreparedMessageSubsequentFailure(t *testing.T) {
+func TestUploadWritePreparedMessageSubsequentFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newUploadManager(
 		&mockableConnMock{},
@@ -72,7 +72,7 @@ func TestUnitUploadWritePreparedMessageSubsequentFailure(t *testing.T) {
 	}
 }
 
-func TestUnitUploadLoop(t *testing.T) {
+func TestUploadLoop(t *testing.T) {
 	mgr := newUploadManager(
 		&mockableConnMock{},
 		defaultCallbackPerformance,

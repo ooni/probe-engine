@@ -1,8 +1,7 @@
 name: libooniffi
 on:
-  pull_request:
   schedule:
-    - cron: "14 17 * * 3"
+    - cron: "0 5 * * 3"
 jobs:
   darwin:
     runs-on: macos-latest

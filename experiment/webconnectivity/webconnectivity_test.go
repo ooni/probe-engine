@@ -25,10 +25,14 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx := context.Background()
 	// we need a real session because we need the web-connectivity helper
+	// as well as the ASN database
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
 	callbacks := model.NewPrinterCallbacks(log.Log)
@@ -55,6 +59,9 @@ func TestIntegrationSuccess(t *testing.T) {
 }
 
 func TestMeasureWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -85,6 +92,9 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 }
 
 func TestMeasureWithNoInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -115,6 +125,9 @@ func TestMeasureWithNoInput(t *testing.T) {
 }
 
 func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -145,6 +158,9 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 }
 
 func TestMeasureWithUnsupportedInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -175,6 +191,9 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 }
 
 func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

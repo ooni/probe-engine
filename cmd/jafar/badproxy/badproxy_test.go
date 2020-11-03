@@ -12,13 +12,13 @@ import (
 	"github.com/google/martian/v3/mitm"
 )
 
-func TestIntegrationCleartext(t *testing.T) {
+func TestCleartext(t *testing.T) {
 	listener := newproxy(t)
 	checkdial(t, listener.Addr().String(), nil, net.Dial)
 	killproxy(t, listener)
 }
 
-func TestIntegrationTLS(t *testing.T) {
+func TestTLS(t *testing.T) {
 	listener := newproxytls(t)
 	checkdial(t, listener.Addr().String(), nil,
 		func(network, address string) (net.Conn, error) {
@@ -38,7 +38,7 @@ func TestIntegrationTLS(t *testing.T) {
 	killproxy(t, listener)
 }
 
-func TestIntegrationListenError(t *testing.T) {
+func TestListenError(t *testing.T) {
 	proxy := NewCensoringProxy()
 	listener, err := proxy.Start("8.8.8.8:80")
 	if err == nil {
@@ -49,7 +49,7 @@ func TestIntegrationListenError(t *testing.T) {
 	}
 }
 
-func TestUnitStarTLS(t *testing.T) {
+func TestStarTLS(t *testing.T) {
 	expected := errors.New("mocked error")
 
 	t.Run("when we cannot create a new authority", func(t *testing.T) {

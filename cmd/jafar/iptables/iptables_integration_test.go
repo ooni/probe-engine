@@ -13,10 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/ooni/probe-engine/cmd/jafar/resolver"
 	"github.com/ooni/probe-engine/cmd/jafar/shellx"
 	"github.com/ooni/probe-engine/cmd/jafar/uncensored"
 )
+
+func init() {
+	log.SetLevel(log.ErrorLevel)
+}
 
 func newCensoringPolicy() *CensoringPolicy {
 	policy := NewCensoringPolicy()
@@ -24,9 +29,12 @@ func newCensoringPolicy() *CensoringPolicy {
 	return policy
 }
 
-func TestUnitCannotApplyPolicy(t *testing.T) {
+func TestCannotApplyPolicy(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.DropIPs = []string{"antani"}
@@ -36,9 +44,12 @@ func TestUnitCannotApplyPolicy(t *testing.T) {
 	defer policy.Waive()
 }
 
-func TestUnitCreateChainsError(t *testing.T) {
+func TestCreateChainsError(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	if err := policy.Apply(); err != nil {
@@ -52,9 +63,12 @@ func TestUnitCreateChainsError(t *testing.T) {
 	}
 }
 
-func TestIntegrationDropIP(t *testing.T) {
+func TestDropIP(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.DropIPs = []string{"1.1.1.1"}
@@ -62,7 +76,7 @@ func TestIntegrationDropIP(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "1.1.1.1:853")
 	if err == nil {
@@ -76,9 +90,12 @@ func TestIntegrationDropIP(t *testing.T) {
 	}
 }
 
-func TestIntegrationDropKeyword(t *testing.T) {
+func TestDropKeyword(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.DropKeywords = []string{"ooni.io"}
@@ -86,7 +103,7 @@ func TestIntegrationDropKeyword(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
 	if err != nil {
@@ -104,9 +121,12 @@ func TestIntegrationDropKeyword(t *testing.T) {
 	}
 }
 
-func TestIntegrationDropKeywordHex(t *testing.T) {
+func TestDropKeywordHex(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.DropKeywordsHex = []string{"|6f 6f 6e 69|"}
@@ -114,7 +134,7 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer policy.Waive()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
 	if err != nil {
@@ -135,9 +155,12 @@ func TestIntegrationDropKeywordHex(t *testing.T) {
 	}
 }
 
-func TestIntegrationResetIP(t *testing.T) {
+func TestResetIP(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.ResetIPs = []string{"1.1.1.1"}
@@ -157,9 +180,12 @@ func TestIntegrationResetIP(t *testing.T) {
 	}
 }
 
-func TestIntegrationResetKeyword(t *testing.T) {
+func TestResetKeyword(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.ResetKeywords = []string{"ooni.io"}
@@ -179,9 +205,12 @@ func TestIntegrationResetKeyword(t *testing.T) {
 	}
 }
 
-func TestIntegrationResetKeywordHex(t *testing.T) {
+func TestResetKeywordHex(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
 	policy.ResetKeywordsHex = []string{"|6f 6f 6e 69|"}
@@ -201,9 +230,12 @@ func TestIntegrationResetKeywordHex(t *testing.T) {
 	}
 }
 
-func TestIntegrationHijackDNS(t *testing.T) {
+func TestHijackDNS(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	resolver := resolver.NewCensoringResolver(
 		[]string{"ooni.io"}, nil, nil,
@@ -232,9 +264,12 @@ func TestIntegrationHijackDNS(t *testing.T) {
 	}
 }
 
-func TestIntegrationHijackHTTP(t *testing.T) {
+func TestHijackHTTP(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	// Implementation note: this test is complicated by the fact
 	// that we are running as root and so we're whitelisted.
@@ -268,9 +303,12 @@ func TestIntegrationHijackHTTP(t *testing.T) {
 	}
 }
 
-func TestIntegrationHijackHTTPS(t *testing.T) {
+func TestHijackHTTPS(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("not implemented on this platform")
+	}
+	if testing.Short() {
+		t.Skip("skip test in short mode")
 	}
 	// Implementation note: this test is complicated by the fact
 	// that we are running as root and so we're whitelisted.

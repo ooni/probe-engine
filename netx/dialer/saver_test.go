@@ -14,7 +14,7 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestUnitSaverDialerFailure(t *testing.T) {
+func TestSaverDialerFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
 	dlr := dialer.SaverDialer{
@@ -54,7 +54,7 @@ func TestUnitSaverDialerFailure(t *testing.T) {
 	}
 }
 
-func TestUnitSaverConnDialerFailure(t *testing.T) {
+func TestSaverConnDialerFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
 	dlr := dialer.SaverConnDialer{
@@ -72,10 +72,10 @@ func TestUnitSaverConnDialerFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
+func TestSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
 	// This is the most common use case for collecting reads, writes
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	nextprotos := []string{"h2"}
 	saver := &trace.Saver{}
@@ -169,9 +169,9 @@ func TestIntegrationSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
+func TestSaverTLSHandshakerSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	nextprotos := []string{"h2"}
 	saver := &trace.Saver{}
@@ -236,9 +236,9 @@ func TestIntegrationSaverTLSHandshakerSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerHostnameError(t *testing.T) {
+func TestSaverTLSHandshakerHostnameError(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
@@ -269,9 +269,9 @@ func TestIntegrationSaverTLSHandshakerHostnameError(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerInvalidCertError(t *testing.T) {
+func TestSaverTLSHandshakerInvalidCertError(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
@@ -302,9 +302,9 @@ func TestIntegrationSaverTLSHandshakerInvalidCertError(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerAuthorityError(t *testing.T) {
+func TestSaverTLSHandshakerAuthorityError(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{
@@ -335,9 +335,9 @@ func TestIntegrationSaverTLSHandshakerAuthorityError(t *testing.T) {
 	}
 }
 
-func TestIntegrationSaverTLSHandshakerNoTLSVerify(t *testing.T) {
+func TestSaverTLSHandshakerNoTLSVerify(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	saver := &trace.Saver{}
 	tlsdlr := dialer.TLSDialer{

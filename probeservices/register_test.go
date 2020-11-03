@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
-func TestUnitMaybeRegister(t *testing.T) {
+func TestMaybeRegister(t *testing.T) {
 	t.Run("when metadata is not valid", func(t *testing.T) {
 		clnt := newclient()
 		ctx := context.Background()
@@ -47,7 +47,7 @@ func TestUnitMaybeRegister(t *testing.T) {
 	})
 }
 
-func TestIntegrationMaybeRegisterIdempotent(t *testing.T) {
+func TestMaybeRegisterIdempotent(t *testing.T) {
 	clnt := newclient()
 	ctx := context.Background()
 	metadata := testorchestra.MetadataFixture()

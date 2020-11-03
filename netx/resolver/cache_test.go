@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/netx/resolver"
 )
 
-func TestUnitCacheFailure(t *testing.T) {
+func TestCacheFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	var r resolver.Resolver = resolver.FakeResolver{
 		Err: expected,
@@ -26,7 +26,7 @@ func TestUnitCacheFailure(t *testing.T) {
 	}
 }
 
-func TestUnitCacheHitSuccess(t *testing.T) {
+func TestCacheHitSuccess(t *testing.T) {
 	var r resolver.Resolver = resolver.FakeResolver{
 		Err: errors.New("mocked error"),
 	}
@@ -41,7 +41,7 @@ func TestUnitCacheHitSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitCacheMissSuccess(t *testing.T) {
+func TestCacheMissSuccess(t *testing.T) {
 	var r resolver.Resolver = resolver.FakeResolver{
 		Result: []string{"8.8.8.8"},
 	}
@@ -58,7 +58,7 @@ func TestUnitCacheMissSuccess(t *testing.T) {
 	}
 }
 
-func TestUnitCacheReadonlySuccess(t *testing.T) {
+func TestCacheReadonlySuccess(t *testing.T) {
 	var r resolver.Resolver = resolver.FakeResolver{
 		Result: []string{"8.8.8.8"},
 	}

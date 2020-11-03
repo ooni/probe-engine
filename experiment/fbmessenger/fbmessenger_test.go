@@ -9,6 +9,7 @@ import (
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -24,10 +25,13 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := fbmessenger.NewExperimentMeasurer(fbmessenger.Config{})
 	ctx := context.Background()
-	// we need a real session because we need to ASN database
+	// we need a real session because we need the ASN database
 	sess := newsession(t)
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
@@ -86,11 +90,11 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationWithCancelledContext(t *testing.T) {
+func TestWithCancelledContext(t *testing.T) {
 	measurer := fbmessenger.NewExperimentMeasurer(fbmessenger.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so we fail immediately
-	sess := newsession(t)
+	sess := &mockable.Session{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
