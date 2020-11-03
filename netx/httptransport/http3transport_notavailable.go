@@ -14,6 +14,11 @@ type NilRoundTripper struct {
 	RoundTripper
 }
 
+// CloseIdleConnections closes all the connections opened by this transport.
+func (t *NilRoundTripper) CloseIdleConnections() {
+	// do nothing, for interface compliance
+}
+
 // NewHTTP3Transport creates a new HTTP3Transport instance.
 func NewHTTP3Transport(dialer Dialer, tlsDialer TLSDialer) NilRoundTripper {
 	log.Errorf("%s", "HTTP3 not available. Please use Go 1.15 and the tag PSIPHON_DISABLE_QUIC")
