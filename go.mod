@@ -14,7 +14,7 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/miekg/dns v1.1.34
 	github.com/montanaflynn/stats v0.6.3
-	github.com/ooni/psiphon v0.0.0-20201104075123-b81b270f1f0d
+	github.com/ooni/psiphon v0.0.0-20201104081349-ed320c5ca504
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/oschwald/maxminddb-golang v1.7.0 // indirect
 	github.com/pborman/getopt/v2 v2.1.0
