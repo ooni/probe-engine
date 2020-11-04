@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/ooni/probe-engine/netx"
+
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
-	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 )
 
@@ -173,7 +174,8 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		return nil
 	}
 
-	if ok := netx.CertPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody)); !ok {
+	certPool := netx.NewDefaultCertPool()
+	if ok := certPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody)); !ok {
 		testkeys.CACertStatus = false
 		testkeys.ApiStatus = "blocked"
 		errorValue := "invalid_ca"
@@ -186,14 +188,17 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 		// Here we need to provide the method explicitly. See
 		// https://github.com/ooni/probe-engine/issues/827.
 		{Target: providerURL, Config: urlgetter.Config{
+			CertPool:        certPool,
 			Method:          "GET",
 			FailOnHTTPError: true,
 		}},
 		{Target: eipServiceURL, Config: urlgetter.Config{
+			CertPool:        certPool,
 			Method:          "GET",
 			FailOnHTTPError: true,
 		}},
 		{Target: geoServiceURL, Config: urlgetter.Config{
+			CertPool:        certPool,
 			Method:          "GET",
 			FailOnHTTPError: true,
 		}},
