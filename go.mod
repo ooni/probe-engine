@@ -40,6 +40,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/iancoleman/strcase v0.1.2
 	github.com/juju/ratelimit v1.0.2-0.20191002062651-f60b32039441 // indirect
+	github.com/lucas-clemente/quic-go v0.18.1
 	github.com/marusama/semaphore v0.0.0-20171214154724-565ffd8e868a // indirect
 	github.com/miekg/dns v1.1.34
 	github.com/montanaflynn/stats v0.6.3

@@ -402,12 +402,18 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		log.Infof("Report ID: %s", experiment.ReportID())
 	}
 
+	usingTransport := map[string]string{
+		"false": " over TCP",
+		"true":  " over QUIC",
+	}
 	inputCount := len(currentOptions.Inputs)
 	inputCounter := 0
 	for _, input := range currentOptions.Inputs {
 		inputCounter++
 		if input != "" {
-			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+			// TODO(kelmenhorst): log transport protocol information in http logging debug-mode-only functionality
+			proto := usingTransport[extraOptions["HTTP3Enabled"]]
+			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input)
 		}
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")
