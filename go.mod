@@ -6,13 +6,18 @@ require (
 	git.torproject.org/pluggable-transports/goptlib.git v1.1.0
 	github.com/apex/log v1.9.0
 	github.com/cretz/bine v0.1.0
+	github.com/dchest/siphash v1.2.2 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.2
 	github.com/google/martian/v3 v3.1.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/iancoleman/strcase v0.1.2
-	github.com/miekg/dns v1.1.34
+	github.com/lucas-clemente/quic-go v0.18.1
+	github.com/marten-seemann/qpack v0.2.1 // indirect
+	github.com/marten-seemann/qtls-go1-15 v0.1.1 // indirect
+	github.com/miekg/dns v1.1.35
 	github.com/montanaflynn/stats v0.6.3
 	github.com/ooni/psiphon v0.0.0-20201104081349-ed320c5ca504
 	github.com/oschwald/geoip2-golang v1.4.0
@@ -23,7 +28,8 @@ require (
 	github.com/rogpeppe/go-internal v1.6.2
 	gitlab.com/yawning/obfs4.git v0.0.0-20200410113629-2d8f3c8bbfd7
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
-	golang.org/x/net v0.0.0-20201022231255-08b38378de70
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
-	golang.org/x/sys v0.0.0-20201022201747-fb209a7c41cd // indirect
+	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
+	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
+	golang.org/x/text v0.3.4 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
 )
