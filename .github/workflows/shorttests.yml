@@ -6,7 +6,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-    matrix:
+      matrix:
         go: [ "1.14", "1.15" ]
     steps:
       - uses: actions/setup-go@v1
