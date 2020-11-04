@@ -42,6 +42,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 			CacheResolutions:    true,
 			ContextByteCounting: true,
 			DialSaver:           c.Saver,
+			HTTP3Enabled:        c.Config.HTTP3Enabled,
 			HTTPSaver:           c.Saver,
 			Logger:              c.Logger,
 			ReadWriteSaver:      c.Saver,
