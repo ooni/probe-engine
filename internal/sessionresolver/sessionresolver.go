@@ -25,7 +25,8 @@ type Resolver struct {
 
 // New creates a new session resolver.
 func New(config netx.Config) *Resolver {
-	primary, err := netx.NewDNSClient(config, "https://dns.quad9.net/dns-query")
+	primary, err := netx.NewDNSClientWithOverrides(config,
+		"https://cloudflare.com/dns-query", "dns.cloudflare.com", "")
 	runtimex.PanicOnError(err, "cannot create dns over https resolver")
 	fallback, err := netx.NewDNSClient(config, "system:///")
 	runtimex.PanicOnError(err, "cannot create system resolver")
