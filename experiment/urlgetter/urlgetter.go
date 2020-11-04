@@ -5,6 +5,7 @@ package urlgetter
 
 import (
 	"context"
+	"crypto/x509"
 	"time"
 
 	"github.com/ooni/probe-engine/model"
@@ -18,6 +19,10 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
+	// not settable from command line
+	CertPool *x509.CertPool
+
+	// settable from command line
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
