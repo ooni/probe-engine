@@ -7,6 +7,7 @@ assignees: bassosimone
 
 ---
 
+- [ ] psiphon: run ./update.bash
 - [ ] engine: update dependencies
 - [ ] engine: update internal/httpheader/useragent.go
 - [ ] engine: update version.go
