@@ -5,6 +5,7 @@ go 1.14
 require (
 	git.torproject.org/pluggable-transports/goptlib.git v1.1.0
 	github.com/apex/log v1.9.0
+	github.com/bassosimone/psidep v0.0.0-20201105110849-115d8b4420b3
 	github.com/cretz/bine v0.1.0
 	github.com/dchest/siphash v1.2.2 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
@@ -19,7 +20,6 @@ require (
 	github.com/marten-seemann/qtls-go1-15 v0.1.1 // indirect
 	github.com/miekg/dns v1.1.35
 	github.com/montanaflynn/stats v0.6.3
-	github.com/ooni/psiphon v0.1.0
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/oschwald/maxminddb-golang v1.7.0 // indirect
 	github.com/pborman/getopt/v2 v2.1.0
