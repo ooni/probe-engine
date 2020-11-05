@@ -19,7 +19,7 @@ require (
 	github.com/marten-seemann/qtls-go1-15 v0.1.1 // indirect
 	github.com/miekg/dns v1.1.35
 	github.com/montanaflynn/stats v0.6.3
-	github.com/ooni/psiphon v0.0.0-20201105104640-9af3b55437b3
+	github.com/ooni/psiphon v0.1.0
 	github.com/oschwald/geoip2-golang v1.4.0
 	github.com/oschwald/maxminddb-golang v1.7.0 // indirect
 	github.com/pborman/getopt/v2 v2.1.0

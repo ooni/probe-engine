@@ -175,8 +175,8 @@ github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1Cpa
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
-github.com/ooni/psiphon v0.0.0-20201105104640-9af3b55437b3 h1:sMPGVlyvW8ZeJlhmn4kkC9LtNuCDePJoJ5MmkAYQipk=
-github.com/ooni/psiphon v0.0.0-20201105104640-9af3b55437b3/go.mod h1:p+l7SBAGTH3bw9ALcLvlrz6ry+isIM2f51Y5yOhgmTQ=
+github.com/ooni/psiphon v0.1.0 h1:fUcDpzZSd2McI5GomHtwusQllYPQoq3ETM3GMfQxCQQ=
+github.com/ooni/psiphon v0.1.0/go.mod h1:p+l7SBAGTH3bw9ALcLvlrz6ry+isIM2f51Y5yOhgmTQ=
 github.com/openzipkin/zipkin-go v0.1.1/go.mod h1:NtoC/o8u3JlF1lSlyPNswIbeQH9bJTmOf0Erfk+hxe8=
 github.com/oschwald/geoip2-golang v1.4.0 h1:5RlrjCgRyIGDz/mBmPfnAF4h8k0IAcRv9PvrpOfz+Ug=
 github.com/oschwald/geoip2-golang v1.4.0/go.mod h1:8QwxJvRImBH+Zl6Aa6MaIcs5YdlZSTKtzmPGzQqi9ng=
