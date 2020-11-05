@@ -83,7 +83,7 @@ for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
 done
 ```
 
-2. pin to a specific psiphon of our psiphon integration repo using:
+2. pin to a specific version of our psiphon integration repo using:
 
 ```bash
 go get -v github.com/ooni/psiphon@VERSION
