@@ -83,27 +83,13 @@ for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
 done
 ```
 
-2. pin to a specific psiphon version (we usually track the
-`staging-client` branch) using:
+2. pin to a specific psiphon of our psiphon integration repo using:
 
 ```bash
-go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
+go get -v github.com/ooni/psiphon@VERSION
 ```
 
-3. clone `psiphon-tunnel-core`, checkout the tip of the `staging-client`
-branch and generate a `go.mod` by running `go mod init && go mod tidy` in
-the toplevel dir
+3. run `go mod tidy`
 
-4. rewrite `go.mod` such that it contains only your direct dependencies
-followed by the exact content of `psiphon-tunnel-core`'s `go.mod`
-
-5. run `go mod tidy`
-
-6. make sure you don't downgrade `bolt` and `goselect` because this
-will break downstream builds on MIPS:
-
-```bash
-go get -u -v github.com/Psiphon-Labs/bolt github.com/creack/goselect
-```
-
-The above procedure allows us to pin all psiphon dependencies precisely.
+Step 2 is currently needed because github.com/ooni/psiphon does not
+seem to update automatically when using `go get -u -v ./...`
