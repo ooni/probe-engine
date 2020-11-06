@@ -1,5 +1,8 @@
 name: generate
 on:
+  push:
+    branches:
+      - 'release/**'
   schedule:
     - cron: "0 0 * * */1"
 jobs:
