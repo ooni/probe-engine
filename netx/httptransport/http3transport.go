@@ -1,5 +1,3 @@
-//+build go1.15 PSIPHON_DISABLE_QUIC
-
 package httptransport
 
 import (
