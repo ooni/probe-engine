@@ -62,8 +62,8 @@ type Config struct {
 // TestKeys contains riseupvpn test keys.
 type TestKeys struct {
 	urlgetter.TestKeys
-	ApiFailure      *string             `json:"api_failure"`
-	ApiStatus       string              `json:"api_status"`
+	APIFailure      *string             `json:"api_failure"`
+	APIStatus       string              `json:"api_status"`
 	CACertStatus    bool                `json:"ca_cert_status"`
 	FailingGateways []GatewayConnection `json:"failing_gateways"`
 }
@@ -71,8 +71,8 @@ type TestKeys struct {
 // NewTestKeys creates new riseupvpn TestKeys.
 func NewTestKeys() *TestKeys {
 	return &TestKeys{
-		ApiFailure:      nil,
-		ApiStatus:       "ok",
+		APIFailure:      nil,
+		APIStatus:       "ok",
 		CACertStatus:    true,
 		FailingGateways: nil,
 	}
@@ -85,12 +85,12 @@ func (tk *TestKeys) UpdateProviderAPITestKeys(v urlgetter.MultiOutput) {
 	tk.Requests = append(tk.Requests, v.TestKeys.Requests...)
 	tk.TCPConnect = append(tk.TCPConnect, v.TestKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, v.TestKeys.TLSHandshakes...)
-	if tk.ApiStatus != "ok" {
+	if tk.APIStatus != "ok" {
 		return // we already flipped the state
 	}
 	if v.TestKeys.Failure != nil {
-		tk.ApiStatus = "blocked"
-		tk.ApiFailure = v.TestKeys.Failure
+		tk.APIStatus = "blocked"
+		tk.APIFailure = v.TestKeys.Failure
 		return
 	}
 }
@@ -124,8 +124,8 @@ func (tk *TestKeys) AddCACertFetchTestKeys(testKeys urlgetter.TestKeys) {
 	tk.TCPConnect = append(tk.TCPConnect, testKeys.TCPConnect...)
 	tk.TLSHandshakes = append(tk.TLSHandshakes, testKeys.TLSHandshakes...)
 	if testKeys.Failure != nil {
-		tk.ApiStatus = "blocked"
-		tk.ApiFailure = tk.Failure
+		tk.APIStatus = "blocked"
+		tk.APIFailure = tk.Failure
 		tk.CACertStatus = false
 	}
 }
@@ -177,9 +177,9 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	certPool := netx.NewDefaultCertPool()
 	if ok := certPool.AppendCertsFromPEM([]byte(tk.HTTPResponseBody)); !ok {
 		testkeys.CACertStatus = false
-		testkeys.ApiStatus = "blocked"
+		testkeys.APIStatus = "blocked"
 		errorValue := "invalid_ca"
-		testkeys.ApiFailure = &errorValue
+		testkeys.APIFailure = &errorValue
 		return nil
 	}
 
@@ -263,7 +263,6 @@ func parseGateways(testKeys *TestKeys) []GatewayV3 {
 			}
 		}
 	}
-
 	return nil
 }
 

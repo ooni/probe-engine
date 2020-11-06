@@ -31,7 +31,10 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	measurement := new(model.Measurement)
 	err := measurer.Run(
@@ -70,10 +73,10 @@ func TestIntegration(t *testing.T) {
 	if len(tk.TLSHandshakes) <= 0 {
 		t.Fatal("no TLSHandshakes?!")
 	}
-	if tk.ApiFailure != nil {
+	if tk.APIFailure != nil {
 		t.Fatal("unexpected ApiFailure")
 	}
-	if tk.ApiStatus != "ok" {
+	if tk.APIStatus != "ok" {
 		t.Fatal("unexpected ApiStatus")
 	}
 	if tk.CACertStatus != true {
@@ -122,15 +125,15 @@ func TestUpdateWithMixedResults(t *testing.T) {
 			HTTPResponseStatus: 200,
 		},
 	})
-	if tk.ApiStatus != "blocked" {
+	if tk.APIStatus != "blocked" {
 		t.Fatal("ApiStatus should be blocked")
 	}
-	if *tk.ApiFailure != errorx.FailureEOFError {
+	if *tk.APIFailure != errorx.FailureEOFError {
 		t.Fatal("invalid ApiFailure")
 	}
 }
 
-func TestIntegrationFailureCaCertFetch(t *testing.T) {
+func TestFailureCaCertFetch(t *testing.T) {
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	// we're cancelling immediately so that the CA Cert fetch fails
@@ -147,20 +150,22 @@ func TestIntegrationFailureCaCertFetch(t *testing.T) {
 	if tk.CACertStatus != false {
 		t.Fatal("invalid CACertStatus ")
 	}
-	if tk.ApiStatus != "blocked" {
+	if tk.APIStatus != "blocked" {
 		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.ApiFailure != nil {
+	if tk.APIFailure != nil {
 		t.Fatal("ApiFailure should be null")
 	}
 	if len(tk.Requests) > 1 {
 		t.Fatal("Unexpected requests")
 	}
-
 }
 
-func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
+func TestFailureEipServiceBlocked(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -186,16 +191,19 @@ func TestIntegrationFailureEipServiceBlocked(t *testing.T) {
 		}
 	}
 
-	if tk.ApiStatus != "blocked" {
+	if tk.APIStatus != "blocked" {
 		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.ApiFailure == nil {
+	if tk.APIFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
 }
 
-func TestIntegrationFailureProviderUrlBlocked(t *testing.T) {
+func TestFailureProviderUrlBlocked(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -221,16 +229,19 @@ func TestIntegrationFailureProviderUrlBlocked(t *testing.T) {
 	if tk.CACertStatus != true {
 		t.Fatal("invalid CACertStatus ")
 	}
-	if tk.ApiStatus != "blocked" {
+	if tk.APIStatus != "blocked" {
 		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.ApiFailure == nil {
+	if tk.APIFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
 }
 
-func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
+func TestFailureGeoIpServiceBlocked(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := riseupvpn.NewExperimentMeasurer(riseupvpn.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -256,16 +267,16 @@ func TestIntegrationFailureGeoIpServiceBlocked(t *testing.T) {
 		}
 	}
 
-	if tk.ApiStatus != "blocked" {
+	if tk.APIStatus != "blocked" {
 		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.ApiFailure == nil {
+	if tk.APIFailure == nil {
 		t.Fatal("ApiFailure should not be null")
 	}
 }
 
-func TestIntegrationFailureGateway(t *testing.T) {
+func TestFailureGateway(t *testing.T) {
 	var testCases = [...]string{"openvpn", "obfs4"}
 	eipService, err := fetchEipService()
 	if err != nil {
@@ -408,11 +419,11 @@ func runGatewayTest(t *testing.T, censoredGateway *SelfCensoredGateway) {
 		t.Fatal("unexpected failed gateway configuration")
 	}
 
-	if tk.ApiStatus == "blocked" {
+	if tk.APIStatus == "blocked" {
 		t.Fatal("invalid ApiStatus")
 	}
 
-	if tk.ApiFailure != nil {
+	if tk.APIFailure != nil {
 		t.Fatal("ApiFailure should be null")
 	}
 }
