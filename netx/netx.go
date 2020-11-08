@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
@@ -49,6 +50,11 @@ type Logger interface {
 // Dialer is the definition of dialer assumed by this package.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+// HTTP3Dialer is the definition of a dialer for HTTP3 transport assumed by this package.
+type HTTP3Dialer interface {
+	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
 // TLSDialer is the definition of a TLS dialer assumed by this package.
@@ -168,6 +174,15 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
+// NewHTTP3DNSDialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
+func NewHTTP3DNSDialer(config Config) HTTP3Dialer {
+	if config.FullResolver == nil {
+		config.FullResolver = NewResolver(config)
+	}
+	var d HTTP3Dialer = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
+	return d
+}
+
 // NewTLSDialer creates a new TLSDialer from the specified config
 func NewTLSDialer(config Config) TLSDialer {
 	if config.Dialer == nil {
@@ -207,9 +222,17 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 
-	tInfo := allTransportsInfo[config.HTTP3Enabled]
-	txp := tInfo.Factory(config.Dialer, config.TLSDialer)
-	transport := tInfo.TransportName
+	var txp httptransport.RoundTripper
+	var transport string = ""
+	if config.HTTP3Enabled {
+		d := NewHTTP3DNSDialer(config)
+		txp = httptransport.NewHTTP3Transport(d, config.TLSDialer)
+		transport = "h3"
+
+	} else {
+		txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
+		transport = "h2 / http/1.1"
+	}
 
 	if config.ByteCounter != nil {
 		txp = httptransport.ByteCountingTransport{
@@ -236,18 +259,6 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 type httpTransportInfo struct {
 	Factory       func(httptransport.Dialer, httptransport.TLSDialer) httptransport.RoundTripper
 	TransportName string
-}
-
-var allTransportsInfo = map[bool]httpTransportInfo{
-	false: httpTransportInfo{
-		Factory: httptransport.NewSystemTransport,
-		// TODO(kelmenhorst): distinguish between h2 / http/1.1
-		TransportName: "h2 / http/1.1",
-	},
-	true: httpTransportInfo{
-		Factory:       httptransport.NewHTTP3Transport,
-		TransportName: "h3",
-	},
 }
 
 // DNSClient is a DNS client. It wraps a Resolver and it possibly
