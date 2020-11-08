@@ -2,18 +2,24 @@ package httptransport_test
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
-	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
+type MockHTTP3Dialer struct{}
+
+func (d MockHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+	return quic.DialAddrEarly(host, tlsCfg, cfg)
+}
 func TestUnitHTTP3TransportSuccess(t *testing.T) {
-	txp := httptransport.NewHTTP3Transport(selfcensor.SystemDialer{}, dialer.TLSDialer{})
+	txp := httptransport.NewHTTP3Transport(MockHTTP3Dialer{}, dialer.TLSDialer{})
 
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
@@ -32,7 +38,7 @@ func TestUnitHTTP3TransportSuccess(t *testing.T) {
 }
 
 func TestUnitHTTP3TransportFailure(t *testing.T) {
-	txp := httptransport.NewHTTP3Transport(selfcensor.SystemDialer{}, dialer.TLSDialer{})
+	txp := httptransport.NewHTTP3Transport(MockHTTP3Dialer{}, dialer.TLSDialer{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so that the request immediately fails
