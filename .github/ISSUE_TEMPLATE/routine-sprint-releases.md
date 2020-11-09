@@ -2,7 +2,7 @@
 name: Routine sprint releases
 about: Bi-weekly releases of probe-engine, etc.
 title: ''
-labels: effort/S, priority/medium
+labels: effort/M, priority/medium
 assignees: bassosimone
 
 ---
