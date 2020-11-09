@@ -6,10 +6,10 @@ import (
 
 // NewSystemTransport creates a new "system" HTTP transport. That is a transport
 // using the Go standard library with custom dialer and TLS dialer.
-func NewSystemTransport(dialer Dialer, tlsDialer TLSDialer) RoundTripper {
+func NewSystemTransport(config Config) RoundTripper {
 	txp := http.DefaultTransport.(*http.Transport).Clone()
-	txp.DialContext = dialer.DialContext
-	txp.DialTLSContext = tlsDialer.DialTLSContext
+	txp.DialContext = config.Dialer.DialContext
+	txp.DialTLSContext = config.TLSDialer.DialTLSContext
 	// Better for Cloudflare DNS and also better because we have less
 	// noisy events and we can better understand what happened.
 	txp.MaxConnsPerHost = 1

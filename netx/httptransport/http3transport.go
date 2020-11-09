@@ -24,10 +24,10 @@ func (t *HTTP3Transport) CloseIdleConnections() {
 }
 
 // NewHTTP3Transport creates a new HTTP3Transport instance.
-func NewHTTP3Transport(dialer HTTP3Dialer, tlsDialer TLSDialer) RoundTripper {
+func NewHTTP3Transport(config Config) RoundTripper {
 	txp := &HTTP3Transport{}
 	txp.QuicConfig = &quic.Config{}
-	txp.Dial = dialer.Dial
+	txp.Dial = config.HTTP3Dialer.Dial
 	return txp
 }
 
