@@ -9,9 +9,7 @@
 //
 // We extracted this package from cmd/miniooni to allow us to further
 // integrate the miniooni CLI into other binaries (see for example the
-// code at github.com/bassosimone/aladdin). In retrospect, this isn't
-// particularly simple to keep up to date because it is complex to sync
-// the dependencies used by Psiphon, which need precise pinning.
+// code at github.com/bassosimone/aladdin).
 package libminiooni
 
 import (
