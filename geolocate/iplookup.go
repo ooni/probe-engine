@@ -36,6 +36,22 @@ var (
 			fn:   AvastIPLookup,
 		},
 		{
+			name: "ipconfig",
+			fn:   IPConfigIPLookup,
+		},
+		{
+			name: "ipinfo",
+			fn:   IPInfoIPLookup,
+		},
+		{
+			name: "stun_ekiga",
+			fn:   STUNEkigaIPLookup,
+		},
+		{
+			name: "stun_google",
+			fn:   STUNGoogleIPLookup,
+		},
+		{
 			name: "ubuntu",
 			fn:   UbuntuIPLookup,
 		},
