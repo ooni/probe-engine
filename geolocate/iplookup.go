@@ -10,8 +10,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ooni/probe-engine/internal/multierror"
 	"github.com/ooni/probe-engine/model"
 )
+
+// ErrAllIPLookuppersFailed indicates that we failed with looking
+// up the probe IP for with all the lookuppers that we tried.
+var ErrAllIPLookuppersFailed = errors.New("all IP lookuppers failed")
 
 // LookupFunc is a function for performing the IP lookup.
 type LookupFunc func(
@@ -62,7 +67,7 @@ func makeSlice() []method {
 }
 
 // DoWithCustomFunc performs the IP lookup with a custom function.
-func (c *IPLookupClient) DoWithCustomFunc(
+func (c IPLookupClient) DoWithCustomFunc(
 	ctx context.Context, fn LookupFunc,
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
@@ -77,13 +82,15 @@ func (c *IPLookupClient) DoWithCustomFunc(
 }
 
 // Do performs the IP lookup.
-func (c *IPLookupClient) Do(ctx context.Context) (ip string, err error) {
+func (c IPLookupClient) Do(ctx context.Context) (string, error) {
+	union := multierror.New(ErrAllIPLookuppersFailed)
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)
-		ip, err = c.DoWithCustomFunc(ctx, method.fn)
+		ip, err := c.DoWithCustomFunc(ctx, method.fn)
 		if err == nil {
-			return
+			return ip, nil
 		}
+		union.Add(err)
 	}
-	return model.DefaultProbeIP, errors.New("All IP lookuppers failed")
+	return model.DefaultProbeIP, union
 }

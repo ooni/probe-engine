@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -88,7 +89,7 @@ func ReduceErrorForGeolocate(err error) error {
 	if errors.Is(err, context.Canceled) {
 		return nil // when we have not downloaded the resources yet
 	}
-	if err.Error() == "All IP lookuppers failed" {
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
 		return nil // otherwise
 	}
 	return fmt.Errorf("not the error we expected: %w", err)
