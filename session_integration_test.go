@@ -79,7 +79,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ams-pg.ooni.org",
+			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -117,7 +117,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ams-pg.ooni.org",
+			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -190,7 +190,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ams-pg.ooni.org/",
+		Address: "https://ams-pg-test.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -215,7 +215,7 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ams-pg.ooni.org/",
+		Address: "https://ams-pg-test.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {

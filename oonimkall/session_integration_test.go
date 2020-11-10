@@ -18,7 +18,7 @@ import (
 func NewSessionWithAssetsDir(assetsDir string) (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
 		AssetsDir:        assetsDir,
-		ProbeServicesURL: "https://ams-pg.ooni.org/",
+		ProbeServicesURL: "https://ams-pg-test.ooni.org/",
 		SoftwareName:     "oonimkall-test",
 		SoftwareVersion:  "0.1.0",
 		StateDir:         "../testdata/oonimkall/state",
