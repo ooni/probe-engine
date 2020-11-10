@@ -37,7 +37,7 @@ func STUNIPLookup(ctx context.Context, config STUNConfig) (string, error) {
 		}
 		clnt, err := dial("udp", config.Endpoint)
 		if err != nil {
-			return "", err
+			return model.DefaultProbeIP, err
 		}
 		defer clnt.Close()
 		message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)

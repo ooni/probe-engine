@@ -18,10 +18,8 @@ func IPConfigIPLookup(
 	userAgent string,
 ) (string, error) {
 	data, err := (httpx.Client{
-		//BaseURL:    "https://cloudflare.com",
 		BaseURL:    "https://ipconfig.io",
 		HTTPClient: httpClient,
-		Host:       "ipconfig.io",
 		Logger:     logger,
 		UserAgent:  httpheader.CLIUserAgent(),
 	}).FetchResource(ctx, "/")

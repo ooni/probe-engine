@@ -11,51 +11,11 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 )
 
-func init() {
-	log.SetLevel(log.DebugLevel)
-}
-
 func TestIPLookupWorksUsingAvast(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
 	ip, err := geolocate.AvastIPLookup(
-		context.Background(),
-		http.DefaultClient,
-		log.Log,
-		httpheader.UserAgent(),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if net.ParseIP(ip) == nil {
-		t.Fatalf("not an IP address: '%s'", ip)
-	}
-}
-
-func TestIPLookupWorksUsingEkiga(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	ip, err := geolocate.STUNEkigaIPLookup(
-		context.Background(),
-		http.DefaultClient,
-		log.Log,
-		httpheader.UserAgent(),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if net.ParseIP(ip) == nil {
-		t.Fatalf("not an IP address: '%s'", ip)
-	}
-}
-
-func TestIPLookupWorksUsingGoogle(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	ip, err := geolocate.STUNGoogleIPLookup(
 		context.Background(),
 		http.DefaultClient,
 		log.Log,
@@ -92,6 +52,42 @@ func TestIPLookupWorksUsingIPInfo(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	ip, err := geolocate.IPInfoIPLookup(
+		context.Background(),
+		http.DefaultClient,
+		log.Log,
+		httpheader.UserAgent(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if net.ParseIP(ip) == nil {
+		t.Fatalf("not an IP address: '%s'", ip)
+	}
+}
+
+func TestIPLookupWorksUsingSTUNEkiga(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
+	ip, err := geolocate.STUNEkigaIPLookup(
+		context.Background(),
+		http.DefaultClient,
+		log.Log,
+		httpheader.UserAgent(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if net.ParseIP(ip) == nil {
+		t.Fatalf("not an IP address: '%s'", ip)
+	}
+}
+
+func TestIPLookupWorksUsingSTUNGoogle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
+	ip, err := geolocate.STUNGoogleIPLookup(
 		context.Background(),
 		http.DefaultClient,
 		log.Log,
