@@ -140,7 +140,7 @@ func TestNewRequestAuthorizationHeader(t *testing.T) {
 	}
 }
 
-func TestNewRequestUserAgentIsSetDefault(t *testing.T) {
+func TestNewRequestUserAgentIsSet(t *testing.T) {
 	client := newClient()
 	req, err := client.NewRequest(
 		context.Background(), "GET", "/", nil, nil,
