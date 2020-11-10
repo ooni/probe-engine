@@ -14,6 +14,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
@@ -644,7 +645,7 @@ func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 	client, err := sess.NewOrchestraClient(ctx)
-	if err == nil || err.Error() != "All IP lookuppers failed" {
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if client != nil {
