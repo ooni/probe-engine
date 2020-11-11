@@ -30,14 +30,10 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 	for _, addr := range addrs {
 		ip := net.ParseIP(addr)
 		port, err := strconv.Atoi(onlyport)
-		if err != nil {
-			return nil, err
-		}
+
 		udpAddr := &net.UDPAddr{IP: ip, Port: port, Zone: ""}
 		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
-		if err != nil {
-			return nil, err
-		}
+
 		sess, err := quic.DialEarly(udpConn, udpAddr, host, tlsCfg, cfg)
 		if err == nil {
 			return sess, nil
