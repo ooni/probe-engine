@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ooni/probe-engine/experiment/tlstool/internal"
+	"github.com/ooni/probe-engine/experiment/tlstool/internal/patternsplitter"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
@@ -29,13 +29,13 @@ const (
 // Config contains the experiment configuration.
 type Config struct {
 	Delay int64  `ooni:"Milliseconds to wait between writes"`
-	SNI   string `ooni:"Set the specified SNI"`
+	SNI   string `ooni:"Force using the specified SNI"`
 }
 
 // TestKeys contains the experiment results.
 type TestKeys struct {
-	VanillaFailure *string `json:"vanilla_failure"`
-	SplitFailure   *string `json:"split_failure"`
+	VanillaFailure  *string `json:"vanilla_failure"`
+	SNISplitFailure *string `json:"sni_split_failure"`
 }
 
 // Measurer performs the measurement.
@@ -66,9 +66,9 @@ func (m Measurer) Run(
 	err := m.vanillaRun(ctx, sess.Logger(), address)
 	callbacks.OnProgress(0.5, fmt.Sprintf("vanilla: %+v", err))
 	tk.VanillaFailure = archival.NewFailure(err)
-	err = m.splitRun(ctx, sess.Logger(), address)
+	err = m.sniSplitRun(ctx, sess.Logger(), address)
 	callbacks.OnProgress(1.0, fmt.Sprintf("split: %+v", err))
-	tk.SplitFailure = archival.NewFailure(err)
+	tk.SNISplitFailure = archival.NewFailure(err)
 	return nil
 }
 
@@ -96,8 +96,8 @@ func (m Measurer) vanillaRun(ctx context.Context, logger model.Logger, address s
 	return nil
 }
 
-func (m Measurer) splitRun(ctx context.Context, logger model.Logger, address string) error {
-	dialer := &internal.SplitDialer{
+func (m Measurer) sniSplitRun(ctx context.Context, logger model.Logger, address string) error {
+	dialer := &patternsplitter.SplitDialer{
 		Dialer:  m.newDialer(logger),
 		Delay:   m.config.Delay,
 		Pattern: m.pattern(address),
