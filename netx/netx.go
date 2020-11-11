@@ -175,8 +175,8 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
-// NewHTTP3DNSDialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
-func NewHTTP3DNSDialer(config Config) HTTP3Dialer {
+// NewHTTP3Dialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
+func NewHTTP3Dialer(config Config) HTTP3Dialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
@@ -223,7 +223,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 		config.TLSDialer = NewTLSDialer(config)
 	}
 	if config.HTTP3Dialer == nil {
-		config.HTTP3Dialer = NewHTTP3DNSDialer(config)
+		config.HTTP3Dialer = NewHTTP3Dialer(config)
 	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
