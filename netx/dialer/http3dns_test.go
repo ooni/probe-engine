@@ -4,20 +4,40 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-func TestHTTP3DNSDialerNoPort(t *testing.T) {
+func TestHTTP3DNSDialerSuccess(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
 	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	conn, err := dialer.Dial("udp", "antani.ooni.nu", &tls.Config{}, &quic.Config{})
+	sess, err := dialer.Dial("udp", "www.google.com:443", tlsConf, &quic.Config{})
+	if err != nil {
+		t.Fatal("unexpected error")
+	}
+	if sess == nil {
+		t.Fatal("non nil sess expected")
+	}
+}
+func TestHTTP3DNSDialerNoPort(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
+	sess, err := dialer.Dial("udp", "antani.ooni.nu", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if conn != nil {
-		t.Fatal("expected a nil conn here")
+	if sess != nil {
+		t.Fatal("expected a nil sess here")
+	}
+	if err.Error() != "address antani.ooni.nu: missing port in address" {
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -35,15 +55,49 @@ func TestHTTP3DNSDialerLookupHostAddress(t *testing.T) {
 }
 
 func TestHTTP3DNSDialerLookupHostFailure(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
 	expected := errors.New("mocked error")
 	dialer := dialer.HTTP3DNSDialer{Resolver: MockableResolver{
 		Err: expected,
 	}}
-	conn, err := dialer.Dial("udp", "dns.google.com:853", &tls.Config{}, &quic.Config{})
+	sess, err := dialer.Dial("udp", "dns.google.com:853", tlsConf, &quic.Config{})
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
-	if conn != nil {
-		t.Fatal("expected nil conn")
+	if sess != nil {
+		t.Fatal("expected nil sess")
+	}
+}
+
+func TestHTTP3DNSDialerInvalidPort(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
+	sess, err := dialer.Dial("udp", "www.google.com:0", tlsConf, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess")
+	}
+	if !strings.HasSuffix(err.Error(), "sendto: invalid argument") {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestHTTP3DNSDialerNilTLSConf(t *testing.T) {
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
+	sess, err := dialer.Dial("udp", "www.google.com:443", nil, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess")
+	}
+	if err.Error() != "quic: tls.Config not set" {
+		t.Fatal("not the error we expected", err.Error())
 	}
 }
