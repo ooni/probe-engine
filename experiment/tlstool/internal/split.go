@@ -36,8 +36,7 @@ type SplitConn struct {
 
 // Write implements net.Conn.Write.
 func (c SplitConn) Write(b []byte) (int, error) {
-	idx := bytes.Index(b, c.Pattern)
-	if idx > -1 {
+	if idx := bytes.Index(b, c.Pattern); idx > -1 {
 		idx += len(c.Pattern) / 2
 		if _, err := c.Conn.Write(b[:idx]); err != nil {
 			return 0, err
