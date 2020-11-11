@@ -1,6 +1,11 @@
 // Package tlstool contains a TLS tool that we are currently using
 // for running quick and dirty experiments. This tool will change
 // without notice and may be removed without notice.
+//
+// Caveats
+//
+// In particular, this experiment MAY panic when passed incorrect
+// input. This is acceptable because this is not production ready code.
 package tlstool
 
 import (
@@ -68,6 +73,8 @@ func (m Measurer) Run(
 }
 
 func (m Measurer) newDialer(logger model.Logger) netx.Dialer {
+	// TODO(bassosimone): this is a resolver that should hopefully work
+	// in many places. Maybe allow to configure it?
 	resolver, err := netx.NewDNSClientWithOverrides(netx.Config{Logger: logger},
 		"https://cloudflare.com/dns-query", "dns.cloudflare.com", "")
 	runtimex.PanicOnError(err, "cannot initialize resolver")
@@ -120,6 +127,7 @@ func (m Measurer) pattern(address string) string {
 		return m.config.SNI
 	}
 	addr, _, err := net.SplitHostPort(address)
+	// TODO(bassosimone): replace this panic with proper error checking.
 	runtimex.PanicOnError(err, "cannot split address")
 	return addr
 }
