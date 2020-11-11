@@ -1,4 +1,4 @@
-package internal_test
+package patternsplitter_test
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/experiment/tlstool/internal"
+	"github.com/ooni/probe-engine/experiment/tlstool/internal/patternsplitter"
 )
 
 func TestSplitDialerFailure(t *testing.T) {
 	expected := errors.New("mocked error")
-	d := internal.SplitDialer{Dialer: internal.FakeDialer{Err: expected}}
+	d := patternsplitter.SplitDialer{Dialer: patternsplitter.FakeDialer{Err: expected}}
 	conn, err := d.DialContext(context.Background(), "tcp", "1.1.1.1:853")
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
@@ -22,9 +22,9 @@ func TestSplitDialerFailure(t *testing.T) {
 }
 
 func TestSplitDialerSuccess(t *testing.T) {
-	innerconn := &internal.FakeConn{}
-	d := internal.SplitDialer{
-		Dialer:  internal.FakeDialer{Conn: innerconn},
+	innerconn := &patternsplitter.FakeConn{}
+	d := patternsplitter.SplitDialer{
+		Dialer:  patternsplitter.FakeDialer{Conn: innerconn},
 		Delay:   1234,
 		Pattern: "abcdef",
 	}
@@ -32,9 +32,9 @@ func TestSplitDialerSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	realconn, ok := conn.(internal.SplitConn)
+	realconn, ok := conn.(patternsplitter.SplitConn)
 	if !ok {
-		t.Fatal("cannot cast conn to internal.SplitConn")
+		t.Fatal("cannot cast conn to patternsplitter.SplitConn")
 	}
 	if realconn.Delay != 1234 {
 		t.Fatal("invalid Delay value")
@@ -52,8 +52,8 @@ func TestWriteSuccessNoSplit(t *testing.T) {
 		pattern = "abc.def"
 		data    = "deadbeefdeafbeef"
 	)
-	innerconn := &internal.FakeConn{}
-	conn := internal.SplitConn{
+	innerconn := &patternsplitter.FakeConn{}
+	conn := patternsplitter.SplitConn{
 		Conn:    innerconn,
 		Pattern: []byte(pattern),
 	}
@@ -78,10 +78,10 @@ func TestWriteFailureNoSplit(t *testing.T) {
 		data    = "deadbeefdeafbeef"
 	)
 	expected := errors.New("mocked error")
-	innerconn := &internal.FakeConn{
+	innerconn := &patternsplitter.FakeConn{
 		WriteError: expected,
 	}
-	conn := internal.SplitConn{
+	conn := patternsplitter.SplitConn{
 		Conn:    innerconn,
 		Pattern: []byte(pattern),
 	}
@@ -99,8 +99,8 @@ func TestWriteSuccessSplit(t *testing.T) {
 		pattern = "abc.def"
 		data    = "deadbeefabc.defdeafbeef"
 	)
-	innerconn := &internal.FakeConn{}
-	conn := internal.SplitConn{
+	innerconn := &patternsplitter.FakeConn{}
+	conn := patternsplitter.SplitConn{
 		Conn:    innerconn,
 		Pattern: []byte(pattern),
 	}
@@ -128,10 +128,10 @@ func TestWriteFailureSplitFirstWrite(t *testing.T) {
 		data    = "deadbeefabc.defdeafbeef"
 	)
 	expected := errors.New("mocked error")
-	innerconn := &internal.FakeConn{
+	innerconn := &patternsplitter.FakeConn{
 		WriteError: expected,
 	}
-	conn := internal.SplitConn{
+	conn := patternsplitter.SplitConn{
 		Conn:    innerconn,
 		Pattern: []byte(pattern),
 	}
@@ -153,8 +153,8 @@ func TestWriteFailureSplitSecondWrite(t *testing.T) {
 		data    = "deadbeefabc.defdeafbeef"
 	)
 	expected := errors.New("mocked error")
-	innerconn := &internal.FakeConn{}
-	conn := internal.SplitConn{
+	innerconn := &patternsplitter.FakeConn{}
+	conn := patternsplitter.SplitConn{
 		BeforeSecondWrite: func() {
 			innerconn.WriteError = expected // second write will then fail
 		},
