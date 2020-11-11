@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// Config contains the configuration assumed by this package
+// Config contains the configuration required for constructing an HTTP transport
 type Config struct {
 	Dialer      Dialer
 	HTTP3Dialer HTTP3Dialer
