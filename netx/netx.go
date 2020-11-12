@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
@@ -49,6 +50,11 @@ type Logger interface {
 // Dialer is the definition of dialer assumed by this package.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+// HTTP3Dialer is the definition of a dialer for HTTP3 transport assumed by this package.
+type HTTP3Dialer interface {
+	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
 // TLSDialer is the definition of a TLS dialer assumed by this package.
@@ -85,6 +91,7 @@ type Config struct {
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
+	HTTP3Dialer         HTTP3Dialer          // default: dialer.HTTP3DNSDialer
 	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
@@ -168,6 +175,15 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
+// NewHTTP3Dialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
+func NewHTTP3Dialer(config Config) HTTP3Dialer {
+	if config.FullResolver == nil {
+		config.FullResolver = NewResolver(config)
+	}
+	var d HTTP3Dialer = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
+	return d
+}
+
 // NewTLSDialer creates a new TLSDialer from the specified config
 func NewTLSDialer(config Config) TLSDialer {
 	if config.Dialer == nil {
@@ -206,9 +222,12 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.TLSDialer == nil {
 		config.TLSDialer = NewTLSDialer(config)
 	}
+	if config.HTTP3Dialer == nil {
+		config.HTTP3Dialer = NewHTTP3Dialer(config)
+	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
-	txp := tInfo.Factory(config.Dialer, config.TLSDialer)
+	txp := tInfo.Factory(httptransport.Config{Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer})
 	transport := tInfo.TransportName
 
 	if config.ByteCounter != nil {
@@ -234,7 +253,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 
 // httpTransportInfo contains the constructing function as well as the transport name
 type httpTransportInfo struct {
-	Factory       func(httptransport.Dialer, httptransport.TLSDialer) httptransport.RoundTripper
+	Factory       func(httptransport.Config) httptransport.RoundTripper
 	TransportName string
 }
 
