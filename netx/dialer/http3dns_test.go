@@ -25,6 +25,7 @@ func TestHTTP3DNSDialerSuccess(t *testing.T) {
 		t.Fatal("non nil sess expected")
 	}
 }
+
 func TestHTTP3DNSDialerNoPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
