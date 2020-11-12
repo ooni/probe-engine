@@ -1,4 +1,4 @@
-package segmenter
+package internal
 
 import (
 	"context"

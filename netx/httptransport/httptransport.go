@@ -7,6 +7,13 @@ import (
 	"net/http"
 )
 
+// Config contains the configuration required for constructing an HTTP transport
+type Config struct {
+	Dialer      Dialer
+	HTTP3Dialer HTTP3Dialer
+	TLSDialer   TLSDialer
+}
+
 // Dialer is the definition of dialer assumed by this package.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
