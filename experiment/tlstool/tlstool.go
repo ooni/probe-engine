@@ -13,9 +13,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"time"
 
-	"github.com/ooni/probe-engine/experiment/tlstool/internal/patternsplitter"
-	"github.com/ooni/probe-engine/experiment/tlstool/internal/segmenter"
+	"github.com/ooni/probe-engine/experiment/tlstool/internal"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
@@ -24,7 +24,7 @@ import (
 
 const (
 	testName    = "tlstool"
-	testVersion = "0.0.2"
+	testVersion = "0.0.3"
 )
 
 // Config contains the experiment configuration.
@@ -35,9 +35,12 @@ type Config struct {
 
 // TestKeys contains the experiment results.
 type TestKeys struct {
-	SegmenterFailure *string `json:"segmenter_failure"`
-	SNISplitFailure  *string `json:"sni_split_failure"`
-	VanillaFailure   *string `json:"vanilla_failure"`
+	Experiment map[string]*ExperimentKeys `json:"experiment"`
+}
+
+// ExperimentKeys contains the specific experiment results.
+type ExperimentKeys struct {
+	Failure *string `json:"failure"`
 }
 
 // Measurer performs the measurement.
@@ -55,6 +58,26 @@ func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
+type method struct {
+	name      string
+	newDialer func(internal.DialerConfig) internal.Dialer
+	progress  float64
+}
+
+var allMethods = []method{{
+	name:      "vanilla",
+	newDialer: internal.NewVanillaDialer,
+}, {
+	name:      "snisplit",
+	newDialer: internal.NewSNISplitterDialer,
+}, {
+	name:      "random",
+	newDialer: internal.NewRandomSplitterDialer,
+}, {
+	name:      "thrice",
+	newDialer: internal.NewThriceSplitterDialer,
+}}
+
 // Run implements ExperimentMeasurer.Run.
 func (m Measurer) Run(
 	ctx context.Context,
@@ -62,22 +85,26 @@ func (m Measurer) Run(
 	measurement *model.Measurement,
 	callbacks model.ExperimentCallbacks,
 ) error {
+	// TODO(bassosimone): wondering whether this experiment should
+	// actually be merged with sniblocking instead?
 	tk := new(TestKeys)
+	tk.Experiment = make(map[string]*ExperimentKeys)
 	measurement.TestKeys = tk
 	address := string(measurement.Input)
-
-	err := m.segmenterRun(ctx, sess.Logger(), address)
-	callbacks.OnProgress(0.33, fmt.Sprintf("segmenter: %+v", err))
-	tk.SegmenterFailure = archival.NewFailure(err)
-
-	err = m.sniSplitRun(ctx, sess.Logger(), address)
-	callbacks.OnProgress(0.66, fmt.Sprintf("sni_split: %+v", err))
-	tk.SNISplitFailure = archival.NewFailure(err)
-
-	err = m.vanillaRun(ctx, sess.Logger(), address)
-	callbacks.OnProgress(0.99, fmt.Sprintf("vanilla: %+v", err))
-	tk.VanillaFailure = archival.NewFailure(err)
-
+	for idx, meth := range allMethods {
+		// TODO(bassosimone): here we actually want to use urlgetter
+		// if possible and collect standard test keys.
+		err := m.run(ctx, runConfig{
+			address:   address,
+			logger:    sess.Logger(),
+			newDialer: meth.newDialer,
+		})
+		percent := float64(idx) / float64(len(allMethods))
+		callbacks.OnProgress(percent, fmt.Sprintf("%s: %+v", meth.name, err))
+		tk.Experiment[meth.name] = &ExperimentKeys{
+			Failure: archival.NewFailure(err),
+		}
+	}
 	return nil
 }
 
@@ -90,51 +117,24 @@ func (m Measurer) newDialer(logger model.Logger) netx.Dialer {
 	return netx.NewDialer(netx.Config{FullResolver: resolver, Logger: logger})
 }
 
-func (m Measurer) vanillaRun(ctx context.Context, logger model.Logger, address string) error {
-	dialer := m.newDialer(logger)
-	tdialer := netx.NewTLSDialer(netx.Config{
-		Dialer:    dialer,
-		Logger:    logger,
-		TLSConfig: m.tlsConfig(),
-	})
-	conn, err := tdialer.DialTLSContext(ctx, "tcp", address)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
+type runConfig struct {
+	address   string
+	logger    model.Logger
+	newDialer func(internal.DialerConfig) internal.Dialer
 }
 
-func (m Measurer) sniSplitRun(ctx context.Context, logger model.Logger, address string) error {
-	dialer := &patternsplitter.Dialer{
-		Dialer:  m.newDialer(logger),
-		Delay:   m.config.Delay,
-		Pattern: m.pattern(address),
-	}
+func (m Measurer) run(ctx context.Context, config runConfig) error {
+	dialer := config.newDialer(internal.DialerConfig{
+		Dialer: m.newDialer(config.logger),
+		Delay:  time.Duration(m.config.Delay) * time.Millisecond,
+		SNI:    m.pattern(config.address),
+	})
 	tdialer := netx.NewTLSDialer(netx.Config{
 		Dialer:    dialer,
-		Logger:    logger,
+		Logger:    config.logger,
 		TLSConfig: m.tlsConfig(),
 	})
-	conn, err := tdialer.DialTLSContext(ctx, "tcp", address)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
-}
-
-func (m Measurer) segmenterRun(ctx context.Context, logger model.Logger, address string) error {
-	dialer := &segmenter.Dialer{
-		Dialer: m.newDialer(logger),
-		Delay:  m.config.Delay,
-	}
-	tdialer := netx.NewTLSDialer(netx.Config{
-		Dialer:    dialer,
-		Logger:    logger,
-		TLSConfig: m.tlsConfig(),
-	})
-	conn, err := tdialer.DialTLSContext(ctx, "tcp", address)
+	conn, err := tdialer.DialTLSContext(ctx, "tcp", config.address)
 	if err != nil {
 		return err
 	}
