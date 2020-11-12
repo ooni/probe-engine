@@ -12,7 +12,8 @@ import (
 // HTTP3DNSDialer is a dialer that uses the configured Resolver to resolve a
 // domain name to IP addresses
 type HTTP3DNSDialer struct {
-	Resolver Resolver
+	DialEarly func(net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) // for testing
+	Resolver  Resolver
 }
 
 // Dial implements HTTP3Dialer.Dial
@@ -30,6 +31,10 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 	if err != nil {
 		return nil, err
 	}
+	dialEarly := d.DialEarly
+	if dialEarly == nil {
+		dialEarly = quic.DialEarly
+	}
 	var errorslist []error
 	for _, addr := range addrs {
 		ip := net.ParseIP(addr)
@@ -39,7 +44,7 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 			errorslist = append(errorslist, err)
 			break
 		}
-		sess, err := quic.DialEarly(udpConn, udpAddr, host, tlsCfg, cfg)
+		sess, err := dialEarly(udpConn, udpAddr, host, tlsCfg, cfg)
 		if err == nil {
 			return sess, nil
 		}

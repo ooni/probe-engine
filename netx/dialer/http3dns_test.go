@@ -102,7 +102,7 @@ func TestHTTP3DNSDialerInvalidPortSyntax(t *testing.T) {
 		t.Fatal("expected nil sess")
 	}
 	if !errors.Is(err, strconv.ErrSyntax) {
-		t.Fatal("not the error we expected", err)
+		t.Fatal("not the error we expected")
 	}
 }
 
@@ -116,6 +116,26 @@ func TestHTTP3DNSDialerNilTLSConf(t *testing.T) {
 		t.Fatal("expected nil sess")
 	}
 	if err.Error() != "quic: tls.Config not set" {
-		t.Fatal("not the error we expected", err.Error())
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestHTTP3DNSDialerDialEarlyFails(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
+	mockDialEarly := func(net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) {
+		return nil, errors.New("mocked DialEarly error")
+	}
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), DialEarly: mockDialEarly}
+	sess, err := dialer.Dial("udp", "www.google.com:443", tlsConf, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess")
+	}
+	if err.Error() != "mocked DialEarly error" {
+		t.Fatal("not the error we expected")
 	}
 }
