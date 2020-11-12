@@ -110,19 +110,6 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestMeasurerMeasureNoControlSNI(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
-	err := measurer.Run(
-		context.Background(),
-		newsession(),
-		new(model.Measurement),
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if err.Error() != "Experiment requires ControlSNI" {
-		t.Fatal("not the error we expected")
-	}
-}
-
 func TestMeasurerMeasureNoMeasurementInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{
 		ControlSNI: "example.com",

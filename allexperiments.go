@@ -198,9 +198,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*sniblocking.Config),
 				))
 			},
-			config: &sniblocking.Config{
-				ControlSNI: "example.com",
-			},
+			config: &sniblocking.Config{},
 			inputPolicy: InputRequired,
 		}
 	},

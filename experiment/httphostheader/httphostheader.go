@@ -56,7 +56,7 @@ func (m *Measurer) Run(
 		return errors.New("experiment requires input")
 	}
 	if m.config.TestHelperURL == "" {
-		m.config.TestHelperURL = "http://www.example.com"
+		m.config.TestHelperURL = "http://www.example.org"
 	}
 	urlgetter.RegisterExtensions(measurement)
 	g := urlgetter.Getter{
