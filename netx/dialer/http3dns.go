@@ -61,5 +61,7 @@ func (d HTTP3DNSDialer) LookupHost(hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}
+	// TODO(bassosimone,kelmenhorst): here we should actually use the context
+	// passed to dial when we upgrade to a version of quic-go that allows us to do so.
 	return d.Resolver.LookupHost(context.Background(), hostname)
 }
