@@ -39,6 +39,7 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 			return sess, nil
 		}
 		errorslist = append(errorslist, err)
+		udpConn.Close()
 	}
 	return nil, reduceErrors(errorslist)
 }
