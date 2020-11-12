@@ -14,6 +14,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
@@ -79,7 +80,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ams-pg.ooni.org",
+			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -117,7 +118,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 	sess, err := NewSession(SessionConfig{
 		AssetsDir: "testdata",
 		AvailableProbeServices: []model.Service{{
-			Address: "https://ams-pg.ooni.org",
+			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
 		Logger: log.Log,
@@ -190,7 +191,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ams-pg.ooni.org/",
+		Address: "https://ams-pg-test.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -215,7 +216,7 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.Service{
-		Address: "https://ams-pg.ooni.org/",
+		Address: "https://ams-pg-test.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -644,7 +645,7 @@ func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 	client, err := sess.NewOrchestraClient(ctx)
-	if err == nil || err.Error() != "All IP lookuppers failed" {
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
 	if client != nil {

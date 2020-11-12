@@ -16,6 +16,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/experiment/telegram"
+	"github.com/ooni/probe-engine/experiment/tlstool"
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
@@ -197,9 +198,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*sniblocking.Config),
 				))
 			},
-			config: &sniblocking.Config{
-				ControlSNI: "example.com",
-			},
+			config: &sniblocking.Config{},
 			inputPolicy: InputRequired,
 		}
 	},
@@ -237,6 +236,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:      &telegram.Config{},
 			inputPolicy: InputNone,
+		}
+	},
+
+	"tlstool": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, tlstool.NewExperimentMeasurer(
+					*config.(*tlstool.Config),
+				))
+			},
+			config:      &tlstool.Config{},
+			inputPolicy: InputRequired,
 		}
 	},
 

@@ -35,8 +35,12 @@ func TestLookupASN(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(asn)
-	t.Log(org)
+	if asn <= 0 {
+		t.Fatal("unexpected ASN value")
+	}
+	if len(org) <= 0 {
+		t.Fatal("unexpected org value")
+	}
 }
 
 func TestLookupASNInvalidFile(t *testing.T) {
@@ -73,7 +77,9 @@ func TestLookupCC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(cc)
+	if len(cc) != 2 {
+		t.Fatal("does not seem a country code")
+	}
 }
 
 func TestLookupCCInvalidFile(t *testing.T) {

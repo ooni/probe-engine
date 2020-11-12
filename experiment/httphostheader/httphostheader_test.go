@@ -21,7 +21,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "http_host_header" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
