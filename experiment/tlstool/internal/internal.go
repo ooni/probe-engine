@@ -40,7 +40,7 @@ func NewThriceSplitterDialer(config DialerConfig) Dialer {
 }
 
 // NewRandomSplitterDialer creates a new dialer that splits
-// the SNI like the fixed schedma used by outline. See
+// the SNI like the fixed splitting schema used by outline. See
 // github.com/Jigsaw-Code/outline-go-tun2socks.
 func NewRandomSplitterDialer(config DialerConfig) Dialer {
 	return Dialer{

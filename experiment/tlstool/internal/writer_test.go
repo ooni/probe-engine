@@ -35,7 +35,7 @@ func TestSleeperWriterWorksAsIntended(t *testing.T) {
 	}
 }
 
-func TestSplitterNoSplitSuccess(t *testing.T) {
+func TestSplitterWriterNoSplitSuccess(t *testing.T) {
 	innerconn := &internal.FakeConn{}
 	conn := internal.SplitterWriter{Conn: innerconn}
 	const data = "deadbeef"
@@ -54,7 +54,7 @@ func TestSplitterNoSplitSuccess(t *testing.T) {
 	}
 }
 
-func TestSplitterNoSplitFailure(t *testing.T) {
+func TestSplitterWriterNoSplitFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	innerconn := &internal.FakeConn{WriteError: expected}
 	conn := internal.SplitterWriter{Conn: innerconn}
@@ -71,7 +71,7 @@ func TestSplitterNoSplitFailure(t *testing.T) {
 	}
 }
 
-func TestSplitterSplitSuccess(t *testing.T) {
+func TestSplitterWriterSplitSuccess(t *testing.T) {
 	innerconn := &internal.FakeConn{}
 	conn := internal.SplitterWriter{
 		Conn: innerconn,
@@ -100,7 +100,7 @@ func TestSplitterSplitSuccess(t *testing.T) {
 	}
 }
 
-func TestSplitterSplitFailure(t *testing.T) {
+func TestSplitterWriterSplitFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	innerconn := &internal.FakeConn{WriteError: expected}
 	conn := internal.SplitterWriter{

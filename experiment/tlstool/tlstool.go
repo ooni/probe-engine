@@ -61,7 +61,6 @@ func (m Measurer) ExperimentVersion() string {
 type method struct {
 	name      string
 	newDialer func(internal.DialerConfig) internal.Dialer
-	progress  float64
 }
 
 var allMethods = []method{{

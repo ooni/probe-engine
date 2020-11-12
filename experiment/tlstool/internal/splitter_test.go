@@ -143,15 +143,3 @@ func TestSNISplitterWithUnicode(t *testing.T) {
 		t.Fatal("invalid output[7]")
 	}
 }
-
-// SleeperWriter is a net.Conn that optionally sleeps for the
-// specified delay before posting each write.
-type SleeperWriter struct {
-	net.Conn
-	Delay time.Duration
-}
-
-func (c SleeperWriter) Write(b []byte) (int, error) {
-	<-time.After(c.Delay)
-	return c.Conn.Write(b)
-}

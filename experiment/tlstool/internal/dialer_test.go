@@ -24,7 +24,7 @@ func TestDialerFailure(t *testing.T) {
 
 func TestDialerSuccess(t *testing.T) {
 	splitter := func([]byte) [][]byte {
-		return [][]byte{[]byte("hello")}
+		return nil // any value is fine we just a need a splitter != nil here
 	}
 	innerconn := &internal.FakeConn{}
 	dialer := internal.Dialer{
