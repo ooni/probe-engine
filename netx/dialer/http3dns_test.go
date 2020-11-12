@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -85,6 +86,23 @@ func TestHTTP3DNSDialerInvalidPort(t *testing.T) {
 	}
 	if !strings.HasSuffix(err.Error(), "sendto: invalid argument") {
 		t.Fatal("not the error we expected")
+	}
+}
+
+func TestHTTP3DNSDialerInvalidPortSyntax(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
+	sess, err := dialer.Dial("udp", "www.google.com:port", tlsConf, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess")
+	}
+	if !errors.Is(err, strconv.ErrSyntax) {
+		t.Fatal("not the error we expected", err)
 	}
 }
 
