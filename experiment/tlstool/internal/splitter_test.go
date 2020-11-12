@@ -1,9 +1,7 @@
 package internal_test
 
 import (
-	"net"
 	"testing"
-	"time"
 
 	"github.com/ooni/probe-engine/experiment/tlstool/internal"
 	"github.com/ooni/probe-engine/internal/randx"
