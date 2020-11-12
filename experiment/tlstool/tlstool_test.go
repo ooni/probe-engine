@@ -15,7 +15,7 @@ func TestMeasurerExperimentNameVersion(t *testing.T) {
 	if measurer.ExperimentName() != "tlstool" {
 		t.Fatal("unexpected ExperimentName")
 	}
-	if measurer.ExperimentVersion() != "0.0.2" {
+	if measurer.ExperimentVersion() != "0.0.3" {
 		t.Fatal("unexpected ExperimentVersion")
 	}
 }
