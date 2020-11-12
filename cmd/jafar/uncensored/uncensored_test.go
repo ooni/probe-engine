@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	client, err := NewClient("dot://1.1.1.1:853")
 	if err != nil {
 		t.Fatal(err)

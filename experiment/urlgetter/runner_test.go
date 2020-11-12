@@ -78,9 +78,9 @@ func TestRunnerWithEmptyHostname(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerTLSHandshakeSuccess(t *testing.T) {
+func TestRunnerTLSHandshakeSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	r := urlgetter.Runner{Target: "tlshandshake://www.google.com:443"}
 	err := r.Run(context.Background())
@@ -89,9 +89,9 @@ func TestIntegrationRunnerTLSHandshakeSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerTCPConnectSuccess(t *testing.T) {
+func TestRunnerTCPConnectSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	r := urlgetter.Runner{Target: "tcpconnect://www.google.com:443"}
 	err := r.Run(context.Background())
@@ -100,9 +100,9 @@ func TestIntegrationRunnerTCPConnectSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerDNSLookupSuccess(t *testing.T) {
+func TestRunnerDNSLookupSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	r := urlgetter.Runner{Target: "dnslookup://www.google.com"}
 	err := r.Run(context.Background())
@@ -111,9 +111,9 @@ func TestIntegrationRunnerDNSLookupSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationRunnerHTTPSSuccess(t *testing.T) {
+func TestRunnerHTTPSSuccess(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	r := urlgetter.Runner{Target: "https://www.google.com"}
 	err := r.Run(context.Background())

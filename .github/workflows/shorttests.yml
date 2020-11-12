@@ -1,18 +1,19 @@
-name: golang
+name: shorttests
 on:
   pull_request:
   push:
-  schedule:
-    - cron: "14 17 * * 3"
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ "1.14", "1.15" ]
     steps:
       - uses: actions/setup-go@v1
         with:
-          go-version: "1.14"
+          go-version: "${{ matrix.go }}"
       - uses: actions/checkout@v2
-      - run: go test -race -tags shaping -v -coverprofile=probe-engine.cov -coverpkg=./... ./...
+      - run: go test -short -race -tags shaping -coverprofile=probe-engine.cov ./...
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: probe-engine.cov

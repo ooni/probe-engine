@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -18,7 +19,7 @@ import (
 func NewSessionWithAssetsDir(assetsDir string) (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
 		AssetsDir:        assetsDir,
-		ProbeServicesURL: "https://ams-pg.ooni.org/",
+		ProbeServicesURL: "https://ams-pg-test.ooni.org/",
 		SoftwareName:     "oonimkall-test",
 		SoftwareVersion:  "0.1.0",
 		StateDir:         "../testdata/oonimkall/state",
@@ -31,6 +32,9 @@ func NewSession() (*oonimkall.Session, error) {
 }
 
 func TestNewSessionWithInvalidStateDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
 		StateDir: "",
 	})
@@ -43,6 +47,9 @@ func TestNewSessionWithInvalidStateDir(t *testing.T) {
 }
 
 func TestNewSessionWithMissingSoftwareName(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := oonimkall.NewSession(&oonimkall.SessionConfig{
 		StateDir: "../testdata/oonimkall/state",
 	})
@@ -55,6 +62,9 @@ func TestNewSessionWithMissingSoftwareName(t *testing.T) {
 }
 
 func TestMaybeUpdateResourcesWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	dir, err := ioutil.TempDir("", "xx")
 	if err != nil {
 		t.Fatal(err)
@@ -79,13 +89,16 @@ func ReduceErrorForGeolocate(err error) error {
 	if errors.Is(err, context.Canceled) {
 		return nil // when we have not downloaded the resources yet
 	}
-	if err.Error() == "All IP lookuppers failed" {
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
 		return nil // otherwise
 	}
 	return fmt.Errorf("not the error we expected: %w", err)
 }
 
 func TestGeolocateWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -102,6 +115,9 @@ func TestGeolocateWithCancelledContext(t *testing.T) {
 }
 
 func TestGeolocateGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -139,6 +155,9 @@ func ReduceErrorForSubmitter(err error) error {
 }
 
 func TestSubmitWithCancelledContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -155,6 +174,9 @@ func TestSubmitWithCancelledContext(t *testing.T) {
 }
 
 func TestSubmitWithInvalidJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -204,6 +226,9 @@ func DoSubmission(ctx *oonimkall.Context, sess *oonimkall.Session) error {
 }
 
 func TestSubmitMeasurementGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -215,6 +240,9 @@ func TestSubmitMeasurementGood(t *testing.T) {
 }
 
 func TestSubmitCancelContextAfterFirstSubmission(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	sess, err := NewSession()
 	if err != nil {
 		t.Fatal(err)

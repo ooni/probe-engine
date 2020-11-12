@@ -13,7 +13,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestUnitNewExperimentMeasurer(t *testing.T) {
+func TestNewExperimentMeasurer(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
 	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
@@ -23,7 +23,7 @@ func TestUnitNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestUnitDiscoverCancelledContext(t *testing.T) {
+func TestDiscoverCancelledContext(t *testing.T) {
 	m := new(Measurer)
 	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
@@ -52,7 +52,7 @@ func (txp *verifyRequestTransport) RoundTrip(req *http.Request) (*http.Response,
 	return nil, txp.ExpectedError
 }
 
-func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
+func TestDoDownloadWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
 	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
@@ -69,7 +69,7 @@ func TestUnitDoDownloadWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitDoUploadWithCancelledContext(t *testing.T) {
+func TestDoUploadWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
 	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
@@ -86,7 +86,7 @@ func TestUnitDoUploadWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitRunWithCancelledContext(t *testing.T) {
+func TestRunWithCancelledContext(t *testing.T) {
 	m := new(Measurer)
 	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
@@ -101,7 +101,7 @@ func TestUnitRunWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
+func TestRunWithMaybeStartTunnelFailure(t *testing.T) {
 	m := new(Measurer)
 	expected := errors.New("mocked error")
 	sess := &mockable.Session{
@@ -117,7 +117,7 @@ func TestUnitRunWithMaybeStartTunnelFailure(t *testing.T) {
 	}
 }
 
-func TestUnitRunWithProxyURL(t *testing.T) {
+func TestRunWithProxyURL(t *testing.T) {
 	m := new(Measurer)
 	sess := &mockable.Session{
 		MockableHTTPClient: http.DefaultClient,
@@ -137,7 +137,10 @@ func TestUnitRunWithProxyURL(t *testing.T) {
 	}
 }
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
@@ -153,7 +156,7 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailDownload(t *testing.T) {
+func TestFailDownload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
@@ -174,10 +177,10 @@ func TestIntegrationFailDownload(t *testing.T) {
 	}
 }
 
-func TestIntegrationFailUpload(t *testing.T) {
+func TestFailUpload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
+	measurer := NewExperimentMeasurer(Config{noDownload: true}).(*Measurer)
 	measurer.preUploadHook = func() {
 		cancel()
 	}
@@ -195,8 +198,8 @@ func TestIntegrationFailUpload(t *testing.T) {
 	}
 }
 
-func TestIntegrationDownloadJSONUnmarshalFail(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{}).(*Measurer)
+func TestDownloadJSONUnmarshalFail(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{noUpload: true}).(*Measurer)
 	var seenError bool
 	expected := errors.New("expected error")
 	measurer.jsonUnmarshal = func(data []byte, v interface{}) error {

@@ -52,6 +52,10 @@ func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
+// ErrFailure is the error returned when you set the
+// config.ReturnError field to true.
+var ErrFailure = errors.New("mocked error")
+
 // Run implements model.ExperimentMeasurer.Run.
 func (m Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
@@ -59,7 +63,7 @@ func (m Measurer) Run(
 ) error {
 	var err error
 	if m.config.ReturnError {
-		err = errors.New("mocked error")
+		err = ErrFailure
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys

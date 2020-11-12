@@ -9,17 +9,15 @@
 //
 // We extracted this package from cmd/miniooni to allow us to further
 // integrate the miniooni CLI into other binaries (see for example the
-// code at github.com/bassosimone/aladdin). In retrospect, this isn't
-// particularly simple to keep up to date because it is complex to sync
-// the dependencies used by Psiphon, which need precise pinning.
+// code at github.com/bassosimone/aladdin).
 package libminiooni
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -32,6 +30,7 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
@@ -235,14 +234,17 @@ func loadFileInputs(opts *Options) {
 		if len(opts.Inputs) != 0 {
 			fatalWithString("inputs can either be supplied through file or command line, but not both")
 		}
-		content, err := ioutil.ReadFile(opts.InputFilePath)
+		file, err := fsx.Open(opts.InputFilePath)
 		fatalOnError(err, "cannot read input file")
+		defer file.Close()
 		// Implementation note: when you save file with vim, you have newline at
 		// end of file and you don't want to consider that an input line. While there
 		// ignore any other empty line that may occur inside the file.
-		for _, input := range strings.Split(string(content), "\n") {
-			if input != "" {
-				opts.Inputs = append(opts.Inputs, input)
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line != "" {
+				opts.Inputs = append(opts.Inputs, line)
 			}
 		}
 	}
@@ -398,12 +400,18 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		log.Infof("Report ID: %s", experiment.ReportID())
 	}
 
+	usingTransport := map[string]string{
+		"false": " over TCP",
+		"true":  " over QUIC",
+	}
 	inputCount := len(currentOptions.Inputs)
 	inputCounter := 0
 	for _, input := range currentOptions.Inputs {
 		inputCounter++
 		if input != "" {
-			log.Infof("[%d/%d] running with input: %s", inputCounter, inputCount, input)
+			// TODO(kelmenhorst): log transport protocol information in http logging debug-mode-only functionality
+			proto := usingTransport[extraOptions["HTTP3Enabled"]]
+			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input)
 		}
 		measurement, err := experiment.Measure(input)
 		warnOnError(err, "measurement failed")

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/experiment/hirl"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
@@ -26,11 +25,18 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	}
 }
 
-func TestIntegrationSuccess(t *testing.T) {
+func TestSuccess(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx := context.Background()
-	// we need a real session because we need the tcp-echo helper
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -67,12 +73,19 @@ func TestIntegrationSuccess(t *testing.T) {
 	}
 }
 
-func TestIntegrationCancelledContext(t *testing.T) {
+func TestCancelledContext(t *testing.T) {
 	measurer := hirl.NewExperimentMeasurer(hirl.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	// we need a real session because we need the tcp-echo helper
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
 	err := measurer.Run(ctx, sess, measurement, callbacks)
@@ -346,7 +359,15 @@ func TestWrongTestHelperType(t *testing.T) {
 }
 
 func TestRunMethodDialFailure(t *testing.T) {
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	helpers, ok := sess.GetTestHelpersByName("tcp-echo")
 	if len(helpers) < 1 || !ok {
 		t.Fatal("cannot get helper")
@@ -385,7 +406,15 @@ func TestRunMethodDialFailure(t *testing.T) {
 }
 
 func TestRunMethodSetDeadlineFailure(t *testing.T) {
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	helpers, ok := sess.GetTestHelpersByName("tcp-echo")
 	if len(helpers) < 1 || !ok {
 		t.Fatal("cannot get helper")
@@ -426,7 +455,15 @@ func TestRunMethodSetDeadlineFailure(t *testing.T) {
 }
 
 func TestRunMethodWriteFailure(t *testing.T) {
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	helpers, ok := sess.GetTestHelpersByName("tcp-echo")
 	if len(helpers) < 1 || !ok {
 		t.Fatal("cannot get helper")
@@ -467,7 +504,15 @@ func TestRunMethodWriteFailure(t *testing.T) {
 }
 
 func TestRunMethodReadEOFWithWrongData(t *testing.T) {
-	sess := newsession(t)
+	sess := &mockable.Session{
+		MockableLogger: log.Log,
+		MockableTestHelpers: map[string][]model.Service{
+			"tcp-echo": []model.Service{{
+				Address: "37.218.241.93",
+				Type:    "legacy",
+			}},
+		},
+	}
 	helpers, ok := sess.GetTestHelpersByName("tcp-echo")
 	if len(helpers) < 1 || !ok {
 		t.Fatal("cannot get helper")
@@ -504,29 +549,4 @@ func TestRunMethodReadEOFWithWrongData(t *testing.T) {
 	if result.Tampering != true {
 		t.Fatal("unexpected Tampering")
 	}
-}
-
-func newsession(t *testing.T) model.ExperimentSession {
-	sess, err := engine.NewSession(engine.SessionConfig{
-		AssetsDir: "../../testdata",
-		AvailableProbeServices: []model.Service{{
-			Address: "https://ams-pg.ooni.org",
-			Type:    "https",
-		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
-		SoftwareName:    "ooniprobe-engine",
-		SoftwareVersion: "0.0.1",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := sess.MaybeLookupBackends(); err != nil {
-		t.Fatal(err)
-	}
-	return sess
 }

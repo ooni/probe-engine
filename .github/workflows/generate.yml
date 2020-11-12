@@ -1,8 +1,10 @@
 name: generate
 on:
-  pull_request:
+  push:
+    branches:
+      - 'release/**'
   schedule:
-    - cron: "14 17 * * 3"
+    - cron: "0 0 * * */1"
 jobs:
   test:
     runs-on: ubuntu-latest

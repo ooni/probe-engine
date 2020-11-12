@@ -5,6 +5,7 @@ package urlgetter
 
 import (
 	"context"
+	"crypto/x509"
 	"time"
 
 	"github.com/ooni/probe-engine/model"
@@ -18,10 +19,15 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
+	// not settable from command line
+	CertPool *x509.CertPool
+
+	// settable from command line
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
+	HTTP3Enabled      bool   `ooni:"Force http3"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`

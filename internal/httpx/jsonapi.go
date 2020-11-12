@@ -17,6 +17,9 @@ import (
 
 // Client is an extended client.
 type Client struct {
+	// Accept contains the accept header.
+	Accept string
+
 	// Authorization contains the authorization header.
 	Authorization string
 
@@ -81,6 +84,9 @@ func (c Client) NewRequest(ctx context.Context, method, resourcePath string,
 	request.Host = c.Host // allow cloudfronting
 	if c.Authorization != "" {
 		request.Header.Set("Authorization", c.Authorization)
+	}
+	if c.Accept != "" {
+		request.Header.Set("Accept", c.Accept)
 	}
 	request.Header.Set("User-Agent", c.UserAgent)
 	// Implementation note: the following allows tunneling if c.ProxyURL

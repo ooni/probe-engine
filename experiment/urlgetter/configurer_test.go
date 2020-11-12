@@ -74,7 +74,7 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSPowerdns(t *testing.T) {
 	saver := new(trace.Saver)
 	configurer := urlgetter.Configurer{
 		Config: urlgetter.Config{
-			ResolverURL: "doh://powerdns",
+			ResolverURL: "doh://google",
 		},
 		Logger: log.Log,
 		Saver:  saver,
@@ -126,7 +126,7 @@ func TestConfigurerNewConfigurationResolverDNSOverHTTPSPowerdns(t *testing.T) {
 	if !ok {
 		t.Fatal("not the DNS transport we expected")
 	}
-	if dohtxp.URL != "https://doh.powerdns.org/" {
+	if dohtxp.URL != "https://dns.google/dns-query" {
 		t.Fatal("not the DoH URL we expected")
 	}
 	if len(configuration.HTTPConfig.TLSConfig.NextProtos) != 2 {

@@ -1,6 +1,6 @@
 # OONI probe measurement engine
 
-[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) ![Golang Status](https://github.com/ooni/probe-engine/workflows/golang/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
+[![GoDoc](https://godoc.org/github.com/ooni/probe-engine?status.svg)](https://godoc.org/github.com/ooni/probe-engine) [![Short Tests Status](https://github.com/ooni/probe-engine/workflows/shorttests/badge.svg)](https://github.com/ooni/probe-engine/actions?query=workflow%3Ashorttests) [![All Tests Status](https://github.com/ooni/probe-engine/workflows/alltests/badge.svg)](https://github.com/ooni/probe-engine/actions?query=workflow%3Aalltests) [![Coverage Status](https://coveralls.io/repos/github/ooni/probe-engine/badge.svg?branch=master)](https://coveralls.io/github/ooni/probe-engine?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ooni/probe-engine)](https://goreportcard.com/report/github.com/ooni/probe-engine)
 
 This repository contains OONI probe's [measurement engine](
 https://github.com/ooni/spec/tree/master/probe#engine). That is, the
@@ -83,27 +83,13 @@ for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
 done
 ```
 
-2. pin to a specific psiphon version (we usually track the
-`staging-client` branch) using:
+2. pin to a specific version of our psiphon integration repo using:
 
 ```bash
-go get -v github.com/Psiphon-Labs/psiphon-tunnel-core@COMMITHASH
+go get -v github.com/ooni/psiphon@VERSION
 ```
 
-3. clone `psiphon-tunnel-core`, checkout the tip of the `staging-client`
-branch and generate a `go.mod` by running `go mod init && go mod tidy` in
-the toplevel dir
+3. run `go mod tidy`
 
-4. rewrite `go.mod` such that it contains only your direct dependencies
-followed by the exact content of `psiphon-tunnel-core`'s `go.mod`
-
-5. run `go mod tidy`
-
-6. make sure you don't downgrade `bolt` and `goselect` because this
-will break downstream builds on MIPS:
-
-```bash
-go get -u -v github.com/Psiphon-Labs/bolt github.com/creack/goselect
-```
-
-The above procedure allows us to pin all psiphon dependencies precisely.
+Step 2 is currently needed because github.com/ooni/psiphon does not
+seem to update automatically when using `go get -u -v ./...`

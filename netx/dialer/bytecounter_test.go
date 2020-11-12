@@ -33,9 +33,9 @@ func dorequest(ctx context.Context, url string) error {
 	return resp.Body.Close()
 }
 
-func TestIntegrationByteCounterNormalUsage(t *testing.T) {
+func TestByteCounterNormalUsage(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	sess := bytecounter.New()
 	ctx := context.Background()
@@ -56,9 +56,9 @@ func TestIntegrationByteCounterNormalUsage(t *testing.T) {
 	}
 }
 
-func TestIntegrationByteCounterNoHandlers(t *testing.T) {
+func TestByteCounterNoHandlers(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	ctx := context.Background()
 	if err := dorequest(ctx, "http://www.google.com"); err != nil {
@@ -69,7 +69,7 @@ func TestIntegrationByteCounterNoHandlers(t *testing.T) {
 	}
 }
 
-func TestUnitByteCounterConnectFailure(t *testing.T) {
+func TestByteCounterConnectFailure(t *testing.T) {
 	dialer := dialer.ByteCounterDialer{Dialer: dialer.EOFDialer{}}
 	conn, err := dialer.DialContext(context.Background(), "tcp", "www.google.com:80")
 	if !errors.Is(err, io.EOF) {

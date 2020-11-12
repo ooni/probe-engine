@@ -12,6 +12,9 @@ import (
 )
 
 func TestDNSLookup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	config := webconnectivity.DNSLookupConfig{
 		Session: newsession(t, true),
 		URL:     &url.URL{Host: "dns.google"},

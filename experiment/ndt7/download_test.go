@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func TestUnitDownloadSetReadDeadlineFailure(t *testing.T) {
+func TestDownloadSetReadDeadlineFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newDownloadManager(
 		&mockableConnMock{
@@ -27,7 +27,7 @@ func TestUnitDownloadSetReadDeadlineFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadNextReaderFailure(t *testing.T) {
+func TestDownloadNextReaderFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newDownloadManager(
 		&mockableConnMock{
@@ -42,7 +42,7 @@ func TestUnitDownloadNextReaderFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadTextMessageReadAllFailure(t *testing.T) {
+func TestDownloadTextMessageReadAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newDownloadManager(
 		&mockableConnMock{
@@ -70,7 +70,7 @@ func (r *alwaysFailingReader) Read(p []byte) (int, error) {
 	return 0, r.Err
 }
 
-func TestUnitDownloadBinaryMessageReadAllFailure(t *testing.T) {
+func TestDownloadBinaryMessageReadAllFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	mgr := newDownloadManager(
 		&mockableConnMock{
@@ -90,7 +90,7 @@ func TestUnitDownloadBinaryMessageReadAllFailure(t *testing.T) {
 	}
 }
 
-func TestUnitDownloadOnJSONCallbackError(t *testing.T) {
+func TestDownloadOnJSONCallbackError(t *testing.T) {
 	mgr := newDownloadManager(
 		&mockableConnMock{
 			NextReaderMsgType: websocket.TextMessage,
@@ -116,7 +116,7 @@ func (r *invalidJSONReader) Read(p []byte) (int, error) {
 	return copy(p, []byte(`{`)), io.EOF
 }
 
-func TestUnitDownloadOnJSONLoop(t *testing.T) {
+func TestDownloadOnJSONLoop(t *testing.T) {
 	mgr := newDownloadManager(
 		&mockableConnMock{
 			NextReaderMsgType: websocket.TextMessage,

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestIntegrationBodyTracerSuccess(t *testing.T) {
+func TestBodyTracerSuccess(t *testing.T) {
 	client := &http.Client{
 		Transport: NewBodyTracer(http.DefaultTransport),
 	}
@@ -22,7 +22,7 @@ func TestIntegrationBodyTracerSuccess(t *testing.T) {
 	client.CloseIdleConnections()
 }
 
-func TestIntegrationBodyTracerFailure(t *testing.T) {
+func TestBodyTracerFailure(t *testing.T) {
 	client := &http.Client{
 		Transport: NewBodyTracer(http.DefaultTransport),
 	}

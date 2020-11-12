@@ -212,7 +212,7 @@ URL is `<transport>://<domain>[:<port>][/<path>]`. Here are some examples:
 * `udp://8.8.8.8:53` uses DNS over UDP
 * `tcp://8.8.8.8:53` used DNS over TCP
 * `dot://8.8.8.8:853` uses DNS over TLS
-* `https://doh.powerdns.com/` uses DNS over HTTPS
+* `https://dns.google/dns-query` uses DNS over HTTPS
 
 So, for example, if you are using Jafar to censor `1.1.1.1:853`, then you
 most likely want to use `-uncensored-resolver-url`.

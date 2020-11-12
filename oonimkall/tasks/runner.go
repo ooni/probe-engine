@@ -4,6 +4,7 @@ package tasks
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	engine "github.com/ooni/probe-engine"
@@ -327,6 +328,7 @@ func (r *Runner) Run(ctx context.Context) {
 		)
 		defer cancel()
 	}
+	inputCount := len(r.settings.Inputs)
 	for idx, input := range r.settings.Inputs {
 		if ctx.Err() != nil {
 			break
@@ -336,6 +338,12 @@ func (r *Runner) Run(ctx context.Context) {
 			Idx:   int64(idx),
 			Input: input,
 		})
+		if input != "" && inputCount > 0 {
+			percentage := (float64(idx)/float64(inputCount))*0.6 + 0.4
+			r.emitter.EmitStatusProgress(percentage, fmt.Sprintf(
+				"processing %s", input,
+			))
+		}
 		m, err := experiment.MeasureWithContext(
 			r.contextForExperiment(ctx, builder),
 			input,

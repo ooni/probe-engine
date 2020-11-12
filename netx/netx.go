@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/netx/dialer"
@@ -49,6 +50,11 @@ type Logger interface {
 // Dialer is the definition of dialer assumed by this package.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+// HTTP3Dialer is the definition of a dialer for HTTP3 transport assumed by this package.
+type HTTP3Dialer interface {
+	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
 // TLSDialer is the definition of a TLS dialer assumed by this package.
@@ -79,11 +85,14 @@ type Config struct {
 	BogonIsError        bool                 // default: bogon is not error
 	ByteCounter         *bytecounter.Counter // default: no explicit byte counting
 	CacheResolutions    bool                 // default: no caching
+	CertPool            *x509.CertPool       // default: use vendored gocertifi
 	ContextByteCounting bool                 // default: no implicit byte counting
 	DNSCache            map[string][]string  // default: cache is empty
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
+	HTTP3Dialer         HTTP3Dialer          // default: dialer.HTTP3DNSDialer
+	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
 	NoTLSVerify         bool                 // default: perform TLS verify
@@ -92,7 +101,7 @@ type Config struct {
 	ResolveSaver        *trace.Saver         // default: not saving resolves
 	TLSConfig           *tls.Config          // default: attempt using h2
 	TLSDialer           TLSDialer            // default: dialer.TLSDialer
-	TLSSaver            *trace.Saver         // defaukt: not saving TLS
+	TLSSaver            *trace.Saver         // default: not saving TLS
 }
 
 type tlsHandshaker interface {
@@ -100,14 +109,15 @@ type tlsHandshaker interface {
 		net.Conn, tls.ConnectionState, error)
 }
 
-// CertPool is the certificate pool we're using by default
-var CertPool *x509.CertPool
-
-func init() {
-	var err error
-	CertPool, err = gocertifi.CACerts()
+// NewDefaultCertPool returns a copy of the default x509
+// certificate pool. This function panics on failure.
+func NewDefaultCertPool() *x509.CertPool {
+	pool, err := gocertifi.CACerts()
 	runtimex.PanicOnError(err, "gocertifi.CACerts() failed")
+	return pool
 }
+
+var defaultCertPool *x509.CertPool = NewDefaultCertPool()
 
 // NewResolver creates a new resolver from the specified config
 func NewResolver(config Config) Resolver {
@@ -165,6 +175,15 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
+// NewHTTP3Dialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
+func NewHTTP3Dialer(config Config) HTTP3Dialer {
+	if config.FullResolver == nil {
+		config.FullResolver = NewResolver(config)
+	}
+	var d HTTP3Dialer = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
+	return d
+}
+
 // NewTLSDialer creates a new TLSDialer from the specified config
 func NewTLSDialer(config Config) TLSDialer {
 	if config.Dialer == nil {
@@ -182,7 +201,10 @@ func NewTLSDialer(config Config) TLSDialer {
 	if config.TLSConfig == nil {
 		config.TLSConfig = &tls.Config{NextProtos: []string{"h2", "http/1.1"}}
 	}
-	config.TLSConfig.RootCAs = CertPool // always use our own CA
+	if config.CertPool == nil {
+		config.CertPool = defaultCertPool
+	}
+	config.TLSConfig.RootCAs = config.CertPool
 	config.TLSConfig.InsecureSkipVerify = config.NoTLSVerify
 	return dialer.TLSDialer{
 		Config:        config.TLSConfig,
@@ -200,8 +222,14 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.TLSDialer == nil {
 		config.TLSDialer = NewTLSDialer(config)
 	}
-	var txp HTTPRoundTripper
-	txp = httptransport.NewSystemTransport(config.Dialer, config.TLSDialer)
+	if config.HTTP3Dialer == nil {
+		config.HTTP3Dialer = NewHTTP3Dialer(config)
+	}
+
+	tInfo := allTransportsInfo[config.HTTP3Enabled]
+	txp := tInfo.Factory(httptransport.Config{Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer})
+	transport := tInfo.TransportName
+
 	if config.ByteCounter != nil {
 		txp = httptransport.ByteCountingTransport{
 			Counter: config.ByteCounter, RoundTripper: txp}
@@ -211,7 +239,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 	if config.HTTPSaver != nil {
 		txp = httptransport.SaverMetadataHTTPTransport{
-			RoundTripper: txp, Saver: config.HTTPSaver}
+			RoundTripper: txp, Saver: config.HTTPSaver, Transport: transport}
 		txp = httptransport.SaverBodyHTTPTransport{
 			RoundTripper: txp, Saver: config.HTTPSaver}
 		txp = httptransport.SaverPerformanceHTTPTransport{
@@ -221,6 +249,24 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 	txp = httptransport.UserAgentTransport{RoundTripper: txp}
 	return txp
+}
+
+// httpTransportInfo contains the constructing function as well as the transport name
+type httpTransportInfo struct {
+	Factory       func(httptransport.Config) httptransport.RoundTripper
+	TransportName string
+}
+
+var allTransportsInfo = map[bool]httpTransportInfo{
+	false: httpTransportInfo{
+		Factory: httptransport.NewSystemTransport,
+		// TODO(kelmenhorst): distinguish between h2 / http/1.1
+		TransportName: "h2 / http/1.1",
+	},
+	true: httpTransportInfo{
+		Factory:       httptransport.NewHTTP3Transport,
+		TransportName: "h3",
+	},
 }
 
 // DNSClient is a DNS client. It wraps a Resolver and it possibly

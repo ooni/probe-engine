@@ -6,7 +6,7 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	if humanizex.SI(128, "bit/s") != "128  bit/s" {
 		t.Fatal("unexpected result")
 	}

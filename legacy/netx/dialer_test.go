@@ -8,7 +8,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx"
 )
 
-func TestIntegrationDialerDial(t *testing.T) {
+func TestDialerDial(t *testing.T) {
 	dialer := netx.NewDialer()
 	conn, err := dialer.Dial("tcp", "www.google.com:80")
 	if err != nil {
@@ -17,7 +17,7 @@ func TestIntegrationDialerDial(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialerDialWithCustomResolver(t *testing.T) {
+func TestDialerDialWithCustomResolver(t *testing.T) {
 	dialer := netx.NewDialer()
 	resolver, err := netx.NewResolver("tcp", "1.1.1.1:53")
 	if err != nil {
@@ -31,7 +31,7 @@ func TestIntegrationDialerDialWithCustomResolver(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialerDialWithConfigureDNS(t *testing.T) {
+func TestDialerDialWithConfigureDNS(t *testing.T) {
 	dialer := netx.NewDialer()
 	err := dialer.ConfigureDNS("tcp", "1.1.1.1:53")
 	if err != nil {
@@ -44,7 +44,7 @@ func TestIntegrationDialerDialWithConfigureDNS(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialerDialTLS(t *testing.T) {
+func TestDialerDialTLS(t *testing.T) {
 	dialer := netx.NewDialer()
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")
 	if err != nil {
@@ -53,7 +53,7 @@ func TestIntegrationDialerDialTLS(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialerDialTLSForceSkipVerify(t *testing.T) {
+func TestDialerDialTLSForceSkipVerify(t *testing.T) {
 	dialer := netx.NewDialer()
 	dialer.ForceSkipVerify()
 	conn, err := dialer.DialTLS("tcp", "self-signed.badssl.com:443")
@@ -63,7 +63,7 @@ func TestIntegrationDialerDialTLSForceSkipVerify(t *testing.T) {
 	conn.Close()
 }
 
-func TestIntegrationDialerSetCABundleNonexisting(t *testing.T) {
+func TestDialerSetCABundleNonexisting(t *testing.T) {
 	dialer := netx.NewDialer()
 	err := dialer.SetCABundle("testdata/cacert-nonexistent.pem")
 	if err == nil {
@@ -71,7 +71,7 @@ func TestIntegrationDialerSetCABundleNonexisting(t *testing.T) {
 	}
 }
 
-func TestIntegrationDialerSetCABundleInvalid(t *testing.T) {
+func TestDialerSetCABundleInvalid(t *testing.T) {
 	dialer := netx.NewDialer()
 	err := dialer.SetCABundle("testdata/cacert-invalid.pem")
 	if err == nil {
@@ -79,7 +79,7 @@ func TestIntegrationDialerSetCABundleInvalid(t *testing.T) {
 	}
 }
 
-func TestIntegrationDialerSetCABundleWAI(t *testing.T) {
+func TestDialerSetCABundleWAI(t *testing.T) {
 	dialer := netx.NewDialer()
 	err := dialer.SetCABundle("testdata/cacert.pem")
 	if err != nil {
@@ -98,7 +98,7 @@ func TestIntegrationDialerSetCABundleWAI(t *testing.T) {
 	}
 }
 
-func TestIntegrationDialerForceSpecificSNI(t *testing.T) {
+func TestDialerForceSpecificSNI(t *testing.T) {
 	dialer := netx.NewDialer()
 	err := dialer.ForceSpecificSNI("www.facebook.com")
 	conn, err := dialer.DialTLS("tcp", "www.google.com:443")

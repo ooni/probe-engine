@@ -9,11 +9,14 @@ import (
 	"github.com/ooni/probe-engine/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/experiment/hhfm"
 	"github.com/ooni/probe-engine/experiment/hirl"
+	"github.com/ooni/probe-engine/experiment/httphostheader"
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
+	"github.com/ooni/probe-engine/experiment/riseupvpn"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/experiment/telegram"
+	"github.com/ooni/probe-engine/experiment/tlstool"
 	"github.com/ooni/probe-engine/experiment/tor"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/experiment/webconnectivity"
@@ -139,6 +142,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"http_host_header": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, httphostheader.NewExperimentMeasurer(
+					*config.(*httphostheader.Config),
+				))
+			},
+			config:      &httphostheader.Config{},
+			inputPolicy: InputRequired,
+		}
+	},
+
 	"http_invalid_request_line": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
@@ -183,9 +198,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*sniblocking.Config),
 				))
 			},
-			config: &sniblocking.Config{
-				ControlSNI: "example.com",
-			},
+			config: &sniblocking.Config{},
 			inputPolicy: InputRequired,
 		}
 	},
@@ -202,6 +215,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"riseupvpn": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, riseupvpn.NewExperimentMeasurer(
+					*config.(*riseupvpn.Config),
+				))
+			},
+			config:      &riseupvpn.Config{},
+			inputPolicy: InputNone,
+		}
+	},
+
 	"telegram": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
@@ -211,6 +236,18 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:      &telegram.Config{},
 			inputPolicy: InputNone,
+		}
+	},
+
+	"tlstool": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, tlstool.NewExperimentMeasurer(
+					*config.(*tlstool.Config),
+				))
+			},
+			config:      &tlstool.Config{},
+			inputPolicy: InputRequired,
 		}
 	},
 

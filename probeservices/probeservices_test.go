@@ -26,7 +26,7 @@ func newclient() *probeservices.Client {
 			MockableLogger:     log.Log,
 		},
 		model.Service{
-			Address: "https://ams-pg.ooni.org/",
+			Address: "https://ams-pg-test.ooni.org/",
 			Type:    "https",
 		},
 	)
@@ -139,9 +139,9 @@ func TestNewClientCloudfrontGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationCloudfront(t *testing.T) {
+func TestCloudfront(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	client, err := probeservices.NewClient(
 		&mockable.Session{}, model.Service{
@@ -176,7 +176,7 @@ func TestIntegrationCloudfront(t *testing.T) {
 
 func TestDefaultProbeServicesWorkAsIntended(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	for _, e := range probeservices.Default() {
 		client, err := probeservices.NewClient(&mockable.Session{
@@ -397,7 +397,7 @@ func TestTryAllCanceledContext(t *testing.T) {
 
 func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	const pattern = "^https://ps[1-4].ooni.io$"
 	// put onion first so we also verify that we sort the endpoints
@@ -469,7 +469,7 @@ func TestTryAllIntegrationWeRaceForFastestHTTPS(t *testing.T) {
 
 func TestTryAllIntegrationWeFallback(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping test in short mode")
+		t.Skip("skip test in short mode")
 	}
 	// put onion first so we also verify that we sort the endpoints
 	in := []model.Service{{

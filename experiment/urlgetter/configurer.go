@@ -40,8 +40,10 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 		HTTPConfig: netx.Config{
 			BogonIsError:        c.Config.RejectDNSBogons,
 			CacheResolutions:    true,
+			CertPool:            c.Config.CertPool,
 			ContextByteCounting: true,
 			DialSaver:           c.Saver,
+			HTTP3Enabled:        c.Config.HTTP3Enabled,
 			HTTPSaver:           c.Saver,
 			Logger:              c.Logger,
 			ReadWriteSaver:      c.Saver,

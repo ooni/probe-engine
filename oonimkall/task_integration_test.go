@@ -17,7 +17,10 @@ type eventlike struct {
 	Value map[string]interface{} `json:"value"`
 }
 
-func TestIntegrationGood(t *testing.T) {
+func TestGood(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -57,7 +60,10 @@ func TestIntegrationGood(t *testing.T) {
 	}
 }
 
-func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
+func TestGoodWithoutGeoIPLookup(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -82,7 +88,10 @@ func TestIntegrationGoodWithoutGeoIPLookup(t *testing.T) {
 	}
 }
 
-func TestIntegrationWithMeasurementFailure(t *testing.T) {
+func TestWithMeasurementFailure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -107,7 +116,10 @@ func TestIntegrationWithMeasurementFailure(t *testing.T) {
 	}
 }
 
-func TestIntegrationInvalidJSON(t *testing.T) {
+func TestInvalidJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{`)
 	var syntaxerr *json.SyntaxError
 	if !errors.As(err, &syntaxerr) {
@@ -118,7 +130,10 @@ func TestIntegrationInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestIntegrationUnsupportedSetting(t *testing.T) {
+func TestUnsupportedSetting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"input_filepaths": ["/nonexistent"],
@@ -149,7 +164,10 @@ func TestIntegrationUnsupportedSetting(t *testing.T) {
 	}
 }
 
-func TestIntegrationEmptyStateDir(t *testing.T) {
+func TestEmptyStateDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -178,7 +196,10 @@ func TestIntegrationEmptyStateDir(t *testing.T) {
 	}
 }
 
-func TestIntegrationEmptyAssetsDir(t *testing.T) {
+func TestEmptyAssetsDir(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"log_level": "DEBUG",
 		"name": "Example",
@@ -207,7 +228,10 @@ func TestIntegrationEmptyAssetsDir(t *testing.T) {
 	}
 }
 
-func TestIntegrationUnknownExperiment(t *testing.T) {
+func TestUnknownExperiment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -237,7 +261,10 @@ func TestIntegrationUnknownExperiment(t *testing.T) {
 	}
 }
 
-func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
+func TestInconsistentGeoIPSettings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -269,7 +296,10 @@ func TestIntegrationInconsistentGeoIPSettings(t *testing.T) {
 	}
 }
 
-func TestIntegrationInputIsRequired(t *testing.T) {
+func TestInputIsRequired(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -299,7 +329,10 @@ func TestIntegrationInputIsRequired(t *testing.T) {
 	}
 }
 
-func TestIntegrationMaxRuntime(t *testing.T) {
+func TestMaxRuntime(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	begin := time.Now()
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
@@ -326,12 +359,19 @@ func TestIntegrationMaxRuntime(t *testing.T) {
 	// 1. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263788
 	//
 	// 2. https://github.com/ooni/probe-engine/pull/588/checks?check_run_id=667263855
+	//
+	// In case there are further timeouts, e.g. in the sessionresolver, the
+	// time used by the experiment will be much more. This is for example the
+	// case in https://github.com/ooni/probe-engine/issues/1005.
 	if time.Now().Sub(begin) > 10*time.Second {
 		t.Fatal("expected shorter runtime")
 	}
 }
 
-func TestIntegrationInterruptExampleWithInput(t *testing.T) {
+func TestInterruptExampleWithInput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	t.Skip("Skipping broken test; see https://github.com/ooni/probe-engine/issues/992")
 	// We cannot use WebConnectivity until it's written in Go since
 	// measurement-kit may not always be available
@@ -395,7 +435,10 @@ func TestIntegrationInterruptExampleWithInput(t *testing.T) {
 	}
 }
 
-func TestIntegrationInterruptNdt7(t *testing.T) {
+func TestInterruptNdt7(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"name": "Ndt7",
@@ -445,7 +488,10 @@ func TestIntegrationInterruptNdt7(t *testing.T) {
 	}
 }
 
-func TestIntegrationCountBytesForExample(t *testing.T) {
+func TestCountBytesForExample(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"name": "Example",
@@ -479,7 +525,10 @@ func TestIntegrationCountBytesForExample(t *testing.T) {
 	}
 }
 
-func TestIntegrationPrivacySettings(t *testing.T) {
+func TestPrivacySettings(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	do := func(saveASN, saveCC, saveIP bool) (string, string, string) {
 		task, err := oonimkall.StartTask(fmt.Sprintf(`{
 			"assets_dir": "../testdata/oonimkall/assets",
@@ -555,7 +604,10 @@ func TestIntegrationPrivacySettings(t *testing.T) {
 	}
 }
 
-func TestIntegrationNonblock(t *testing.T) {
+func TestNonblock(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"name": "Example",

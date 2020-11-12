@@ -13,7 +13,7 @@ import (
 
 func TestFetchURLListSuccess(t *testing.T) {
 	client := newclient()
-	client.BaseURL = "https://ams-pg.ooni.org"
+	client.BaseURL = "https://ams-pg-test.ooni.org"
 	config := model.URLListConfig{
 		Categories:  []string{"NEWS", "CULTR"},
 		CountryCode: "IT",

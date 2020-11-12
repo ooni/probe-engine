@@ -10,7 +10,7 @@ import (
 	"github.com/ooni/probe-engine/probeservices/testorchestra"
 )
 
-func TestIntegrationFetchPsiphonConfig(t *testing.T) {
+func TestFetchPsiphonConfig(t *testing.T) {
 	clnt := newclient()
 	if err := clnt.MaybeRegister(context.Background(), testorchestra.MetadataFixture()); err != nil {
 		t.Fatal(err)

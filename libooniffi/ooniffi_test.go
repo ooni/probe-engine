@@ -4,13 +4,13 @@ import (
 	"testing"
 )
 
-func TestUnitTaskStartNullPointer(t *testing.T) {
+func TestTaskStartNullPointer(t *testing.T) {
 	if ooniffi_task_start_(nil) != nil {
 		t.Fatal("expected nil result here")
 	}
 }
 
-func TestUnitTaskStartInvalidJSON(t *testing.T) {
+func TestTaskStartInvalidJSON(t *testing.T) {
 	settings := cstring("{")
 	defer freestring(settings)
 	if ooniffi_task_start_(settings) != nil {
@@ -18,7 +18,7 @@ func TestUnitTaskStartInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestUnitTaskStartIdxWrapping(t *testing.T) {
+func TestTaskStartIdxWrapping(t *testing.T) {
 	settings := cstring(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -42,37 +42,37 @@ func TestUnitTaskStartIdxWrapping(t *testing.T) {
 	restoreidx(o)
 }
 
-func TestUnitTaskWaitForNextEventNullPointer(t *testing.T) {
+func TestTaskWaitForNextEventNullPointer(t *testing.T) {
 	if ooniffi_task_wait_for_next_event(nil) != nil {
 		t.Fatal("expected nil result here")
 	}
 }
 
-func TestUnitTaskIsDoneNullPointer(t *testing.T) {
+func TestTaskIsDoneNullPointer(t *testing.T) {
 	if ooniffi_task_is_done(nil) == 0 {
 		t.Fatal("expected true-ish result here")
 	}
 }
 
-func TestUnitTaskInterruptNullPointer(t *testing.T) {
+func TestTaskInterruptNullPointer(t *testing.T) {
 	ooniffi_task_interrupt(nil) // mainly: we don't crash :^)
 }
 
-func TestUnitEventSerializationNullPointer(t *testing.T) {
+func TestEventSerializationNullPointer(t *testing.T) {
 	if ooniffi_event_serialization_(nil) != nil {
 		t.Fatal("expected nil result here")
 	}
 }
 
-func TestUnitEventDestroyNullPointer(t *testing.T) {
+func TestEventDestroyNullPointer(t *testing.T) {
 	ooniffi_event_destroy(nil) // mainly: we don't crash
 }
 
-func TestUnitTaskDestroyNullPointer(t *testing.T) {
+func TestTaskDestroyNullPointer(t *testing.T) {
 	ooniffi_task_destroy(nil) // mainly: we don't crash
 }
 
-func TestIntegrationExampleNormalUsage(t *testing.T) {
+func TestExampleNormalUsage(t *testing.T) {
 	settings := cstring(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -97,7 +97,7 @@ func TestIntegrationExampleNormalUsage(t *testing.T) {
 	ooniffi_task_destroy(task)
 }
 
-func TestIntegrationExampleInterruptAndDestroy(t *testing.T) {
+func TestExampleInterruptAndDestroy(t *testing.T) {
 	settings := cstring(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -118,7 +118,7 @@ func TestIntegrationExampleInterruptAndDestroy(t *testing.T) {
 	ooniffi_task_destroy(task)
 }
 
-func TestIntegrationExampleDestroyImmediately(t *testing.T) {
+func TestExampleDestroyImmediately(t *testing.T) {
 	settings := cstring(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",

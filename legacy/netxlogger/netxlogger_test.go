@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/modelx"
 )
 
-func TestIntegration(t *testing.T) {
+func TestGood(t *testing.T) {
 	log.SetHandler(discard.Default)
 	client := netx.NewHTTPClient()
 	client.ConfigureDNS("udp", "dns.google.com:53")

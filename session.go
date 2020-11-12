@@ -145,6 +145,7 @@ func (s *Session) KibiBytesSent() float64 {
 func (s *Session) Close() error {
 	s.httpDefaultTransport.CloseIdleConnections()
 	s.resolver.CloseIdleConnections()
+	s.logger.Infof("%s", s.resolver.Stats())
 	if s.tunnel != nil {
 		s.tunnel.Stop()
 	}

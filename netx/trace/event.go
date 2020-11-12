@@ -32,4 +32,5 @@ type Event struct {
 	TLSPeerCerts       []*x509.Certificate `json:",omitempty"`
 	TLSVersion         string              `json:",omitempty"`
 	Time               time.Time           `json:",omitempty"`
+	Transport          string              `json:",omitempty"`
 }
