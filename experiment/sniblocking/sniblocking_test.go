@@ -105,21 +105,8 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
-	}
-}
-
-func TestMeasurerMeasureNoControlSNI(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
-	err := measurer.Run(
-		context.Background(),
-		newsession(),
-		new(model.Measurement),
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if err.Error() != "Experiment requires ControlSNI" {
-		t.Fatal("not the error we expected")
 	}
 }
 
