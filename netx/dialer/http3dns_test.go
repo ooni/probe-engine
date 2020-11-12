@@ -124,8 +124,9 @@ func TestHTTP3DNSDialerDialEarlyFails(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
+	expected := errors.New("mocked DialEarly error")
 	mockDialEarly := func(net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) {
-		return nil, errors.New("mocked DialEarly error")
+		return nil, expected
 	}
 	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), DialEarly: mockDialEarly}
 	sess, err := dialer.Dial("udp", "www.google.com:443", tlsConf, &quic.Config{})
@@ -135,7 +136,7 @@ func TestHTTP3DNSDialerDialEarlyFails(t *testing.T) {
 	if sess != nil {
 		t.Fatal("expected nil sess")
 	}
-	if err.Error() != "mocked DialEarly error" {
+	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
 }
