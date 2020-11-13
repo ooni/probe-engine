@@ -49,7 +49,7 @@ func TestIPLookupInvalidIP(t *testing.T) {
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).DoWithCustomFunc(ctx, geolocate.InvalidIPLookup)
-	if err == nil {
+	if !errors.Is(err, geolocate.ErrInvalidIPAddress) {
 		t.Fatal("expected an error here")
 	}
 	if ip != model.DefaultProbeIP {

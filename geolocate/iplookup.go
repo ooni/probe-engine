@@ -18,6 +18,10 @@ import (
 // up the probe IP for with all the lookuppers that we tried.
 var ErrAllIPLookuppersFailed = errors.New("all IP lookuppers failed")
 
+// ErrInvalidIPAddress indicates that the code returned to us a
+// string that actually isn't a valid IP address.
+var ErrInvalidIPAddress = errors.New("lookupper did not return a valid IP")
+
 // LookupFunc is a function for performing the IP lookup.
 type LookupFunc func(
 	ctx context.Context, client *http.Client,
@@ -91,7 +95,7 @@ func (c IPLookupClient) DoWithCustomFunc(
 		return model.DefaultProbeIP, err
 	}
 	if net.ParseIP(ip) == nil {
-		return model.DefaultProbeIP, fmt.Errorf("Invalid IP address: %s", ip)
+		return model.DefaultProbeIP, fmt.Errorf("%w: %s", ErrInvalidIPAddress, ip)
 	}
 	c.Logger.Debugf("iplookup: IP: %s", ip)
 	return ip, nil
