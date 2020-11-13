@@ -26,3 +26,4 @@ assignees: bassosimone
 - [ ] ios: pin to latest oonimkall
 - [ ] desktop: pin to latest cli
 - [ ] engine: create issue for next routine release
+- [ ] e2etesting: see whether we can remove legacy checks
