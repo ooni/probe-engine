@@ -3,7 +3,6 @@ package geolocate
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/ooni/probe-engine/model"
 	"github.com/pion/stun"
@@ -13,7 +12,6 @@ import (
 type STUNClient interface {
 	Close() error
 	Start(m *stun.Message, h stun.Handler) error
-	SetRTO(rto time.Duration)
 }
 
 // STUNConfig contains configuration for STUNIPLookup
@@ -41,7 +39,6 @@ func STUNIPLookup(ctx context.Context, config STUNConfig) (string, error) {
 		}
 		defer clnt.Close()
 		message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
-		clnt.SetRTO(3 * time.Second)
 		errch, ipch := make(chan error, 1), make(chan string, 1)
 		err = clnt.Start(message, func(ev stun.Event) {
 			if ev.Error != nil {
