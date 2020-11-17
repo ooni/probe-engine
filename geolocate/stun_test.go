@@ -65,8 +65,6 @@ func (c MockableSTUNClient) Start(m *stun.Message, h stun.Handler) error {
 	return nil
 }
 
-func (c MockableSTUNClient) SetRTO(rto time.Duration) {}
-
 func TestSTUNIPLookupStartReturnsError(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
