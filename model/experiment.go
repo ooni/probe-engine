@@ -29,6 +29,8 @@ type ExperimentSession interface {
 	ProxyURL() *url.URL
 	MaybeResolverIP() string
 	TempDir() string
+	TorArgs() []string
+	TorBinary() string
 	TunnelBootstrapTime() time.Duration
 	UserAgent() string
 }
