@@ -31,6 +31,9 @@ research and quality assurance testing. Build using:
 go build -v ./cmd/miniooni/
 ```
 
+See also `./build-cli.bash` for more advanced builds (e.g. to create
+statically linked and/or stripped binaries).
+
 We don't provide any `miniooni` command line flags stability guarantee.
 
 See
