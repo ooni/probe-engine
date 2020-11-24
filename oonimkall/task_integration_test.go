@@ -525,10 +525,16 @@ func TestCountBytesForExample(t *testing.T) {
 	}
 }
 
-func TestPrivacySettings(t *testing.T) {
+// TODO(bassosimone): we should check whether we need to update
+// other tests in oonimkall after we've removed privacy settings.
+
+func TestPrivacyAndScrubbing(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
+	// TODO(bassosimone): this function here needs to be simplified since
+	// currently we're just adapting its behaviour after removing the possibility
+	// of setting the privacy settings for the user.
 	do := func(saveASN, saveCC, saveIP bool) (string, string, string) {
 		task, err := oonimkall.StartTask(fmt.Sprintf(`{
 			"assets_dir": "../testdata/oonimkall/assets",
@@ -567,40 +573,36 @@ func TestPrivacySettings(t *testing.T) {
 		return measurement.ProbeASN, measurement.ProbeCC, measurement.ProbeIP
 	}
 	asn, cc, ip := do(false, false, false)
-	if asn != "AS0" || cc != "ZZ" || ip != "127.0.0.1" {
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
 		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(false, false, true)
-	if asn != "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
-		t.Fatalf("unexpected result: ip was supposed to be %+v and instead is 127.0.0.1", ip)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(false, true, false)
-	if asn != "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatalf("unexpected result: cc was supposed to be %+v and instead is ZZ", cc)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(true, false, false)
-	if asn == "AS0" || cc != "ZZ" || ip != "127.0.0.1" {
-		t.Fatalf("unexpected result: asn was supposed to be %+v and instead is AS0", asn)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(true, false, true)
-	if asn == "AS0" || cc != "ZZ" || ip == "127.0.0.1" {
-		t.Fatalf(`unexpected result: asn and ip were supposed to be %+v and %+v
-			, respectively. instead are AS0 and/or 127.0.0.1`, asn, ip)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(true, true, false)
 	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatalf(`unexpected result: asn and cc were supposed to be %+v and %+v
-			, respectively. instead are AS0 and/or ZZ`, asn, cc)
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(false, true, true)
-	if asn != "AS0" || cc == "ZZ" || ip == "127.0.0.1" {
-		t.Fatalf(`unexpected result: cc and ip were supposed to be %+v and %+v
-			, respectively. instead are ZZ and/or 127.0.0.1`, cc, ip)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 	asn, cc, ip = do(true, true, true)
-	if asn == "AS0" || cc == "ZZ" || ip == "127.0.0.1" {
-		t.Fatalf(`unexpected result: asn, cc and ip were supposed to be %+v, %+v and %+v
-			, respectively. instead are AS0, ZZ and/or 127.0.0.1`, asn, cc, ip)
+	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+		t.Fatal("unexpected result")
 	}
 }
 
