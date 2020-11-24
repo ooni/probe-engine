@@ -33,7 +33,6 @@ type SessionConfig struct {
 	AvailableProbeServices []model.Service
 	KVStore                KVStore
 	Logger                 model.Logger
-	PrivacySettings        model.PrivacySettings
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
@@ -50,7 +49,6 @@ type Session struct {
 	byteCounter              *bytecounter.Counter
 	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
-	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
 	logger                   model.Logger
 	proxyURL                 *url.URL
@@ -98,7 +96,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 		availableProbeServices:  config.AvailableProbeServices,
 		byteCounter:             bytecounter.New(),
 		kvStore:                 config.KVStore,
-		privacySettings:         config.PrivacySettings,
 		logger:                  config.Logger,
 		proxyURL:                config.ProxyURL,
 		queryProbeServicesCount: atomicx.NewInt64(),

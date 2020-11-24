@@ -37,6 +37,9 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
+// TODO(bassosimone): consider removing options from here now
+// that we have completely removed privacy settings.
+
 // Options contains the options you can set from the CLI.
 type Options struct {
 	Annotations      []string
@@ -289,14 +292,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	fatalOnError(err, "cannot create kvstore2 directory")
 
 	config := engine.SessionConfig{
-		AssetsDir: assetsDir,
-		KVStore:   kvstore,
-		Logger:    logger,
-		PrivacySettings: model.PrivacySettings{
-			// See https://github.com/ooni/explorer/issues/495#issuecomment-704101604
-			IncludeASN:     currentOptions.NoGeoIP == false,
-			IncludeCountry: true,
-		},
+		AssetsDir:       assetsDir,
+		KVStore:         kvstore,
+		Logger:          logger,
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,

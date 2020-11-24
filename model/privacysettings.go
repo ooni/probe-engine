@@ -7,44 +7,22 @@ import (
 	"net"
 )
 
-// PrivacySettings contains privacy settings for submitting measurements.
-type PrivacySettings struct {
-	// IncludeASN indicates whether to include the ASN
-	IncludeASN bool
+// TODO(bassosimone): this code should be moved into the
+// measurement.go file and this file should be deleted
 
-	// IncludeCountry indicates whether to include the country
-	IncludeCountry bool
-
-	// IncludeIP indicates whether to include the IP
-	IncludeIP bool
+// Scrub scrubs the probeIP out of the measurement.
+func (m *Measurement) Scrub(probeIP string) (err error) {
+	// We now behave like we can share everything except the
+	// probe IP, which we instead cannot ever share
+	m.ProbeIP = DefaultProbeIP
+	m.ResolverIP = DefaultResolverIP
+	return m.MaybeRewriteTestKeys(probeIP, json.Marshal)
 }
 
-// Apply applies the privacy settings to the measurement, possibly
-// scrubbing the probeIP out of it.
-func (ps PrivacySettings) Apply(m *Measurement, probeIP string) (err error) {
-	if ps.IncludeASN == false {
-		m.ProbeASN = DefaultProbeASNString
-		m.ResolverNetworkName = DefaultResolverNetworkName
-		m.ProbeNetworkName = DefaultProbeNetworkName
-		m.ResolverASN = DefaultResolverASNString
-	}
-	if ps.IncludeCountry == false {
-		m.ProbeCC = DefaultProbeCC
-	}
-	if ps.IncludeIP == false {
-		m.ProbeIP = DefaultProbeIP
-		m.ResolverIP = DefaultResolverIP
-		err = ps.MaybeRewriteTestKeys(m, probeIP, json.Marshal)
-	}
-	return
-}
-
-// MaybeRewriteTestKeys is the function called by Apply that
+// MaybeRewriteTestKeys is the function called by Scrub that
 // ensures that m's serialization doesn't include the IP
-func (ps PrivacySettings) MaybeRewriteTestKeys(
-	m *Measurement, currentIP string,
-	marshal func(interface{}) ([]byte, error),
-) error {
+func (m *Measurement) MaybeRewriteTestKeys(
+	currentIP string, marshal func(interface{}) ([]byte, error)) error {
 	if net.ParseIP(currentIP) == nil {
 		return errors.New("Invalid probe IP string")
 	}

@@ -84,11 +84,6 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 			Type:    "https",
 		}},
 		Logger: model.DiscardLogger,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 		TorArgs:         []string{"antani1", "antani2", "antani3"},
@@ -122,11 +117,6 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 			Type:    "https",
 		}},
 		Logger: model.DiscardLogger,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",

@@ -108,12 +108,7 @@ func TestScrubCommonCase(t *testing.T) {
 		ResolverASN:         "AS12345",
 	}
 	m := makeMeasurement(config)
-	privacy := model.PrivacySettings{
-		IncludeCountry: true,
-		IncludeASN:     true,
-	}
-	err := privacy.Apply(&m, config.ProbeIP)
-	if err != nil {
+	if err := m.Scrub(config.ProbeIP); err != nil {
 		t.Fatal(err)
 	}
 	if m.ProbeASN != config.ProbeASN {
@@ -146,92 +141,26 @@ func TestScrubCommonCase(t *testing.T) {
 	}
 }
 
-func TestScrubDoNotShareASN(t *testing.T) {
-	config := makeMeasurementConfig{
-		ProbeIP:             "130.192.91.211",
-		ProbeASN:            "AS137",
-		ProbeCC:             "IT",
-		ProbeNetworkName:    "Vodafone Italia S.p.A.",
-		ResolverIP:          "8.8.8.8",
-		ResolverNetworkName: "Google LLC",
-		ResolverASN:         "AS12345",
-	}
-	m := makeMeasurement(config)
-	privacy := model.PrivacySettings{
-		IncludeCountry: true,
-	}
-	err := privacy.Apply(&m, config.ProbeIP)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if m.ProbeASN == config.ProbeASN {
-		t.Fatal("ProbeASN has not been scrubbed")
-	}
-	if m.ProbeCC != config.ProbeCC {
-		t.Fatal("ProbeCC has been scrubbed")
-	}
-	if m.ProbeIP == config.ProbeIP {
-		t.Fatal("ProbeIP has not been scrubbed")
-	}
-	if m.ProbeNetworkName == config.ProbeNetworkName {
-		t.Fatal("ProbeNetworkName has not been scrubbed")
-	}
-	if m.ResolverIP == config.ResolverIP {
-		t.Fatal("ResolverIP has not been scrubbed")
-	}
-	if m.ResolverNetworkName == config.ResolverNetworkName {
-		t.Fatal("ResolverNetworkName has not been scrubbed")
-	}
-	if m.ResolverASN == config.ResolverASN {
-		t.Fatal("ResolverASN has not been scrubbed")
-	}
-	data, err := json.Marshal(m)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if bytes.Count(data, []byte(config.ProbeIP)) != 0 {
-		t.Fatal("ProbeIP not fully redacted")
-	}
-}
+// TODO(bassosimone): the following tests could be improved.
 
-func TestPrivacySettingsApply(t *testing.T) {
-	ps := &model.PrivacySettings{}
+func TestScrubInvalidIP(t *testing.T) {
 	m := &model.Measurement{
 		ProbeASN: "AS1234",
 		ProbeCC:  "IT",
 	}
-	err := ps.Apply(m, "8.8.8.8")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if m.ProbeASN != model.DefaultProbeASNString {
-		t.Fatal("ASN was not scrubbed")
-	}
-	if m.ProbeCC != model.DefaultProbeCC {
-		t.Fatal("CC was not scrubbed")
-	}
-}
-
-func TestPrivacySettingsApplyInvalidIP(t *testing.T) {
-	ps := &model.PrivacySettings{}
-	m := &model.Measurement{
-		ProbeASN: "AS1234",
-		ProbeCC:  "IT",
-	}
-	err := ps.Apply(m, "") // invalid IP
+	err := m.Scrub("") // invalid IP
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
 }
 
-func TestPrivacySettingsApplyMarshalError(t *testing.T) {
-	ps := &model.PrivacySettings{}
+func TestScrubMarshalError(t *testing.T) {
 	m := &model.Measurement{
 		ProbeASN: "AS1234",
 		ProbeCC:  "IT",
 	}
-	err := ps.MaybeRewriteTestKeys(
-		m, "8.8.8.8", func(v interface{}) ([]byte, error) {
+	err := m.MaybeRewriteTestKeys(
+		"8.8.8.8", func(v interface{}) ([]byte, error) {
 			return nil, errors.New("mocked error")
 		})
 	if err == nil {

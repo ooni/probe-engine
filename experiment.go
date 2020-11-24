@@ -123,9 +123,7 @@ func (e *Experiment) MeasureWithContext(
 	})
 	stop := time.Now()
 	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
-	scrubErr := e.session.privacySettings.Apply(
-		measurement, e.session.ProbeIP(),
-	)
+	scrubErr := measurement.Scrub(e.session.ProbeIP())
 	if err == nil {
 		err = scrubErr
 	}
