@@ -35,20 +35,20 @@ func TestNewSessionBuilderChecks(t *testing.T) {
 	t.Run("with also logger", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir: "testdata",
-			Logger:    log.Log,
+			Logger:    model.DiscardLogger,
 		})
 	})
 	t.Run("with also software name", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir:    "testdata",
-			Logger:       log.Log,
+			Logger:       model.DiscardLogger,
 			SoftwareName: "ooniprobe-engine",
 		})
 	})
 	t.Run("with software version and wrong tempdir", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir:       "testdata",
-			Logger:          log.Log,
+			Logger:          model.DiscardLogger,
 			SoftwareName:    "ooniprobe-engine",
 			SoftwareVersion: "0.0.1",
 			TempDir:         "./nonexistent",
@@ -83,7 +83,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
+		Logger: model.DiscardLogger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeASN:     true,
 			IncludeCountry: true,
@@ -121,7 +121,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
+		Logger: model.DiscardLogger,
 		PrivacySettings: model.PrivacySettings{
 			IncludeASN:     true,
 			IncludeCountry: true,
@@ -373,7 +373,7 @@ func TestGetAvailableProbeServices(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -394,7 +394,7 @@ func TestMaybeLookupBackendsFailure(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -416,7 +416,7 @@ func TestMaybeLookupTestHelpersIdempotent(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -442,7 +442,7 @@ func TestAllProbeServicesUnsupported(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
