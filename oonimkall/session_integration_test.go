@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
 )
@@ -18,7 +19,7 @@ import (
 func NewSessionWithAssetsDir(assetsDir string) (*oonimkall.Session, error) {
 	return oonimkall.NewSession(&oonimkall.SessionConfig{
 		AssetsDir:        assetsDir,
-		ProbeServicesURL: "https://ams-pg.ooni.org/",
+		ProbeServicesURL: "https://ams-pg-test.ooni.org/",
 		SoftwareName:     "oonimkall-test",
 		SoftwareVersion:  "0.1.0",
 		StateDir:         "../testdata/oonimkall/state",
@@ -88,7 +89,7 @@ func ReduceErrorForGeolocate(err error) error {
 	if errors.Is(err, context.Canceled) {
 		return nil // when we have not downloaded the resources yet
 	}
-	if err.Error() == "All IP lookuppers failed" {
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
 		return nil // otherwise
 	}
 	return fmt.Errorf("not the error we expected: %w", err)

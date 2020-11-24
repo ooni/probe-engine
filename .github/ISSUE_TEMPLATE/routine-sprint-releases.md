@@ -2,7 +2,7 @@
 name: Routine sprint releases
 about: Bi-weekly releases of probe-engine, etc.
 title: ''
-labels: effort/S, priority/medium
+labels: effort/M, priority/medium
 assignees: bassosimone
 
 ---
@@ -26,3 +26,4 @@ assignees: bassosimone
 - [ ] ios: pin to latest oonimkall
 - [ ] desktop: pin to latest cli
 - [ ] engine: create issue for next routine release
+- [ ] e2etesting: see whether we can remove legacy checks

@@ -15,7 +15,7 @@ import (
 
 const (
 	testName    = "http_host_header"
-	testVersion = "0.1.0"
+	testVersion = "0.2.0"
 )
 
 // Config contains the experiment config.
@@ -56,7 +56,7 @@ func (m *Measurer) Run(
 		return errors.New("experiment requires input")
 	}
 	if m.config.TestHelperURL == "" {
-		m.config.TestHelperURL = "http://www.example.com"
+		m.config.TestHelperURL = "http://www.example.org"
 	}
 	urlgetter.RegisterExtensions(measurement)
 	g := urlgetter.Getter{

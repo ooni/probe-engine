@@ -20,7 +20,7 @@ import (
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.1.0"
+	testVersion = "0.2.0"
 )
 
 // Config contains the experiment config.
@@ -245,7 +245,7 @@ func (m *Measurer) Run(
 	}
 	m.mu.Unlock()
 	if m.config.ControlSNI == "" {
-		return errors.New("Experiment requires ControlSNI")
+		m.config.ControlSNI = "example.org"
 	}
 	if measurement.Input == "" {
 		return errors.New("Experiment requires measurement.Input")

@@ -19,6 +19,7 @@ type MockHTTP3Dialer struct{}
 func (d MockHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
+
 func TestUnitHTTP3TransportSuccess(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}, TLSDialer: dialer.TLSDialer{}})
 

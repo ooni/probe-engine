@@ -15,12 +15,14 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
+const userAgent = "miniooni/0.1.0-dev"
+
 func newClient() httpx.Client {
 	return httpx.Client{
 		BaseURL:    "https://httpbin.org",
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
-		UserAgent:  "miniooni/0.1.0-dev",
+		UserAgent:  userAgent,
 	}
 }
 
@@ -97,6 +99,20 @@ func TestNewRequestCloudfronting(t *testing.T) {
 	}
 }
 
+func TestNewRequestAcceptIsSet(t *testing.T) {
+	client := newClient()
+	client.Accept = "application/xml"
+	req, err := client.NewRequestWithJSONBody(
+		context.Background(), "GET", "/", nil, []string{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if req.Header.Get("Accept") != "application/xml" {
+		t.Fatal("expected different Accept here")
+	}
+}
+
 func TestNewRequestContentTypeIsSet(t *testing.T) {
 	client := newClient()
 	req, err := client.NewRequestWithJSONBody(
@@ -132,7 +148,7 @@ func TestNewRequestUserAgentIsSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if req.Header.Get("User-Agent") != client.UserAgent {
+	if req.Header.Get("User-Agent") != userAgent {
 		t.Fatal("expected different User-Agent here")
 	}
 }

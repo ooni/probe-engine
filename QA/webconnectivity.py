@@ -186,7 +186,7 @@ def webconnectivity_nonexistent_domain(ooni_exe, outfile):
     tk = execute_jafar_and_return_validated_test_keys(
         ooni_exe,
         outfile,
-        "-i http://antani.xyz web_connectivity",
+        "-i http://antani.ooni.io web_connectivity",
         "webconnectivity_nonexistent_domain",
         args,
     )

@@ -10,8 +10,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ooni/probe-engine/internal/multierror"
 	"github.com/ooni/probe-engine/model"
 )
+
+// ErrAllIPLookuppersFailed indicates that we failed with looking
+// up the probe IP for with all the lookuppers that we tried.
+var ErrAllIPLookuppersFailed = errors.New("all IP lookuppers failed")
+
+// ErrInvalidIPAddress indicates that the code returned to us a
+// string that actually isn't a valid IP address.
+var ErrInvalidIPAddress = errors.New("lookupper did not return a valid IP")
 
 // LookupFunc is a function for performing the IP lookup.
 type LookupFunc func(
@@ -29,6 +38,22 @@ var (
 		{
 			name: "avast",
 			fn:   AvastIPLookup,
+		},
+		{
+			name: "ipconfig",
+			fn:   IPConfigIPLookup,
+		},
+		{
+			name: "ipinfo",
+			fn:   IPInfoIPLookup,
+		},
+		{
+			name: "stun_ekiga",
+			fn:   STUNEkigaIPLookup,
+		},
+		{
+			name: "stun_google",
+			fn:   STUNGoogleIPLookup,
 		},
 		{
 			name: "ubuntu",
@@ -62,7 +87,7 @@ func makeSlice() []method {
 }
 
 // DoWithCustomFunc performs the IP lookup with a custom function.
-func (c *IPLookupClient) DoWithCustomFunc(
+func (c IPLookupClient) DoWithCustomFunc(
 	ctx context.Context, fn LookupFunc,
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
@@ -70,20 +95,22 @@ func (c *IPLookupClient) DoWithCustomFunc(
 		return model.DefaultProbeIP, err
 	}
 	if net.ParseIP(ip) == nil {
-		return model.DefaultProbeIP, fmt.Errorf("Invalid IP address: %s", ip)
+		return model.DefaultProbeIP, fmt.Errorf("%w: %s", ErrInvalidIPAddress, ip)
 	}
 	c.Logger.Debugf("iplookup: IP: %s", ip)
 	return ip, nil
 }
 
 // Do performs the IP lookup.
-func (c *IPLookupClient) Do(ctx context.Context) (ip string, err error) {
+func (c IPLookupClient) Do(ctx context.Context) (string, error) {
+	union := multierror.New(ErrAllIPLookuppersFailed)
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)
-		ip, err = c.DoWithCustomFunc(ctx, method.fn)
+		ip, err := c.DoWithCustomFunc(ctx, method.fn)
 		if err == nil {
-			return
+			return ip, nil
 		}
+		union.Add(err)
 	}
-	return model.DefaultProbeIP, errors.New("All IP lookuppers failed")
+	return model.DefaultProbeIP, union
 }

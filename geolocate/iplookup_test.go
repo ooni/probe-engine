@@ -2,6 +2,8 @@ package geolocate_test
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"testing"
 
@@ -10,8 +12,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-func TestIPLookupIntegration(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+func TestIPLookupGood(t *testing.T) {
 	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
@@ -20,19 +21,20 @@ func TestIPLookupIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(ip)
+	if net.ParseIP(ip) == nil {
+		t.Fatal("not an IP address")
+	}
 }
 
 func TestIPLookupAllFailed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel to cause Do() to fail
-	log.SetLevel(log.DebugLevel)
 	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).Do(ctx)
-	if err == nil {
+	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected an error here")
 	}
 	if ip != model.DefaultProbeIP {
@@ -42,13 +44,12 @@ func TestIPLookupAllFailed(t *testing.T) {
 
 func TestIPLookupInvalidIP(t *testing.T) {
 	ctx := context.Background()
-	log.SetLevel(log.DebugLevel)
 	ip, err := (&geolocate.IPLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
 	}).DoWithCustomFunc(ctx, geolocate.InvalidIPLookup)
-	if err == nil {
+	if !errors.Is(err, geolocate.ErrInvalidIPAddress) {
 		t.Fatal("expected an error here")
 	}
 	if ip != model.DefaultProbeIP {

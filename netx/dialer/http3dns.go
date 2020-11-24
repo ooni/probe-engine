@@ -41,6 +41,8 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 		udpAddr := &net.UDPAddr{IP: ip, Port: port, Zone: ""}
 		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
 		if err != nil {
+			// TODO(bassosimone,kelmenhorst): we're not currently testing this
+			// case, which is quite unlikely to happen, though.
 			errorslist = append(errorslist, err)
 			break
 		}
@@ -59,5 +61,7 @@ func (d HTTP3DNSDialer) LookupHost(hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}
+	// TODO(bassosimone,kelmenhorst): here we should actually use the context
+	// passed to dial when we upgrade to a version of quic-go that allows us to do so.
 	return d.Resolver.LookupHost(context.Background(), hostname)
 }

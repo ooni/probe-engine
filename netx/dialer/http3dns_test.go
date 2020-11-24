@@ -25,6 +25,7 @@ func TestHTTP3DNSDialerSuccess(t *testing.T) {
 		t.Fatal("non nil sess expected")
 	}
 }
+
 func TestHTTP3DNSDialerNoPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
@@ -84,7 +85,8 @@ func TestHTTP3DNSDialerInvalidPort(t *testing.T) {
 	if sess != nil {
 		t.Fatal("expected nil sess")
 	}
-	if !strings.HasSuffix(err.Error(), "sendto: invalid argument") {
+	if !strings.HasSuffix(err.Error(), "sendto: invalid argument") &&
+		!strings.HasSuffix(err.Error(), "sendto: can't assign requested address") {
 		t.Fatal("not the error we expected")
 	}
 }
