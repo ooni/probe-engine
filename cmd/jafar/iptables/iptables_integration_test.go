@@ -37,11 +37,11 @@ func TestCannotApplyPolicy(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.DropIPs = []string{"antani"}
 	if err := policy.Apply(); err == nil {
 		t.Fatal("expected an error here")
 	}
-	defer policy.Waive()
 }
 
 func TestCreateChainsError(t *testing.T) {
@@ -52,10 +52,10 @@ func TestCreateChainsError(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	// you should not be able to apply the policy when there is
 	// already a policy, you need to waive it first
 	if err := policy.Apply(); err == nil {
@@ -71,11 +71,11 @@ func TestDropIP(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.DropIPs = []string{"1.1.1.1"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "1.1.1.1:853")
@@ -98,11 +98,11 @@ func TestDropKeyword(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.DropKeywords = []string{"ooni.io"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
@@ -129,11 +129,11 @@ func TestDropKeywordHex(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.DropKeywordsHex = []string{"|6f 6f 6e 69|"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	req, err := http.NewRequest("GET", "http://www.ooni.io", nil)
@@ -164,11 +164,11 @@ func TestResetIP(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.ResetIPs = []string{"1.1.1.1"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	conn, err := (&net.Dialer{}).Dial("tcp", "1.1.1.1:853")
 	if err == nil {
 		t.Fatalf("expected an error here")
@@ -189,11 +189,11 @@ func TestResetKeyword(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.ResetKeywords = []string{"ooni.io"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	resp, err := http.Get("http://www.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -214,11 +214,11 @@ func TestResetKeywordHex(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.ResetKeywordsHex = []string{"|6f 6f 6e 69|"}
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	resp, err := http.Get("http://www.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -248,11 +248,11 @@ func TestHijackDNS(t *testing.T) {
 	}
 	defer server.Shutdown()
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	policy.HijackDNSAddress = server.PacketConn.LocalAddr().String()
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	addrs, err := net.LookupHost("www.ooni.io")
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -281,6 +281,7 @@ func TestHijackHTTP(t *testing.T) {
 	)
 	defer server.Close()
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	pu, err := url.Parse(server.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -289,7 +290,6 @@ func TestHijackHTTP(t *testing.T) {
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	err = shellx.Run("sudo", "-u", "nobody", "--",
 		"curl", "-sf", "http://example.com")
 	if err == nil {
@@ -320,6 +320,7 @@ func TestHijackHTTPS(t *testing.T) {
 	)
 	defer server.Close()
 	policy := newCensoringPolicy()
+	defer policy.Waive()
 	pu, err := url.Parse(server.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -328,7 +329,6 @@ func TestHijackHTTPS(t *testing.T) {
 	if err := policy.Apply(); err != nil {
 		t.Fatal(err)
 	}
-	defer policy.Waive()
 	err = shellx.Run("sudo", "-u", "nobody", "--",
 		"curl", "-sf", "https://example.com")
 	if err == nil {
