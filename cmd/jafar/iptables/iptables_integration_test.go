@@ -147,8 +147,9 @@ func TestDropKeywordHex(t *testing.T) {
 	// the error we see with GitHub Actions is different from the error
 	// we see when testing locally on Fedora
 	if !strings.HasSuffix(err.Error(), "operation not permitted") &&
-		!strings.HasSuffix(err.Error(), "Temporary failure in name resolution") {
-		t.Fatal("unexpected error occurred")
+		!strings.HasSuffix(err.Error(), "Temporary failure in name resolution") &&
+		!strings.HasSuffix(err.Error(), "no such host") {
+		t.Fatalf("unexpected error occurred: %+v", err)
 	}
 	if resp != nil {
 		t.Fatal("expected nil response here")
