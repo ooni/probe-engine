@@ -124,7 +124,7 @@ func TestScrubCommonCase(t *testing.T) {
 		t.Fatal("ProbeNetworkName has been scrubbed")
 	}
 	if m.ResolverIP != config.ResolverIP {
-		t.Fatal("ResolveIP has been scrubbed")
+		t.Fatal("ResolverIP has been scrubbed")
 	}
 	if m.ResolverNetworkName != config.ResolverNetworkName {
 		t.Fatal("ResolverNetworkName has been scrubbed")
