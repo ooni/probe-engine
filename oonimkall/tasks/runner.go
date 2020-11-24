@@ -167,20 +167,18 @@ func (r *Runner) hasUnsupportedSettings(logger *ChanLogger) (unsupported bool) {
 	return
 }
 
+// TODO(bassosimone): we should disable SaveRealProbeASN,
+// SaveRealProbeCC, and SaveRealProbeIP.
+
 func (r *Runner) newsession(logger *ChanLogger) (*engine.Session, error) {
 	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
 	if err != nil {
 		return nil, err
 	}
 	config := engine.SessionConfig{
-		AssetsDir: r.settings.AssetsDir,
-		KVStore:   kvstore,
-		Logger:    logger,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     r.settings.Options.SaveRealProbeASN,
-			IncludeCountry: r.settings.Options.SaveRealProbeCC,
-			IncludeIP:      r.settings.Options.SaveRealProbeIP,
-		},
+		AssetsDir:       r.settings.AssetsDir,
+		KVStore:         kvstore,
+		Logger:          logger,
 		SoftwareName:    r.settings.Options.SoftwareName,
 		SoftwareVersion: r.settings.Options.SoftwareVersion,
 		TempDir:         r.settings.TempDir,

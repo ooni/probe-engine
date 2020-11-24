@@ -220,12 +220,7 @@ func newsession(t *testing.T) model.ExperimentSession {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
+		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
