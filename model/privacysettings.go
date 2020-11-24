@@ -15,7 +15,6 @@ func (m *Measurement) Scrub(probeIP string) (err error) {
 	// We now behave like we can share everything except the
 	// probe IP, which we instead cannot ever share
 	m.ProbeIP = DefaultProbeIP
-	m.ResolverIP = DefaultResolverIP
 	return m.MaybeRewriteTestKeys(probeIP, json.Marshal)
 }
 
