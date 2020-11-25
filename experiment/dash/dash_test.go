@@ -262,7 +262,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "dash" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.10.0" {
+	if measurer.ExperimentVersion() != "0.11.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -325,5 +325,44 @@ func TestMeasureWithProxyURL(t *testing.T) {
 	}
 	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
 		t.Fatal("unexpected SOCKSProxy")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysGood(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{Simple: Simple{
+		ConnectLatency:  1234,
+		MedianBitrate:   123,
+		MinPlayoutDelay: 12,
+	}}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.Latency != 1234 {
+		t.Fatal("invalid latency")
+	}
+	if sk.Bitrate != 123 {
+		t.Fatal("invalid bitrate")
+	}
+	if sk.Delay != 12 {
+		t.Fatal("invalid delay")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }
