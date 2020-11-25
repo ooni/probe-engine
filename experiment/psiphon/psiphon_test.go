@@ -3,6 +3,7 @@ package psiphon_test
 import (
 	"context"
 	"errors"
+	"io"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "psiphon" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.4.0" {
+	if measurer.ExperimentVersion() != "0.5.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -102,4 +103,64 @@ func (d observerCallbacks) OnProgress(percentage float64, message string) {
 
 func newfakesession() model.ExperimentSession {
 	return &mockable.Session{MockableLogger: log.Log}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &psiphon.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysGood(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &psiphon.TestKeys{TestKeys: urlgetter.TestKeys{
+		BootstrapTime: 123,
+	}}}
+	m := &psiphon.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(psiphon.SummaryKeys)
+	if sk.BootstrapTime != 123 {
+		t.Fatal("invalid latency")
+	}
+	if sk.Failure != "" {
+		t.Fatal("invalid failure")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysFailure(t *testing.T) {
+	expected := io.EOF.Error()
+	measurement := &model.Measurement{TestKeys: &psiphon.TestKeys{TestKeys: urlgetter.TestKeys{
+		BootstrapTime: 123,
+		Failure:       &expected,
+	}}}
+	m := &psiphon.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(psiphon.SummaryKeys)
+	if sk.BootstrapTime != 123 {
+		t.Fatal("invalid latency")
+	}
+	if sk.Failure != expected {
+		t.Fatal("invalid failure")
+	}
+	if sk.IsAnomaly == false {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &psiphon.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
+	}
 }
