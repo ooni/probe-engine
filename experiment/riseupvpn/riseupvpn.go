@@ -8,11 +8,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ooni/probe-engine/netx"
-
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 )
 

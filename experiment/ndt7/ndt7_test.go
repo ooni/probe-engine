@@ -18,7 +18,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.6.0" {
+	if measurer.ExperimentVersion() != "0.7.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -220,5 +220,67 @@ func TestDownloadJSONUnmarshalFail(t *testing.T) {
 	}
 	if !seenError {
 		t.Fatal("did not see expected error")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysGood(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{Summary: Summary{
+		RetransmitRate: 1,
+		MSS:            2,
+		MinRTT:         3,
+		AvgRTT:         4,
+		MaxRTT:         5,
+		Ping:           6,
+		Download:       7,
+		Upload:         8,
+	}}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.RetransmitRate != 1 {
+		t.Fatal("invalid retransmitRate")
+	}
+	if sk.MSS != 2 {
+		t.Fatal("invalid mss")
+	}
+	if sk.MinRTT != 3 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.AvgRTT != 4 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.MaxRTT != 5 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Ping != 6 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Download != 7 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Upload != 8 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }
