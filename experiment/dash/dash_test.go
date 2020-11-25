@@ -358,6 +358,9 @@ func TestSummaryKeysGood(t *testing.T) {
 	if sk.Delay != 12 {
 		t.Fatal("invalid delay")
 	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
 }
 
 func TestLogSummary(t *testing.T) {
