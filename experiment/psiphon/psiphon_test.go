@@ -38,9 +38,16 @@ func TestRunWithCancelledContext(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected another error here")
 	}
-	tk := measurement.TestKeys.(psiphon.TestKeys)
+	tk := measurement.TestKeys.(*psiphon.TestKeys)
 	if tk.MaxRuntime <= 0 {
 		t.Fatal("you did not set the max runtime")
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(psiphon.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -62,7 +69,7 @@ func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected another error here")
 	}
-	tk := measurement.TestKeys.(psiphon.TestKeys)
+	tk := measurement.TestKeys.(*psiphon.TestKeys)
 	if tk.MaxRuntime <= 0 {
 		t.Fatal("you did not set the max runtime")
 	}
@@ -81,7 +88,7 @@ func TestRunWillPrintSomethingWithCancelledContext(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected another error here")
 	}
-	tk := measurement.TestKeys.(psiphon.TestKeys)
+	tk := measurement.TestKeys.(*psiphon.TestKeys)
 	if tk.MaxRuntime <= 0 {
 		t.Fatal("you did not set the max runtime")
 	}

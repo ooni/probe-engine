@@ -127,14 +127,22 @@ func TestMeasurerMeasureGood(t *testing.T) {
 	}
 	measurer := NewMeasurer(Config{})
 	sess := newsession()
+	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
 		sess,
-		new(model.Measurement),
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 

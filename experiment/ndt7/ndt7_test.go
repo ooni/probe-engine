@@ -141,6 +141,7 @@ func TestGood(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
+	measurement := new(model.Measurement)
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
@@ -148,11 +149,18 @@ func TestGood(t *testing.T) {
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
-		new(model.Measurement),
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 

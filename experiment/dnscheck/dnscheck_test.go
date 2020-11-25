@@ -71,15 +71,25 @@ func TestWithCancelledContext(t *testing.T) {
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{})
 
+	measurement := &model.Measurement{Input: "dot://1.1.1.1"}
+
 	// test with valid DNS endpoint
 	err := measurer.Run(
 		ctx,
 		newsession(),
-		&model.Measurement{Input: "dot://1.1.1.1"},
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 

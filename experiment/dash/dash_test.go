@@ -270,6 +270,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
+	measurement := new(model.Measurement)
 	m := &Measurer{}
 	err := m.Run(
 		ctx,
@@ -277,11 +278,18 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
-		&model.Measurement{},
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("unexpected error value")
+	}
+	sk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
