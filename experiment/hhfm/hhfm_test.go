@@ -38,7 +38,7 @@ func TestSuccess(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"http-return-json-headers": []model.Service{{
+			"http-return-json-headers": {{
 				Address: "http://37.218.241.94:80",
 				Type:    "legacy",
 			}},
@@ -149,7 +149,7 @@ func TestCancelledContext(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"http-return-json-headers": []model.Service{{
+			"http-return-json-headers": {{
 				Address: "http://37.218.241.94:80",
 				Type:    "legacy",
 			}},
