@@ -18,7 +18,7 @@ func TestMeasurer(t *testing.T) {
 	if m.ExperimentName() != "urlgetter" {
 		t.Fatal("invalid experiment name")
 	}
-	if m.ExperimentVersion() != "0.0.3" {
+	if m.ExperimentVersion() != "0.1.0" {
 		t.Fatal("invalid experiment version")
 	}
 	measurement := new(model.Measurement)
@@ -48,7 +48,7 @@ func TestMeasurerDNSCache(t *testing.T) {
 	if m.ExperimentName() != "urlgetter" {
 		t.Fatal("invalid experiment name")
 	}
-	if m.ExperimentVersion() != "0.0.3" {
+	if m.ExperimentVersion() != "0.1.0" {
 		t.Fatal("invalid experiment version")
 	}
 	measurement := new(model.Measurement)
@@ -66,5 +66,25 @@ func TestMeasurerDNSCache(t *testing.T) {
 	tk := measurement.TestKeys.(urlgetter.TestKeys)
 	if len(tk.DNSCache) != 1 || tk.DNSCache[0] != "dns.google 8.8.8.8 8.8.4.4" {
 		t.Fatal("invalid tk.DNSCache")
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: urlgetter.TestKeys{}}
+	m := &urlgetter.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(urlgetter.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &urlgetter.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }
