@@ -106,7 +106,7 @@ func (m Measurer) Run(
 		Target:  string(measurement.Input),
 	}
 	tk, err := g.Get(ctx)
-	measurement.TestKeys = tk
+	measurement.TestKeys = &tk
 	return err
 }
 

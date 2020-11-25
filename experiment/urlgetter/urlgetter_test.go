@@ -33,7 +33,7 @@ func TestMeasurer(t *testing.T) {
 	if len(measurement.Extensions) != 5 {
 		t.Fatal("not the expected number of extensions")
 	}
-	tk := measurement.TestKeys.(urlgetter.TestKeys)
+	tk := measurement.TestKeys.(*urlgetter.TestKeys)
 	if len(tk.DNSCache) != 0 {
 		t.Fatal("not the DNSCache value we expected")
 	}
@@ -63,14 +63,14 @@ func TestMeasurerDNSCache(t *testing.T) {
 	if len(measurement.Extensions) != 5 {
 		t.Fatal("not the expected number of extensions")
 	}
-	tk := measurement.TestKeys.(urlgetter.TestKeys)
+	tk := measurement.TestKeys.(*urlgetter.TestKeys)
 	if len(tk.DNSCache) != 1 || tk.DNSCache[0] != "dns.google 8.8.8.8 8.8.4.4" {
 		t.Fatal("invalid tk.DNSCache")
 	}
 }
 
 func TestSummaryKeysGeneric(t *testing.T) {
-	measurement := &model.Measurement{TestKeys: urlgetter.TestKeys{}}
+	measurement := &model.Measurement{TestKeys: &urlgetter.TestKeys{}}
 	m := &urlgetter.Measurer{}
 	osk, err := m.GetSummaryKeys(measurement)
 	if err != nil {
