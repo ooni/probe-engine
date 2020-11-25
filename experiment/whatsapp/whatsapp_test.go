@@ -2,6 +2,7 @@ package whatsapp_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"regexp"
 	"testing"
@@ -21,7 +22,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "whatsapp" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.8.0" {
+	if measurer.ExperimentVersion() != "0.9.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -590,5 +591,76 @@ func TestWeConfigureWebChecksCorrectly(t *testing.T) {
 	}
 	if called.Load() != 263 {
 		t.Fatal("not called the expected number of times")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &whatsapp.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	tests := []struct {
+		tk                         whatsapp.TestKeys
+		RegistrationServerBlocking bool
+		WebBlocking                bool
+		EndpointsBlocking          bool
+		isAnomaly                  bool
+	}{{
+		tk:                         whatsapp.TestKeys{},
+		RegistrationServerBlocking: false,
+		WebBlocking:                false,
+		EndpointsBlocking:          false,
+		isAnomaly:                  false,
+	}, {
+		tk: whatsapp.TestKeys{
+			RegistrationServerStatus: "blocked",
+		},
+		RegistrationServerBlocking: true,
+		WebBlocking:                false,
+		EndpointsBlocking:          false,
+		isAnomaly:                  true,
+	}, {
+		tk: whatsapp.TestKeys{
+			WhatsappWebStatus: "blocked",
+		},
+		RegistrationServerBlocking: false,
+		WebBlocking:                true,
+		EndpointsBlocking:          false,
+		isAnomaly:                  true,
+	}, {
+		tk: whatsapp.TestKeys{
+			WhatsappEndpointsStatus: "blocked",
+		},
+		RegistrationServerBlocking: false,
+		WebBlocking:                false,
+		EndpointsBlocking:          true,
+		isAnomaly:                  true,
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &whatsapp.Measurer{}
+			measurement := &model.Measurement{TestKeys: &tt.tk}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(whatsapp.SummaryKeys)
+			if sk.IsAnomaly != tt.isAnomaly {
+				t.Fatal("unexpected isAnomaly value")
+			}
+		})
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &whatsapp.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }

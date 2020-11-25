@@ -5,6 +5,7 @@ package whatsapp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -28,7 +29,7 @@ const (
 	WebHTTPSURL = "https://web.whatsapp.com/"
 
 	testName    = "whatsapp"
-	testVersion = "0.8.0"
+	testVersion = "0.9.0"
 )
 
 var endpointPattern = regexp.MustCompile("^tcpconnect://e[0-9]{1,2}.whatsapp.net:[0-9]{3,5}$")
@@ -205,4 +206,37 @@ func (m Measurer) Run(
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	RegistrationServerBlocking bool `json:"registration_server_blocking"`
+	WebBlocking                bool `json:"whatsapp_web_blocking"`
+	EndpointsBlocking          bool `json:"whatsapp_endpoints_blocking"`
+	IsAnomaly                  bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	blocking := func(value string) bool {
+		return value == "blocked"
+	}
+	sk.RegistrationServerBlocking = blocking(tk.RegistrationServerStatus)
+	sk.WebBlocking = blocking(tk.WhatsappWebStatus)
+	sk.EndpointsBlocking = blocking(tk.WhatsappEndpointsStatus)
+	sk.IsAnomaly = (sk.RegistrationServerBlocking || sk.WebBlocking || sk.EndpointsBlocking)
+	return sk, nil
+}
+
+// LogSummary implements model.ExperimentMeasurer.LogSummary.
+func (m Measurer) LogSummary(model.Logger, string) error {
+	return nil
 }
