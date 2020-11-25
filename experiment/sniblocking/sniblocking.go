@@ -20,7 +20,7 @@ import (
 
 const (
 	testName    = "sni_blocking"
-	testVersion = "0.2.0"
+	testVersion = "0.3.0"
 )
 
 // Config contains the experiment config.
@@ -290,4 +290,22 @@ func asString(failure *string) (result string) {
 		result = *failure
 	}
 	return
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m *Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	return SummaryKeys{IsAnomaly: false}, nil
+}
+
+// LogSummary implements model.ExperimentMeasurer.LogSummary.
+func (m *Measurer) LogSummary(model.Logger, string) error {
+	return nil
 }

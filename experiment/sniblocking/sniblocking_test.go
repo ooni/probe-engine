@@ -105,7 +105,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "sni_blocking" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.2.0" {
+	if measurer.ExperimentVersion() != "0.3.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -411,4 +411,24 @@ func TestMaybeURLToSNI(t *testing.T) {
 
 func newsession() model.ExperimentSession {
 	return &mockable.Session{MockableLogger: log.Log}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
+	}
 }

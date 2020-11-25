@@ -19,7 +19,7 @@ func TestSuccess(t *testing.T) {
 	if m.ExperimentName() != "example" {
 		t.Fatal("invalid ExperimentName")
 	}
-	if m.ExperimentVersion() != "0.0.1" {
+	if m.ExperimentVersion() != "0.1.0" {
 		t.Fatal("invalid ExperimentVersion")
 	}
 	ctx := context.Background()
@@ -42,5 +42,25 @@ func TestFailure(t *testing.T) {
 	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
 	if !errors.Is(err, example.ErrFailure) {
 		t.Fatal("expected an error here")
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &example.TestKeys{}}
+	m := &example.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(example.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &example.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }

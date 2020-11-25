@@ -24,7 +24,7 @@ import (
 
 const (
 	testName    = "tlstool"
-	testVersion = "0.0.3"
+	testVersion = "0.1.0"
 )
 
 // Config contains the experiment configuration.
@@ -161,4 +161,22 @@ func (m Measurer) pattern(address string) string {
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	return SummaryKeys{IsAnomaly: false}, nil
+}
+
+// LogSummary implements model.ExperimentMeasurer.LogSummary.
+func (m Measurer) LogSummary(model.Logger, string) error {
+	return nil
 }

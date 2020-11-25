@@ -18,7 +18,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 		t.Error("unexpected experiment name")
 	}
 
-	if measurer.ExperimentVersion() != "0.0.1" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Error("unexpected experiment version")
 	}
 }
@@ -139,4 +139,24 @@ func TestDNSCheckValid(t *testing.T) {
 
 func newsession() model.ExperimentSession {
 	return &mockable.Session{MockableLogger: log.Log}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
+	}
 }

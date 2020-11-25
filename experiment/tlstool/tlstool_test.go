@@ -15,7 +15,7 @@ func TestMeasurerExperimentNameVersion(t *testing.T) {
 	if measurer.ExperimentName() != "tlstool" {
 		t.Fatal("unexpected ExperimentName")
 	}
-	if measurer.ExperimentVersion() != "0.0.3" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Fatal("unexpected ExperimentVersion")
 	}
 }
@@ -67,6 +67,26 @@ func TestRunWithCancelledContext(t *testing.T) {
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &tlstool.TestKeys{}}
+	m := &tlstool.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(tlstool.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &tlstool.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
 		t.Fatal(err)
 	}
 }
