@@ -22,7 +22,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "whatsapp" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.8.0" {
+	if measurer.ExperimentVersion() != "0.9.0" {
 		t.Fatal("unexpected version")
 	}
 }
