@@ -251,6 +251,13 @@ func TestCancelledContext(t *testing.T) {
 	if tk.Tampering.Total != true {
 		t.Fatal("invalid Tampering.Total")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(hhfm.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestNoHelpers(t *testing.T) {

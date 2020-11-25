@@ -76,6 +76,13 @@ func TestGood(t *testing.T) {
 	if tk.TelegramWebStatus != "ok" {
 		t.Fatal("unexpected TelegramWebStatus")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(telegram.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestUpdateWithNoAccessPointsBlocking(t *testing.T) {

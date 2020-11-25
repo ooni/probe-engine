@@ -128,6 +128,13 @@ func TestCancelledContext(t *testing.T) {
 	if tk.Tampering != false {
 		t.Fatal("overall there is tampering?!")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(hirl.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 type FakeMethodSuccessful struct{}

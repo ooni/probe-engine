@@ -151,6 +151,13 @@ func TestWithCancelledContext(t *testing.T) {
 	if *tk.FacebookTCPBlocking != false {
 		t.Fatal("invalid FacebookTCPBlocking")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(fbmessenger.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestComputeEndpointStatsTCPBlocking(t *testing.T) {

@@ -25,9 +25,17 @@ func TestSuccess(t *testing.T) {
 	ctx := context.Background()
 	sess := &mockable.Session{MockableLogger: log.Log}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
-	err := m.Run(ctx, sess, new(model.Measurement), callbacks)
+	measurement := new(model.Measurement)
+	err := m.Run(ctx, sess, measurement, callbacks)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(example.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 

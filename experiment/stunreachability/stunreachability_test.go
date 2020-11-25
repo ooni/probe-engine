@@ -113,6 +113,13 @@ func TestCancelledContext(t *testing.T) {
 	if len(tk.Queries) <= 0 {
 		t.Fatal("no DNS queries?!")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(stunreachability.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestNewClientFailure(t *testing.T) {

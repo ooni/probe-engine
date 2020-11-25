@@ -64,7 +64,7 @@ func TestSuccess(t *testing.T) {
 func TestFailureAllEndpoints(t *testing.T) {
 	measurer := whatsapp.NewExperimentMeasurer(whatsapp.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	cancel() // fail immediately
 	sess := &mockable.Session{MockableLogger: log.Log}
 	measurement := new(model.Measurement)
 	callbacks := model.NewPrinterCallbacks(log.Log)
@@ -99,6 +99,13 @@ func TestFailureAllEndpoints(t *testing.T) {
 	}
 	if tk.WhatsappWebStatus != "blocked" {
 		t.Fatal("invalid WhatsappWebStatus")
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(whatsapp.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -653,6 +660,15 @@ func TestSummaryKeysWorksAsIntended(t *testing.T) {
 			sk := got.(whatsapp.SummaryKeys)
 			if sk.IsAnomaly != tt.isAnomaly {
 				t.Fatal("unexpected isAnomaly value")
+			}
+			if sk.RegistrationServerBlocking != tt.RegistrationServerBlocking {
+				t.Fatal("unexpected registrationServerBlocking value")
+			}
+			if sk.WebBlocking != tt.WebBlocking {
+				t.Fatal("unexpected webBlocking value")
+			}
+			if sk.EndpointsBlocking != tt.EndpointsBlocking {
+				t.Fatal("unexpected endpointsBlocking value")
 			}
 		})
 	}

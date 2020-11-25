@@ -37,6 +37,13 @@ func TestMeasurer(t *testing.T) {
 	if len(tk.DNSCache) != 0 {
 		t.Fatal("not the DNSCache value we expected")
 	}
+	sk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(urlgetter.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestMeasurerDNSCache(t *testing.T) {

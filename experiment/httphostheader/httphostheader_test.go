@@ -53,6 +53,13 @@ func TestMeasurerMeasureNoTestHelper(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestRunnerHTTPSetHostHeader(t *testing.T) {

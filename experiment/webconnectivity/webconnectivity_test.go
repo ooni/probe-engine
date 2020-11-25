@@ -79,6 +79,13 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 		t.Fatal("unexpected http_experiment_failure")
 	}
 	// TODO(bassosimone): write further checks here?
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(webconnectivity.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestMeasureWithNoInput(t *testing.T) {
@@ -398,6 +405,12 @@ func TestSummaryKeysWorksAsIntended(t *testing.T) {
 			sk := got.(webconnectivity.SummaryKeys)
 			if sk.IsAnomaly != tt.isAnomaly {
 				t.Fatal("unexpected isAnomaly value")
+			}
+			if sk.Accessible != tt.Accessible {
+				t.Fatal("unexpected Accessible value")
+			}
+			if sk.Blocking != tt.Blocking {
+				t.Fatal("unexpected Accessible value")
 			}
 		})
 	}

@@ -94,7 +94,7 @@ func (m *Measurer) Run(
 	tk, err := g.Get(ctx)
 	cancel()
 	wg.Wait()
-	measurement.TestKeys = TestKeys{
+	measurement.TestKeys = &TestKeys{
 		TestKeys:   tk,
 		MaxRuntime: maxruntime,
 	}
