@@ -5,6 +5,7 @@ package fbmessenger
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"time"
 
@@ -198,4 +199,34 @@ func (m Measurer) Run(
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	DNSBlocking bool `json:"facebook_dns_blocking"`
+	TCPBlocking bool `json:"facebook_tcp_blocking"`
+	IsAnomaly   bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	dnsBlocking := tk.FacebookDNSBlocking != nil && *tk.FacebookDNSBlocking
+	tcpBlocking := tk.FacebookTCPBlocking != nil && *tk.FacebookTCPBlocking
+	sk.DNSBlocking = dnsBlocking
+	sk.TCPBlocking = tcpBlocking
+	sk.IsAnomaly = dnsBlocking || tcpBlocking
+	return sk, nil
+}
+
+// LogSummary implements model.ExperimentMeasurer.LogSummary.
+func (m Measurer) LogSummary(model.Logger, string) error {
+	return nil
 }
