@@ -20,7 +20,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "http_invalid_request_line" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -31,7 +31,7 @@ func TestSuccess(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -80,7 +80,7 @@ func TestCancelledContext(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -362,7 +362,7 @@ func TestRunMethodDialFailure(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -409,7 +409,7 @@ func TestRunMethodSetDeadlineFailure(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -458,7 +458,7 @@ func TestRunMethodWriteFailure(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -507,7 +507,7 @@ func TestRunMethodReadEOFWithWrongData(t *testing.T) {
 	sess := &mockable.Session{
 		MockableLogger: log.Log,
 		MockableTestHelpers: map[string][]model.Service{
-			"tcp-echo": []model.Service{{
+			"tcp-echo": {{
 				Address: "37.218.241.93",
 				Type:    "legacy",
 			}},
@@ -548,5 +548,51 @@ func TestRunMethodReadEOFWithWrongData(t *testing.T) {
 	}
 	if result.Tampering != true {
 		t.Fatal("unexpected Tampering")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &hirl.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysFalse(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &hirl.TestKeys{
+		Tampering: false,
+	}}
+	m := &hirl.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(hirl.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysTrue(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &hirl.TestKeys{
+		Tampering: true,
+	}}
+	m := &hirl.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(hirl.SummaryKeys)
+	if sk.IsAnomaly == false {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &hirl.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }
