@@ -27,7 +27,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "http_header_field_manipulation" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -841,5 +841,66 @@ func TestDialerDialContext(t *testing.T) {
 	}
 	if conn != nil {
 		t.Fatal("conn is not nil")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &hhfm.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	tests := []struct {
+		tampering hhfm.Tampering
+		isAnomaly bool
+	}{{
+		tampering: hhfm.Tampering{},
+		isAnomaly: false,
+	}, {
+		tampering: hhfm.Tampering{HeaderFieldName: true},
+		isAnomaly: true,
+	}, {
+		tampering: hhfm.Tampering{HeaderFieldNumber: true},
+		isAnomaly: true,
+	}, {
+		tampering: hhfm.Tampering{HeaderFieldValue: true},
+		isAnomaly: true,
+	}, {
+		tampering: hhfm.Tampering{HeaderNameCapitalization: true},
+		isAnomaly: true,
+	}, {
+		tampering: hhfm.Tampering{RequestLineCapitalization: true},
+		isAnomaly: true,
+	}, {
+		tampering: hhfm.Tampering{Total: true},
+		isAnomaly: true,
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &hhfm.Measurer{}
+			measurement := &model.Measurement{TestKeys: &hhfm.TestKeys{
+				Tampering: tt.tampering,
+			}}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(hhfm.SummaryKeys)
+			if sk.IsAnomaly != tt.isAnomaly {
+				t.Fatal("unexpected isAnomaly value")
+			}
+		})
+	}
+}
+
+func TestLogSummary(t *testing.T) {
+	m := &hhfm.Measurer{}
+	if err := m.LogSummary(log.Log, "xyz"); err != nil {
+		t.Fatal(err)
 	}
 }
