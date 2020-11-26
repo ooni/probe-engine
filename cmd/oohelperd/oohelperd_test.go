@@ -1,22 +1,16 @@
 package main
 
 import (
-	"net/http"
 	"testing"
 )
 
 func TestSmoke(t *testing.T) {
-	// just check whether we can start and then tear down the server
+	// Just check whether we can start and then tear down the server, so
+	// we have coverage of this code and when we see that some lines aren't
+	// covered we know these are genuine places where we're not testing
+	// the code rather than just places like this simple main.
 	*endpoint = ":54321"
 	go main()
-	resp, err := http.Get("http://127.0.0.1:54321")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 400 {
-		t.Fatal("unexpected status code")
-	}
 	srvcancel()  // kills the listener
 	srvwg.Wait() // joined
 }
