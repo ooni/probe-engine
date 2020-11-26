@@ -68,6 +68,12 @@ func (e *Experiment) Name() string {
 	return e.testName
 }
 
+// GetSummaryKeys returns a data structure containing a
+// summary of the test keys for probe-cli.
+func (e *Experiment) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
+	return e.measurer.GetSummaryKeys(m)
+}
+
 // OpenReport is an idempotent method to open a report. We assume that
 // you have configured the available probe services, either manually or
 // through using the session's MaybeLookupBackends method.

@@ -358,6 +358,9 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if experiment.KibiBytesReceived() <= 0 {
 		t.Fatal("no data received?!")
 	}
+	if _, err := experiment.GetSummaryKeys(measurement); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestOptions(t *testing.T) {
@@ -718,5 +721,7 @@ func (am *antaniMeasurer) Run(
 }
 
 func (am *antaniMeasurer) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
-	return nil, nil
+	return struct {
+		Failure *string `json:"failure"`
+	}{}, nil
 }
