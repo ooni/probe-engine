@@ -172,8 +172,3 @@ func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, e
 	sk.IsAnomaly = webBlocking || httpBlocking || tcpBlocking
 	return sk, nil
 }
-
-// LogSummary implements model.ExperimentMeasurer.LogSummary.
-func (m Measurer) LogSummary(model.Logger, string) error {
-	return nil
-}

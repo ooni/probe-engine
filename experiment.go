@@ -69,6 +69,12 @@ func (e *Experiment) Name() string {
 	return e.testName
 }
 
+// GetSummaryKeys returns a data structure containing a
+// summary of the test keys for probe-cli.
+func (e *Experiment) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
+	return e.measurer.GetSummaryKeys(m)
+}
+
 // OpenReport is an idempotent method to open a report. We assume that
 // you have configured the available probe services, either manually or
 // through using the session's MaybeLookupBackends method.
@@ -135,14 +141,6 @@ type sessionExperimentCallbacks struct {
 	exp   *Experiment
 	inner model.ExperimentCallbacks
 	sess  *Session
-}
-
-func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	cb.sess.byteCounter.CountKibiBytesReceived(dloadKiB)
-	cb.exp.byteCounter.CountKibiBytesReceived(dloadKiB)
-	cb.sess.byteCounter.CountKibiBytesSent(uploadKiB)
-	cb.exp.byteCounter.CountKibiBytesSent(uploadKiB)
-	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
 }
 
 func (cb *sessionExperimentCallbacks) OnProgress(percentage float64, message string) {

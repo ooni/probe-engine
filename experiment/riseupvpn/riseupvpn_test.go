@@ -440,10 +440,3 @@ func TestSummaryKeysGeneric(t *testing.T) {
 		t.Fatal("invalid isAnomaly")
 	}
 }
-
-func TestLogSummary(t *testing.T) {
-	m := &riseupvpn.Measurer{}
-	if err := m.LogSummary(log.Log, "xyz"); err != nil {
-		t.Fatal(err)
-	}
-}

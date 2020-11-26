@@ -54,8 +54,5 @@ func Connects(ctx context.Context, config ConnectsConfig) (out ConnectsResult) {
 // ConnectsNoCallbacks suppresses the callbacks
 type ConnectsNoCallbacks struct{}
 
-// OnDataUsage implements ExperimentCallbacks.OnDataUsage
-func (ConnectsNoCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {}
-
 // OnProgress implements ExperimentCallbacks.OnProgress
 func (ConnectsNoCallbacks) OnProgress(percentage float64, message string) {}

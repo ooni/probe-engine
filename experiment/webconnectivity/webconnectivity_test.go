@@ -415,10 +415,3 @@ func TestSummaryKeysWorksAsIntended(t *testing.T) {
 		})
 	}
 }
-
-func TestLogSummary(t *testing.T) {
-	m := &webconnectivity.Measurer{}
-	if err := m.LogSummary(log.Log, "xyz"); err != nil {
-		t.Fatal(err)
-	}
-}

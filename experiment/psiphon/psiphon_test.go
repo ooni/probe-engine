@@ -101,9 +101,6 @@ type observerCallbacks struct {
 	progress *atomicx.Int64
 }
 
-func (d observerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-}
-
 func (d observerCallbacks) OnProgress(percentage float64, message string) {
 	d.progress.Add(1)
 }
@@ -162,12 +159,5 @@ func TestSummaryKeysFailure(t *testing.T) {
 	}
 	if sk.IsAnomaly == false {
 		t.Fatal("invalid isAnomaly")
-	}
-}
-
-func TestLogSummary(t *testing.T) {
-	m := &psiphon.Measurer{}
-	if err := m.LogSummary(log.Log, "xyz"); err != nil {
-		t.Fatal(err)
 	}
 }
