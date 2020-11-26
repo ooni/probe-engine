@@ -91,7 +91,4 @@ type ExperimentMeasurer interface {
 
 	// GetSummaryKeys returns summary keys expected by ooni/probe-cli.
 	GetSummaryKeys(*Measurement) (interface{}, error)
-
-	// LogSummary logs the experiment summary.
-	LogSummary(Logger, string) error
 }

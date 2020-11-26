@@ -474,8 +474,3 @@ func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, e
 		(sk.ORPortAccessible <= 0 && sk.ORPortTotal > 0))
 	return sk, nil
 }
-
-// LogSummary implements model.ExperimentMeasurer.LogSummary.
-func (m Measurer) LogSummary(model.Logger, string) error {
-	return nil
-}

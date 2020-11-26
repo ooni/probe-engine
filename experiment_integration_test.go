@@ -340,7 +340,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if data == nil {
 		t.Fatal("data is nil")
 	}
-	t.Log(measurement.MakeGenericTestKeys())
 	err = experiment.SubmitAndUpdateMeasurement(measurement)
 	if err != nil {
 		t.Fatal(err)
@@ -358,6 +357,9 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	}
 	if experiment.KibiBytesReceived() <= 0 {
 		t.Fatal("no data received?!")
+	}
+	if _, err := experiment.GetSummaryKeys(measurement); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -719,9 +721,7 @@ func (am *antaniMeasurer) Run(
 }
 
 func (am *antaniMeasurer) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
-	return nil, nil
-}
-
-func (am *antaniMeasurer) LogSummary(model.Logger, string) error {
-	return nil
+	return struct {
+		Failure *string `json:"failure"`
+	}{}, nil
 }
