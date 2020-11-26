@@ -340,7 +340,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if data == nil {
 		t.Fatal("data is nil")
 	}
-	t.Log(measurement.MakeGenericTestKeys())
 	err = experiment.SubmitAndUpdateMeasurement(measurement)
 	if err != nil {
 		t.Fatal(err)

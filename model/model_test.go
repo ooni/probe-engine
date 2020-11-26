@@ -168,49 +168,6 @@ func TestScrubMarshalError(t *testing.T) {
 	}
 }
 
-func TestMakeGenericTestKeysIdempotent(t *testing.T) {
-	m := new(model.Measurement)
-	m.TestKeys = make(map[string]interface{})
-	_, err := m.MakeGenericTestKeysEx(
-		func(interface{}) ([]byte, error) {
-			return nil, errors.New("mocked error")
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestMakeGenericTestKeysSuccess(t *testing.T) {
-	m := makeMeasurement(makeMeasurementConfig{
-		ProbeIP:  "127.0.0.1",
-		ProbeASN: "AS137",
-		ProbeCC:  "IT",
-	})
-	out, err := m.MakeGenericTestKeys()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if out["client_resolver"].(string) != "91.80.37.104" {
-		t.Fatal("expected different client resolver here")
-	}
-}
-
-func TestMakeGenericTestKeysMarshalError(t *testing.T) {
-	m := new(model.Measurement)
-	out, err := m.MakeGenericTestKeysEx(
-		func(interface{}) ([]byte, error) {
-			return nil, errors.New("mocked error")
-		},
-	)
-	if err == nil {
-		t.Fatal("expected an error here")
-	}
-	if out != nil {
-		t.Fatal("expected nil output here")
-	}
-}
-
 func TestDiscardLoggerWorksAsIntended(t *testing.T) {
 	logger := model.DiscardLogger
 	logger.Debug("foo")
