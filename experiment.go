@@ -142,14 +142,6 @@ type sessionExperimentCallbacks struct {
 	sess  *Session
 }
 
-func (cb *sessionExperimentCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	cb.sess.byteCounter.CountKibiBytesReceived(dloadKiB)
-	cb.exp.byteCounter.CountKibiBytesReceived(dloadKiB)
-	cb.sess.byteCounter.CountKibiBytesSent(uploadKiB)
-	cb.exp.byteCounter.CountKibiBytesSent(uploadKiB)
-	cb.inner.OnDataUsage(dloadKiB, uploadKiB)
-}
-
 func (cb *sessionExperimentCallbacks) OnProgress(percentage float64, message string) {
 	cb.inner.OnProgress(percentage, message)
 }

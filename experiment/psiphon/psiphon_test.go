@@ -101,9 +101,6 @@ type observerCallbacks struct {
 	progress *atomicx.Int64
 }
 
-func (d observerCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-}
-
 func (d observerCallbacks) OnProgress(percentage float64, message string) {
 	d.progress.Add(1)
 }

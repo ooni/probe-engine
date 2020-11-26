@@ -175,10 +175,6 @@ type registerCallbacksCalled struct {
 	onProgressCalled bool
 }
 
-func (c *registerCallbacksCalled) OnDataUsage(dloadKiB, uploadKiB float64) {
-	// nothing - unused
-}
-
 func (c *registerCallbacksCalled) OnProgress(percentage float64, message string) {
 	c.onProgressCalled = true
 }
