@@ -1,4 +1,4 @@
-// Command oohelperctrl contains a simple command line
+// Command oohelper contains a simple command line
 // client for the Web Connectivity test helper.
 package main
 
