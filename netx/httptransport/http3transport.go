@@ -1,6 +1,7 @@
 package httptransport
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 
@@ -11,6 +12,21 @@ import (
 // HTTP3Dialer is the definition of dialer for HTTP3 transport assumed by this package.
 type HTTP3Dialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
+}
+
+// HTTP3ContextDialer is a dialer for HTTP3 transport using Context.
+type HTTP3ContextDialer interface {
+	DialContext(ctx context.Context, network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
+}
+
+// HTTP3WrapperDialer is a HTTP3Dialer that wraps a ContextDialer
+type HTTP3WrapperDialer struct {
+	Dialer HTTP3ContextDialer
+}
+
+// Dial implements HTTP3Dialer.Dial
+func (d HTTP3WrapperDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+	return d.Dialer.DialContext(context.Background(), network, host, tlsCfg, cfg)
 }
 
 // HTTP3Transport is a httptransport.RoundTripper using the http3 protocol.

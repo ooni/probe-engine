@@ -180,8 +180,9 @@ func NewHTTP3Dialer(config Config) HTTP3Dialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d HTTP3Dialer = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
-	return d
+	d := &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
+	var dialer HTTP3Dialer = &httptransport.HTTP3WrapperDialer{Dialer: d}
+	return dialer
 }
 
 // NewTLSDialer creates a new TLSDialer from the specified config
