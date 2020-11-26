@@ -18,6 +18,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/version"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -83,7 +84,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: model.DiscardLogger,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 		TorArgs:         []string{"antani1", "antani2", "antani3"},
@@ -116,7 +117,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: model.DiscardLogger,
+		Logger:          model.DiscardLogger,
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
@@ -579,7 +580,7 @@ func TestUserAgentNoProxy(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
-	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + Version
+	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + version.Version
 	sess := newSessionForTestingNoLookups(t)
 	ua := sess.UserAgent()
 	diff := cmp.Diff(expect, ua)
