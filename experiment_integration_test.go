@@ -721,7 +721,3 @@ func (am *antaniMeasurer) Run(
 func (am *antaniMeasurer) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
 	return nil, nil
 }
-
-func (am *antaniMeasurer) LogSummary(model.Logger, string) error {
-	return nil
-}

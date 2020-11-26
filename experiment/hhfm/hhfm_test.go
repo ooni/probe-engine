@@ -904,10 +904,3 @@ func TestSummaryKeysWorksAsIntended(t *testing.T) {
 		})
 	}
 }
-
-func TestLogSummary(t *testing.T) {
-	m := &hhfm.Measurer{}
-	if err := m.LogSummary(log.Log, "xyz"); err != nil {
-		t.Fatal(err)
-	}
-}

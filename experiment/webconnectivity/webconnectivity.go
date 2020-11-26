@@ -222,8 +222,3 @@ func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, e
 	sk.Accessible = tk.Accessible != nil && *tk.Accessible
 	return sk, nil
 }
-
-// LogSummary implements model.ExperimentMeasurer.LogSummary.
-func (m Measurer) LogSummary(model.Logger, string) error {
-	return nil
-}
