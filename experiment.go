@@ -159,10 +159,17 @@ func (e *Experiment) SaveMeasurement(measurement *model.Measurement, filePath st
 // SubmitAndUpdateMeasurement submits a measurement and updates the
 // fields whose value has changed as part of the submission.
 func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) error {
+	return e.SubmitAndUpdateMeasurementContext(context.Background(), measurement)
+}
+
+// SubmitAndUpdateMeasurementContext submits a measurement and updates the
+// fields whose value has changed as part of the submission.
+func (e *Experiment) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, measurement *model.Measurement) error {
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	return e.report.SubmitMeasurement(context.Background(), measurement)
+	return e.report.SubmitMeasurement(ctx, measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
