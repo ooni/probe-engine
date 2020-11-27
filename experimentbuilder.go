@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
+	"strconv"
 
 	"github.com/iancoleman/strcase"
 	"github.com/ooni/probe-engine/model"
@@ -111,6 +113,34 @@ func (b *ExperimentBuilder) SetOptionString(key, value string) error {
 		return errors.New("field is not a string")
 	}
 	field.SetString(value)
+	return nil
+}
+
+var intregexp = regexp.MustCompile("^[0-9]+$")
+
+// SetOptionGuessType sets an option whose type depends on the
+// option value. If the value is `"true"` or `"false"` we
+// assume the option is boolean. If the value is numeric, then we
+// set an integer option. Otherwise we set a string option.
+func (b *ExperimentBuilder) SetOptionGuessType(key, value string) error {
+	if value == "true" || value == "false" {
+		return b.SetOptionBool(key, value == "true")
+	}
+	if !intregexp.MatchString(value) {
+		return b.SetOptionString(key, value)
+	}
+	number, _ := strconv.ParseInt(value, 10, 64)
+	return b.SetOptionInt(key, number)
+}
+
+// SetOptionsGuessType calls the SetOptionGuessType method for every
+// key, value pair contained by the opts input map.
+func (b *ExperimentBuilder) SetOptionsGuessType(opts map[string]string) error {
+	for k, v := range opts {
+		if err := b.SetOptionGuessType(k, v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

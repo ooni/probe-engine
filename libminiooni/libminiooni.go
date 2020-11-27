@@ -22,9 +22,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -368,21 +366,8 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		// Tests that do not expect input internally require an empty input to run
 		currentOptions.Inputs = append(currentOptions.Inputs, "")
 	}
-	intregexp := regexp.MustCompile("^[0-9]+$")
-	for key, value := range extraOptions {
-		if value == "true" || value == "false" {
-			err := builder.SetOptionBool(key, value == "true")
-			fatalOnError(err, "cannot set boolean option")
-		} else if intregexp.MatchString(value) {
-			number, err := strconv.ParseInt(value, 10, 64)
-			fatalOnError(err, "cannot parse integer option")
-			err = builder.SetOptionInt(key, number)
-			fatalOnError(err, "cannot set integer option")
-		} else {
-			err := builder.SetOptionString(key, value)
-			fatalOnError(err, "cannot set string option")
-		}
-	}
+	err = builder.SetOptionsGuessType(extraOptions)
+	fatalOnError(err, "cannot parse extraOptions")
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
