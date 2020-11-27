@@ -47,6 +47,10 @@ func main() {
 	debug := flag.Bool("debug", false, "Toggle debug mode")
 	flag.Parse()
 	log.SetLevel(logmap[*debug])
+	testableMain()
+}
+
+func testableMain() {
 	mux := http.NewServeMux()
 	mux.Handle("/", internal.Handler{
 		Client:            httpx,

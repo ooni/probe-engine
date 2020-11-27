@@ -9,8 +9,7 @@ func TestSmoke(t *testing.T) {
 	// we have coverage of this code and when we see that some lines aren't
 	// covered we know these are genuine places where we're not testing
 	// the code rather than just places like this simple main.
-	*endpoint = ":54321"
-	go main()
+	go testableMain()
 	srvcancel()  // kills the listener
 	srvwg.Wait() // joined
 }
