@@ -13,7 +13,6 @@
 package libminiooni
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -28,7 +27,6 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
@@ -45,7 +43,7 @@ type Options struct {
 	ExtraOptions     []string
 	HomeDir          string
 	Inputs           []string
-	InputFilePath    string
+	InputFilePaths   []string
 	NoBouncer        bool
 	NoGeoIP          bool
 	NoJSON           bool
@@ -79,7 +77,7 @@ func init() {
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.InputFilePath, "file", 'f',
+		&globalOptions.InputFilePaths, "file", 'f',
 		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
@@ -231,27 +229,6 @@ func gethomedir(optionsHome string) string {
 	return os.Getenv("HOME")
 }
 
-func loadFileInputs(opts *Options) {
-	if len(opts.InputFilePath) != 0 {
-		if len(opts.Inputs) != 0 {
-			fatalWithString("inputs can either be supplied through file or command line, but not both")
-		}
-		file, err := fsx.Open(opts.InputFilePath)
-		fatalOnError(err, "cannot read input file")
-		defer file.Close()
-		// Implementation note: when you save file with vim, you have newline at
-		// end of file and you don't want to consider that an input line. While there
-		// ignore any other empty line that may occur inside the file.
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if line != "" {
-				opts.Inputs = append(opts.Inputs, line)
-			}
-		}
-	}
-}
-
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
 //
@@ -339,33 +316,16 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
 
-	// load inputs from file, if present
-	loadFileInputs(&currentOptions)
-
-	if builder.InputPolicy() == engine.InputRequired {
-		if len(currentOptions.Inputs) <= 0 {
-			log.Info("Fetching test lists")
-			client, err := sess.NewOrchestraClient(context.Background())
-			fatalOnError(err, "cannot create new orchestra client")
-			list, err := client.FetchURLList(context.Background(), model.URLListConfig{
-				CountryCode: sess.ProbeCC(),
-				Limit:       17,
-			})
-			fatalOnError(err, "cannot fetch test lists")
-			for _, entry := range list {
-				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
-			}
-		}
-	} else if builder.InputPolicy() == engine.InputOptional {
-		if len(currentOptions.Inputs) == 0 {
-			currentOptions.Inputs = append(currentOptions.Inputs, "")
-		}
-	} else if len(currentOptions.Inputs) != 0 {
-		fatalWithString("this experiment does not expect any input")
-	} else {
-		// Tests that do not expect input internally require an empty input to run
-		currentOptions.Inputs = append(currentOptions.Inputs, "")
+	inputLoader := engine.InputLoader{
+		StaticInputs: currentOptions.Inputs,
+		SourceFiles:  currentOptions.InputFilePaths,
+		InputPolicy:  builder.InputPolicy(),
+		Session:      sess,
+		URLLimit:     17,
 	}
+	inputs, err := inputLoader.Load(context.Background())
+	fatalOnError(err, "cannot load inputs")
+
 	err = builder.SetOptionsGuessType(extraOptions)
 	fatalOnError(err, "cannot parse extraOptions")
 	experiment := builder.NewExperiment()
@@ -388,16 +348,16 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		"false": " over TCP",
 		"true":  " over QUIC",
 	}
-	inputCount := len(currentOptions.Inputs)
+	inputCount := len(inputs)
 	inputCounter := 0
-	for _, input := range currentOptions.Inputs {
+	for _, input := range inputs {
 		inputCounter++
-		if input != "" {
+		if input.URL != "" {
 			// TODO(kelmenhorst): log transport protocol information in http logging debug-mode-only functionality
 			proto := usingTransport[extraOptions["HTTP3Enabled"]]
-			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input)
+			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input.URL)
 		}
-		measurement, err := experiment.Measure(input)
+		measurement, err := experiment.Measure(input.URL)
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
 		measurement.Options = currentOptions.ExtraOptions
