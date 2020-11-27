@@ -102,7 +102,7 @@ func (m Measurer) Run(
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
 	tk.Agent = "redirect"
-	tk.ClientResolver = sess.MaybeResolverIP()
+	tk.ClientResolver = sess.ResolverIP()
 	if measurement.Input == "" {
 		return ErrNoInput
 	}

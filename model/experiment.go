@@ -25,7 +25,7 @@ type ExperimentSession interface {
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
 	ProbeCC() string
 	ProxyURL() *url.URL
-	MaybeResolverIP() string
+	ResolverIP() string
 	TempDir() string
 	TunnelBootstrapTime() time.Duration
 	UserAgent() string
