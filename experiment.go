@@ -122,11 +122,7 @@ func (e *Experiment) MeasureWithContext(
 	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
 	measurement = e.newMeasurement(input)
 	start := time.Now()
-	err = e.measurer.Run(ctx, e.session, measurement, &sessionExperimentCallbacks{
-		exp:   e,
-		inner: e.callbacks,
-		sess:  e.session,
-	})
+	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
 	stop := time.Now()
 	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
 	scrubErr := measurement.Scrub(e.session.ProbeIP())
@@ -134,16 +130,6 @@ func (e *Experiment) MeasureWithContext(
 		err = scrubErr
 	}
 	return
-}
-
-type sessionExperimentCallbacks struct {
-	exp   *Experiment
-	inner model.ExperimentCallbacks
-	sess  *Session
-}
-
-func (cb *sessionExperimentCallbacks) OnProgress(percentage float64, message string) {
-	cb.inner.OnProgress(percentage, message)
 }
 
 // SaveMeasurement saves a measurement on the specified file path.
