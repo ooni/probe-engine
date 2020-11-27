@@ -90,19 +90,6 @@ func (e *Experiment) ReportID() string {
 	return e.report.ID
 }
 
-// LoadMeasurement loads a measurement from a byte stream. The measurement
-// must be a measurement for this experiment.
-func (e *Experiment) LoadMeasurement(data []byte) (*model.Measurement, error) {
-	var measurement model.Measurement
-	if err := json.Unmarshal(data, &measurement); err != nil {
-		return nil, err
-	}
-	if measurement.TestName != e.Name() {
-		return nil, errors.New("not a measurement for this experiment")
-	}
-	return &measurement, nil
-}
-
 // Measure performs a measurement with input. We assume that you have
 // configured the available test helpers, either manually or by calling
 // the session's MaybeLookupBackends() method.
