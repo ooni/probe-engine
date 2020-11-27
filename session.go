@@ -187,6 +187,11 @@ func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
 }
 
+// MaybeLookupBackendsContext is like MaybeLookupBackends but with context.
+func (s *Session) MaybeLookupBackendsContext(ctx context.Context) (err error) {
+	return s.maybeLookupBackends(ctx)
+}
+
 // ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
 // a specific name because we already configured a proxy.
 var ErrAlreadyUsingProxy = errors.New(

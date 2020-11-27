@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"context"
-
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -16,10 +14,6 @@ func (s *Session) GetAvailableProbeServices() []model.Service {
 
 func (s *Session) AppendAvailableProbeService(svc model.Service) {
 	s.availableProbeServices = append(s.availableProbeServices, svc)
-}
-
-func (s *Session) MaybeLookupBackendsContext(ctx context.Context) (err error) {
-	return s.maybeLookupBackends(ctx)
 }
 
 func (s *Session) QueryProbeServicesCount() int64 {

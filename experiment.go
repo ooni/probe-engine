@@ -91,19 +91,6 @@ func (e *Experiment) ReportID() string {
 	return e.report.ID
 }
 
-// LoadMeasurement loads a measurement from a byte stream. The measurement
-// must be a measurement for this experiment.
-func (e *Experiment) LoadMeasurement(data []byte) (*model.Measurement, error) {
-	var measurement model.Measurement
-	if err := json.Unmarshal(data, &measurement); err != nil {
-		return nil, err
-	}
-	if measurement.TestName != e.Name() {
-		return nil, errors.New("not a measurement for this experiment")
-	}
-	return &measurement, nil
-}
-
 // Measure performs a measurement with input. We assume that you have
 // configured the available test helpers, either manually or by calling
 // the session's MaybeLookupBackends() method.
@@ -123,11 +110,7 @@ func (e *Experiment) MeasureWithContext(
 	ctx = dialer.WithExperimentByteCounter(ctx, e.byteCounter)
 	measurement = e.newMeasurement(input)
 	start := time.Now()
-	err = e.measurer.Run(ctx, e.session, measurement, &sessionExperimentCallbacks{
-		exp:   e,
-		inner: e.callbacks,
-		sess:  e.session,
-	})
+	err = e.measurer.Run(ctx, e.session, measurement, e.callbacks)
 	stop := time.Now()
 	measurement.MeasurementRuntime = stop.Sub(start).Seconds()
 	scrubErr := measurement.Scrub(e.session.ProbeIP())
@@ -135,16 +118,6 @@ func (e *Experiment) MeasureWithContext(
 		err = scrubErr
 	}
 	return
-}
-
-type sessionExperimentCallbacks struct {
-	exp   *Experiment
-	inner model.ExperimentCallbacks
-	sess  *Session
-}
-
-func (cb *sessionExperimentCallbacks) OnProgress(percentage float64, message string) {
-	cb.inner.OnProgress(percentage, message)
 }
 
 // SaveMeasurement saves a measurement on the specified file path.
@@ -160,10 +133,17 @@ func (e *Experiment) SaveMeasurement(measurement *model.Measurement, filePath st
 // SubmitAndUpdateMeasurement submits a measurement and updates the
 // fields whose value has changed as part of the submission.
 func (e *Experiment) SubmitAndUpdateMeasurement(measurement *model.Measurement) error {
+	return e.SubmitAndUpdateMeasurementContext(context.Background(), measurement)
+}
+
+// SubmitAndUpdateMeasurementContext submits a measurement and updates the
+// fields whose value has changed as part of the submission.
+func (e *Experiment) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, measurement *model.Measurement) error {
 	if e.report == nil {
 		return errors.New("Report is not open")
 	}
-	return e.report.SubmitMeasurement(context.Background(), measurement)
+	return e.report.SubmitMeasurement(ctx, measurement)
 }
 
 // CloseReport is an idempotent method that closes an open report
@@ -183,14 +163,14 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
 		MeasurementStartTimeSaved: utctimenow,
-		ProbeIP:                   e.session.MaybeProbeIP(),
-		ProbeASN:                  e.session.MaybeProbeASNString(),
-		ProbeCC:                   e.session.MaybeProbeCC(),
-		ProbeNetworkName:          e.session.MaybeProbeNetworkName(),
+		ProbeIP:                   model.DefaultProbeIP,
+		ProbeASN:                  e.session.ProbeASNString(),
+		ProbeCC:                   e.session.ProbeCC(),
+		ProbeNetworkName:          e.session.ProbeNetworkName(),
 		ReportID:                  e.ReportID(),
-		ResolverASN:               e.session.MaybeResolverASNString(),
-		ResolverIP:                e.session.MaybeResolverIP(),
-		ResolverNetworkName:       e.session.MaybeResolverNetworkName(),
+		ResolverASN:               e.session.ResolverASNString(),
+		ResolverIP:                e.session.ResolverIP(),
+		ResolverNetworkName:       e.session.ResolverNetworkName(),
 		SoftwareName:              e.session.SoftwareName(),
 		SoftwareVersion:           e.session.SoftwareVersion(),
 		TestName:                  e.testName,
@@ -237,8 +217,8 @@ func (e *Experiment) newReportTemplate() probeservices.ReportTemplate {
 	return probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
 		Format:            probeservices.DefaultFormat,
-		ProbeASN:          e.session.MaybeProbeASNString(),
-		ProbeCC:           e.session.MaybeProbeCC(),
+		ProbeASN:          e.session.ProbeASNString(),
+		ProbeCC:           e.session.ProbeCC(),
 		SoftwareName:      e.session.SoftwareName(),
 		SoftwareVersion:   e.session.SoftwareVersion(),
 		TestName:          e.testName,
