@@ -156,17 +156,9 @@ func (il InputLoader) loadRemote(conf loadRemoteConfig) ([]model.URLInfo, error)
 	if err != nil {
 		return nil, err
 	}
-	list, err := client.FetchURLList(conf.ctx, model.URLListConfig{
+	return client.FetchURLList(conf.ctx, model.URLListConfig{
 		CountryCode: conf.session.ProbeCC(),
 		Limit:       il.URLLimit,
 		Categories:  il.URLCategories,
 	})
-	if err != nil {
-		return nil, err
-	}
-	inputs := []model.URLInfo{}
-	for _, entry := range list {
-		inputs = append(inputs, entry)
-	}
-	return inputs, nil
 }
