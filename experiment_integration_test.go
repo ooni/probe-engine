@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -457,62 +456,6 @@ func TestSetOption(t *testing.T) {
 		}
 		if err := b.SetOptionString("antani", "xx"); err == nil {
 			t.Fatal("expected an error here")
-		}
-	})
-}
-
-func TestLoadMeasurement(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	sess := newSessionForTesting(t)
-	defer sess.Close()
-	builder, err := sess.NewExperimentBuilder("example")
-	if err != nil {
-		t.Fatal(err)
-	}
-	experiment := builder.NewExperiment()
-	testflow := func(t *testing.T, name string) (*model.Measurement, error) {
-		path := fmt.Sprintf(
-			"testdata/loadable-measurement-%s.jsonl", name,
-		)
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return experiment.LoadMeasurement(data)
-	}
-	t.Run("with correct name", func(t *testing.T) {
-		measurement, err := testflow(t, "example")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if measurement == nil {
-			t.Fatal("expected non nil measurement here")
-		}
-	})
-	t.Run("with invalid name", func(t *testing.T) {
-		measurement, err := testflow(t, "wrongname")
-		if err == nil {
-			t.Fatal("expected error here")
-		}
-		if measurement != nil {
-			t.Fatal("expected nil measurement here")
-		}
-		if err.Error() != "not a measurement for this experiment" {
-			t.Fatal("unexpected error value")
-		}
-	})
-	t.Run("with invalid JSON", func(t *testing.T) {
-		measurement, err := testflow(t, "notjson")
-		if err == nil {
-			t.Fatal("expected error here")
-		}
-		if measurement != nil {
-			t.Fatal("expected nil measurement here")
-		}
-		if err.Error() == "not a measurement for this experiment" {
-			t.Fatal("unexpected error value")
 		}
 	})
 }
