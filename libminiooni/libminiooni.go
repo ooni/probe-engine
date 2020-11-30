@@ -346,6 +346,14 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	})
 	fatalOnError(err, "cannot create submitter")
 
+	saver, err := engine.NewSaver(engine.NewSaverConfig{
+		Enabled:    currentOptions.NoJSON == false,
+		Experiment: experiment,
+		FilePath:   currentOptions.ReportFile,
+		Logger:     sess.Logger(),
+	})
+	fatalOnError(err, "cannot create saver")
+
 	usingTransport := map[string]string{
 		"false": " over TCP",
 		"true":  " over QUIC",
@@ -365,12 +373,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		measurement.Options = currentOptions.ExtraOptions
 		err = submitter.SubmitAndUpdateMeasurementContext(ctx, measurement)
 		warnOnError(err, "submitting measurement failed")
-		if !currentOptions.NoJSON {
-			// Note: must be after submission because submission modifies
-			// the measurement to include the report ID.
-			log.Infof("saving measurement to disk")
-			err := experiment.SaveMeasurement(measurement, currentOptions.ReportFile)
-			warnOnError(err, "saving measurement failed")
-		}
+		// Note: must be after submission because submission modifies
+		// the measurement to include the report ID.
+		err = saver.SaveMeasurement(measurement)
+		fatalOnError(err, "saving measurement failed")
 	}
 }
