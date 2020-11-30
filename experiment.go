@@ -79,7 +79,7 @@ func (e *Experiment) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
 // you have configured the available probe services, either manually or
 // through using the session's MaybeLookupBackends method.
 func (e *Experiment) OpenReport() (err error) {
-	return e.openReport(context.Background())
+	return e.OpenReportContext(context.Background())
 }
 
 // ReportID returns the open reportID, if we have opened a report
@@ -184,7 +184,9 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	return &m
 }
 
-func (e *Experiment) openReport(ctx context.Context) error {
+// OpenReportContext will open a report using the given context
+// to possibly limit the lifetime of this operation.
+func (e *Experiment) OpenReportContext(ctx context.Context) error {
 	if e.report != nil {
 		return nil // already open
 	}
