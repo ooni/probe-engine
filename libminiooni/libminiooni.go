@@ -342,7 +342,6 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	submitter, err := engine.NewSubmitter(ctx, engine.SubmitterConfig{
 		Enabled:    currentOptions.NoCollector == false,
 		Experiment: experiment,
-		Logger:     sess.Logger(),
 	})
 	fatalOnError(err, "cannot create submitter")
 
@@ -350,32 +349,62 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		Enabled:    currentOptions.NoJSON == false,
 		Experiment: experiment,
 		FilePath:   currentOptions.ReportFile,
-		Logger:     sess.Logger(),
 	})
 	fatalOnError(err, "cannot create saver")
 
-	usingTransport := map[string]string{
-		"false": " over TCP",
-		"true":  " over QUIC",
+	inputProcessor := engine.InputProcessor{
+		Annotations: annotations,
+		Experiment: &experimentWrapper{
+			child: engine.NewInputProcessorExperimentWrapper(experiment),
+			total: len(inputs),
+		},
+		Inputs:  inputs,
+		Options: currentOptions.ExtraOptions,
+		Saver: saverWrapper{
+			child: engine.NewInputProcessorSaverWrapper(saver),
+		},
+		Submitter: submitterWrapper{
+			child: engine.NewInputProcessorSubmitterWrapper(submitter),
+		},
 	}
-	inputCount := len(inputs)
-	inputCounter := 0
-	for _, input := range inputs {
-		inputCounter++
-		if input.URL != "" {
-			// TODO(kelmenhorst): log transport protocol information in http logging debug-mode-only functionality
-			proto := usingTransport[extraOptions["HTTP3Enabled"]]
-			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input.URL)
-		}
-		measurement, err := experiment.Measure(input.URL)
-		warnOnError(err, "measurement failed")
-		measurement.AddAnnotations(annotations)
-		measurement.Options = currentOptions.ExtraOptions
-		err = submitter.SubmitAndUpdateMeasurementContext(ctx, measurement)
-		warnOnError(err, "submitting measurement failed")
-		// Note: must be after submission because submission modifies
-		// the measurement to include the report ID.
-		err = saver.SaveMeasurement(measurement)
-		fatalOnError(err, "saving measurement failed")
+	err = inputProcessor.Run(ctx)
+	fatalOnError(err, "inputProcessor.Run failed")
+}
+
+type experimentWrapper struct {
+	child engine.InputProcessorExperimentWrapper
+	total int
+}
+
+func (ew *experimentWrapper) MeasureWithContext(
+	ctx context.Context, idx int, input string) (*model.Measurement, error) {
+	if input != "" {
+		log.Infof("[%d/%d] running with input: %s", idx+1, ew.total, input)
 	}
+	measurement, err := ew.child.MeasureWithContext(ctx, idx, input)
+	warnOnError(err, "measurement failed")
+	// policy: we do not stop the loop if the measurement fails
+	return measurement, nil
+}
+
+type submitterWrapper struct {
+	child engine.InputProcessorSubmitterWrapper
+}
+
+func (sw submitterWrapper) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, idx int, m *model.Measurement) error {
+	log.Info("submitting measurement to OONI collector; please be patient...")
+	err := sw.child.SubmitAndUpdateMeasurementContext(ctx, idx, m)
+	warnOnError(err, "submitting measurement failed")
+	// policy: we do not stop the loop if measurement submission fails
+	return nil
+}
+
+type saverWrapper struct {
+	child engine.InputProcessorSaverWrapper
+}
+
+func (sw saverWrapper) SaveMeasurement(idx int, m *model.Measurement) error {
+	log.Info("saving measurement to disk")
+	return sw.child.SaveMeasurement(idx, m)
 }

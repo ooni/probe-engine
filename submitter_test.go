@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/ooni/probe-engine/model"
@@ -66,18 +65,7 @@ func TestNewSubmitterOpenReportFailure(t *testing.T) {
 	}
 }
 
-type FakeSubmitterLogger struct {
-	Written []string
-}
-
-func (fsl *FakeSubmitterLogger) Infof(format string, v ...interface{}) {
-	fsl.Written = append(fsl.Written, fmt.Sprintf(format, v...))
-}
-
-var _ SubmitterLogger = &FakeSubmitterLogger{}
-
 func TestNewSubmitterOpenReportSuccess(t *testing.T) {
-	fakeLogger := &FakeSubmitterLogger{}
 	reportID := "a_fake_report_id"
 	expected := errors.New("mocked error")
 	ctx := context.Background()
@@ -87,28 +75,12 @@ func TestNewSubmitterOpenReportSuccess(t *testing.T) {
 			FakeReportID: reportID,
 			SubmitErr:    expected,
 		},
-		Logger: fakeLogger,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := submitter.(realSubmitter); !ok {
-		t.Fatal("not the type of submitter we expected")
-	}
-	if len(fakeLogger.Written) != 1 {
-		t.Fatal("written wrong number of log entries")
-	}
-	if fakeLogger.Written[0] != "reportID: a_fake_report_id" {
-		t.Fatal("unexpected lopg entry written")
-	}
 	m := new(model.Measurement)
 	if err := submitter.SubmitAndUpdateMeasurementContext(ctx, m); !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
-	}
-	if len(fakeLogger.Written) != 2 {
-		t.Fatal("written wrong number of log entries")
-	}
-	if fakeLogger.Written[1] != "submitting measurement to OONI collector; please, be patient..." {
-		t.Fatal("unexpected lopg entry written")
 	}
 }
