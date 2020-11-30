@@ -2,7 +2,6 @@ package engine
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -52,25 +51,13 @@ func (fse *FakeSaverExperiment) SaveMeasurement(m *model.Measurement, filepath s
 
 var _ SaverExperiment = &FakeSaverExperiment{}
 
-type FakeSaverLogger struct {
-	Written []string
-}
-
-func (fsl *FakeSaverLogger) Infof(format string, v ...interface{}) {
-	fsl.Written = append(fsl.Written, fmt.Sprintf(format, v...))
-}
-
-var _ SaverLogger = &FakeSaverLogger{}
-
 func TestNewSaverWithFailureWhenSaving(t *testing.T) {
 	expected := errors.New("mocked error")
-	logger := &FakeSaverLogger{}
 	fse := &FakeSaverExperiment{Error: expected}
 	saver, err := NewSaver(SaverConfig{
 		Enabled:    true,
 		FilePath:   "report.jsonl",
 		Experiment: fse,
-		Logger:     logger,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -81,12 +68,6 @@ func TestNewSaverWithFailureWhenSaving(t *testing.T) {
 	m := &model.Measurement{Input: "www.kernel.org"}
 	if err := saver.SaveMeasurement(m); !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
-	}
-	if len(logger.Written) != 1 {
-		t.Fatal("invalid number of log entries")
-	}
-	if logger.Written[0] != "saving measurement to disk" {
-		t.Fatal("invalid logged message")
 	}
 	if diff := cmp.Diff(fse.M, m); diff != "" {
 		t.Fatal(diff)
