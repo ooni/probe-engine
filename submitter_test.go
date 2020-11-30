@@ -102,4 +102,10 @@ func TestNewSubmitterOpenReportSuccess(t *testing.T) {
 	if err := submitter.SubmitAndUpdateMeasurementContext(ctx, m); !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
+	if len(fakeLogger.Written) != 2 {
+		t.Fatal("written wrong number of log entries")
+	}
+	if fakeLogger.Written[1] != "submitting measurement to OONI collector; please, be patient..." {
+		t.Fatal("unexpected lopg entry written")
+	}
 }

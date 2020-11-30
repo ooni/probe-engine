@@ -64,7 +64,7 @@ func NewSubmitter(ctx context.Context, config NewSubmitterConfig) (Submitter, er
 		return nil, err
 	}
 	config.Logger.Infof("reportID: %s", config.Experiment.ReportID())
-	return config.Experiment, nil
+	return realSubmitter{Experiment: config.Experiment, Logger: config.Logger}, nil
 }
 
 type stubSubmitter struct{}
@@ -73,3 +73,18 @@ func (stubSubmitter) SubmitAndUpdateMeasurementContext(
 	ctx context.Context, m *model.Measurement) error {
 	return nil
 }
+
+var _ Submitter = stubSubmitter{}
+
+type realSubmitter struct {
+	Experiment SubmitterExperiment
+	Logger     SubmitterLogger
+}
+
+func (rs realSubmitter) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, m *model.Measurement) error {
+	rs.Logger.Infof("submitting measurement to OONI collector; please, be patient...")
+	return rs.Experiment.SubmitAndUpdateMeasurementContext(ctx, m)
+}
+
+var _ Submitter = realSubmitter{}
