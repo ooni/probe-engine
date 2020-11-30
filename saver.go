@@ -11,8 +11,8 @@ type Saver interface {
 	SaveMeasurement(m *model.Measurement) error
 }
 
-// NewSaverConfig is the configuration for creating a new Saver.
-type NewSaverConfig struct {
+// SaverConfig is the configuration for creating a new Saver.
+type SaverConfig struct {
 	// Enabled is true if saving is enabled.
 	Enabled bool
 
@@ -38,7 +38,7 @@ type SaverLogger interface {
 }
 
 // NewSaver creates a new instance of Saver.
-func NewSaver(config NewSaverConfig) (Saver, error) {
+func NewSaver(config SaverConfig) (Saver, error) {
 	if !config.Enabled {
 		return fakeSaver{}, nil
 	}

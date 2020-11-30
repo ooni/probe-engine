@@ -33,7 +33,7 @@ func (InputLoaderBrokenFile) Close() error {
 }
 
 func TestInputLoaderReadfileScannerFailure(t *testing.T) {
-	il := InputLoader{}
+	il := inputLoader{}
 	out, err := il.readfile("", InputLoaderBrokenFS{}.Open)
 	if !errors.Is(err, syscall.EFAULT) {
 		t.Fatal("not the error we expected")
@@ -64,7 +64,7 @@ func (InputLoaderBrokenSession) ProbeCC() string {
 }
 
 func TestInputLoaderNewOrchestraClientFailure(t *testing.T) {
-	il := InputLoader{}
+	il := inputLoader{}
 	lrc := loadRemoteConfig{
 		ctx:     context.Background(),
 		session: InputLoaderBrokenSession{},
@@ -93,7 +93,7 @@ func (InputLoaderBrokenOrchestraClient) FetchURLList(ctx context.Context, config
 }
 
 func TestInputLoaderFetchURLListFailure(t *testing.T) {
-	il := InputLoader{}
+	il := inputLoader{}
 	lrc := loadRemoteConfig{
 		ctx: context.Background(),
 		session: InputLoaderBrokenSession{

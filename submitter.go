@@ -17,8 +17,8 @@ type Submitter interface {
 		ctx context.Context, m *model.Measurement) error
 }
 
-// NewSubmitterConfig contains settings for NewSubmitter.
-type NewSubmitterConfig struct {
+// SubmitterConfig contains settings for NewSubmitter.
+type SubmitterConfig struct {
 	// Enabled is true if measurement submission is enabled.
 	Enabled bool
 
@@ -56,7 +56,7 @@ type SubmitterLogger interface {
 // NewSubmitter creates a new submitter instance. Depending on
 // whether submission is enabled or not, the returned submitter
 // instance migh just be a stub implementation.
-func NewSubmitter(ctx context.Context, config NewSubmitterConfig) (Submitter, error) {
+func NewSubmitter(ctx context.Context, config SubmitterConfig) (Submitter, error) {
 	if !config.Enabled {
 		return stubSubmitter{}, nil
 	}

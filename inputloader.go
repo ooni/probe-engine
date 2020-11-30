@@ -42,7 +42,14 @@ type InputLoaderSession interface {
 // We gather input from StaticInput and SourceFiles. If there is
 // input, we return it. Otherwise, we use OONI's probe services
 // to gather input using the test lists API.
-type InputLoader struct {
+type InputLoader interface {
+	// Load attempts to load input using the specified input loader. We will
+	// return a list of URLs because this is the only input we support.
+	Load(ctx context.Context) ([]model.URLInfo, error)
+}
+
+// InputLoaderConfig contains config for InputLoader.
+type InputLoaderConfig struct {
 	// StaticInputs contains optional input to be added
 	// to the resulting input list if possible.
 	StaticInputs []string
@@ -69,9 +76,25 @@ type InputLoader struct {
 	URLCategories []string
 }
 
+// NewInputLoader creates a new InputLoader.
+func NewInputLoader(config InputLoaderConfig) InputLoader {
+	// TODO(bassosimone): the current implementation stems from a
+	// simple refactoring from a previous implementation where
+	// we weren't using interfaces. Because now we're using interfaces,
+	// there is the opportunity to select behaviour here depending
+	// on the specified policy rather than later inside Load.
+	return inputLoader{InputLoaderConfig: config}
+}
+
+type inputLoader struct {
+	InputLoaderConfig
+}
+
+var _ InputLoader = inputLoader{}
+
 // Load attempts to load input using the specified input loader. We will
 // return a list of URLs because this is the only input we support.
-func (il InputLoader) Load(ctx context.Context) ([]model.URLInfo, error) {
+func (il inputLoader) Load(ctx context.Context) ([]model.URLInfo, error) {
 	switch il.InputPolicy {
 	case InputOptional:
 		return il.loadOptional()
@@ -82,14 +105,14 @@ func (il InputLoader) Load(ctx context.Context) ([]model.URLInfo, error) {
 	}
 }
 
-func (il InputLoader) loadNone() ([]model.URLInfo, error) {
+func (il inputLoader) loadNone() ([]model.URLInfo, error) {
 	if len(il.StaticInputs) > 0 || len(il.SourceFiles) > 0 {
 		return nil, ErrNoInputExpected
 	}
 	return []model.URLInfo{{}}, nil
 }
 
-func (il InputLoader) loadOptional() ([]model.URLInfo, error) {
+func (il inputLoader) loadOptional() ([]model.URLInfo, error) {
 	inputs, err := il.loadLocal()
 	if err == nil && len(inputs) <= 0 {
 		inputs = []model.URLInfo{{}}
@@ -97,7 +120,7 @@ func (il InputLoader) loadOptional() ([]model.URLInfo, error) {
 	return inputs, err
 }
 
-func (il InputLoader) loadRequired(ctx context.Context) ([]model.URLInfo, error) {
+func (il inputLoader) loadRequired(ctx context.Context) ([]model.URLInfo, error) {
 	inputs, err := il.loadLocal()
 	if err != nil || len(inputs) > 0 {
 		return inputs, err
@@ -105,7 +128,7 @@ func (il InputLoader) loadRequired(ctx context.Context) ([]model.URLInfo, error)
 	return il.loadRemote(loadRemoteConfig{ctx: ctx, session: il.Session})
 }
 
-func (il InputLoader) loadLocal() ([]model.URLInfo, error) {
+func (il inputLoader) loadLocal() ([]model.URLInfo, error) {
 	inputs := []model.URLInfo{}
 	for _, input := range il.StaticInputs {
 		inputs = append(inputs, model.URLInfo{URL: input})
@@ -120,7 +143,7 @@ func (il InputLoader) loadLocal() ([]model.URLInfo, error) {
 	return inputs, nil
 }
 
-func (il InputLoader) readfile(filepath string, open func(string) (fsx.File, error)) ([]model.URLInfo, error) {
+func (il inputLoader) readfile(filepath string, open func(string) (fsx.File, error)) ([]model.URLInfo, error) {
 	inputs := []model.URLInfo{}
 	filep, err := open(filepath)
 	if err != nil {
@@ -148,7 +171,7 @@ type loadRemoteConfig struct {
 	session InputLoaderSession
 }
 
-func (il InputLoader) loadRemote(conf loadRemoteConfig) ([]model.URLInfo, error) {
+func (il inputLoader) loadRemote(conf loadRemoteConfig) ([]model.URLInfo, error) {
 	if err := conf.session.MaybeLookupLocationContext(conf.ctx); err != nil {
 		return nil, err
 	}

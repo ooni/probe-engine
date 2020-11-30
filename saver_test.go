@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewSaverDisabled(t *testing.T) {
-	saver, err := NewSaver(NewSaverConfig{
+	saver, err := NewSaver(SaverConfig{
 		Enabled: false,
 	})
 	if err != nil {
@@ -26,7 +26,7 @@ func TestNewSaverDisabled(t *testing.T) {
 }
 
 func TestNewSaverWithEmptyFilePath(t *testing.T) {
-	saver, err := NewSaver(NewSaverConfig{
+	saver, err := NewSaver(SaverConfig{
 		Enabled:  true,
 		FilePath: "",
 	})
@@ -66,7 +66,7 @@ func TestNewSaverWithFailureWhenSaving(t *testing.T) {
 	expected := errors.New("mocked error")
 	logger := &FakeSaverLogger{}
 	fse := &FakeSaverExperiment{Error: expected}
-	saver, err := NewSaver(NewSaverConfig{
+	saver, err := NewSaver(SaverConfig{
 		Enabled:    true,
 		FilePath:   "report.jsonl",
 		Experiment: fse,

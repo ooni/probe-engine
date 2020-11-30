@@ -14,10 +14,10 @@ import (
 )
 
 func TestInputLoaderInputNoneWithStaticInputs(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
 		InputPolicy:  engine.InputNone,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if !errors.Is(err, engine.ErrNoInputExpected) {
@@ -29,13 +29,13 @@ func TestInputLoaderInputNoneWithStaticInputs(t *testing.T) {
 }
 
 func TestInputLoaderInputNoneWithFilesInputs(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		SourceFiles: []string{
 			"testdata/inputloader1.txt",
 			"testdata/inputloader2.txt",
 		},
 		InputPolicy: engine.InputNone,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if !errors.Is(err, engine.ErrNoInputExpected) {
@@ -47,14 +47,14 @@ func TestInputLoaderInputNoneWithFilesInputs(t *testing.T) {
 }
 
 func TestInputLoaderInputNoneWithBothInputs(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
 			"testdata/inputloader1.txt",
 			"testdata/inputloader2.txt",
 		},
 		InputPolicy: engine.InputNone,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if !errors.Is(err, engine.ErrNoInputExpected) {
@@ -66,9 +66,9 @@ func TestInputLoaderInputNoneWithBothInputs(t *testing.T) {
 }
 
 func TestInputLoaderInputNoneWithNoInput(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		InputPolicy: engine.InputNone,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if err != nil {
@@ -80,9 +80,9 @@ func TestInputLoaderInputNoneWithNoInput(t *testing.T) {
 }
 
 func TestInputLoaderInputOptionalWithNoInput(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		InputPolicy: engine.InputOptional,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if err != nil {
@@ -94,14 +94,14 @@ func TestInputLoaderInputOptionalWithNoInput(t *testing.T) {
 }
 
 func TestInputLoaderInputOptionalWithInput(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
 			"testdata/inputloader1.txt",
 			"testdata/inputloader2.txt",
 		},
 		InputPolicy: engine.InputOptional,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestInputLoaderInputOptionalWithInput(t *testing.T) {
 }
 
 func TestInputLoaderInputOptionalNonexistentFile(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
 			"testdata/inputloader1.txt",
@@ -131,7 +131,7 @@ func TestInputLoaderInputOptionalNonexistentFile(t *testing.T) {
 			"testdata/inputloader2.txt",
 		},
 		InputPolicy: engine.InputOptional,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if !errors.Is(err, syscall.ENOENT) {
@@ -143,14 +143,14 @@ func TestInputLoaderInputOptionalNonexistentFile(t *testing.T) {
 }
 
 func TestInputLoaderInputRequiredlWithInput(t *testing.T) {
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
 			"testdata/inputloader1.txt",
 			"testdata/inputloader2.txt",
 		},
 		InputPolicy: engine.InputRequired,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if err != nil {
@@ -184,10 +184,10 @@ func TestInputLoaderInputRequiredlWithNoInputAndCancelledContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer sess.Close()
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		InputPolicy: engine.InputRequired,
 		Session:     sess,
-	}
+	})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	out, err := il.Load(ctx)
@@ -219,11 +219,11 @@ func TestInputLoaderInputRequiredlWithNoInputGood(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer sess.Close()
-	il := engine.InputLoader{
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		InputPolicy: engine.InputRequired,
 		Session:     sess,
 		URLLimit:    30,
-	}
+	})
 	ctx := context.Background()
 	out, err := il.Load(ctx)
 	if err != nil {

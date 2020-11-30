@@ -11,7 +11,7 @@ import (
 
 func TestSubmitterNotEnabled(t *testing.T) {
 	ctx := context.Background()
-	submitter, err := NewSubmitter(ctx, NewSubmitterConfig{
+	submitter, err := NewSubmitter(ctx, SubmitterConfig{
 		Enabled: false,
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ var _ SubmitterExperiment = FakeSubmitterExperiment{}
 func TestNewSubmitterOpenReportFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
-	submitter, err := NewSubmitter(ctx, NewSubmitterConfig{
+	submitter, err := NewSubmitter(ctx, SubmitterConfig{
 		Enabled:    true,
 		Experiment: FakeSubmitterExperiment{OpenReportErr: expected},
 	})
@@ -81,7 +81,7 @@ func TestNewSubmitterOpenReportSuccess(t *testing.T) {
 	reportID := "a_fake_report_id"
 	expected := errors.New("mocked error")
 	ctx := context.Background()
-	submitter, err := NewSubmitter(ctx, NewSubmitterConfig{
+	submitter, err := NewSubmitter(ctx, SubmitterConfig{
 		Enabled: true,
 		Experiment: FakeSubmitterExperiment{
 			FakeReportID: reportID,
