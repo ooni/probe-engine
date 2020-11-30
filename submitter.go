@@ -12,7 +12,7 @@ import (
 // Submitter submits a measurement to the OONI collector.
 type Submitter interface {
 	// SubmitAndUpdateMeasurementContext submits the measurement
-	// and updates its report ID field in case of sucess.
+	// and updates its report ID field in case of success.
 	SubmitAndUpdateMeasurementContext(
 		ctx context.Context, m *model.Measurement) error
 }
