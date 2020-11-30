@@ -318,13 +318,13 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
 
-	inputLoader := engine.InputLoader{
+	inputLoader := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: currentOptions.Inputs,
 		SourceFiles:  currentOptions.InputFilePaths,
 		InputPolicy:  builder.InputPolicy(),
 		Session:      sess,
 		URLLimit:     17,
-	}
+	})
 	inputs, err := inputLoader.Load(context.Background())
 	fatalOnError(err, "cannot load inputs")
 
@@ -339,14 +339,14 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		)
 	}()
 
-	submitter, err := engine.NewSubmitter(ctx, engine.NewSubmitterConfig{
+	submitter, err := engine.NewSubmitter(ctx, engine.SubmitterConfig{
 		Enabled:    currentOptions.NoCollector == false,
 		Experiment: experiment,
 		Logger:     sess.Logger(),
 	})
 	fatalOnError(err, "cannot create submitter")
 
-	saver, err := engine.NewSaver(engine.NewSaverConfig{
+	saver, err := engine.NewSaver(engine.SaverConfig{
 		Enabled:    currentOptions.NoJSON == false,
 		Experiment: experiment,
 		FilePath:   currentOptions.ReportFile,
