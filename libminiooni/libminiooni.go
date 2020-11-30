@@ -235,6 +235,8 @@ func gethomedir(optionsHome string) string {
 // This function will panic in case of a fatal error. It is up to you that
 // integrate this function to either handle the panic of ignore it.
 func MainWithConfiguration(experimentName string, currentOptions Options) {
+	ctx := context.Background()
+
 	extraOptions := mustMakeMap(currentOptions.ExtraOptions)
 	annotations := mustMakeMap(currentOptions.Annotations)
 
@@ -328,6 +330,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 
 	err = builder.SetOptionsGuessType(extraOptions)
 	fatalOnError(err, "cannot parse extraOptions")
+
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
@@ -336,13 +339,12 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		)
 	}()
 
-	if !currentOptions.NoCollector {
-		log.Info("Opening report; please be patient...")
-		err := experiment.OpenReport()
-		fatalOnError(err, "cannot open report")
-		defer experiment.CloseReport()
-		log.Infof("Report ID: %s", experiment.ReportID())
-	}
+	submitter, err := engine.NewSubmitter(ctx, engine.NewSubmitterConfig{
+		Enabled:    currentOptions.NoCollector == false,
+		Experiment: experiment,
+		Logger:     sess.Logger(),
+	})
+	fatalOnError(err, "cannot create submitter")
 
 	usingTransport := map[string]string{
 		"false": " over TCP",
@@ -361,11 +363,8 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		warnOnError(err, "measurement failed")
 		measurement.AddAnnotations(annotations)
 		measurement.Options = currentOptions.ExtraOptions
-		if !currentOptions.NoCollector {
-			log.Infof("submitting measurement to OONI collector; please be patient...")
-			err := experiment.SubmitAndUpdateMeasurement(measurement)
-			warnOnError(err, "submitting measurement failed")
-		}
+		err = submitter.SubmitAndUpdateMeasurementContext(ctx, measurement)
+		warnOnError(err, "submitting measurement failed")
 		if !currentOptions.NoJSON {
 			// Note: must be after submission because submission modifies
 			// the measurement to include the report ID.
