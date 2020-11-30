@@ -6,6 +6,7 @@ import (
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/ooni/probe-engine/netx/dialer"
 )
 
 // HTTP3Dialer is the definition of dialer for HTTP3 transport assumed by this package.
@@ -27,6 +28,9 @@ func (t *HTTP3Transport) CloseIdleConnections() {
 func NewHTTP3Transport(config Config) RoundTripper {
 	txp := &HTTP3Transport{}
 	txp.QuicConfig = &quic.Config{}
+	if tlsdialer, ok := config.TLSDialer.(dialer.TLSDialer); ok {
+		txp.TLSClientConfig = tlsdialer.Config
+	}
 	txp.Dial = config.HTTP3Dialer.Dial
 	return txp
 }
