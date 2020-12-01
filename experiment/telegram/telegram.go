@@ -5,6 +5,7 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 
 const (
 	testName    = "telegram"
-	testVersion = "0.1.1"
+	testVersion = "0.2.0"
 )
 
 // Config contains the telegram experiment config.
@@ -142,4 +143,32 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	HTTPBlocking bool `json:"telegram_http_blocking"`
+	TCPBlocking  bool `json:"telegram_tcp_blocking"`
+	WebBlocking  bool `json:"telegram_web_blocking"`
+	IsAnomaly    bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	tcpBlocking := tk.TelegramTCPBlocking
+	httpBlocking := tk.TelegramHTTPBlocking
+	webBlocking := tk.TelegramWebFailure != nil
+	sk.TCPBlocking = tcpBlocking
+	sk.HTTPBlocking = httpBlocking
+	sk.WebBlocking = webBlocking
+	sk.IsAnomaly = webBlocking || httpBlocking || tcpBlocking
+	return sk, nil
 }

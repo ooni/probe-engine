@@ -27,7 +27,7 @@ const (
 	defaultTimeout = 120 * time.Second
 	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.10.0"
+	testVersion    = "0.11.0"
 	totalStep      = 15.0
 )
 
@@ -302,4 +302,28 @@ func (m Measurer) Run(
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	Latency   float64 `json:"connect_latency"`
+	Bitrate   float64 `json:"median_bitrate"`
+	Delay     float64 `json:"min_playout_delay"`
+	IsAnomaly bool    `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.Latency = tk.Simple.ConnectLatency
+	sk.Bitrate = float64(tk.Simple.MedianBitrate)
+	sk.Delay = tk.Simple.MinPlayoutDelay
+	return sk, nil
 }

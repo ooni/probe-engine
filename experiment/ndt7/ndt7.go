@@ -6,6 +6,7 @@ package ndt7
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,7 +20,7 @@ import (
 
 const (
 	testName    = "ndt"
-	testVersion = "0.6.0"
+	testVersion = "0.7.0"
 )
 
 // Config contains the experiment settings
@@ -290,4 +291,38 @@ func failureFromError(err error) (failure *string) {
 		failure = &s
 	}
 	return
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	Upload         float64 `json:"upload"`
+	Download       float64 `json:"download"`
+	Ping           float64 `json:"ping"`
+	MaxRTT         float64 `json:"max_rtt"`
+	AvgRTT         float64 `json:"avg_rtt"`
+	MinRTT         float64 `json:"min_rtt"`
+	MSS            float64 `json:"mss"`
+	RetransmitRate float64 `json:"retransmit_rate"`
+	IsAnomaly      bool    `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.Upload = tk.Summary.Upload
+	sk.Download = tk.Summary.Download
+	sk.Ping = tk.Summary.Ping
+	sk.MaxRTT = tk.Summary.MaxRTT
+	sk.AvgRTT = tk.Summary.AvgRTT
+	sk.MinRTT = tk.Summary.MinRTT
+	sk.MSS = float64(tk.Summary.MSS)
+	sk.RetransmitRate = tk.Summary.RetransmitRate
+	return sk, nil
 }

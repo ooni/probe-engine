@@ -13,7 +13,6 @@
 package libminiooni
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -22,20 +21,21 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
+	"github.com/ooni/probe-engine/version"
 	"github.com/pborman/getopt/v2"
 )
+
+// TODO(bassosimone): consider removing options from here now
+// that we have completely removed privacy settings.
 
 // Options contains the options you can set from the CLI.
 type Options struct {
@@ -43,7 +43,7 @@ type Options struct {
 	ExtraOptions     []string
 	HomeDir          string
 	Inputs           []string
-	InputFilePath    string
+	InputFilePaths   []string
 	NoBouncer        bool
 	NoGeoIP          bool
 	NoJSON           bool
@@ -60,7 +60,7 @@ type Options struct {
 
 const (
 	softwareName    = "miniooni"
-	softwareVersion = engine.Version
+	softwareVersion = version.Version
 )
 
 var (
@@ -77,7 +77,7 @@ func init() {
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.InputFilePath, "file", 'f',
+		&globalOptions.InputFilePaths, "file", 'f',
 		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
@@ -229,33 +229,14 @@ func gethomedir(optionsHome string) string {
 	return os.Getenv("HOME")
 }
 
-func loadFileInputs(opts *Options) {
-	if len(opts.InputFilePath) != 0 {
-		if len(opts.Inputs) != 0 {
-			fatalWithString("inputs can either be supplied through file or command line, but not both")
-		}
-		file, err := fsx.Open(opts.InputFilePath)
-		fatalOnError(err, "cannot read input file")
-		defer file.Close()
-		// Implementation note: when you save file with vim, you have newline at
-		// end of file and you don't want to consider that an input line. While there
-		// ignore any other empty line that may occur inside the file.
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if line != "" {
-				opts.Inputs = append(opts.Inputs, line)
-			}
-		}
-	}
-}
-
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
 //
 // This function will panic in case of a fatal error. It is up to you that
 // integrate this function to either handle the panic of ignore it.
 func MainWithConfiguration(experimentName string, currentOptions Options) {
+	ctx := context.Background()
+
 	extraOptions := mustMakeMap(currentOptions.ExtraOptions)
 	annotations := mustMakeMap(currentOptions.Annotations)
 
@@ -289,14 +270,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	fatalOnError(err, "cannot create kvstore2 directory")
 
 	config := engine.SessionConfig{
-		AssetsDir: assetsDir,
-		KVStore:   kvstore,
-		Logger:    logger,
-		PrivacySettings: model.PrivacySettings{
-			// See https://github.com/ooni/explorer/issues/495#issuecomment-704101604
-			IncludeASN:     currentOptions.NoGeoIP == false,
-			IncludeCountry: true,
-		},
+		AssetsDir:       assetsDir,
+		KVStore:         kvstore,
+		Logger:          logger,
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
@@ -342,48 +318,19 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	builder, err := sess.NewExperimentBuilder(experimentName)
 	fatalOnError(err, "cannot create experiment builder")
 
-	// load inputs from file, if present
-	loadFileInputs(&currentOptions)
+	inputLoader := engine.NewInputLoader(engine.InputLoaderConfig{
+		StaticInputs: currentOptions.Inputs,
+		SourceFiles:  currentOptions.InputFilePaths,
+		InputPolicy:  builder.InputPolicy(),
+		Session:      sess,
+		URLLimit:     17,
+	})
+	inputs, err := inputLoader.Load(context.Background())
+	fatalOnError(err, "cannot load inputs")
 
-	if builder.InputPolicy() == engine.InputRequired {
-		if len(currentOptions.Inputs) <= 0 {
-			log.Info("Fetching test lists")
-			client, err := sess.NewOrchestraClient(context.Background())
-			fatalOnError(err, "cannot create new orchestra client")
-			list, err := client.FetchURLList(context.Background(), model.URLListConfig{
-				CountryCode: sess.ProbeCC(),
-				Limit:       17,
-			})
-			fatalOnError(err, "cannot fetch test lists")
-			for _, entry := range list {
-				currentOptions.Inputs = append(currentOptions.Inputs, entry.URL)
-			}
-		}
-	} else if builder.InputPolicy() == engine.InputOptional {
-		if len(currentOptions.Inputs) == 0 {
-			currentOptions.Inputs = append(currentOptions.Inputs, "")
-		}
-	} else if len(currentOptions.Inputs) != 0 {
-		fatalWithString("this experiment does not expect any input")
-	} else {
-		// Tests that do not expect input internally require an empty input to run
-		currentOptions.Inputs = append(currentOptions.Inputs, "")
-	}
-	intregexp := regexp.MustCompile("^[0-9]+$")
-	for key, value := range extraOptions {
-		if value == "true" || value == "false" {
-			err := builder.SetOptionBool(key, value == "true")
-			fatalOnError(err, "cannot set boolean option")
-		} else if intregexp.MatchString(value) {
-			number, err := strconv.ParseInt(value, 10, 64)
-			fatalOnError(err, "cannot parse integer option")
-			err = builder.SetOptionInt(key, number)
-			fatalOnError(err, "cannot set integer option")
-		} else {
-			err := builder.SetOptionString(key, value)
-			fatalOnError(err, "cannot set string option")
-		}
-	}
+	err = builder.SetOptionsGuessType(extraOptions)
+	fatalOnError(err, "cannot parse extraOptions")
+
 	experiment := builder.NewExperiment()
 	defer func() {
 		log.Infof("experiment: recv %s, sent %s",
@@ -392,42 +339,72 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		)
 	}()
 
-	if !currentOptions.NoCollector {
-		log.Info("Opening report; please be patient...")
-		err := experiment.OpenReport()
-		fatalOnError(err, "cannot open report")
-		defer experiment.CloseReport()
-		log.Infof("Report ID: %s", experiment.ReportID())
-	}
+	submitter, err := engine.NewSubmitter(ctx, engine.SubmitterConfig{
+		Enabled:    currentOptions.NoCollector == false,
+		Experiment: experiment,
+	})
+	fatalOnError(err, "cannot create submitter")
 
-	usingTransport := map[string]string{
-		"false": " over TCP",
-		"true":  " over QUIC",
+	saver, err := engine.NewSaver(engine.SaverConfig{
+		Enabled:    currentOptions.NoJSON == false,
+		Experiment: experiment,
+		FilePath:   currentOptions.ReportFile,
+	})
+	fatalOnError(err, "cannot create saver")
+
+	inputProcessor := engine.InputProcessor{
+		Annotations: annotations,
+		Experiment: &experimentWrapper{
+			child: engine.NewInputProcessorExperimentWrapper(experiment),
+			total: len(inputs),
+		},
+		Inputs:  inputs,
+		Options: currentOptions.ExtraOptions,
+		Saver: saverWrapper{
+			child: engine.NewInputProcessorSaverWrapper(saver),
+		},
+		Submitter: submitterWrapper{
+			child: engine.NewInputProcessorSubmitterWrapper(submitter),
+		},
 	}
-	inputCount := len(currentOptions.Inputs)
-	inputCounter := 0
-	for _, input := range currentOptions.Inputs {
-		inputCounter++
-		if input != "" {
-			// TODO(kelmenhorst): log transport protocol information in http logging debug-mode-only functionality
-			proto := usingTransport[extraOptions["HTTP3Enabled"]]
-			log.Infof("[%d/%d] running%s with input: %s", inputCounter, inputCount, proto, input)
-		}
-		measurement, err := experiment.Measure(input)
-		warnOnError(err, "measurement failed")
-		measurement.AddAnnotations(annotations)
-		measurement.Options = currentOptions.ExtraOptions
-		if !currentOptions.NoCollector {
-			log.Infof("submitting measurement to OONI collector; please be patient...")
-			err := experiment.SubmitAndUpdateMeasurement(measurement)
-			warnOnError(err, "submitting measurement failed")
-		}
-		if !currentOptions.NoJSON {
-			// Note: must be after submission because submission modifies
-			// the measurement to include the report ID.
-			log.Infof("saving measurement to disk")
-			err := experiment.SaveMeasurement(measurement, currentOptions.ReportFile)
-			warnOnError(err, "saving measurement failed")
-		}
+	err = inputProcessor.Run(ctx)
+	fatalOnError(err, "inputProcessor.Run failed")
+}
+
+type experimentWrapper struct {
+	child engine.InputProcessorExperimentWrapper
+	total int
+}
+
+func (ew *experimentWrapper) MeasureWithContext(
+	ctx context.Context, idx int, input string) (*model.Measurement, error) {
+	if input != "" {
+		log.Infof("[%d/%d] running with input: %s", idx+1, ew.total, input)
 	}
+	measurement, err := ew.child.MeasureWithContext(ctx, idx, input)
+	warnOnError(err, "measurement failed")
+	// policy: we do not stop the loop if the measurement fails
+	return measurement, nil
+}
+
+type submitterWrapper struct {
+	child engine.InputProcessorSubmitterWrapper
+}
+
+func (sw submitterWrapper) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, idx int, m *model.Measurement) error {
+	log.Info("submitting measurement to OONI collector; please be patient...")
+	err := sw.child.SubmitAndUpdateMeasurementContext(ctx, idx, m)
+	warnOnError(err, "submitting measurement failed")
+	// policy: we do not stop the loop if measurement submission fails
+	return nil
+}
+
+type saverWrapper struct {
+	child engine.InputProcessorSaverWrapper
+}
+
+func (sw saverWrapper) SaveMeasurement(idx int, m *model.Measurement) error {
+	log.Info("saving measurement to disk")
+	return sw.child.SaveMeasurement(idx, m)
 }

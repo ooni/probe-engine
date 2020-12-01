@@ -21,7 +21,7 @@ func TestMeasurerExperimentNameVersion(t *testing.T) {
 	if measurer.ExperimentName() != "stun_reachability" {
 		t.Fatal("unexpected ExperimentName")
 	}
-	if measurer.ExperimentVersion() != "0.0.1" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Fatal("unexpected ExperimentVersion")
 	}
 }
@@ -112,6 +112,13 @@ func TestCancelledContext(t *testing.T) {
 	}
 	if len(tk.Queries) <= 0 {
 		t.Fatal("no DNS queries?!")
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(stunreachability.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -218,5 +225,18 @@ func TestReadFailure(t *testing.T) {
 	}
 	if len(tk.Queries) > 0 {
 		t.Fatal("DNS queries?!")
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &stunreachability.TestKeys{}}
+	m := &stunreachability.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(stunreachability.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
 	}
 }

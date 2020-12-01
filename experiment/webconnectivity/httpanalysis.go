@@ -184,6 +184,16 @@ func HTTPHeadersMatch(tk urlgetter.TestKeys, ctrl ControlResponse) *bool {
 	return &good
 }
 
+// GetTitle returns the title or an empty string.
+func GetTitle(measurementBody string) string {
+	re := regexp.MustCompile(`(?i)<title>([^<]{1,128})</title>`) // like MK
+	v := re.FindStringSubmatch(measurementBody)
+	if len(v) < 2 {
+		return ""
+	}
+	return v[1]
+}
+
 // HTTPTitleMatch returns whether the measurement and the control titles
 // reasonably match, or nil if not applicable.
 func HTTPTitleMatch(tk urlgetter.TestKeys, ctrl ControlResponse) (out *bool) {
@@ -202,12 +212,10 @@ func HTTPTitleMatch(tk urlgetter.TestKeys, ctrl ControlResponse) (out *bool) {
 	}
 	control := ctrl.HTTPRequest.Title
 	measurementBody := response.Body.Value
-	re := regexp.MustCompile(`(?i)<title>([^<]{1,128})</title>`) // like MK
-	v := re.FindStringSubmatch(measurementBody)
-	if len(v) < 2 {
+	measurement := GetTitle(measurementBody)
+	if measurement == "" {
 		return
 	}
-	measurement := v[1]
 	const (
 		inMeasurement = 1 << 0
 		inControl     = 1 << 1

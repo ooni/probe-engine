@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/ooni/probe-engine/internal/humanizex"
 )
 
 // ExperimentOrchestraClient is the experiment's view of
@@ -27,7 +25,7 @@ type ExperimentSession interface {
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
 	ProbeCC() string
 	ProxyURL() *url.URL
-	MaybeResolverIP() string
+	ResolverIP() string
 	TempDir() string
 	TorArgs() []string
 	TorBinary() string
@@ -37,12 +35,6 @@ type ExperimentSession interface {
 
 // ExperimentCallbacks contains experiment event-handling callbacks
 type ExperimentCallbacks interface {
-	// OnDataUsage provides information about data usage.
-	//
-	// This callback is deprecated and will be removed once we have
-	// removed the dependency on Measurement Kit.
-	OnDataUsage(dloadKiB, uploadKiB float64)
-
 	// OnProgress provides information about an experiment progress.
 	OnProgress(percentage float64, message string)
 }
@@ -55,14 +47,6 @@ type PrinterCallbacks struct {
 // NewPrinterCallbacks returns a new default callback handler
 func NewPrinterCallbacks(logger Logger) PrinterCallbacks {
 	return PrinterCallbacks{Logger: logger}
-}
-
-// OnDataUsage provides information about data usage.
-func (d PrinterCallbacks) OnDataUsage(dloadKiB, uploadKiB float64) {
-	d.Logger.Infof("experiment: recv %s, sent %s",
-		humanizex.SI(dloadKiB*1024, "byte"),
-		humanizex.SI(uploadKiB*1024, "byte"),
-	)
 }
 
 // OnProgress provides information about an experiment progress.
@@ -90,4 +74,7 @@ type ExperimentMeasurer interface {
 		ctx context.Context, sess ExperimentSession,
 		measurement *Measurement, callbacks ExperimentCallbacks,
 	) error
+
+	// GetSummaryKeys returns summary keys expected by ooni/probe-cli.
+	GetSummaryKeys(*Measurement) (interface{}, error)
 }

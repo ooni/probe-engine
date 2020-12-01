@@ -21,7 +21,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "http_host_header" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.2.0" {
+	if measurer.ExperimentVersion() != "0.3.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -52,6 +52,13 @@ func TestMeasurerMeasureNoTestHelper(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -84,4 +91,17 @@ func TestRunnerHTTPSetHostHeader(t *testing.T) {
 
 func newsession() model.ExperimentSession {
 	return &mockable.Session{MockableLogger: log.Log}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
 }

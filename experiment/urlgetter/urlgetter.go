@@ -14,7 +14,7 @@ import (
 
 const (
 	testName    = "urlgetter"
-	testVersion = "0.0.3"
+	testVersion = "0.1.0"
 )
 
 // Config contains the experiment's configuration.
@@ -73,19 +73,23 @@ func RegisterExtensions(m *model.Measurement) {
 	archival.ExtTunnel.AddTo(m)
 }
 
-type measurer struct {
+// Measurer performs the measurement.
+type Measurer struct {
 	Config
 }
 
-func (m measurer) ExperimentName() string {
+// ExperimentName implements model.ExperimentSession.ExperimentName
+func (m Measurer) ExperimentName() string {
 	return testName
 }
 
-func (m measurer) ExperimentVersion() string {
+// ExperimentVersion implements model.ExperimentSession.ExperimentVersion
+func (m Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
-func (m measurer) Run(
+// Run implements model.ExperimentSession.Run
+func (m Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -102,11 +106,24 @@ func (m measurer) Run(
 		Target:  string(measurement.Input),
 	}
 	tk, err := g.Get(ctx)
-	measurement.TestKeys = tk
+	measurement.TestKeys = &tk
 	return err
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return measurer{Config: config}
+	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	return SummaryKeys{IsAnomaly: false}, nil
 }

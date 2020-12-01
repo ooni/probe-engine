@@ -25,6 +25,7 @@ import (
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/resources"
+	"github.com/ooni/probe-engine/version"
 )
 
 // SessionConfig contains the Session config
@@ -33,7 +34,6 @@ type SessionConfig struct {
 	AvailableProbeServices []model.Service
 	KVStore                KVStore
 	Logger                 model.Logger
-	PrivacySettings        model.PrivacySettings
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
@@ -50,7 +50,6 @@ type Session struct {
 	byteCounter              *bytecounter.Counter
 	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
-	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
 	logger                   model.Logger
 	proxyURL                 *url.URL
@@ -98,7 +97,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 		availableProbeServices:  config.AvailableProbeServices,
 		byteCounter:             bytecounter.New(),
 		kvStore:                 config.KVStore,
-		privacySettings:         config.PrivacySettings,
 		logger:                  config.Logger,
 		proxyURL:                config.ProxyURL,
 		queryProbeServicesCount: atomicx.NewInt64(),
@@ -187,6 +185,11 @@ func (s *Session) MaybeLookupLocation() error {
 // MaybeLookupBackends is a caching OONI backends lookup call.
 func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
+}
+
+// MaybeLookupBackendsContext is like MaybeLookupBackends but with context.
+func (s *Session) MaybeLookupBackendsContext(ctx context.Context) (err error) {
+	return s.maybeLookupBackends(ctx)
 }
 
 // ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
@@ -408,7 +411,7 @@ func (s *Session) TunnelBootstrapTime() time.Duration {
 // UserAgent constructs the user agent to be used in this session.
 func (s *Session) UserAgent() (useragent string) {
 	useragent += s.softwareName + "/" + s.softwareVersion
-	useragent += " ooniprobe-engine/" + Version
+	useragent += " ooniprobe-engine/" + version.Version
 	return
 }
 

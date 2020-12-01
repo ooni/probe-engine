@@ -6,6 +6,7 @@ package psiphon
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 
 const (
 	testName    = "psiphon"
-	testVersion = "0.4.0"
+	testVersion = "0.5.0"
 )
 
 // Config contains the experiment's configuration.
@@ -94,7 +95,7 @@ func (m *Measurer) Run(
 	tk, err := g.Get(ctx)
 	cancel()
 	wg.Wait()
-	measurement.TestKeys = TestKeys{
+	measurement.TestKeys = &TestKeys{
 		TestKeys:   tk,
 		MaxRuntime: maxruntime,
 	}
@@ -104,4 +105,29 @@ func (m *Measurer) Run(
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return &Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	BootstrapTime float64 `json:"bootstrap_time"`
+	Failure       string  `json:"failure"`
+	IsAnomaly     bool    `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	if tk.Failure != nil {
+		sk.Failure = *tk.Failure
+		sk.IsAnomaly = true
+	}
+	sk.BootstrapTime = tk.BootstrapTime
+	return sk, nil
 }
