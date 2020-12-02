@@ -1,6 +1,6 @@
-// Package urlgetter implements a nettest that fetches a URL. This is not
-// an official OONI nettest, but rather is a probe-engine specific internal
-// experimental nettest that can be useful to do research.
+// Package urlgetter implements a nettest that fetches a URL.
+//
+// See https://github.com/ooni/spec/blob/master/nettests/ts-027-urlgetter.md.
 package urlgetter
 
 import (
@@ -69,6 +69,7 @@ func RegisterExtensions(m *model.Measurement) {
 	archival.ExtHTTP.AddTo(m)
 	archival.ExtDNS.AddTo(m)
 	archival.ExtNetevents.AddTo(m)
+	archival.ExtTCPConnect.AddTo(m)
 	archival.ExtTLSHandshake.AddTo(m)
 	archival.ExtTunnel.AddTo(m)
 }
