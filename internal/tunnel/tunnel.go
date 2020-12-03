@@ -1,3 +1,4 @@
+// Package tunnel contains code to create a psiphon or tor tunnel.
 package tunnel
 
 import (
