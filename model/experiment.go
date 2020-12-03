@@ -3,8 +3,6 @@ package model
 import (
 	"context"
 	"net/http"
-	"net/url"
-	"time"
 )
 
 // ExperimentOrchestraClient is the experiment's view of
@@ -21,13 +19,12 @@ type ExperimentSession interface {
 	GetTestHelpersByName(name string) ([]Service, bool)
 	DefaultHTTPClient() *http.Client
 	Logger() Logger
-	MaybeStartTunnel(ctx context.Context, name string) error
 	NewOrchestraClient(ctx context.Context) (ExperimentOrchestraClient, error)
 	ProbeCC() string
-	ProxyURL() *url.URL
 	ResolverIP() string
 	TempDir() string
-	TunnelBootstrapTime() time.Duration
+	TorArgs() []string
+	TorBinary() string
 	UserAgent() string
 }
 

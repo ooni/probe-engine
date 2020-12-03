@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
@@ -19,7 +18,7 @@ import (
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -64,7 +63,7 @@ type Session struct {
 	torBinary                string
 	tunnelMu                 sync.Mutex
 	tunnelName               string
-	tunnel                   sessiontunnel.Tunnel
+	tunnel                   tunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -226,7 +225,7 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 		// sets a proxy, the second check for s.tunnel is for robustness.
 		return ErrAlreadyUsingProxy
 	}
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name:    name,
 		Session: s,
 	})
@@ -397,15 +396,6 @@ func (s *Session) TorArgs() []string {
 // we will attempt to use "tor". Applies to `-OTunnel=tor` mainly.
 func (s *Session) TorBinary() string {
 	return s.torBinary
-}
-
-// TunnelBootstrapTime returns the time required to bootstrap the tunnel
-// we're using, or zero if we're using no tunnel.
-func (s *Session) TunnelBootstrapTime() time.Duration {
-	if s.tunnel == nil {
-		return 0
-	}
-	return s.tunnel.BootstrapTime()
 }
 
 // UserAgent constructs the user agent to be used in this session.

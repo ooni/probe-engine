@@ -20,9 +20,7 @@ const (
 )
 
 // Config contains the experiment's configuration.
-type Config struct {
-	urlgetter.Config
-}
+type Config struct{}
 
 // TestKeys contains the experiment's result.
 type TestKeys struct {
@@ -74,17 +72,20 @@ func (m *Measurer) Run(
 ) error {
 	const maxruntime = 60
 	ctx, cancel := context.WithTimeout(ctx, maxruntime*time.Second)
-	var wg sync.WaitGroup
+	var (
+		wg     sync.WaitGroup
+		config urlgetter.Config
+	)
 	wg.Add(1)
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
-	m.Config.Tunnel = "psiphon" // force to use psiphon tunnel
+	config.Tunnel = "psiphon" // force to use psiphon tunnel
 	urlgetter.RegisterExtensions(measurement)
 	target := "https://www.google.com/humans.txt"
 	if measurement.Input != "" {
 		target = string(measurement.Input)
 	}
 	g := urlgetter.Getter{
-		Config:  m.Config.Config,
+		Config:  config,
 		Session: sess,
 		Target:  target,
 	}
