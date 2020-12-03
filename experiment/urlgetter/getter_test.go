@@ -221,7 +221,7 @@ func TestGetterWithCancelledContextNoFollowRedirects(t *testing.T) {
 
 func TestGetterWithCancelledContextCannotStartTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	cancel() // fail immediately
 	g := urlgetter.Getter{
 		Session: &mockable.Session{
 			MockableMaybeStartTunnelErr: io.EOF,
