@@ -101,8 +101,8 @@ func (g Getter) get(ctx context.Context, saver *trace.Saver) (TestKeys, error) {
 			return tk, err
 		}
 		tk.BootstrapTime = tun.BootstrapTime().Seconds()
-		tk.SOCKSProxy = tun.SOCKS5ProxyURL().String()
 		proxyURL = tun.SOCKS5ProxyURL()
+		tk.SOCKSProxy = proxyURL.String()
 		defer tun.Stop()
 	}
 	// create configuration

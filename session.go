@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
@@ -397,15 +396,6 @@ func (s *Session) TorArgs() []string {
 // we will attempt to use "tor". Applies to `-OTunnel=tor` mainly.
 func (s *Session) TorBinary() string {
 	return s.torBinary
-}
-
-// TunnelBootstrapTime returns the time required to bootstrap the tunnel
-// we're using, or zero if we're using no tunnel.
-func (s *Session) TunnelBootstrapTime() time.Duration {
-	if s.tunnel == nil {
-		return 0
-	}
-	return s.tunnel.BootstrapTime()
 }
 
 // UserAgent constructs the user agent to be used in this session.

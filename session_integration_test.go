@@ -467,9 +467,6 @@ func TestStartTunnelGood(t *testing.T) {
 	if sess.ProxyURL() == nil {
 		t.Fatal("expected non-nil ProxyURL")
 	}
-	if sess.TunnelBootstrapTime() <= 0 {
-		t.Fatal("expected positive boostrap time")
-	}
 }
 
 func TestStartTunnelNonexistent(t *testing.T) {
