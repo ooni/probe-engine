@@ -7,9 +7,6 @@ import (
 	"net"
 )
 
-// TODO(bassosimone): this code should be moved into the
-// measurement.go file and this file should be deleted
-
 // ErrInvalidProbeIP indicates that we're dealing with a string that
 // is not the valid serialization of an IP address.
 var ErrInvalidProbeIP = errors.New("model: invalid probe IP")
