@@ -34,9 +34,6 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
-// TODO(bassosimone): consider removing options from here now
-// that we have completely removed privacy settings.
-
 // Options contains the options you can set from the CLI.
 type Options struct {
 	Annotations      []string
@@ -44,8 +41,6 @@ type Options struct {
 	HomeDir          string
 	Inputs           []string
 	InputFilePaths   []string
-	NoBouncer        bool
-	NoGeoIP          bool
 	NoJSON           bool
 	NoCollector      bool
 	ProbeServicesURL string
@@ -87,13 +82,6 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.Inputs, "input", 'i',
 		"Add test-dependent input to the test input", "INPUT",
-	)
-	getopt.FlagLong(
-		&globalOptions.NoBouncer, "no-bouncer", 0, "Don't use the OONI bouncer",
-	)
-	getopt.FlagLong(
-		&globalOptions.NoGeoIP, "no-geoip", 'g',
-		"Disable including ASN information into the report",
 	)
 	getopt.FlagLong(
 		&globalOptions.NoJSON, "no-json", 'N', "Disable writing to disk",
@@ -300,11 +288,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
 	fatalOnError(err, "cannot start session tunnel")
 
-	if !currentOptions.NoBouncer {
-		log.Info("Looking up OONI backends; please be patient...")
-		err := sess.MaybeLookupBackends()
-		fatalOnError(err, "cannot lookup OONI backends")
-	}
+	log.Info("Looking up OONI backends; please be patient...")
+	err = sess.MaybeLookupBackends()
+	fatalOnError(err, "cannot lookup OONI backends")
 	log.Info("Looking up your location; please be patient...")
 	err = sess.MaybeLookupLocation()
 	fatalOnError(err, "cannot lookup your location")
