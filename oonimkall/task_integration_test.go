@@ -3,13 +3,14 @@ package oonimkall_test
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
+	"github.com/ooni/probe-engine/oonimkall/tasks"
 )
 
 type eventlike struct {
@@ -29,7 +30,8 @@ func TestGood(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -45,6 +47,9 @@ func TestGood(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
+		if event.Key == "failure.startup" {
+			t.Fatal("unexpected failure.startup event")
+		}
 	}
 	// make sure we only see task_terminated at this point
 	for {
@@ -57,34 +62,6 @@ func TestGood(t *testing.T) {
 			t.Fatalf("unexpected event.Key: %s", event.Key)
 		}
 		break
-	}
-}
-
-func TestGoodWithoutGeoIPLookup(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../testdata/oonimkall/assets",
-		"log_level": "DEBUG",
-		"name": "Example",
-		"options": {
-			"no_geoip": true,
-			"no_resolver_lookup": true,
-			"software_name": "oonimkall-test",
-			"software_version": "0.1.0"
-		},
-		"state_dir": "../testdata/oonimkall/state"
-	}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for !task.IsDone() {
-		eventstr := task.WaitForNextEvent()
-		var event eventlike
-		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 
@@ -102,7 +79,8 @@ func TestWithMeasurementFailure(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -113,13 +91,13 @@ func TestWithMeasurementFailure(t *testing.T) {
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
+		if event.Key == "failure.startup" {
+			t.Fatal("unexpected failure.startup event")
+		}
 	}
 }
 
 func TestInvalidJSON(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	task, err := oonimkall.StartTask(`{`)
 	var syntaxerr *json.SyntaxError
 	if !errors.As(err, &syntaxerr) {
@@ -131,12 +109,8 @@ func TestInvalidJSON(t *testing.T) {
 }
 
 func TestUnsupportedSetting(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
-		"input_filepaths": ["/nonexistent"],
 		"log_level": "DEBUG",
 		"name": "Example",
 		"options": {
@@ -156,18 +130,17 @@ func TestUnsupportedSetting(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Key == "failure.startup" {
-			seen = true
+			if strings.Contains(eventstr, tasks.FailureInvalidVersion) {
+				seen = true
+			}
 		}
 	}
 	if !seen {
-		t.Fatal("did not see failure.startup")
+		t.Fatal("did not see failure.startup with invalid version info")
 	}
 }
 
 func TestEmptyStateDir(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -175,7 +148,8 @@ func TestEmptyStateDir(t *testing.T) {
 		"options": {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
-		}
+		},
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -188,18 +162,17 @@ func TestEmptyStateDir(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Key == "failure.startup" {
-			seen = true
+			if strings.Contains(eventstr, "mkdir : no such file or directory") {
+				seen = true
+			}
 		}
 	}
 	if !seen {
-		t.Fatal("did not see failure.startup")
+		t.Fatal("did not see failure.startup with info that state dir is empty")
 	}
 }
 
 func TestEmptyAssetsDir(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	task, err := oonimkall.StartTask(`{
 		"log_level": "DEBUG",
 		"name": "Example",
@@ -207,7 +180,8 @@ func TestEmptyAssetsDir(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -220,7 +194,9 @@ func TestEmptyAssetsDir(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Key == "failure.startup" {
-			seen = true
+			if strings.Contains(eventstr, "AssetsDir is empty") {
+				seen = true
+			}
 		}
 	}
 	if !seen {
@@ -229,9 +205,6 @@ func TestEmptyAssetsDir(t *testing.T) {
 }
 
 func TestUnknownExperiment(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"log_level": "DEBUG",
@@ -240,7 +213,8 @@ func TestUnknownExperiment(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -253,42 +227,9 @@ func TestUnknownExperiment(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Key == "failure.startup" {
-			seen = true
-		}
-	}
-	if !seen {
-		t.Fatal("did not see failure.startup")
-	}
-}
-
-func TestInconsistentGeoIPSettings(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	task, err := oonimkall.StartTask(`{
-		"assets_dir": "../testdata/oonimkall/assets",
-		"log_level": "DEBUG",
-		"name": "Example",
-		"options": {
-			"no_geoip": true,
-			"no_resolver_lookup": false,
-			"software_name": "oonimkall-test",
-			"software_version": "0.1.0"
-		},
-		"state_dir": "../testdata/oonimkall/state"
-	}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var seen bool
-	for !task.IsDone() {
-		eventstr := task.WaitForNextEvent()
-		var event eventlike
-		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
-			t.Fatal(err)
-		}
-		if event.Key == "failure.startup" {
-			seen = true
+			if strings.Contains(eventstr, "no such experiment: ") {
+				seen = true
+			}
 		}
 	}
 	if !seen {
@@ -308,7 +249,8 @@ func TestInputIsRequired(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -321,7 +263,9 @@ func TestInputIsRequired(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Key == "failure.startup" {
-			seen = true
+			if strings.Contains(eventstr, "no input provided") {
+				seen = true
+			}
 		}
 	}
 	if !seen {
@@ -343,13 +287,21 @@ func TestMaxRuntime(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for !task.IsDone() {
-		task.WaitForNextEvent()
+		eventstr := task.WaitForNextEvent()
+		var event eventlike
+		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+			t.Fatal(err)
+		}
+		if event.Key == "failure.startup" {
+			t.Fatal(eventstr)
+		}
 	}
 	// The runtime is long because of ancillary operations and is even more
 	// longer because of self shaping we may be performing (especially in
@@ -373,8 +325,6 @@ func TestInterruptExampleWithInput(t *testing.T) {
 		t.Skip("skip test in short mode")
 	}
 	t.Skip("Skipping broken test; see https://github.com/ooni/probe-engine/issues/992")
-	// We cannot use WebConnectivity until it's written in Go since
-	// measurement-kit may not always be available
 	task, err := oonimkall.StartTask(`{
 		"assets_dir": "../testdata/oonimkall/assets",
 		"inputs": [
@@ -391,7 +341,8 @@ func TestInterruptExampleWithInput(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -404,6 +355,8 @@ func TestInterruptExampleWithInput(t *testing.T) {
 			t.Fatal(err)
 		}
 		switch event.Key {
+		case "failure.startup":
+			t.Fatal(eventstr)
 		case "status.measurement_start":
 			go task.Interrupt()
 		}
@@ -446,7 +399,8 @@ func TestInterruptNdt7(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -461,6 +415,9 @@ func TestInterruptNdt7(t *testing.T) {
 		var event eventlike
 		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
+		}
+		if event.Key == "failure.startup" {
+			t.Fatal(eventstr)
 		}
 		// We compress the keys because we don't know how many
 		// status.progress we will see. What matters is that we
@@ -499,7 +456,8 @@ func TestCountBytesForExample(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)
@@ -512,6 +470,8 @@ func TestCountBytesForExample(t *testing.T) {
 			t.Fatal(err)
 		}
 		switch event.Key {
+		case "failure.startup":
+			t.Fatal(eventstr)
 		case "status.end":
 			downloadKB = event.Value["downloaded_kb"].(float64)
 			uploadKB = event.Value["uploaded_kb"].(float64)
@@ -525,83 +485,45 @@ func TestCountBytesForExample(t *testing.T) {
 	}
 }
 
-// TODO(bassosimone): we should check whether we need to update
-// other tests in oonimkall after we've removed privacy settings.
-
 func TestPrivacyAndScrubbing(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
-	// TODO(bassosimone): this function here needs to be simplified since
-	// currently we're just adapting its behaviour after removing the possibility
-	// of setting the privacy settings for the user.
-	do := func(saveASN, saveCC, saveIP bool) (string, string, string) {
-		task, err := oonimkall.StartTask(fmt.Sprintf(`{
+	task, err := oonimkall.StartTask(`{
 			"assets_dir": "../testdata/oonimkall/assets",
 			"name": "Example",
 			"options": {
-				"save_real_probe_asn": %+v,
-				"save_real_probe_cc": %+v,
-				"save_real_probe_ip": %+v,
 				"software_name": "oonimkall-test",
 				"software_version": "0.1.0"
 			},
-			"state_dir": "../testdata/oonimkall/state"
-		}`, saveASN, saveCC, saveIP))
-		if err != nil {
+			"state_dir": "../testdata/oonimkall/state",
+			"version": 1
+		}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var m *model.Measurement
+	for !task.IsDone() {
+		eventstr := task.WaitForNextEvent()
+		var event eventlike
+		if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
 			t.Fatal(err)
 		}
-		var measurement *model.Measurement
-		for !task.IsDone() {
-			eventstr := task.WaitForNextEvent()
-			var event eventlike
-			if err := json.Unmarshal([]byte(eventstr), &event); err != nil {
+		switch event.Key {
+		case "failure.startup":
+			t.Fatal(eventstr)
+		case "measurement":
+			v := []byte(event.Value["json_str"].(string))
+			m = new(model.Measurement)
+			if err := json.Unmarshal(v, &m); err != nil {
 				t.Fatal(err)
 			}
-			switch event.Key {
-			case "measurement":
-				v := []byte(event.Value["json_str"].(string))
-				measurement = new(model.Measurement)
-				if err := json.Unmarshal(v, &measurement); err != nil {
-					t.Fatal(err)
-				}
-			}
 		}
-		if measurement == nil {
-			t.Fatal("measurement is nil")
-		}
-		return measurement.ProbeASN, measurement.ProbeCC, measurement.ProbeIP
 	}
-	asn, cc, ip := do(false, false, false)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
+	if m == nil {
+		t.Fatal("measurement is nil")
 	}
-	asn, cc, ip = do(false, false, true)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(false, true, false)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(true, false, false)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(true, false, true)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(true, true, false)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(false, true, true)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
-		t.Fatal("unexpected result")
-	}
-	asn, cc, ip = do(true, true, true)
-	if asn == "AS0" || cc == "ZZ" || ip != "127.0.0.1" {
+	if m.ProbeASN == "AS0" || m.ProbeCC == "ZZ" || m.ProbeIP != "127.0.0.1" {
 		t.Fatal("unexpected result")
 	}
 }
@@ -617,7 +539,8 @@ func TestNonblock(t *testing.T) {
 			"software_name": "oonimkall-test",
 			"software_version": "0.1.0"
 		},
-		"state_dir": "../testdata/oonimkall/state"
+		"state_dir": "../testdata/oonimkall/state",
+		"version": 1
 	}`)
 	if err != nil {
 		t.Fatal(err)

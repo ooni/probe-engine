@@ -58,117 +58,16 @@ func NewRunner(settings *Settings, out chan<- *Event) *Runner {
 	}
 }
 
-func (r *Runner) hasUnsupportedSettings(logger *ChanLogger) (unsupported bool) {
-	sadly := func(why string) {
-		r.emitter.EmitFailureStartup(why)
-		unsupported = true
-	}
-	if r.settings.InputFilepaths != nil {
-		sadly("InputFilepaths: not supported")
-	}
-	if r.settings.Options.AllEndpoints != nil {
-		logger.Warn("Options.AllEndpoints: not supported")
-	}
-	if r.settings.Options.Backend != "" {
-		sadly("Options.Backend: not supported")
-	}
-	if r.settings.Options.BouncerBaseURL != "" {
-		sadly("Options.BouncerBaseURL: not supported")
-	}
-	if r.settings.Options.CABundlePath != "" {
-		logger.Warn("Options.CABundlePath: not supported")
-	}
-	if r.settings.Options.CollectorBaseURL != "" {
-		sadly("Options.CollectorBaseURL: not supported")
-	}
-	if r.settings.Options.ConstantBitrate != nil {
-		logger.Warn("Options.ConstantBitrate: not supported")
-	}
-	if r.settings.Options.DNSNameserver != nil {
-		logger.Warn("Options.DNSNameserver: not supported")
-	}
-	if r.settings.Options.DNSEngine != nil {
-		logger.Warn("Options.DNSEngine: not supported")
-	}
-	if r.settings.Options.ExpectedBody != nil {
-		logger.Warn("Options.ExpectedBody: not supported")
-	}
-	if r.settings.Options.GeoIPASNPath != "" {
-		logger.Warn("Options.GeoIPASNPath: not supported")
-	}
-	if r.settings.Options.GeoIPCountryPath != "" {
-		logger.Warn("Options.GeoIPCountryPath: not supported")
-	}
-	if r.settings.Options.Hostname != nil {
-		logger.Warn("Options.Hostname: not supported")
-	}
-	if r.settings.Options.IgnoreBouncerError != nil {
-		logger.Warn("Options.IgnoreBouncerError: not supported")
-	}
-	if r.settings.Options.IgnoreOpenReportError != nil {
-		logger.Warn("Options.IgnoreOpenReportError: not supported")
-	}
-	if r.settings.Options.MLabNSAddressFamily != nil {
-		logger.Warn("Options.MLabNSAddressFamily: not supported")
-	}
-	if r.settings.Options.MLabNSBaseURL != nil {
-		logger.Warn("Options.MLabNSBaseURL: not supported")
-	}
-	if r.settings.Options.MLabNSCountry != nil {
-		logger.Warn("Options.MLabNSCountry: not supported")
-	}
-	if r.settings.Options.MLabNSMetro != nil {
-		logger.Warn("Options.MLabNSMetro: not supported")
-	}
-	if r.settings.Options.MLabNSPolicy != nil {
-		logger.Warn("Options.MLabNSPolicy: not supported")
-	}
-	if r.settings.Options.MLabNSToolName != nil {
-		logger.Warn("Options.MLabNSToolName: not supported")
-	}
-	if r.settings.Options.Port != nil {
-		sadly("Options.Port: not supported")
-	}
-	if r.settings.Options.ProbeASN != "" {
-		logger.Warn("Options.ProbeASN: not supported")
-	}
-	if r.settings.Options.ProbeCC != "" {
-		logger.Warn("Options.ProbeCC: not supported")
-	}
-	if r.settings.Options.ProbeIP != "" {
-		logger.Warn("Options.ProbeIP: not supported")
-	}
-	if r.settings.Options.ProbeNetworkName != "" {
-		logger.Warn("Options.ProbeNetworkName: not supported")
-	}
-	if r.settings.Options.RandomizeInput != false {
-		sadly("Options.RandomizeInput: not supported")
-	}
-	if r.settings.Options.SaveRealResolverIP != nil {
-		sadly("Options.SaveRealResolverIP: not supported")
-	}
-	if r.settings.Options.Server != nil {
-		sadly("Options.Server: not supported")
-	}
-	if r.settings.Options.TestSuite != nil {
-		sadly("Options.TestSuite: not supported")
-	}
-	if r.settings.Options.Timeout != nil {
-		sadly("Options.Timeout: not supported")
-	}
-	if r.settings.Options.UUID != nil {
-		sadly("Options.UUID: not supported")
-	}
-	if r.settings.OutputFilepath != "" && r.settings.Options.NoFileReport == false {
-		sadly("OutputFilepath && !NoFileReport: not supported")
-	}
-	// TODO(bassosimone): intercept IgnoreBouncerFailureError and
-	// return a failure if such variable is true.
-	return
-}
+// FailureInvalidVersion is the failure returned when Version is invalid
+const FailureInvalidVersion = "invalid Settings.Version number"
 
-// TODO(bassosimone): we should disable SaveRealProbeASN,
-// SaveRealProbeCC, and SaveRealProbeIP.
+func (r *Runner) hasUnsupportedSettings(logger *ChanLogger) bool {
+	if r.settings.Version < 1 {
+		r.emitter.EmitFailureStartup(FailureInvalidVersion)
+		return true
+	}
+	return false
+}
 
 func (r *Runner) newsession(logger *ChanLogger) (*engine.Session, error) {
 	kvstore, err := engine.NewFileSystemKVStore(r.settings.StateDir)
@@ -239,48 +138,40 @@ func (r *Runner) Run(ctx context.Context) {
 		return
 	}
 
-	if !r.settings.Options.NoBouncer {
-		logger.Info("Looking up OONI backends... please, be patient")
-		if err := sess.MaybeLookupBackends(); err != nil {
-			r.emitter.EmitFailureStartup(err.Error())
-			return
-		}
-		r.emitter.EmitStatusProgress(0.1, "contacted bouncer")
-	}
-	if !r.settings.Options.NoGeoIP && !r.settings.Options.NoResolverLookup {
-		logger.Info("Looking up your location... please, be patient")
-		maybeLookupLocation := r.maybeLookupLocation
-		if maybeLookupLocation == nil {
-			maybeLookupLocation = func(sess *engine.Session) error {
-				return sess.MaybeLookupLocation()
-			}
-		}
-		if err := maybeLookupLocation(sess); err != nil {
-			r.emitter.EmitFailureGeneric(failureIPLookup, err.Error())
-			r.emitter.EmitFailureGeneric(failureASNLookup, err.Error())
-			r.emitter.EmitFailureGeneric(failureCCLookup, err.Error())
-			r.emitter.EmitFailureGeneric(failureResolverLookup, err.Error())
-			return
-		}
-		r.emitter.EmitStatusProgress(0.2, "geoip lookup")
-		r.emitter.EmitStatusProgress(0.3, "resolver lookup")
-		r.emitter.Emit(statusGeoIPLookup, eventStatusGeoIPLookup{
-			ProbeIP:          sess.ProbeIP(),
-			ProbeASN:         sess.ProbeASNString(),
-			ProbeCC:          sess.ProbeCC(),
-			ProbeNetworkName: sess.ProbeNetworkName(),
-		})
-		r.emitter.Emit(statusResolverLookup, eventStatusResolverLookup{
-			ResolverASN:         sess.ResolverASNString(),
-			ResolverIP:          sess.ResolverIP(),
-			ResolverNetworkName: sess.ResolverNetworkName(),
-		})
-	} else if r.settings.Options.NoGeoIP && r.settings.Options.NoResolverLookup {
-		logger.Warn("Not looking up your location")
-	} else {
-		r.emitter.EmitFailureStartup("Inconsistent NoGeoIP and NoResolverLookup options")
+	logger.Info("Looking up OONI backends... please, be patient")
+	if err := sess.MaybeLookupBackends(); err != nil {
+		r.emitter.EmitFailureStartup(err.Error())
 		return
 	}
+	r.emitter.EmitStatusProgress(0.1, "contacted bouncer")
+
+	logger.Info("Looking up your location... please, be patient")
+	maybeLookupLocation := r.maybeLookupLocation
+	if maybeLookupLocation == nil {
+		maybeLookupLocation = func(sess *engine.Session) error {
+			return sess.MaybeLookupLocation()
+		}
+	}
+	if err := maybeLookupLocation(sess); err != nil {
+		r.emitter.EmitFailureGeneric(failureIPLookup, err.Error())
+		r.emitter.EmitFailureGeneric(failureASNLookup, err.Error())
+		r.emitter.EmitFailureGeneric(failureCCLookup, err.Error())
+		r.emitter.EmitFailureGeneric(failureResolverLookup, err.Error())
+		return
+	}
+	r.emitter.EmitStatusProgress(0.2, "geoip lookup")
+	r.emitter.EmitStatusProgress(0.3, "resolver lookup")
+	r.emitter.Emit(statusGeoIPLookup, eventStatusGeoIPLookup{
+		ProbeIP:          sess.ProbeIP(),
+		ProbeASN:         sess.ProbeASNString(),
+		ProbeCC:          sess.ProbeCC(),
+		ProbeNetworkName: sess.ProbeNetworkName(),
+	})
+	r.emitter.Emit(statusResolverLookup, eventStatusResolverLookup{
+		ResolverASN:         sess.ResolverASNString(),
+		ResolverIP:          sess.ResolverIP(),
+		ResolverNetworkName: sess.ResolverNetworkName(),
+	})
 
 	builder.SetCallbacks(&runnerCallbacks{emitter: r.emitter})
 	if len(r.settings.Inputs) <= 0 {
