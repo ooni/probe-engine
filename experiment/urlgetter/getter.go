@@ -3,6 +3,7 @@ package urlgetter
 import (
 	"context"
 	"net/url"
+	"path/filepath"
 	"time"
 
 	"github.com/ooni/probe-engine/internal/sessiontunnel"
@@ -94,6 +95,7 @@ func (g Getter) get(ctx context.Context, saver *trace.Saver) (TestKeys, error) {
 		tun, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
 			Name:    g.Config.Tunnel,
 			Session: g.Session,
+			WorkDir: filepath.Join(g.Session.TempDir(), "urlgetter-tunnel"),
 		})
 		if err != nil {
 			return tk, err
