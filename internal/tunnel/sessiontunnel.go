@@ -1,4 +1,4 @@
-package sessiontunnel
+package tunnel
 
 import (
 	"context"

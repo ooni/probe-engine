@@ -19,7 +19,7 @@ import (
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
@@ -64,7 +64,7 @@ type Session struct {
 	torBinary                string
 	tunnelMu                 sync.Mutex
 	tunnelName               string
-	tunnel                   sessiontunnel.Tunnel
+	tunnel                   tunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -226,7 +226,7 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 		// sets a proxy, the second check for s.tunnel is for robustness.
 		return ErrAlreadyUsingProxy
 	}
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name:    name,
 		Session: s,
 	})

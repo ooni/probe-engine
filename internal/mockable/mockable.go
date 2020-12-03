@@ -9,7 +9,7 @@ import (
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/internal/torx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
@@ -156,7 +156,7 @@ func (sess *Session) UserAgent() string {
 var _ model.ExperimentSession = &Session{}
 var _ probeservices.Session = &Session{}
 var _ psiphonx.Session = &Session{}
-var _ sessiontunnel.Session = &Session{}
+var _ tunnel.Session = &Session{}
 var _ torx.Session = &Session{}
 
 // ExperimentOrchestraClient is the experiment's view of

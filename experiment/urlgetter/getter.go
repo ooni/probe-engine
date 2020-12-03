@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -92,7 +92,7 @@ func (g Getter) get(ctx context.Context, saver *trace.Saver) (TestKeys, error) {
 	// start tunnel
 	var proxyURL *url.URL
 	if g.Config.Tunnel != "" {
-		tun, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+		tun, err := tunnel.Start(ctx, tunnel.Config{
 			Name:    g.Config.Tunnel,
 			Session: g.Session,
 			WorkDir: filepath.Join(g.Session.TempDir(), "urlgetter-tunnel"),
