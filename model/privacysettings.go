@@ -10,6 +10,10 @@ import (
 // TODO(bassosimone): this code should be moved into the
 // measurement.go file and this file should be deleted
 
+// ErrInvalidProbeIP indicates that we're dealing with a string that
+// is not the valid serialization of an IP address.
+var ErrInvalidProbeIP = errors.New("model: invalid probe IP")
+
 // Scrub scrubs the probeIP out of the measurement.
 func (m *Measurement) Scrub(probeIP string) (err error) {
 	// We now behave like we can share everything except the
@@ -18,12 +22,15 @@ func (m *Measurement) Scrub(probeIP string) (err error) {
 	return m.MaybeRewriteTestKeys(probeIP, json.Marshal)
 }
 
+// Scrubbed is the string that replaces IP addresses.
+const Scrubbed = `[scrubbed]`
+
 // MaybeRewriteTestKeys is the function called by Scrub that
 // ensures that m's serialization doesn't include the IP
 func (m *Measurement) MaybeRewriteTestKeys(
 	currentIP string, marshal func(interface{}) ([]byte, error)) error {
 	if net.ParseIP(currentIP) == nil {
-		return errors.New("Invalid probe IP string")
+		return ErrInvalidProbeIP
 	}
 	data, err := marshal(m.TestKeys)
 	if err != nil {
@@ -37,7 +44,7 @@ func (m *Measurement) MaybeRewriteTestKeys(
 	if bytes.Count(data, bpip) <= 0 {
 		return nil
 	}
-	data = bytes.ReplaceAll(data, bpip, []byte(`[scrubbed]`))
+	data = bytes.ReplaceAll(data, bpip, []byte(Scrubbed))
 	// We add an annotation such that hopefully later we can measure the
 	// number of cases where we failed to sanitize properly.
 	m.AddAnnotation("_probe_engine_sanitize_test_keys", "true")

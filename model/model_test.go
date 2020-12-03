@@ -83,7 +83,7 @@ func makeMeasurement(config makeMeasurementConfig) model.Measurement {
 		ResolverASN:          config.ResolverASN,
 		SoftwareName:         "probe-engine",
 		SoftwareVersion:      "0.1.0",
-		TestKeys: fakeTestKeys{
+		TestKeys: &fakeTestKeys{
 			ClientResolver: "91.80.37.104",
 			Body: fmt.Sprintf(`
 				<HTML><HEAD><TITLE>Your IP is %s</TITLE></HEAD>
@@ -97,7 +97,7 @@ func makeMeasurement(config makeMeasurementConfig) model.Measurement {
 	}
 }
 
-func TestScrubCommonCase(t *testing.T) {
+func TestScrubWeAreScrubbing(t *testing.T) {
 	config := makeMeasurementConfig{
 		ProbeIP:             "130.192.91.211",
 		ProbeASN:            "AS137",
@@ -141,7 +141,50 @@ func TestScrubCommonCase(t *testing.T) {
 	}
 }
 
-// TODO(bassosimone): the following tests could be improved.
+func TestScrubNoScrubbingRequired(t *testing.T) {
+	config := makeMeasurementConfig{
+		ProbeIP:             "130.192.91.211",
+		ProbeASN:            "AS137",
+		ProbeCC:             "IT",
+		ProbeNetworkName:    "Vodafone Italia S.p.A.",
+		ResolverIP:          "8.8.8.8",
+		ResolverNetworkName: "Google LLC",
+		ResolverASN:         "AS12345",
+	}
+	m := makeMeasurement(config)
+	m.TestKeys.(*fakeTestKeys).Body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+	if err := m.Scrub(config.ProbeIP); err != nil {
+		t.Fatal(err)
+	}
+	if m.ProbeASN != config.ProbeASN {
+		t.Fatal("ProbeASN has been scrubbed")
+	}
+	if m.ProbeCC != config.ProbeCC {
+		t.Fatal("ProbeCC has been scrubbed")
+	}
+	if m.ProbeIP == config.ProbeIP {
+		t.Fatal("ProbeIP HAS NOT been scrubbed")
+	}
+	if m.ProbeNetworkName != config.ProbeNetworkName {
+		t.Fatal("ProbeNetworkName has been scrubbed")
+	}
+	if m.ResolverIP != config.ResolverIP {
+		t.Fatal("ResolverIP has been scrubbed")
+	}
+	if m.ResolverNetworkName != config.ResolverNetworkName {
+		t.Fatal("ResolverNetworkName has been scrubbed")
+	}
+	if m.ResolverASN != config.ResolverASN {
+		t.Fatal("ResolverASN has been scrubbed")
+	}
+	data, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Count(data, []byte(model.Scrubbed)) > 0 {
+		t.Fatal("We should not see any scrubbing")
+	}
+}
 
 func TestScrubInvalidIP(t *testing.T) {
 	m := &model.Measurement{
@@ -149,22 +192,23 @@ func TestScrubInvalidIP(t *testing.T) {
 		ProbeCC:  "IT",
 	}
 	err := m.Scrub("") // invalid IP
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, model.ErrInvalidProbeIP) {
+		t.Fatal("not the error we expected")
 	}
 }
 
 func TestScrubMarshalError(t *testing.T) {
+	expected := errors.New("mocked error")
 	m := &model.Measurement{
 		ProbeASN: "AS1234",
 		ProbeCC:  "IT",
 	}
 	err := m.MaybeRewriteTestKeys(
 		"8.8.8.8", func(v interface{}) ([]byte, error) {
-			return nil, errors.New("mocked error")
+			return nil, expected
 		})
-	if err == nil {
-		t.Fatal("expected an error here")
+	if !errors.Is(err, expected) {
+		t.Fatal("not the error we expected")
 	}
 }
 

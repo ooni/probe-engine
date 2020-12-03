@@ -115,11 +115,8 @@ type Measurement struct {
 
 // AddAnnotations adds the annotations from input to m.Annotations.
 func (m *Measurement) AddAnnotations(input map[string]string) {
-	if m.Annotations == nil {
-		m.Annotations = make(map[string]string)
-	}
 	for key, value := range input {
-		m.Annotations[key] = value
+		m.AddAnnotation(key, value)
 	}
 }
 
