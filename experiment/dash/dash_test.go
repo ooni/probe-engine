@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -262,7 +261,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "dash" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.11.0" {
+	if measurer.ExperimentVersion() != "0.12.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -290,49 +289,6 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	}
 	if _, ok := sk.(SummaryKeys); !ok {
 		t.Fatal("invalid type for summary keys")
-	}
-}
-
-func TestMeasurerMaybeStartTunnelFailure(t *testing.T) {
-	m := &Measurer{config: Config{
-		Tunnel: "psiphon",
-	}}
-	expected := errors.New("mocked error")
-	err := m.Run(
-		context.Background(),
-		&mockable.Session{
-			MockableHTTPClient:          http.DefaultClient,
-			MockableMaybeStartTunnelErr: expected,
-			MockableLogger:              log.Log,
-		},
-		&model.Measurement{},
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if !errors.Is(err, expected) {
-		t.Fatal("unexpected error value")
-	}
-}
-
-func TestMeasureWithProxyURL(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cause failure
-	m := &Measurer{}
-	measurement := &model.Measurement{}
-	err := m.Run(
-		ctx,
-		&mockable.Session{
-			MockableHTTPClient: http.DefaultClient,
-			MockableLogger:     log.Log,
-			MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
-		},
-		measurement,
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if !errors.Is(err, context.Canceled) {
-		t.Fatal("unexpected error value")
-	}
-	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
-		t.Fatal("unexpected SOCKSProxy")
 	}
 }
 

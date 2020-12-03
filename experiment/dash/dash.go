@@ -18,7 +18,6 @@ import (
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
-	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
@@ -27,19 +26,17 @@ const (
 	defaultTimeout = 120 * time.Second
 	magicVersion   = "0.008000000"
 	testName       = "dash"
-	testVersion    = "0.11.0"
+	testVersion    = "0.12.0"
 	totalStep      = 15.0
 )
 
 var (
-	errServerBusy        = errors.New("Server busy; try again later")
-	errHTTPRequestFailed = errors.New("HTTP request failed")
+	errServerBusy        = errors.New("dash: server busy; try again later")
+	errHTTPRequestFailed = errors.New("dash: request failed")
 )
 
 // Config contains the experiment config.
-type Config struct {
-	Tunnel string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
-}
+type Config struct{}
 
 // Simple contains the experiment total summary
 type Simple struct {
@@ -59,17 +56,10 @@ type ServerInfo struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	BootstrapTime float64         `json:"bootstrap_time,omitempty"`
-	Server        ServerInfo      `json:"server"`
-	Simple        Simple          `json:"simple"`
-	Failure       *string         `json:"failure"`
-	ReceiverData  []clientResults `json:"receiver_data"`
-	SOCKSProxy    string          `json:"socksproxy,omitempty"`
-	Tunnel        string          `json:"tunnel,omitempty"`
-}
-
-func registerExtensions(m *model.Measurement) {
-	archival.ExtTunnel.AddTo(m)
+	Server       ServerInfo      `json:"server"`
+	Simple       Simple          `json:"simple"`
+	Failure      *string         `json:"failure"`
+	ReceiverData []clientResults `json:"receiver_data"`
 }
 
 type runner struct {
@@ -266,24 +256,12 @@ func (m Measurer) Run(
 ) error {
 	tk := new(TestKeys)
 	measurement.TestKeys = tk
-	registerExtensions(measurement)
-	tk.Tunnel = m.config.Tunnel
-	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
-		s := err.Error()
-		tk.Failure = &s
-		return err
-	}
-	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
-	if url := sess.ProxyURL(); url != nil {
-		tk.SOCKSProxy = url.Host
-	}
 	saver := &trace.Saver{}
 	httpClient := &http.Client{
 		Transport: netx.NewHTTPTransport(netx.Config{
 			ContextByteCounting: true,
 			DialSaver:           saver,
 			Logger:              sess.Logger(),
-			ProxyURL:            sess.ProxyURL(),
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
