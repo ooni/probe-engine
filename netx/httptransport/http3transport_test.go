@@ -26,7 +26,6 @@ type MockSNIHTTP3Dialer struct {
 
 func (d MockSNIHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	d.namech <- tlsCfg.ServerName
-	close(d.namech)
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
 
@@ -36,7 +35,6 @@ type MockCertHTTP3Dialer struct {
 
 func (d MockCertHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	d.certch <- tlsCfg.RootCAs
-	close(d.certch)
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
 
@@ -76,7 +74,7 @@ func TestUnitHTTP3TransportSNINoVerify(t *testing.T) {
 	}
 	resp, err := txp.RoundTrip(req)
 	if err != nil {
-		t.Fatal("unexpected error")
+		t.Fatalf("unexpected error: %+v", err)
 	}
 	if resp == nil {
 		t.Fatal("unexpected nil resp")
