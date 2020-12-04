@@ -44,6 +44,7 @@ func (t *HTTP3Transport) CloseIdleConnections() {
 func NewHTTP3Transport(config Config) RoundTripper {
 	txp := &HTTP3Transport{}
 	txp.QuicConfig = &quic.Config{}
+	txp.TLSClientConfig = config.TLSConfig
 	txp.Dial = config.HTTP3Dialer.Dial
 	return txp
 }
