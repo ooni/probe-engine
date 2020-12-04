@@ -429,19 +429,6 @@ func runGatewayTest(t *testing.T, censoredGateway *SelfCensoredGateway) {
 	}
 }
 
-func TestSummaryKeysGeneric(t *testing.T) {
-	measurement := &model.Measurement{TestKeys: &riseupvpn.TestKeys{}}
-	m := &riseupvpn.Measurer{}
-	osk, err := m.GetSummaryKeys(measurement)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sk := osk.(riseupvpn.SummaryKeys)
-	if sk.IsAnomaly {
-		t.Fatal("invalid isAnomaly")
-	}
-}
-
 func TestSummaryKeysInvalidType(t *testing.T) {
 	measurement := new(model.Measurement)
 	m := &riseupvpn.Measurer{}
