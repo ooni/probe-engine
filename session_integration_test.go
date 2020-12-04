@@ -18,6 +18,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/probeservices"
+	"github.com/ooni/probe-engine/version"
 )
 
 func TestNewSessionBuilderChecks(t *testing.T) {
@@ -35,20 +36,20 @@ func TestNewSessionBuilderChecks(t *testing.T) {
 	t.Run("with also logger", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir: "testdata",
-			Logger:    log.Log,
+			Logger:    model.DiscardLogger,
 		})
 	})
 	t.Run("with also software name", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir:    "testdata",
-			Logger:       log.Log,
+			Logger:       model.DiscardLogger,
 			SoftwareName: "ooniprobe-engine",
 		})
 	})
 	t.Run("with software version and wrong tempdir", func(t *testing.T) {
 		newSessionMustFail(t, SessionConfig{
 			AssetsDir:       "testdata",
-			Logger:          log.Log,
+			Logger:          model.DiscardLogger,
 			SoftwareName:    "ooniprobe-engine",
 			SoftwareVersion: "0.0.1",
 			TempDir:         "./nonexistent",
@@ -83,12 +84,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 		TorArgs:         []string{"antani1", "antani2", "antani3"},
@@ -121,12 +117,7 @@ func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Sess
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
+		Logger:          model.DiscardLogger,
 		ProxyURL:        URL,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
@@ -373,7 +364,7 @@ func TestGetAvailableProbeServices(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -394,7 +385,7 @@ func TestMaybeLookupBackendsFailure(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -416,7 +407,7 @@ func TestMaybeLookupTestHelpersIdempotent(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -442,7 +433,7 @@ func TestAllProbeServicesUnsupported(t *testing.T) {
 	}
 	sess, err := NewSession(SessionConfig{
 		AssetsDir:       "testdata",
-		Logger:          log.Log,
+		Logger:          model.DiscardLogger,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -475,9 +466,6 @@ func TestStartTunnelGood(t *testing.T) {
 	}
 	if sess.ProxyURL() == nil {
 		t.Fatal("expected non-nil ProxyURL")
-	}
-	if sess.TunnelBootstrapTime() <= 0 {
-		t.Fatal("expected positive boostrap time")
 	}
 }
 
@@ -589,7 +577,7 @@ func TestUserAgentNoProxy(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
-	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + Version
+	expect := "ooniprobe-engine/0.0.1 ooniprobe-engine/" + version.Version
 	sess := newSessionForTestingNoLookups(t)
 	ua := sess.UserAgent()
 	diff := cmp.Diff(expect, ua)

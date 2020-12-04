@@ -26,7 +26,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "tor" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.2.0" {
+	if measurer.ExperimentVersion() != "0.3.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -127,14 +127,22 @@ func TestMeasurerMeasureGood(t *testing.T) {
 	}
 	measurer := NewMeasurer(Config{})
 	sess := newsession()
+	measurement := new(model.Measurement)
 	err := measurer.Run(
 		context.Background(),
 		sess,
-		new(model.Measurement),
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -862,4 +870,62 @@ func TestMaybeScrubbingLogger(t *testing.T) {
 			t.Fatal("not the output type we expected")
 		}
 	})
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	tests := []struct {
+		tk        TestKeys
+		isAnomaly bool
+	}{{
+		tk:        TestKeys{},
+		isAnomaly: false,
+	}, {
+		tk:        TestKeys{DirPortAccessible: 1, DirPortTotal: 3},
+		isAnomaly: false,
+	}, {
+		tk:        TestKeys{DirPortAccessible: 0, DirPortTotal: 3},
+		isAnomaly: true,
+	}, {
+		tk:        TestKeys{OBFS4Accessible: 1, OBFS4Total: 3},
+		isAnomaly: false,
+	}, {
+		tk:        TestKeys{OBFS4Accessible: 0, OBFS4Total: 3},
+		isAnomaly: true,
+	}, {
+		tk:        TestKeys{ORPortDirauthAccessible: 1, ORPortDirauthTotal: 3},
+		isAnomaly: false,
+	}, {
+		tk:        TestKeys{ORPortDirauthAccessible: 0, ORPortDirauthTotal: 3},
+		isAnomaly: true,
+	}, {
+		tk:        TestKeys{ORPortAccessible: 1, ORPortTotal: 3},
+		isAnomaly: false,
+	}, {
+		tk:        TestKeys{ORPortAccessible: 0, ORPortTotal: 3},
+		isAnomaly: true,
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &Measurer{}
+			measurement := &model.Measurement{TestKeys: &tt.tk}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(SummaryKeys)
+			if sk.IsAnomaly != tt.isAnomaly {
+				t.Fatal("unexpected isAnomaly value")
+			}
+		})
+	}
 }

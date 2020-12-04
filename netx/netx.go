@@ -180,8 +180,9 @@ func NewHTTP3Dialer(config Config) HTTP3Dialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d HTTP3Dialer = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
-	return d
+	d := &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
+	var dialer HTTP3Dialer = &httptransport.HTTP3WrapperDialer{Dialer: d}
+	return dialer
 }
 
 // NewTLSDialer creates a new TLSDialer from the specified config
@@ -227,7 +228,9 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
-	txp := tInfo.Factory(httptransport.Config{Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer, TLSConfig: config.TLSConfig})
+	txp := tInfo.Factory(httptransport.Config{
+		Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer,
+		TLSConfig: config.TLSConfig})
 	transport := tInfo.TransportName
 
 	if config.ByteCounter != nil {
@@ -258,12 +261,12 @@ type httpTransportInfo struct {
 }
 
 var allTransportsInfo = map[bool]httpTransportInfo{
-	false: httpTransportInfo{
+	false: {
 		Factory: httptransport.NewSystemTransport,
 		// TODO(kelmenhorst): distinguish between h2 / http/1.1
 		TransportName: "h2 / http/1.1",
 	},
-	true: httpTransportInfo{
+	true: {
 		Factory:       httptransport.NewHTTP3Transport,
 		TransportName: "h3",
 	},

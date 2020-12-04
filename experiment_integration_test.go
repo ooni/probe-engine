@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -175,10 +174,6 @@ type registerCallbacksCalled struct {
 	onProgressCalled bool
 }
 
-func (c *registerCallbacksCalled) OnDataUsage(dloadKiB, uploadKiB float64) {
-	// nothing - unused
-}
-
 func (c *registerCallbacksCalled) OnProgress(percentage float64, message string) {
 	c.onProgressCalled = true
 }
@@ -340,7 +335,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if data == nil {
 		t.Fatal("data is nil")
 	}
-	t.Log(measurement.MakeGenericTestKeys())
 	err = experiment.SubmitAndUpdateMeasurement(measurement)
 	if err != nil {
 		t.Fatal(err)
@@ -359,164 +353,9 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if experiment.KibiBytesReceived() <= 0 {
 		t.Fatal("no data received?!")
 	}
-}
-
-func TestOptions(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	t.Run("when config is not a pointer", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: 17,
-		}
-		options, err := b.Options()
-		if err == nil {
-			t.Fatal("expected an error here")
-		}
-		if options != nil {
-			t.Fatal("expected nil here")
-		}
-	})
-	t.Run("when confg is not a struct", func(t *testing.T) {
-		number := 17
-		b := &ExperimentBuilder{
-			config: &number,
-		}
-		options, err := b.Options()
-		if err == nil {
-			t.Fatal("expected an error here")
-		}
-		if options != nil {
-			t.Fatal("expected nil here")
-		}
-	})
-}
-
-func TestSetOption(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	t.Run("when config is not a pointer", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: 17,
-		}
-		if err := b.SetOptionBool("antani", false); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when config is not a struct", func(t *testing.T) {
-		number := 17
-		b := &ExperimentBuilder{
-			config: &number,
-		}
-		if err := b.SetOptionBool("antani", false); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when field is not valid", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: &ExperimentBuilder{},
-		}
-		if err := b.SetOptionBool("antani", false); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when field is not bool", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: new(example.Config),
-		}
-		if err := b.SetOptionBool("Message", false); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when field is not string", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: new(example.Config),
-		}
-		if err := b.SetOptionString("ReturnError", "xx"); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when field is not int", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: new(example.Config),
-		}
-		if err := b.SetOptionInt("ReturnError", 17); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when int field does not exist", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: new(example.Config),
-		}
-		if err := b.SetOptionInt("antani", 17); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-	t.Run("when string field does not exist", func(t *testing.T) {
-		b := &ExperimentBuilder{
-			config: new(example.Config),
-		}
-		if err := b.SetOptionString("antani", "xx"); err == nil {
-			t.Fatal("expected an error here")
-		}
-	})
-}
-
-func TestLoadMeasurement(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	sess := newSessionForTesting(t)
-	defer sess.Close()
-	builder, err := sess.NewExperimentBuilder("example")
-	if err != nil {
+	if _, err := experiment.GetSummaryKeys(measurement); err != nil {
 		t.Fatal(err)
 	}
-	experiment := builder.NewExperiment()
-	testflow := func(t *testing.T, name string) (*model.Measurement, error) {
-		path := fmt.Sprintf(
-			"testdata/loadable-measurement-%s.jsonl", name,
-		)
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return experiment.LoadMeasurement(data)
-	}
-	t.Run("with correct name", func(t *testing.T) {
-		measurement, err := testflow(t, "example")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if measurement == nil {
-			t.Fatal("expected non nil measurement here")
-		}
-	})
-	t.Run("with invalid name", func(t *testing.T) {
-		measurement, err := testflow(t, "wrongname")
-		if err == nil {
-			t.Fatal("expected error here")
-		}
-		if measurement != nil {
-			t.Fatal("expected nil measurement here")
-		}
-		if err.Error() != "not a measurement for this experiment" {
-			t.Fatal("unexpected error value")
-		}
-	})
-	t.Run("with invalid JSON", func(t *testing.T) {
-		measurement, err := testflow(t, "notjson")
-		if err == nil {
-			t.Fatal("expected error here")
-		}
-		if measurement != nil {
-			t.Fatal("expected nil measurement here")
-		}
-		if err.Error() == "not a measurement for this experiment" {
-			t.Fatal("unexpected error value")
-		}
-	})
 }
 
 func TestSaveMeasurementErrors(t *testing.T) {
@@ -716,4 +555,10 @@ func (am *antaniMeasurer) Run(
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
 	return nil
+}
+
+func (am *antaniMeasurer) GetSummaryKeys(m *model.Measurement) (interface{}, error) {
+	return struct {
+		Failure *string `json:"failure"`
+	}{}, nil
 }

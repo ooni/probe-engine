@@ -18,7 +18,7 @@ func TestMeasurer(t *testing.T) {
 	if m.ExperimentName() != "urlgetter" {
 		t.Fatal("invalid experiment name")
 	}
-	if m.ExperimentVersion() != "0.0.3" {
+	if m.ExperimentVersion() != "0.1.0" {
 		t.Fatal("invalid experiment version")
 	}
 	measurement := new(model.Measurement)
@@ -30,12 +30,19 @@ func TestMeasurer(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if len(measurement.Extensions) != 5 {
+	if len(measurement.Extensions) != 6 {
 		t.Fatal("not the expected number of extensions")
 	}
-	tk := measurement.TestKeys.(urlgetter.TestKeys)
+	tk := measurement.TestKeys.(*urlgetter.TestKeys)
 	if len(tk.DNSCache) != 0 {
 		t.Fatal("not the DNSCache value we expected")
+	}
+	sk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(urlgetter.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -48,7 +55,7 @@ func TestMeasurerDNSCache(t *testing.T) {
 	if m.ExperimentName() != "urlgetter" {
 		t.Fatal("invalid experiment name")
 	}
-	if m.ExperimentVersion() != "0.0.3" {
+	if m.ExperimentVersion() != "0.1.0" {
 		t.Fatal("invalid experiment version")
 	}
 	measurement := new(model.Measurement)
@@ -60,11 +67,24 @@ func TestMeasurerDNSCache(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
-	if len(measurement.Extensions) != 5 {
+	if len(measurement.Extensions) != 6 {
 		t.Fatal("not the expected number of extensions")
 	}
-	tk := measurement.TestKeys.(urlgetter.TestKeys)
+	tk := measurement.TestKeys.(*urlgetter.TestKeys)
 	if len(tk.DNSCache) != 1 || tk.DNSCache[0] != "dns.google 8.8.8.8 8.8.4.4" {
 		t.Fatal("invalid tk.DNSCache")
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &urlgetter.TestKeys{}}
+	m := &urlgetter.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(urlgetter.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
 	}
 }
