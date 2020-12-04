@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -30,6 +31,9 @@ const (
 
 	// FailureInterrupted means that the user interrupted us.
 	FailureInterrupted = "interrupted"
+
+	// FailureNoCompatibleQUICVersion means that the server does not support the proposed QUIC version
+	FailureNoCompatibleQUICVersion = "incompatible_quic_version"
 
 	// FailureSSLInvalidHostname means we got certificate is not valid for SNI.
 	FailureSSLInvalidHostname = "ssl_invalid_hostname"
@@ -156,6 +160,9 @@ type SafeErrWrapperBuilder struct {
 
 	// TransactionID is the transaction ID, if any
 	TransactionID int64
+
+	// QuicErr indicates that the QUIC transport is used
+	QuicErr bool
 }
 
 // MaybeBuild builds a new ErrWrapper, if b.Error is not nil, and returns
@@ -165,7 +172,7 @@ func (b SafeErrWrapperBuilder) MaybeBuild() (err error) {
 		err = &ErrWrapper{
 			ConnID:        b.ConnID,
 			DialID:        b.DialID,
-			Failure:       toFailureString(b.Error),
+			Failure:       toFailureString(b.Error, b.QuicErr),
 			Operation:     toOperationString(b.Error, b.Operation),
 			TransactionID: b.TransactionID,
 			WrappedErr:    b.Error,
@@ -174,7 +181,7 @@ func (b SafeErrWrapperBuilder) MaybeBuild() (err error) {
 	return
 }
 
-func toFailureString(err error) string {
+func toFailureString(err error, quic bool) string {
 	// The list returned here matches the values used by MK unless
 	// explicitly noted otherwise with a comment.
 
@@ -189,7 +196,9 @@ func toFailureString(err error) string {
 	if errors.Is(err, context.Canceled) {
 		return FailureInterrupted
 	}
-
+	if quic {
+		return toQUICFailureString(err)
+	}
 	var x509HostnameError x509.HostnameError
 	if errors.As(err, &x509HostnameError) {
 		// Test case: https://wrong.host.badssl.com/
@@ -239,6 +248,38 @@ func toFailureString(err error) string {
 		return FailureDNSNXDOMAINError
 	}
 
+	formatted := fmt.Sprintf("unknown_failure: %s", s)
+	return Scrub(formatted) // scrub IP addresses in the error
+}
+
+func toQUICFailureString(err error) string {
+	s := err.Error()
+	matched, err := regexp.MatchString(`.*x509: certificate is valid for.*not.*`, s)
+	if matched {
+		return FailureSSLInvalidHostname
+	}
+	if strings.HasSuffix(s, "x509: certificate signed by unknown authority") {
+		return FailureSSLUnknownAuthority
+	}
+	certInvalidErrors := []string{"x509: certificate is not authorized to sign other certificates", "x509: certificate has expired or is not yet valid:", "x509: a root or intermediate certificate is not authorized to sign for this name:", "x509: a root or intermediate certificate is not authorized for an extended key usage:", "x509: too many intermediates for path length constraint", "x509: certificate specifies an incompatible key usage", "x509: issuer name does not match subject from issuing certificate", "x509: issuer has name constraints but leaf doesn't have a SAN extension", "x509: issuer has name constraints but leaf contains unknown or unconstrained name:"}
+	for _, errstr := range certInvalidErrors {
+		if strings.Contains(s, errstr) {
+			return FailureSSLInvalidCertificate
+		}
+	}
+	if strings.HasPrefix(s, "No compatible QUIC version found.") {
+		return FailureNoCompatibleQUICVersion
+	}
+	if strings.HasSuffix(s, "Handshake did not complete in time") {
+		return FailureGenericTimeoutError
+	}
+	if strings.HasSuffix(s, "connection refused") {
+		return FailureConnectionRefused
+	}
+
+	if strings.Contains(s, "stateless reset") {
+		return FailureConnectionReset
+	}
 	formatted := fmt.Sprintf("unknown_failure: %s", s)
 	return Scrub(formatted) // scrub IP addresses in the error
 }
