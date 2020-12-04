@@ -38,7 +38,7 @@ func (d MockCertHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg 
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
 
-func TestUnitHTTP3TransportSNI(t *testing.T) {
+func TestHTTP3TransportSNI(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
@@ -63,7 +63,7 @@ func TestUnitHTTP3TransportSNI(t *testing.T) {
 	}
 }
 
-func TestUnitHTTP3TransportSNINoVerify(t *testing.T) {
+func TestHTTP3TransportSNINoVerify(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
@@ -85,7 +85,7 @@ func TestUnitHTTP3TransportSNINoVerify(t *testing.T) {
 	}
 }
 
-func TestUnitHTTP3TransportCABundle(t *testing.T) {
+func TestHTTP3TransportCABundle(t *testing.T) {
 	certch := make(chan *x509.CertPool, 1)
 	certpool := x509.NewCertPool()
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
