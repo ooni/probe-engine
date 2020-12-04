@@ -7,7 +7,6 @@ import (
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/internal/tlsx"
-	"github.com/ooni/probe-engine/legacy/netx/connid"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
@@ -40,6 +39,7 @@ type HTTP3HandshakeSaver struct {
 	Dialer HTTP3ContextDialer
 }
 
+// DialContext implements HTTP3ContextDialer.DialContext
 func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
 	h.Saver.Write(trace.Event{
@@ -51,14 +51,6 @@ func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, ad
 	})
 	sess, err := h.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
-
-	connID := connid.Compute(network, addr)
-	err = errorx.SafeErrWrapperBuilder{
-		ConnID:    connID,
-		QuicErr:   true,
-		Error:     err,
-		Operation: errorx.TLSHandshakeOperation,
-	}.MaybeBuild()
 
 	if sess == nil {
 		h.Saver.Write(trace.Event{

@@ -168,11 +168,15 @@ type SafeErrWrapperBuilder struct {
 // MaybeBuild builds a new ErrWrapper, if b.Error is not nil, and returns
 // a nil error value, instead, if b.Error is nil.
 func (b SafeErrWrapperBuilder) MaybeBuild() (err error) {
+	failureString := toFailureString
+	if b.QuicErr {
+		failureString = toQUICFailureString
+	}
 	if b.Error != nil {
 		err = &ErrWrapper{
 			ConnID:        b.ConnID,
 			DialID:        b.DialID,
-			Failure:       toFailureString(b.Error, b.QuicErr),
+			Failure:       failureString(b.Error),
 			Operation:     toOperationString(b.Error, b.Operation),
 			TransactionID: b.TransactionID,
 			WrappedErr:    b.Error,
@@ -181,7 +185,7 @@ func (b SafeErrWrapperBuilder) MaybeBuild() (err error) {
 	return
 }
 
-func toFailureString(err error, quic bool) string {
+func toFailureString(err error) string {
 	// The list returned here matches the values used by MK unless
 	// explicitly noted otherwise with a comment.
 
@@ -195,9 +199,6 @@ func toFailureString(err error, quic bool) string {
 	}
 	if errors.Is(err, context.Canceled) {
 		return FailureInterrupted
-	}
-	if quic {
-		return toQUICFailureString(err)
 	}
 	var x509HostnameError x509.HostnameError
 	if errors.As(err, &x509HostnameError) {

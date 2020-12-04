@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/netx/errorx"
 )
 
 // QUICBaseDialer is a system dialer for Quic
@@ -25,9 +27,11 @@ type HTTP3Dialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
-type SystemBaseDialer struct{}
+// QUICSystemDialer is a base dialer for QUIC
+type QUICSystemDialer struct{}
 
-func (d SystemBaseDialer) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements HTTP3ContextDialer.DialContext
+func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(addr)
 	port, err := strconv.Atoi(onlyport)
 	if err != nil {
@@ -44,4 +48,28 @@ func (d SystemBaseDialer) DialContext(ctx context.Context, network string, addr 
 		udpConn.Close()
 	}()
 	return sess, err
+
+}
+
+// QUICErrorWrapperDialer is a dialer that performs quic err wrapping
+type QUICErrorWrapperDialer struct {
+	Dialer HTTP3ContextDialer
+}
+
+// DialContext implements HTTP3ContextDialer.DialContext
+func (d QUICErrorWrapperDialer) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+	dialID := dialid.ContextDialID(ctx)
+	sess, err := d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+	err = errorx.SafeErrWrapperBuilder{
+		// ConnID does not make any sense if we've failed and the error
+		// does not make any sense (and is nil) if we succeded.
+		DialID:    dialID,
+		Error:     err,
+		Operation: errorx.ConnectOperation,
+		QuicErr:   true,
+	}.MaybeBuild()
+	if err != nil {
+		return nil, err
+	}
+	return sess, nil
 }
