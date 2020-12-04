@@ -24,6 +24,9 @@ type SubmitterConfig struct {
 
 	// Experiment is the current experiment.
 	Experiment SubmitterExperiment
+
+	// Logger is the logger to be used.
+	Logger model.Logger
 }
 
 // SubmitterExperiment is the Submitter's view of the Experiment.
@@ -55,7 +58,8 @@ func NewSubmitter(ctx context.Context, config SubmitterConfig) (Submitter, error
 	if err := config.Experiment.OpenReportContext(ctx); err != nil {
 		return nil, err
 	}
-	return config.Experiment, nil
+	config.Logger.Infof("ReportID: %s", config.Experiment.ReportID())
+	return realSubmitter{exp: config.Experiment, logger: config.Logger}, nil
 }
 
 type stubSubmitter struct{}
@@ -66,3 +70,14 @@ func (stubSubmitter) SubmitAndUpdateMeasurementContext(
 }
 
 var _ Submitter = stubSubmitter{}
+
+type realSubmitter struct {
+	exp    SubmitterExperiment
+	logger model.Logger
+}
+
+func (rs realSubmitter) SubmitAndUpdateMeasurementContext(
+	ctx context.Context, m *model.Measurement) error {
+	rs.logger.Info("submitting measurement to OONI collector; please be patient...")
+	return rs.exp.SubmitAndUpdateMeasurementContext(ctx, m)
+}

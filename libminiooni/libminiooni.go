@@ -328,6 +328,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	submitter, err := engine.NewSubmitter(ctx, engine.SubmitterConfig{
 		Enabled:    currentOptions.NoCollector == false,
 		Experiment: experiment,
+		Logger:     log.Log,
 	})
 	fatalOnError(err, "cannot create submitter")
 
@@ -335,6 +336,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		Enabled:    currentOptions.NoJSON == false,
 		Experiment: experiment,
 		FilePath:   currentOptions.ReportFile,
+		Logger:     log.Log,
 	})
 	fatalOnError(err, "cannot create saver")
 
@@ -346,9 +348,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		},
 		Inputs:  inputs,
 		Options: currentOptions.ExtraOptions,
-		Saver: saverWrapper{
-			child: engine.NewInputProcessorSaverWrapper(saver),
-		},
+		Saver:   engine.NewInputProcessorSaverWrapper(saver),
 		Submitter: submitterWrapper{
 			child: engine.NewInputProcessorSubmitterWrapper(submitter),
 		},
@@ -379,18 +379,8 @@ type submitterWrapper struct {
 
 func (sw submitterWrapper) SubmitAndUpdateMeasurementContext(
 	ctx context.Context, idx int, m *model.Measurement) error {
-	log.Info("submitting measurement to OONI collector; please be patient...")
 	err := sw.child.SubmitAndUpdateMeasurementContext(ctx, idx, m)
 	warnOnError(err, "submitting measurement failed")
 	// policy: we do not stop the loop if measurement submission fails
 	return nil
-}
-
-type saverWrapper struct {
-	child engine.InputProcessorSaverWrapper
-}
-
-func (sw saverWrapper) SaveMeasurement(idx int, m *model.Measurement) error {
-	log.Info("saving measurement to disk")
-	return sw.child.SaveMeasurement(idx, m)
 }

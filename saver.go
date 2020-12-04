@@ -22,6 +22,9 @@ type SaverConfig struct {
 	// FilePath is the filepath where to append the measurement as a
 	// serialized JSON followed by a newline character.
 	FilePath string
+
+	// Logger is the logger used by the saver.
+	Logger model.Logger
 }
 
 // SaverExperiment is an experiment according to the Saver.
@@ -40,6 +43,7 @@ func NewSaver(config SaverConfig) (Saver, error) {
 	return realSaver{
 		Experiment: config.Experiment,
 		FilePath:   config.FilePath,
+		Logger:     config.Logger,
 	}, nil
 }
 
@@ -54,9 +58,11 @@ var _ Saver = fakeSaver{}
 type realSaver struct {
 	Experiment SaverExperiment
 	FilePath   string
+	Logger     model.Logger
 }
 
 func (rs realSaver) SaveMeasurement(m *model.Measurement) error {
+	rs.Logger.Info("saving measurement to disk")
 	return rs.Experiment.SaveMeasurement(m, rs.FilePath)
 }
 
