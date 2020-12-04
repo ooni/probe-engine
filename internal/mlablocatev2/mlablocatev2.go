@@ -62,7 +62,7 @@ var (
 	//
 	// Example: mlab3-mil04.mlab-oti.measurement-lab.org.
 	siteRegexp = regexp.MustCompile(
-		`^(mlab[1-4]d?)-([a-z]{3}[0-9tc]{2})\.([a-z0-9-]{1,16})\.(measurement-lab.org)$`)
+		`^(mlab[1-4]d?)-([a-z]{3}[0-9tc]{2})\.([a-z0-9-]{1,16})\.(measurement-lab\.org)$`)
 )
 
 // Site returns the site name. If it is not possible to determine
