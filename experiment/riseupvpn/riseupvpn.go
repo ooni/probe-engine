@@ -6,6 +6,7 @@ package riseupvpn
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/apex/log"
@@ -285,10 +286,23 @@ func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 // Note that this structure is part of the ABI contract with probe-cli
 // therefore we should be careful when changing it.
 type SummaryKeys struct {
-	IsAnomaly bool `json:"-"`
+	APIBlocked      bool `json:"riseupvpn_api_blocked"`
+	ValidCACert     bool `json:"riseupvpn_ca_cert_valid"`
+	FailingGateways int  `json:"riseupvpn_failing_gateways"`
+	IsAnomaly       bool `json:"-"`
 }
 
 // GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
 func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
-	return SummaryKeys{IsAnomaly: false}, nil
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.APIBlocked = tk.APIStatus != "ok"
+	sk.ValidCACert = tk.CACertStatus
+	sk.FailingGateways = len(tk.FailingGateways)
+	sk.IsAnomaly = (sk.APIBlocked == true || tk.CACertStatus == false ||
+		sk.FailingGateways != 0)
+	return sk, nil
 }
