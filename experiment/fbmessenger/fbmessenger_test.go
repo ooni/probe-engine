@@ -20,7 +20,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "facebook_messenger" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -151,6 +151,13 @@ func TestWithCancelledContext(t *testing.T) {
 	if *tk.FacebookTCPBlocking != false {
 		t.Fatal("invalid FacebookTCPBlocking")
 	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(fbmessenger.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestComputeEndpointStatsTCPBlocking(t *testing.T) {
@@ -220,12 +227,7 @@ func newsession(t *testing.T) model.ExperimentSession {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
+		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -236,4 +238,126 @@ func newsession(t *testing.T) model.ExperimentSession {
 		t.Fatal(err)
 	}
 	return sess
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &fbmessenger.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWithNils(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &fbmessenger.TestKeys{}}
+	m := &fbmessenger.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(fbmessenger.SummaryKeys)
+	if sk.DNSBlocking {
+		t.Fatal("invalid dnsBlocking")
+	}
+	if sk.TCPBlocking {
+		t.Fatal("invalid tcpBlocking")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysWithFalseFalse(t *testing.T) {
+	falsy := false
+	measurement := &model.Measurement{TestKeys: &fbmessenger.TestKeys{
+		FacebookTCPBlocking: &falsy,
+		FacebookDNSBlocking: &falsy,
+	}}
+	m := &fbmessenger.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(fbmessenger.SummaryKeys)
+	if sk.DNSBlocking {
+		t.Fatal("invalid dnsBlocking")
+	}
+	if sk.TCPBlocking {
+		t.Fatal("invalid tcpBlocking")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysWithFalseTrue(t *testing.T) {
+	falsy := false
+	truy := true
+	measurement := &model.Measurement{TestKeys: &fbmessenger.TestKeys{
+		FacebookTCPBlocking: &falsy,
+		FacebookDNSBlocking: &truy,
+	}}
+	m := &fbmessenger.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(fbmessenger.SummaryKeys)
+	if sk.DNSBlocking == false {
+		t.Fatal("invalid dnsBlocking")
+	}
+	if sk.TCPBlocking {
+		t.Fatal("invalid tcpBlocking")
+	}
+	if sk.IsAnomaly == false {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysWithTrueFalse(t *testing.T) {
+	falsy := false
+	truy := true
+	measurement := &model.Measurement{TestKeys: &fbmessenger.TestKeys{
+		FacebookTCPBlocking: &truy,
+		FacebookDNSBlocking: &falsy,
+	}}
+	m := &fbmessenger.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(fbmessenger.SummaryKeys)
+	if sk.DNSBlocking {
+		t.Fatal("invalid dnsBlocking")
+	}
+	if sk.TCPBlocking == false {
+		t.Fatal("invalid tcpBlocking")
+	}
+	if sk.IsAnomaly == false {
+		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestSummaryKeysWithTrueTrue(t *testing.T) {
+	truy := true
+	measurement := &model.Measurement{TestKeys: &fbmessenger.TestKeys{
+		FacebookTCPBlocking: &truy,
+		FacebookDNSBlocking: &truy,
+	}}
+	m := &fbmessenger.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(fbmessenger.SummaryKeys)
+	if sk.DNSBlocking == false {
+		t.Fatal("invalid dnsBlocking")
+	}
+	if sk.TCPBlocking == false {
+		t.Fatal("invalid tcpBlocking")
+	}
+	if sk.IsAnomaly == false {
+		t.Fatal("invalid isAnomaly")
+	}
 }

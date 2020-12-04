@@ -100,15 +100,15 @@ func (s *linuxShell) hijackHTTP(address string) error {
 }
 
 func (s *linuxShell) waive() error {
-	shellx.Run("sudo", "iptables", "-D", "OUTPUT", "-j", "JAFAR_OUTPUT")
-	shellx.Run("sudo", "iptables", "-D", "INPUT", "-j", "JAFAR_INPUT")
-	shellx.Run("sudo", "iptables", "-t", "nat", "-D", "OUTPUT", "-j", "JAFAR_NAT_OUTPUT")
-	shellx.Run("sudo", "iptables", "-F", "JAFAR_INPUT")
-	shellx.Run("sudo", "iptables", "-X", "JAFAR_INPUT")
-	shellx.Run("sudo", "iptables", "-F", "JAFAR_OUTPUT")
-	shellx.Run("sudo", "iptables", "-X", "JAFAR_OUTPUT")
-	shellx.Run("sudo", "iptables", "-t", "nat", "-F", "JAFAR_NAT_OUTPUT")
-	shellx.Run("sudo", "iptables", "-t", "nat", "-X", "JAFAR_NAT_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-D", "OUTPUT", "-j", "JAFAR_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-D", "INPUT", "-j", "JAFAR_INPUT")
+	shellx.RunQuiet("sudo", "iptables", "-t", "nat", "-D", "OUTPUT", "-j", "JAFAR_NAT_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-F", "JAFAR_INPUT")
+	shellx.RunQuiet("sudo", "iptables", "-X", "JAFAR_INPUT")
+	shellx.RunQuiet("sudo", "iptables", "-F", "JAFAR_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-X", "JAFAR_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-t", "nat", "-F", "JAFAR_NAT_OUTPUT")
+	shellx.RunQuiet("sudo", "iptables", "-t", "nat", "-X", "JAFAR_NAT_OUTPUT")
 	return nil
 }
 

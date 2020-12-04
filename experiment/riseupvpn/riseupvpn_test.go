@@ -26,7 +26,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "riseupvpn" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.0.2" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -425,5 +425,18 @@ func runGatewayTest(t *testing.T, censoredGateway *SelfCensoredGateway) {
 
 	if tk.APIFailure != nil {
 		t.Fatal("ApiFailure should be null")
+	}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &riseupvpn.TestKeys{}}
+	m := &riseupvpn.Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(riseupvpn.SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
 	}
 }

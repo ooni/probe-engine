@@ -21,3 +21,20 @@ type Logger interface {
 	// Warnf formats and emits a warning message.
 	Warnf(format string, v ...interface{})
 }
+
+// DiscardLogger is a logger that discards its input
+var DiscardLogger Logger = logDiscarder{}
+
+type logDiscarder struct{}
+
+func (logDiscarder) Debug(msg string) {}
+
+func (logDiscarder) Debugf(format string, v ...interface{}) {}
+
+func (logDiscarder) Info(msg string) {}
+
+func (logDiscarder) Infof(format string, v ...interface{}) {}
+
+func (logDiscarder) Warn(msg string) {}
+
+func (logDiscarder) Warnf(format string, v ...interface{}) {}

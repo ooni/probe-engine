@@ -2,6 +2,8 @@ package telegram_test
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"testing"
 
 	"github.com/apex/log"
@@ -18,7 +20,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "telegram" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.1" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -73,6 +75,13 @@ func TestGood(t *testing.T) {
 	}
 	if tk.TelegramWebStatus != "ok" {
 		t.Fatal("unexpected TelegramWebStatus")
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(telegram.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -359,5 +368,49 @@ func TestUpdateWithAllGood(t *testing.T) {
 	}
 	if tk.TelegramWebFailure != nil {
 		t.Fatal("invalid TelegramWebFailure")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &telegram.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	failure := io.EOF.Error()
+	tests := []struct {
+		tk        telegram.TestKeys
+		isAnomaly bool
+	}{{
+		tk:        telegram.TestKeys{},
+		isAnomaly: false,
+	}, {
+		tk:        telegram.TestKeys{TelegramTCPBlocking: true},
+		isAnomaly: true,
+	}, {
+		tk:        telegram.TestKeys{TelegramHTTPBlocking: true},
+		isAnomaly: true,
+	}, {
+		tk:        telegram.TestKeys{TelegramWebFailure: &failure},
+		isAnomaly: true,
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &telegram.Measurer{}
+			measurement := &model.Measurement{TestKeys: &tt.tk}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(telegram.SummaryKeys)
+			if sk.IsAnomaly != tt.isAnomaly {
+				t.Fatal("unexpected isAnomaly value")
+			}
+		})
 	}
 }

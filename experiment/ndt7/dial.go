@@ -23,13 +23,10 @@ type dialManager struct {
 	writeBufferSize int
 }
 
-func newDialManager(
-	ndt7URL string, proxyURL *url.URL, logger model.Logger,
-	userAgent string) dialManager {
+func newDialManager(ndt7URL string, logger model.Logger, userAgent string) dialManager {
 	return dialManager{
 		ndt7URL:         ndt7URL,
 		logger:          logger,
-		proxyURL:        proxyURL,
 		readBufferSize:  paramMaxBufferSize,
 		userAgent:       userAgent,
 		writeBufferSize: paramMaxBufferSize,

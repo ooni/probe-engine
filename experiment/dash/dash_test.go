@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -262,7 +261,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "dash" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.10.0" {
+	if measurer.ExperimentVersion() != "0.12.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -270,52 +269,13 @@ func TestNewExperimentMeasurer(t *testing.T) {
 func TestMeasureWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cause failure
+	measurement := new(model.Measurement)
 	m := &Measurer{}
 	err := m.Run(
 		ctx,
 		&mockable.Session{
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
-		},
-		&model.Measurement{},
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if !errors.Is(err, context.Canceled) {
-		t.Fatal("unexpected error value")
-	}
-}
-
-func TestMeasurerMaybeStartTunnelFailure(t *testing.T) {
-	m := &Measurer{config: Config{
-		Tunnel: "psiphon",
-	}}
-	expected := errors.New("mocked error")
-	err := m.Run(
-		context.Background(),
-		&mockable.Session{
-			MockableHTTPClient:          http.DefaultClient,
-			MockableMaybeStartTunnelErr: expected,
-			MockableLogger:              log.Log,
-		},
-		&model.Measurement{},
-		model.NewPrinterCallbacks(log.Log),
-	)
-	if !errors.Is(err, expected) {
-		t.Fatal("unexpected error value")
-	}
-}
-
-func TestMeasureWithProxyURL(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cause failure
-	m := &Measurer{}
-	measurement := &model.Measurement{}
-	err := m.Run(
-		ctx,
-		&mockable.Session{
-			MockableHTTPClient: http.DefaultClient,
-			MockableLogger:     log.Log,
-			MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
 		},
 		measurement,
 		model.NewPrinterCallbacks(log.Log),
@@ -323,7 +283,46 @@ func TestMeasureWithProxyURL(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("unexpected error value")
 	}
-	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
-		t.Fatal("unexpected SOCKSProxy")
+	sk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysGood(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{Simple: Simple{
+		ConnectLatency:  1234,
+		MedianBitrate:   123,
+		MinPlayoutDelay: 12,
+	}}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.Latency != 1234 {
+		t.Fatal("invalid latency")
+	}
+	if sk.Bitrate != 123 {
+		t.Fatal("invalid bitrate")
+	}
+	if sk.Delay != 12 {
+		t.Fatal("invalid delay")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
 	}
 }
