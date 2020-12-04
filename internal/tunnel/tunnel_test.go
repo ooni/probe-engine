@@ -1,4 +1,4 @@
-package sessiontunnel_test
+package tunnel_test
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/mockable"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 )
 
 func TestNoTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name: "",
 		Session: &mockable.Session{
 			MockableLogger: log.Log,
@@ -30,7 +30,7 @@ func TestNoTunnel(t *testing.T) {
 func TestPsiphonTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name: "psiphon",
 		Session: &mockable.Session{
 			MockableLogger: log.Log,
@@ -47,7 +47,7 @@ func TestPsiphonTunnel(t *testing.T) {
 func TestTorTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name: "tor",
 		Session: &mockable.Session{
 			MockableLogger: log.Log,
@@ -64,7 +64,7 @@ func TestTorTunnel(t *testing.T) {
 func TestInvalidTunnel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name: "antani",
 		Session: &mockable.Session{
 			MockableLogger: log.Log,

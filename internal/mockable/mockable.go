@@ -5,12 +5,11 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/internal/torx"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
@@ -24,7 +23,6 @@ type Session struct {
 	MockableHTTPClient           *http.Client
 	MockableLogger               model.Logger
 	MockableMaybeResolverIP      string
-	MockableMaybeStartTunnelErr  error
 	MockableOrchestraClient      model.ExperimentOrchestraClient
 	MockableOrchestraClientError error
 	MockableProbeASNString       string
@@ -38,7 +36,6 @@ type Session struct {
 	MockableTempDir              string
 	MockableTorArgs              []string
 	MockableTorBinary            string
-	MockableTunnelBootstrapTime  time.Duration
 	MockableUserAgent            string
 }
 
@@ -71,11 +68,6 @@ func (sess *Session) Logger() model.Logger {
 // MaybeResolverIP implements ExperimentSession.MaybeResolverIP.
 func (sess *Session) MaybeResolverIP() string {
 	return sess.MockableMaybeResolverIP
-}
-
-// MaybeStartTunnel implements ExperimentSession.MaybeStartTunnel
-func (sess *Session) MaybeStartTunnel(ctx context.Context, name string) error {
-	return sess.MockableMaybeStartTunnelErr
 }
 
 // NewOrchestraClient implements ExperimentSession.NewOrchestraClient
@@ -156,11 +148,6 @@ func (sess *Session) TorBinary() string {
 	return sess.MockableTorBinary
 }
 
-// TunnelBootstrapTime implements ExperimentSession.TunnelBootstrapTime
-func (sess *Session) TunnelBootstrapTime() time.Duration {
-	return sess.MockableTunnelBootstrapTime
-}
-
 // UserAgent implements ExperimentSession.UserAgent
 func (sess *Session) UserAgent() string {
 	return sess.MockableUserAgent
@@ -169,7 +156,7 @@ func (sess *Session) UserAgent() string {
 var _ model.ExperimentSession = &Session{}
 var _ probeservices.Session = &Session{}
 var _ psiphonx.Session = &Session{}
-var _ sessiontunnel.Session = &Session{}
+var _ tunnel.Session = &Session{}
 var _ torx.Session = &Session{}
 
 // ExperimentOrchestraClient is the experiment's view of

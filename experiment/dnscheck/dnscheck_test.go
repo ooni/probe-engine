@@ -18,7 +18,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 		t.Error("unexpected experiment name")
 	}
 
-	if measurer.ExperimentVersion() != "0.0.1" {
+	if measurer.ExperimentVersion() != "0.1.0" {
 		t.Error("unexpected experiment version")
 	}
 }
@@ -71,15 +71,25 @@ func TestWithCancelledContext(t *testing.T) {
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{})
 
+	measurement := &model.Measurement{Input: "dot://1.1.1.1"}
+
 	// test with valid DNS endpoint
 	err := measurer.Run(
 		ctx,
 		newsession(),
-		&model.Measurement{Input: "dot://1.1.1.1"},
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -139,4 +149,17 @@ func TestDNSCheckValid(t *testing.T) {
 
 func newsession() model.ExperimentSession {
 	return &mockable.Session{MockableLogger: log.Log}
+}
+
+func TestSummaryKeysGeneric(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
+	}
 }

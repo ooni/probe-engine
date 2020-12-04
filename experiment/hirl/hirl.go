@@ -20,7 +20,7 @@ import (
 
 const (
 	testName    = "http_invalid_request_line"
-	testVersion = "0.1.0"
+	testVersion = "0.2.0"
 	timeout     = 5 * time.Second
 )
 
@@ -301,4 +301,23 @@ func RunMethod(ctx context.Context, config RunMethodConfig) {
 		}
 		result.Received.Value += string(data[:count])
 	}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.IsAnomaly = tk.Tampering
+	return sk, nil
 }

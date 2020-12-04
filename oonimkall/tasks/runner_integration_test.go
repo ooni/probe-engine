@@ -13,9 +13,6 @@ import (
 )
 
 func TestRunnerMaybeLookupBackendsFailure(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 	}))
@@ -30,25 +27,28 @@ func TestRunnerMaybeLookupBackendsFailure(t *testing.T) {
 			SoftwareVersion:      "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
-	seench := make(chan int64)
 	go func() {
-		var seen int64
-		for ev := range out {
-			switch ev.Key {
-			case "failure.startup":
-				seen++
-			case "status.queued", "status.started", "log", "status.end":
-			default:
-				panic(fmt.Sprintf("unexpected key: %s", ev.Key))
-			}
-		}
-		seench <- seen
+		tasks.Run(context.Background(), settings, out)
+		close(out)
 	}()
-	tasks.Run(context.Background(), settings, out)
-	close(out)
-	if n := <-seench; n != 1 {
-		t.Fatal("unexpected number of events")
+	var failures []string
+	for ev := range out {
+		switch ev.Key {
+		case "failure.startup":
+			failure := ev.Value.(tasks.EventFailure).Failure
+			failures = append(failures, failure)
+		case "status.queued", "status.started", "log", "status.end":
+		default:
+			panic(fmt.Sprintf("unexpected key: %s", ev.Key))
+		}
+	}
+	if len(failures) != 1 {
+		t.Fatal("unexpected number of failures")
+	}
+	if failures[0] != "all available probe services failed" {
+		t.Fatal("invalid failure")
 	}
 }
 
@@ -81,6 +81,7 @@ func TestRunnerOpenReportFailure(t *testing.T) {
 			SoftwareVersion:      "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	seench := make(chan int64)
 	go func() {
@@ -123,6 +124,7 @@ func TestRunnerGood(t *testing.T) {
 			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)
@@ -152,21 +154,24 @@ func TestRunnerWithUnsupportedSettings(t *testing.T) {
 			SoftwareName:    "oonimkall-test",
 			SoftwareVersion: "0.1.0",
 		},
-		OutputFilepath: "/nonexistent",
-		StateDir:       "../../testdata/oonimkall/state",
+		StateDir: "../../testdata/oonimkall/state",
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)
 		close(out)
 	}()
-	var found bool
+	var failures []string
 	for ev := range out {
 		if ev.Key == "failure.startup" {
-			found = true
+			failure := ev.Value.(tasks.EventFailure).Failure
+			failures = append(failures, failure)
 		}
 	}
-	if !found {
-		t.Fatal("failure.startup event not found")
+	if len(failures) != 1 {
+		t.Fatal("invalid number of failures")
+	}
+	if failures[0] != tasks.FailureInvalidVersion {
+		t.Fatal("not the failure we expected")
 	}
 }
 
@@ -183,20 +188,25 @@ func TestRunnerWithInvalidKVStorePath(t *testing.T) {
 			SoftwareName:    "oonimkall-test",
 			SoftwareVersion: "0.1.0",
 		},
-		StateDir: "/nonexistent/long/directory/name",
+		StateDir: "", // must be empty to cause the failure below
+		Version:  1,
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)
 		close(out)
 	}()
-	var found bool
+	var failures []string
 	for ev := range out {
 		if ev.Key == "failure.startup" {
-			found = true
+			failure := ev.Value.(tasks.EventFailure).Failure
+			failures = append(failures, failure)
 		}
 	}
-	if !found {
-		t.Fatal("failure.startup event not found")
+	if len(failures) != 1 {
+		t.Fatal("invalid number of failures")
+	}
+	if failures[0] != "mkdir : no such file or directory" {
+		t.Fatal("not the failure we expected")
 	}
 }
 
@@ -214,83 +224,24 @@ func TestRunnerWithInvalidExperimentName(t *testing.T) {
 			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)
 		close(out)
 	}()
-	var found bool
+	var failures []string
 	for ev := range out {
 		if ev.Key == "failure.startup" {
-			found = true
+			failure := ev.Value.(tasks.EventFailure).Failure
+			failures = append(failures, failure)
 		}
 	}
-	if !found {
-		t.Fatal("failure.startup event not found")
+	if len(failures) != 1 {
+		t.Fatal("invalid number of failures")
 	}
-}
-
-func TestRunnerWithInconsistentGeolookupSettings(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	out := make(chan *tasks.Event)
-	settings := &tasks.Settings{
-		AssetsDir: "../../testdata/oonimkall/assets",
-		LogLevel:  "DEBUG",
-		Name:      "Example",
-		Options: tasks.SettingsOptions{
-			NoGeoIP:          true,
-			NoResolverLookup: false,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
-		},
-		StateDir: "../../testdata/oonimkall/state",
-	}
-	go func() {
-		tasks.Run(context.Background(), settings, out)
-		close(out)
-	}()
-	var found bool
-	for ev := range out {
-		if ev.Key == "failure.startup" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal("failure.startup event not found")
-	}
-}
-
-func TestRunnerWithNoGeolookup(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
-	out := make(chan *tasks.Event)
-	settings := &tasks.Settings{
-		AssetsDir: "../../testdata/oonimkall/assets",
-		LogLevel:  "DEBUG",
-		Name:      "Example",
-		Options: tasks.SettingsOptions{
-			NoGeoIP:          true,
-			NoResolverLookup: true,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
-		},
-		StateDir: "../../testdata/oonimkall/state",
-	}
-	go func() {
-		tasks.Run(context.Background(), settings, out)
-		close(out)
-	}()
-	var found bool
-	for ev := range out {
-		if ev.Key == "status.end" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal("status.end event not found")
+	if failures[0] != "no such experiment: Nonexistent" {
+		t.Fatalf("not the failure we expected: %s", failures[0])
 	}
 }
 
@@ -304,25 +255,28 @@ func TestRunnerWithMissingInput(t *testing.T) {
 		LogLevel:  "DEBUG",
 		Name:      "ExampleWithInput",
 		Options: tasks.SettingsOptions{
-			NoGeoIP:          true,
-			NoResolverLookup: true,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
+			SoftwareName:    "oonimkall-test",
+			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)
 		close(out)
 	}()
-	var found bool
+	var failures []string
 	for ev := range out {
 		if ev.Key == "failure.startup" {
-			found = true
+			failure := ev.Value.(tasks.EventFailure).Failure
+			failures = append(failures, failure)
 		}
 	}
-	if !found {
-		t.Fatal("failure.startup event not found")
+	if len(failures) != 1 {
+		t.Fatal("invalid number of failures")
+	}
+	if failures[0] != "no input provided" {
+		t.Fatalf("not the failure we expected: %s", failures[0])
 	}
 }
 
@@ -337,13 +291,12 @@ func TestRunnerWithMaxRuntime(t *testing.T) {
 		LogLevel:  "DEBUG",
 		Name:      "ExampleWithInput",
 		Options: tasks.SettingsOptions{
-			MaxRuntime:       1,
-			NoGeoIP:          true,
-			NoResolverLookup: true,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
+			MaxRuntime:      1,
+			SoftwareName:    "oonimkall-test",
+			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	begin := time.Now()
 	go func() {
@@ -383,13 +336,12 @@ func TestRunnerWithMaxRuntimeNonInterruptible(t *testing.T) {
 		LogLevel:  "DEBUG",
 		Name:      "ExampleWithInputNonInterruptible",
 		Options: tasks.SettingsOptions{
-			MaxRuntime:       1,
-			NoGeoIP:          true,
-			NoResolverLookup: true,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
+			MaxRuntime:      1,
+			SoftwareName:    "oonimkall-test",
+			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	begin := time.Now()
 	go func() {
@@ -429,13 +381,12 @@ func TestRunnerWithFailedMeasurement(t *testing.T) {
 		LogLevel:  "DEBUG",
 		Name:      "ExampleWithFailure",
 		Options: tasks.SettingsOptions{
-			MaxRuntime:       1,
-			NoGeoIP:          true,
-			NoResolverLookup: true,
-			SoftwareName:     "oonimkall-test",
-			SoftwareVersion:  "0.1.0",
+			MaxRuntime:      1,
+			SoftwareName:    "oonimkall-test",
+			SoftwareVersion: "0.1.0",
 		},
 		StateDir: "../../testdata/oonimkall/state",
+		Version:  1,
 	}
 	go func() {
 		tasks.Run(context.Background(), settings, out)

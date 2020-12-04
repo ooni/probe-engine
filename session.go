@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
@@ -19,12 +18,13 @@ import (
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
-	"github.com/ooni/probe-engine/internal/sessiontunnel"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/bytecounter"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/resources"
+	"github.com/ooni/probe-engine/version"
 )
 
 // SessionConfig contains the Session config
@@ -33,7 +33,6 @@ type SessionConfig struct {
 	AvailableProbeServices []model.Service
 	KVStore                KVStore
 	Logger                 model.Logger
-	PrivacySettings        model.PrivacySettings
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
@@ -50,7 +49,6 @@ type Session struct {
 	byteCounter              *bytecounter.Counter
 	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
-	privacySettings          model.PrivacySettings
 	location                 *model.LocationInfo
 	logger                   model.Logger
 	proxyURL                 *url.URL
@@ -65,7 +63,7 @@ type Session struct {
 	torBinary                string
 	tunnelMu                 sync.Mutex
 	tunnelName               string
-	tunnel                   sessiontunnel.Tunnel
+	tunnel                   tunnel.Tunnel
 }
 
 // NewSession creates a new session or returns an error
@@ -98,7 +96,6 @@ func NewSession(config SessionConfig) (*Session, error) {
 		availableProbeServices:  config.AvailableProbeServices,
 		byteCounter:             bytecounter.New(),
 		kvStore:                 config.KVStore,
-		privacySettings:         config.PrivacySettings,
 		logger:                  config.Logger,
 		proxyURL:                config.ProxyURL,
 		queryProbeServicesCount: atomicx.NewInt64(),
@@ -189,6 +186,11 @@ func (s *Session) MaybeLookupBackends() error {
 	return s.maybeLookupBackends(context.Background())
 }
 
+// MaybeLookupBackendsContext is like MaybeLookupBackends but with context.
+func (s *Session) MaybeLookupBackendsContext(ctx context.Context) (err error) {
+	return s.maybeLookupBackends(ctx)
+}
+
 // ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
 // a specific name because we already configured a proxy.
 var ErrAlreadyUsingProxy = errors.New(
@@ -223,7 +225,7 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 		// sets a proxy, the second check for s.tunnel is for robustness.
 		return ErrAlreadyUsingProxy
 	}
-	tunnel, err := sessiontunnel.Start(ctx, sessiontunnel.Config{
+	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name:    name,
 		Session: s,
 	})
@@ -396,19 +398,10 @@ func (s *Session) TorBinary() string {
 	return s.torBinary
 }
 
-// TunnelBootstrapTime returns the time required to bootstrap the tunnel
-// we're using, or zero if we're using no tunnel.
-func (s *Session) TunnelBootstrapTime() time.Duration {
-	if s.tunnel == nil {
-		return 0
-	}
-	return s.tunnel.BootstrapTime()
-}
-
 // UserAgent constructs the user agent to be used in this session.
 func (s *Session) UserAgent() (useragent string) {
 	useragent += s.softwareName + "/" + s.softwareVersion
-	useragent += " ooniprobe-engine/" + Version
+	useragent += " ooniprobe-engine/" + version.Version
 	return
 }
 

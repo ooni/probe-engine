@@ -2,8 +2,11 @@ package urlgetter
 
 import (
 	"context"
+	"net/url"
+	"path/filepath"
 	"time"
 
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/archival"
 	"github.com/ooni/probe-engine/netx/errorx"
@@ -87,18 +90,26 @@ func (g Getter) get(ctx context.Context, saver *trace.Saver) (TestKeys, error) {
 		tk.Agent = "agent"
 	}
 	// start tunnel
-	if err := g.Session.MaybeStartTunnel(ctx, g.Config.Tunnel); err != nil {
-		return tk, err
-	}
-	tk.BootstrapTime = g.Session.TunnelBootstrapTime().Seconds()
-	if url := g.Session.ProxyURL(); url != nil {
-		tk.SOCKSProxy = url.Host
+	var proxyURL *url.URL
+	if g.Config.Tunnel != "" {
+		tun, err := tunnel.Start(ctx, tunnel.Config{
+			Name:    g.Config.Tunnel,
+			Session: g.Session,
+			WorkDir: filepath.Join(g.Session.TempDir(), "urlgetter-tunnel"),
+		})
+		if err != nil {
+			return tk, err
+		}
+		tk.BootstrapTime = tun.BootstrapTime().Seconds()
+		proxyURL = tun.SOCKS5ProxyURL()
+		tk.SOCKSProxy = proxyURL.String()
+		defer tun.Stop()
 	}
 	// create configuration
 	configurer := Configurer{
 		Config:   g.Config,
 		Logger:   g.Session.Logger(),
-		ProxyURL: g.Session.ProxyURL(),
+		ProxyURL: proxyURL,
 		Saver:    saver,
 	}
 	configuration, err := configurer.NewConfiguration()

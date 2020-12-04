@@ -6,6 +6,7 @@ package tor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
@@ -29,7 +30,7 @@ const (
 	testName = "tor"
 
 	// testVersion is the version of this experiment
-	testVersion = "0.2.0"
+	testVersion = "0.3.0"
 )
 
 // Config contains the experiment config.
@@ -434,4 +435,42 @@ func setFailure(err error) (s *string) {
 		s = &descr
 	}
 	return
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	DirPortTotal            int64 `json:"dir_port_total"`
+	DirPortAccessible       int64 `json:"dir_port_accessible"`
+	OBFS4Total              int64 `json:"obfs4_total"`
+	OBFS4Accessible         int64 `json:"obfs4_accessible"`
+	ORPortDirauthTotal      int64 `json:"or_port_dirauth_total"`
+	ORPortDirauthAccessible int64 `json:"or_port_dirauth_accessible"`
+	ORPortTotal             int64 `json:"or_port_total"`
+	ORPortAccessible        int64 `json:"or_port_accessible"`
+	IsAnomaly               bool  `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.DirPortTotal = tk.DirPortTotal
+	sk.DirPortAccessible = tk.DirPortAccessible
+	sk.OBFS4Total = tk.OBFS4Total
+	sk.OBFS4Accessible = tk.OBFS4Accessible
+	sk.ORPortDirauthTotal = tk.ORPortDirauthTotal
+	sk.ORPortDirauthAccessible = tk.ORPortDirauthAccessible
+	sk.ORPortTotal = tk.ORPortTotal
+	sk.ORPortAccessible = tk.ORPortAccessible
+	sk.IsAnomaly = ((sk.DirPortAccessible <= 0 && sk.DirPortTotal > 0) ||
+		(sk.OBFS4Accessible <= 0 && sk.OBFS4Total > 0) ||
+		(sk.ORPortDirauthAccessible <= 0 && sk.ORPortDirauthTotal > 0) ||
+		(sk.ORPortAccessible <= 0 && sk.ORPortTotal > 0))
+	return sk, nil
 }

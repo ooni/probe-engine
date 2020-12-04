@@ -6,6 +6,7 @@ package ndt7
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,17 +15,15 @@ import (
 	"github.com/ooni/probe-engine/internal/mlablocatev2"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx"
-	"github.com/ooni/probe-engine/netx/archival"
 )
 
 const (
 	testName    = "ndt"
-	testVersion = "0.6.0"
+	testVersion = "0.8.0"
 )
 
 // Config contains the experiment settings
 type Config struct {
-	Tunnel     string `ooni:"Run experiment over a tunnel, e.g. psiphon"`
 	noDownload bool
 	noUpload   bool
 }
@@ -52,9 +51,6 @@ type ServerInfo struct {
 
 // TestKeys contains the test keys
 type TestKeys struct {
-	// BootstrapTime is the bootstrap time of the tunnel we're using (if any)
-	BootstrapTime float64 `json:"bootstrap_time,omitempty"`
-
 	// Download contains download results
 	Download []Measurement `json:"download"`
 
@@ -64,24 +60,14 @@ type TestKeys struct {
 	// Protocol contains the version of the ndt protocol
 	Protocol int64 `json:"protocol"`
 
-	// SOCKSProxy is the proxy we're using (if any)
-	SOCKSProxy string `json:"socksproxy,omitempty"`
-
 	// Server contains information on the selected server
 	Server ServerInfo `json:"server"`
 
 	// Summary contains the measurement summary
 	Summary Summary `json:"summary"`
 
-	// Tunnel is the name of the tunnel we're using (if any)
-	Tunnel string `json:"tunnel,omitempty"`
-
 	// Upload contains upload results
 	Upload []Measurement `json:"upload"`
-}
-
-func registerExtensions(m *model.Measurement) {
-	archival.ExtTunnel.AddTo(m)
 }
 
 // Measurer performs the measurement.
@@ -96,8 +82,7 @@ func (m *Measurer) discover(
 	ctx context.Context, sess model.ExperimentSession) (mlablocatev2.NDT7Result, error) {
 	httpClient := &http.Client{
 		Transport: netx.NewHTTPTransport(netx.Config{
-			Logger:   sess.Logger(),
-			ProxyURL: sess.ProxyURL(),
+			Logger: sess.Logger(),
 		}),
 	}
 	defer httpClient.CloseIdleConnections()
@@ -127,7 +112,7 @@ func (m *Measurer) doDownload(
 	if m.config.noDownload == true {
 		return nil // useful to make tests faster
 	}
-	conn, err := newDialManager(URL, sess.ProxyURL(),
+	conn, err := newDialManager(URL,
 		sess.Logger(), sess.UserAgent()).dialDownload(ctx)
 	if err != nil {
 		return err
@@ -197,7 +182,7 @@ func (m *Measurer) doUpload(
 	if m.config.noUpload == true {
 		return nil // useful to make tests faster
 	}
-	conn, err := newDialManager(URL, sess.ProxyURL(),
+	conn, err := newDialManager(URL,
 		sess.Logger(), sess.UserAgent()).dialUpload(ctx)
 	if err != nil {
 		return err
@@ -240,17 +225,6 @@ func (m *Measurer) Run(
 	tk := new(TestKeys)
 	tk.Protocol = 7
 	measurement.TestKeys = tk
-	registerExtensions(measurement)
-	tk.Tunnel = m.config.Tunnel
-	if err := sess.MaybeStartTunnel(ctx, m.config.Tunnel); err != nil {
-		s := err.Error()
-		tk.Failure = &s
-		return err
-	}
-	tk.BootstrapTime = sess.TunnelBootstrapTime().Seconds()
-	if url := sess.ProxyURL(); url != nil {
-		tk.SOCKSProxy = url.Host
-	}
 	locateResult, err := m.discover(ctx, sess)
 	if err != nil {
 		tk.Failure = failureFromError(err)
@@ -290,4 +264,38 @@ func failureFromError(err error) (failure *string) {
 		failure = &s
 	}
 	return
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	Upload         float64 `json:"upload"`
+	Download       float64 `json:"download"`
+	Ping           float64 `json:"ping"`
+	MaxRTT         float64 `json:"max_rtt"`
+	AvgRTT         float64 `json:"avg_rtt"`
+	MinRTT         float64 `json:"min_rtt"`
+	MSS            float64 `json:"mss"`
+	RetransmitRate float64 `json:"retransmit_rate"`
+	IsAnomaly      bool    `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.Upload = tk.Summary.Upload
+	sk.Download = tk.Summary.Download
+	sk.Ping = tk.Summary.Ping
+	sk.MaxRTT = tk.Summary.MaxRTT
+	sk.AvgRTT = tk.Summary.AvgRTT
+	sk.MinRTT = tk.Summary.MinRTT
+	sk.MSS = float64(tk.Summary.MSS)
+	sk.RetransmitRate = tk.Summary.RetransmitRate
+	return sk, nil
 }

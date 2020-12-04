@@ -3,6 +3,7 @@ package webconnectivity_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"testing"
 
@@ -20,7 +21,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "web_connectivity" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -41,11 +42,6 @@ func TestSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
@@ -64,21 +60,15 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	cancel() // immediately fail
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "http://www.example.com"}
 	callbacks := model.NewPrinterCallbacks(log.Log)
-	err := measurer.Run(ctx, sess, measurement, callbacks)
-	if err != nil {
+	if err := measurer.Run(ctx, sess, measurement, callbacks); err != nil {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if *tk.ControlFailure != errorx.FailureInterrupted {
 		t.Fatal("unexpected control_failure")
 	}
@@ -89,6 +79,13 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 		t.Fatal("unexpected http_experiment_failure")
 	}
 	// TODO(bassosimone): write further checks here?
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(webconnectivity.SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
+	}
 }
 
 func TestMeasureWithNoInput(t *testing.T) {
@@ -97,7 +94,7 @@ func TestMeasureWithNoInput(t *testing.T) {
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: ""}
@@ -107,11 +104,6 @@ func TestMeasureWithNoInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
@@ -130,7 +122,7 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "\t\t\t\t\t\t"}
@@ -140,11 +132,6 @@ func TestMeasureWithInputNotBeingAnURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
@@ -163,7 +150,7 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, true)
 	measurement := &model.Measurement{Input: "dnslookup://example.com"}
@@ -173,11 +160,6 @@ func TestMeasureWithUnsupportedInput(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
@@ -196,7 +178,7 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 	}
 	measurer := webconnectivity.NewExperimentMeasurer(webconnectivity.Config{})
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+	defer cancel()
 	// we need a real session because we need the web-connectivity helper
 	sess := newsession(t, false)
 	measurement := &model.Measurement{Input: "https://www.example.com"}
@@ -206,11 +188,6 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
-	// By default we don't want to publish the IP of the client resolver
-	// because now we have already its ASN and CC.
-	if tk.ClientResolver != model.DefaultResolverIP {
-		t.Fatal("unexpected client_resolver")
-	}
 	if tk.ControlFailure != nil {
 		t.Fatal("unexpected control_failure")
 	}
@@ -230,12 +207,7 @@ func newsession(t *testing.T, lookupBackends bool) model.ExperimentSession {
 			Address: "https://ams-pg-test.ooni.org",
 			Type:    "https",
 		}},
-		Logger: log.Log,
-		PrivacySettings: model.PrivacySettings{
-			IncludeASN:     true,
-			IncludeCountry: true,
-			IncludeIP:      false,
-		},
+		Logger:          log.Log,
 		SoftwareName:    "ooniprobe-engine",
 		SoftwareVersion: "0.0.1",
 	})
@@ -379,6 +351,66 @@ func TestComputeTCPBlocking(t *testing.T) {
 			got := webconnectivity.ComputeTCPBlocking(tt.args.measurement, tt.args.control)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &webconnectivity.Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	failure := io.EOF.Error()
+	truy := true
+	tests := []struct {
+		tk         webconnectivity.TestKeys
+		Accessible bool
+		Blocking   string
+		isAnomaly  bool
+	}{{
+		tk:         webconnectivity.TestKeys{},
+		Accessible: false,
+		Blocking:   "",
+		isAnomaly:  false,
+	}, {
+		tk: webconnectivity.TestKeys{Summary: webconnectivity.Summary{
+			BlockingReason: &failure,
+		}},
+		Accessible: false,
+		Blocking:   failure,
+		isAnomaly:  true,
+	}, {
+		tk: webconnectivity.TestKeys{Summary: webconnectivity.Summary{
+			Accessible: &truy,
+		}},
+		Accessible: true,
+		Blocking:   "",
+		isAnomaly:  false,
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &webconnectivity.Measurer{}
+			measurement := &model.Measurement{TestKeys: &tt.tk}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(webconnectivity.SummaryKeys)
+			if sk.IsAnomaly != tt.isAnomaly {
+				t.Fatal("unexpected isAnomaly value")
+			}
+			if sk.Accessible != tt.Accessible {
+				t.Fatal("unexpected Accessible value")
+			}
+			if sk.Blocking != tt.Blocking {
+				t.Fatal("unexpected Accessible value")
 			}
 		})
 	}

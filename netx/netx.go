@@ -259,12 +259,12 @@ type httpTransportInfo struct {
 }
 
 var allTransportsInfo = map[bool]httpTransportInfo{
-	false: httpTransportInfo{
+	false: {
 		Factory: httptransport.NewSystemTransport,
 		// TODO(kelmenhorst): distinguish between h2 / http/1.1
 		TransportName: "h2 / http/1.1",
 	},
-	true: httpTransportInfo{
+	true: {
 		Factory:       httptransport.NewHTTP3Transport,
 		TransportName: "h3",
 	},
