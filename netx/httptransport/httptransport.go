@@ -6,6 +6,8 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
+
+	"github.com/lucas-clemente/quic-go"
 )
 
 // Config contains the configuration required for constructing an HTTP transport
@@ -24,6 +26,11 @@ type Dialer interface {
 // TLSDialer is the definition of a TLS dialer assumed by this package.
 type TLSDialer interface {
 	DialTLSContext(ctx context.Context, network, address string) (net.Conn, error)
+}
+
+// HTTP3Dialer is the definition of dialer for HTTP3 transport assumed by this package.
+type HTTP3Dialer interface {
+	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
 // RoundTripper is the definition of http.RoundTripper used by this package.

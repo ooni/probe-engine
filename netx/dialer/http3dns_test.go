@@ -17,8 +17,8 @@ func TestHTTP3DNSDialerSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	sess, err := dialer.DialContext(context.Background(), "udp", "www.google.com:443", tlsConf, &quic.Config{})
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: dialer.SystemBaseDialer{}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error")
 	}
@@ -31,8 +31,8 @@ func TestHTTP3DNSDialerNoPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	sess, err := dialer.DialContext(context.Background(), "udp", "antani.ooni.nu", tlsConf, &quic.Config{})
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: dialer.SystemBaseDialer{}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "antani.ooni.nu", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -65,7 +65,7 @@ func TestHTTP3DNSDialerLookupHostFailure(t *testing.T) {
 	dialer := dialer.HTTP3DNSDialer{Resolver: MockableResolver{
 		Err: expected,
 	}}
-	sess, err := dialer.DialContext(context.Background(), "udp", "dns.google.com:853", tlsConf, &quic.Config{})
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "dns.google.com:853", tlsConf, &quic.Config{})
 	if !errors.Is(err, expected) {
 		t.Fatal("not the error we expected")
 	}
@@ -78,8 +78,8 @@ func TestHTTP3DNSDialerInvalidPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	sess, err := dialer.DialContext(context.Background(), "udp", "www.google.com:0", tlsConf, &quic.Config{})
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: dialer.SystemBaseDialer{}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:0", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -96,8 +96,8 @@ func TestHTTP3DNSDialerInvalidPortSyntax(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	sess, err := dialer.DialContext(context.Background(), "udp", "www.google.com:port", tlsConf, &quic.Config{})
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: dialer.SystemBaseDialer{}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:port", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -110,8 +110,8 @@ func TestHTTP3DNSDialerInvalidPortSyntax(t *testing.T) {
 }
 
 func TestHTTP3DNSDialerNilTLSConf(t *testing.T) {
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver)}
-	sess, err := dialer.DialContext(context.Background(), "udp", "www.google.com:443", nil, &quic.Config{})
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: dialer.SystemBaseDialer{}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", nil, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -123,16 +123,22 @@ func TestHTTP3DNSDialerNilTLSConf(t *testing.T) {
 	}
 }
 
+type MockDialer struct {
+	err error
+}
+
+func (d MockDialer) DialContext(context.Context, string, string, string, *tls.Config, *quic.Config) (quic.EarlySession, error) {
+	return nil, d.err
+}
+
 func TestHTTP3DNSDialerDialEarlyFails(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
 	expected := errors.New("mocked DialEarly error")
-	mockDialEarly := func(context.Context, net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) {
-		return nil, expected
-	}
-	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), DialEarlyContext: mockDialEarly}
-	sess, err := dialer.DialContext(context.Background(), "udp", "www.google.com:443", tlsConf, &quic.Config{})
+
+	dialer := dialer.HTTP3DNSDialer{Resolver: new(net.Resolver), Dialer: MockDialer{expected}}
+	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
