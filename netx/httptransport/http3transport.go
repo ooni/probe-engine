@@ -20,6 +20,7 @@ type HTTP3ContextDialer interface {
 }
 
 // HTTP3WrapperDialer is a HTTP3Dialer that wraps a ContextDialer
+// This is necessary because the http3 RoundTripper does not support a DialContext method.
 type HTTP3WrapperDialer struct {
 	Dialer HTTP3ContextDialer
 }
