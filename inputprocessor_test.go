@@ -19,6 +19,10 @@ func (fipe *FakeInputProcessorExperiment) MeasureWithContext(
 		return nil, fipe.Err
 	}
 	m := new(model.Measurement)
+	// Here we add annotations to ensure that the input processor
+	// is MERGING annotations as opposed to overwriting them.
+	m.AddAnnotation("antani", "antani")
+	m.AddAnnotation("foo", "baz") // would be bar below
 	m.Input = model.MeasurementTarget(input)
 	fipe.M = append(fipe.M, m)
 	return m, nil
@@ -78,8 +82,14 @@ func TestInputProcessorSubmissionFailed(t *testing.T) {
 	if m.Input != "https://www.kernel.org/" {
 		t.Fatal("invalid input")
 	}
+	if len(m.Annotations) != 2 {
+		t.Fatal("invalid number of annotations")
+	}
 	if m.Annotations["foo"] != "bar" {
-		t.Fatal("annotation not set")
+		t.Fatal("invalid annotation: foo")
+	}
+	if m.Annotations["antani"] != "antani" {
+		t.Fatal("invalid annotation: antani")
 	}
 	if len(m.Options) != 1 || m.Options[0] != "fake=true" {
 		t.Fatal("options not set")
