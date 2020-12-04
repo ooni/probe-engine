@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 )
@@ -58,6 +59,7 @@ func TestNewSaverWithFailureWhenSaving(t *testing.T) {
 		Enabled:    true,
 		FilePath:   "report.jsonl",
 		Experiment: fse,
+		Logger:     log.Log,
 	})
 	if err != nil {
 		t.Fatal(err)

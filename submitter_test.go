@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -75,6 +76,7 @@ func TestNewSubmitterOpenReportSuccess(t *testing.T) {
 			FakeReportID: reportID,
 			SubmitErr:    expected,
 		},
+		Logger: log.Log,
 	})
 	if err != nil {
 		t.Fatal(err)
