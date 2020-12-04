@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/lucas-clemente/quic-go"
-	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/httptransport"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 )
@@ -44,7 +43,7 @@ func (d MockCertHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg 
 func TestUnitHTTP3TransportSNI(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
-	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSDialer: dialer.TLSDialer{Config: &tls.Config{ServerName: sni}}})
+	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +67,7 @@ func TestUnitHTTP3TransportSNI(t *testing.T) {
 func TestUnitHTTP3TransportSNINoVerify(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
-	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSDialer: dialer.TLSDialer{Config: &tls.Config{ServerName: sni, InsecureSkipVerify: true}}})
+	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni, InsecureSkipVerify: true}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +88,7 @@ func TestUnitHTTP3TransportSNINoVerify(t *testing.T) {
 func TestUnitHTTP3TransportCABundle(t *testing.T) {
 	certch := make(chan *x509.CertPool, 1)
 	certpool := x509.NewCertPool()
-	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockCertHTTP3Dialer{certch: certch}, TLSDialer: dialer.TLSDialer{Config: &tls.Config{RootCAs: certpool}}})
+	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockCertHTTP3Dialer{certch: certch}, TLSConfig: &tls.Config{RootCAs: certpool}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -113,7 +112,7 @@ func TestUnitHTTP3TransportCABundle(t *testing.T) {
 }
 
 func TestUnitHTTP3TransportSuccess(t *testing.T) {
-	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}, TLSDialer: dialer.TLSDialer{}})
+	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}})
 
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
@@ -132,7 +131,7 @@ func TestUnitHTTP3TransportSuccess(t *testing.T) {
 }
 
 func TestUnitHTTP3TransportFailure(t *testing.T) {
-	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}, TLSDialer: dialer.TLSDialer{}})
+	txp := httptransport.NewHTTP3Transport(httptransport.Config{Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so that the request immediately fails

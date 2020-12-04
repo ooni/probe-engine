@@ -227,7 +227,7 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
-	txp := tInfo.Factory(httptransport.Config{Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer})
+	txp := tInfo.Factory(httptransport.Config{Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer, TLSConfig: config.TLSConfig})
 	transport := tInfo.TransportName
 
 	if config.ByteCounter != nil {

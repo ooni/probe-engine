@@ -3,6 +3,7 @@ package httptransport
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
 )
@@ -12,6 +13,7 @@ type Config struct {
 	Dialer      Dialer
 	HTTP3Dialer HTTP3Dialer
 	TLSDialer   TLSDialer
+	TLSConfig   *tls.Config
 }
 
 // Dialer is the definition of dialer assumed by this package.
