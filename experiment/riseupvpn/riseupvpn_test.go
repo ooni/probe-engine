@@ -457,16 +457,20 @@ func TestSummaryKeysWorksAsIntended(t *testing.T) {
 		sk riseupvpn.SummaryKeys
 	}{{
 		tk: riseupvpn.TestKeys{
-			APIStatus: "blocked",
+			APIStatus:       "blocked",
+			CACertStatus:    true,
+			FailingGateways: nil,
 		},
 		sk: riseupvpn.SummaryKeys{
-			APIBlocked: true,
-			IsAnomaly:  true,
+			APIBlocked:  true,
+			ValidCACert: true,
+			IsAnomaly:   true,
 		},
 	}, {
 		tk: riseupvpn.TestKeys{
-			APIStatus:    "ok",
-			CACertStatus: false,
+			APIStatus:       "ok",
+			CACertStatus:    false,
+			FailingGateways: nil,
 		},
 		sk: riseupvpn.SummaryKeys{
 			ValidCACert: false,
