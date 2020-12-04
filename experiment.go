@@ -158,7 +158,7 @@ func (e *Experiment) CloseReport() (err error) {
 
 func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	utctimenow := time.Now().UTC()
-	m := model.Measurement{
+	m := &model.Measurement{
 		DataFormatVersion:         probeservices.DefaultDataFormatVersion,
 		Input:                     model.MeasurementTarget(input),
 		MeasurementStartTime:      utctimenow.Format(dateFormat),
@@ -181,7 +181,7 @@ func (e *Experiment) newMeasurement(input string) *model.Measurement {
 	m.AddAnnotation("engine_name", "ooniprobe-engine")
 	m.AddAnnotation("engine_version", version.Version)
 	m.AddAnnotation("platform", platform.Name())
-	return &m
+	return m
 }
 
 // OpenReportContext will open a report using the given context

@@ -123,7 +123,7 @@ func (ip InputProcessor) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		meas.Annotations = ip.Annotations
+		meas.AddAnnotations(ip.Annotations)
 		meas.Options = ip.Options
 		err = ip.Submitter.SubmitAndUpdateMeasurementContext(ctx, idx, meas)
 		if err != nil {
