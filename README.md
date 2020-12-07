@@ -78,21 +78,6 @@ time when the build occurred.
 
 ## Updating dependencies
 
-1. update direct dependencies using:
-
-```bash
-for name in `grep -v indirect go.mod | awk '/^\t/{print $1}'`; do \
-  go get -u -v $name;                                             \
-done
 ```
-
-2. pin to a specific version of our psiphon integration repo using:
-
-```bash
-go get -v github.com/ooni/psiphon@VERSION
+go get -u -v ./... && go mod tidy
 ```
-
-3. run `go mod tidy`
-
-Step 2 is currently needed because github.com/ooni/psiphon does not
-seem to update automatically when using `go get -u -v ./...`
