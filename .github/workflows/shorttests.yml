@@ -2,6 +2,8 @@ name: shorttests
 on:
   pull_request:
   push:
+    branches:
+      - "master"
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -13,15 +15,4 @@ jobs:
         with:
           go-version: "${{ matrix.go }}"
       - uses: actions/checkout@v2
-      - run: go test -short -race -tags shaping -coverprofile=probe-engine.cov ./...
-      - uses: shogo82148/actions-goveralls@v1
-        with:
-          path-to-profile: probe-engine.cov
-          parallel: true
-  finish:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: shogo82148/actions-goveralls@v1
-        with:
-          parallel-finished: true
+      - run: go test -short -race -tags shaping ./...
