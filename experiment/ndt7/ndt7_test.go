@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "ndt" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.6.0" {
+	if measurer.ExperimentVersion() != "0.8.0" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -101,46 +100,11 @@ func TestRunWithCancelledContext(t *testing.T) {
 	}
 }
 
-func TestRunWithMaybeStartTunnelFailure(t *testing.T) {
-	m := new(Measurer)
-	expected := errors.New("mocked error")
-	sess := &mockable.Session{
-		MockableHTTPClient:          http.DefaultClient,
-		MockableMaybeStartTunnelErr: expected,
-		MockableLogger:              log.Log,
-		MockableUserAgent:           "miniooni/0.1.0-dev",
-	}
-	measurement := new(model.Measurement)
-	err := m.Run(context.TODO(), sess, measurement, model.NewPrinterCallbacks(log.Log))
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-}
-
-func TestRunWithProxyURL(t *testing.T) {
-	m := new(Measurer)
-	sess := &mockable.Session{
-		MockableHTTPClient: http.DefaultClient,
-		MockableLogger:     log.Log,
-		MockableProxyURL:   &url.URL{Host: "1.1.1.1:22"},
-		MockableUserAgent:  "miniooni/0.1.0-dev",
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // immediately cancel
-	measurement := new(model.Measurement)
-	err := m.Run(ctx, sess, measurement, model.NewPrinterCallbacks(log.Log))
-	if !errors.Is(err, context.Canceled) {
-		t.Fatal("not the error we expected")
-	}
-	if measurement.TestKeys.(*TestKeys).SOCKSProxy != "1.1.1.1:22" {
-		t.Fatal("not the SOCKSProxy we expected")
-	}
-}
-
 func TestGood(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
+	measurement := new(model.Measurement)
 	measurer := NewExperimentMeasurer(Config{})
 	err := measurer.Run(
 		context.Background(),
@@ -148,11 +112,18 @@ func TestGood(t *testing.T) {
 			MockableHTTPClient: http.DefaultClient,
 			MockableLogger:     log.Log,
 		},
-		new(model.Measurement),
+		measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sk, err := measurer.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := sk.(SummaryKeys); !ok {
+		t.Fatal("invalid type for summary keys")
 	}
 }
 
@@ -220,5 +191,60 @@ func TestDownloadJSONUnmarshalFail(t *testing.T) {
 	}
 	if !seenError {
 		t.Fatal("did not see expected error")
+	}
+}
+
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
+	m := &Measurer{}
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
+	}
+}
+
+func TestSummaryKeysGood(t *testing.T) {
+	measurement := &model.Measurement{TestKeys: &TestKeys{Summary: Summary{
+		RetransmitRate: 1,
+		MSS:            2,
+		MinRTT:         3,
+		AvgRTT:         4,
+		MaxRTT:         5,
+		Ping:           6,
+		Download:       7,
+		Upload:         8,
+	}}}
+	m := &Measurer{}
+	osk, err := m.GetSummaryKeys(measurement)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk := osk.(SummaryKeys)
+	if sk.RetransmitRate != 1 {
+		t.Fatal("invalid retransmitRate")
+	}
+	if sk.MSS != 2 {
+		t.Fatal("invalid mss")
+	}
+	if sk.MinRTT != 3 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.AvgRTT != 4 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.MaxRTT != 5 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Ping != 6 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Download != 7 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.Upload != 8 {
+		t.Fatal("invalid minRTT")
+	}
+	if sk.IsAnomaly {
+		t.Fatal("invalid isAnomaly")
 	}
 }

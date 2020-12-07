@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-const testVersion = "0.0.1"
+const testVersion = "0.1.0"
 
 // Config contains the experiment config.
 //
@@ -79,4 +79,17 @@ func (m Measurer) Run(
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config, testName string) model.ExperimentMeasurer {
 	return Measurer{config: config, testName: testName}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	return SummaryKeys{IsAnomaly: false}, nil
 }

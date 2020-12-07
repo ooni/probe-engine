@@ -6,19 +6,19 @@ package riseupvpn
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
-
-	"github.com/ooni/probe-engine/netx"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/archival"
 )
 
 const (
 	testName      = "riseupvpn"
-	testVersion   = "0.0.2"
+	testVersion   = "0.1.0"
 	eipServiceURL = "https://api.black.riseup.net:443/3/config/eip-service.json"
 	providerURL   = "https://riseup.net/provider.json"
 	geoServiceURL = "https://api.black.riseup.net:9001/json"
@@ -279,4 +279,30 @@ func DecodeEIP3(body string) (*EipService, error) {
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	APIBlocked      bool `json:"api_blocked"`
+	ValidCACert     bool `json:"valid_ca_cert"`
+	FailingGateways int  `json:"failing_gateways"`
+	IsAnomaly       bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	sk := SummaryKeys{IsAnomaly: false}
+	tk, ok := measurement.TestKeys.(*TestKeys)
+	if !ok {
+		return sk, errors.New("invalid test keys type")
+	}
+	sk.APIBlocked = tk.APIStatus != "ok"
+	sk.ValidCACert = tk.CACertStatus
+	sk.FailingGateways = len(tk.FailingGateways)
+	sk.IsAnomaly = (sk.APIBlocked == true || tk.CACertStatus == false ||
+		sk.FailingGateways != 0)
+	return sk, nil
 }

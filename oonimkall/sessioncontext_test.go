@@ -31,8 +31,8 @@ func TestNewContextWithZeroTimeout(t *testing.T) {
 	defer cancel()
 	go func() {
 		<-time.After(250 * time.Millisecond)
-		cancel()
 		here.Add(1)
+		cancel()
 	}()
 	<-ctx.Done()
 	if here.Load() != 1 {
@@ -46,8 +46,8 @@ func TestNewContextWithNegativeTimeout(t *testing.T) {
 	defer cancel()
 	go func() {
 		<-time.After(250 * time.Millisecond)
-		cancel()
 		here.Add(1)
+		cancel()
 	}()
 	<-ctx.Done()
 	if here.Load() != 1 {
@@ -61,8 +61,8 @@ func TestNewContextWithHugeTimeout(t *testing.T) {
 	defer cancel()
 	go func() {
 		<-time.After(250 * time.Millisecond)
-		cancel()
 		here.Add(1)
+		cancel()
 	}()
 	<-ctx.Done()
 	if here.Load() != 1 {
@@ -76,8 +76,8 @@ func TestNewContextWithReasonableTimeout(t *testing.T) {
 	defer cancel()
 	go func() {
 		<-time.After(5 * time.Second)
-		cancel()
 		here.Add(1)
+		cancel()
 	}()
 	<-ctx.Done()
 	if here.Load() != 0 {
@@ -92,8 +92,8 @@ func TestNewContextWithArtificiallyLowMaxTimeout(t *testing.T) {
 	defer cancel()
 	go func() {
 		<-time.After(30 * time.Second)
-		cancel()
 		here.Add(1)
+		cancel()
 	}()
 	<-ctx.Done()
 	if here.Load() != 0 {

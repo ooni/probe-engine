@@ -115,11 +115,8 @@ type Measurement struct {
 
 // AddAnnotations adds the annotations from input to m.Annotations.
 func (m *Measurement) AddAnnotations(input map[string]string) {
-	if m.Annotations == nil {
-		m.Annotations = make(map[string]string)
-	}
 	for key, value := range input {
-		m.Annotations[key] = value
+		m.AddAnnotation(key, value)
 	}
 }
 
@@ -129,34 +126,4 @@ func (m *Measurement) AddAnnotation(key, value string) {
 		m.Annotations = make(map[string]string)
 	}
 	m.Annotations[key] = value
-}
-
-// MakeGenericTestKeys casts the m.TestKeys to a map[string]interface{}.
-//
-// Ideally, all tests should have a clear Go structure, well defined, that
-// will be stored in m.TestKeys as an interface. This is not already the
-// case and it's just valid for tests written in Go. Until all tests will
-// be written in Go, we'll keep this glue here to make sure we convert from
-// the engine format to the cli format.
-//
-// This function will first attempt to cast directly to map[string]interface{},
-// which is possible for MK tests, and then use JSON serialization and
-// de-serialization only if that's required.
-func (m *Measurement) MakeGenericTestKeys() (map[string]interface{}, error) {
-	return m.makeGenericTestKeys(json.Marshal)
-}
-
-func (m *Measurement) makeGenericTestKeys(
-	marshal func(v interface{}) ([]byte, error),
-) (map[string]interface{}, error) {
-	if result, ok := m.TestKeys.(map[string]interface{}); ok {
-		return result, nil
-	}
-	data, err := marshal(m.TestKeys)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]interface{}
-	err = json.Unmarshal(data, &result)
-	return result, err
 }

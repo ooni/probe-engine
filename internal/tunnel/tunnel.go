@@ -1,4 +1,5 @@
-package sessiontunnel
+// Package tunnel contains code to create a psiphon or tor tunnel.
+package tunnel
 
 import (
 	"context"
@@ -29,6 +30,7 @@ type Tunnel interface {
 type Config struct {
 	Name    string
 	Session Session
+	WorkDir string
 }
 
 // Start starts a new tunnel by name or returns an error. Note that if you
@@ -41,7 +43,9 @@ func Start(ctx context.Context, config Config) (Tunnel, error) {
 		return enforceNilContract(nil, nil)
 	case "psiphon":
 		logger.Infof("starting %s tunnel; please be patient...", config.Name)
-		tun, err := psiphonx.Start(ctx, config.Session, psiphonx.Config{})
+		tun, err := psiphonx.Start(ctx, config.Session, psiphonx.Config{
+			WorkDir: config.WorkDir,
+		})
 		return enforceNilContract(tun, err)
 	case "tor":
 		logger.Infof("starting %s tunnel; please be patient...", config.Name)

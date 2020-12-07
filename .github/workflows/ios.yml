@@ -9,9 +9,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v1
         with:
-          # 1.14.12 breaks because -fembed-bitcode is not a valid flag anymore
-          # see https://github.com/ooni/probe-engine/runs/1395802853
-          go-version: "1.14.11"
+          go-version: "1.14"
       - uses: actions/checkout@v2
       - run: ./build-ios.bash
       - run: ./publish-ios.bash

@@ -29,7 +29,7 @@ func TestFetchURLListSuccess(t *testing.T) {
 	}
 	for _, entry := range result {
 		if entry.CategoryCode != "NEWS" && entry.CategoryCode != "CULTR" {
-			t.Fatal("unexpected category code")
+			t.Fatalf("unexpected category code: %+v", entry)
 		}
 	}
 }

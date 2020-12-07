@@ -1,47 +1,6 @@
 // Package dnscheck contains the DNS check experiment.
 //
-// This experiment is not meant to be an user facing experiment rather it is
-// meant to be a building block for building DNS experiments.
-//
-// Description of the experiment
-//
-// You run this experiment with one or more DNS server URLs in input. We
-// describe the format of such URLs later.
-//
-// For each DNS server URL, the code behaves as follows:
-//
-// 1. if the URL's hostname is a domain name, we resolve such domain name
-// using the system resolver and attempt to query the selected resolver using
-// all the possible IP addresses, so to verify all of them
-//
-// 2. otherwise, we directly attempt to use the specified resolver
-//
-// The purpose of this algorithm is to make sure we measure whether each
-// possible IP address for the domain is working or not.
-//
-// By default, we resolve `example.org`. There is an experiment option
-// called Domain allowing you to change that.
-//
-// Input URL format
-//
-// To perform DNS over UDP, use `udp://<address_or_domain>[:<port>]`.
-//
-// To perform DNS over TCP, use `tcp://<address_or_domain>[:<port>]`.
-//
-// For DNS over TLS, use `dot://<address_or_domain>[:<port>]`.
-//
-// For DNS over HTTPS, use `https://<address_or_domain>[:<port>]/<path>`.
-//
-// When the `<port>` is missing, we use the correct default.
-//
-// Output data format
-//
-// A measurement data structure is generated for every input resolver
-// URL using the format described above. Because a single URL might expand
-// to one or more IP addresses, the toplevel output data format is a map.
-//
-// The map key is the TCP or UDP destination endpoint being used. The map
-// value is the measurement for such endpoint.
+// See https://github.com/ooni/spec/blob/master/nettests/ts-028-dnscheck.md.
 package dnscheck
 
 import (
@@ -63,7 +22,7 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.0.1"
+	testVersion   = "0.1.0"
 	defaultDomain = "example.org"
 )
 
@@ -241,4 +200,17 @@ func makeResolverURL(URL *url.URL, addr string) string {
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 	return Measurer{Config: config}
+}
+
+// SummaryKeys contains summary keys for this experiment.
+//
+// Note that this structure is part of the ABI contract with probe-cli
+// therefore we should be careful when changing it.
+type SummaryKeys struct {
+	IsAnomaly bool `json:"-"`
+}
+
+// GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
+func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+	return SummaryKeys{IsAnomaly: false}, nil
 }

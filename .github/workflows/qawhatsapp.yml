@@ -1,7 +1,7 @@
 name: "qawhatsapp"
 on:
   schedule:
-    - cron: "30 3 * * */1"
+    - cron: "25 3 * * */1"
 jobs:
   test:
     runs-on: ubuntu-latest

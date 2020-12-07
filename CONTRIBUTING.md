@@ -5,6 +5,11 @@ to open pull requests. An open pull request will be reviewed by a core
 developer. The review may request you to apply changes. Once the assigned
 reviewer is satisfied, they will merge the pull request.
 
+## Opening issues
+
+Please, before opening a new issue, check whether the issue or feature request
+you want us to consider has not already been reported by someone else.
+
 ## PR requirements
 
 Every pull request that introduces new functionality should feature

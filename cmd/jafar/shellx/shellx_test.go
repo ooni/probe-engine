@@ -11,6 +11,15 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunQuiet(t *testing.T) {
+	if err := RunQuiet("true"); err != nil {
+		t.Fatal(err)
+	}
+	if err := RunQuiet("./nonexistent/command"); err == nil {
+		t.Fatal("expected an error here")
+	}
+}
+
 func TestRunCommandline(t *testing.T) {
 	t.Run("when the command does not parse", func(t *testing.T) {
 		if err := RunCommandline(`"foobar`); err == nil {

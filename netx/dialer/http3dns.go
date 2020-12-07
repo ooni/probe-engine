@@ -7,23 +7,25 @@ import (
 	"strconv"
 
 	"github.com/lucas-clemente/quic-go"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
 )
 
 // HTTP3DNSDialer is a dialer that uses the configured Resolver to resolve a
 // domain name to IP addresses
 type HTTP3DNSDialer struct {
-	DialEarly func(net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) // for testing
-	Resolver  Resolver
+	DialEarlyContext func(context.Context, net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error) // for testing
+	Resolver         Resolver
 }
 
-// Dial implements HTTP3Dialer.Dial
-func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements HTTP3Dialer.DialContext
+func (d HTTP3DNSDialer) DialContext(ctx context.Context, network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(host)
 	if err != nil {
 		return nil, err
 	}
+	ctx = dialid.WithDialID(ctx)
 	var addrs []string
-	addrs, err = d.LookupHost(onlyhost)
+	addrs, err = d.LookupHost(ctx, onlyhost)
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +33,9 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 	if err != nil {
 		return nil, err
 	}
-	dialEarly := d.DialEarly
-	if dialEarly == nil {
-		dialEarly = quic.DialEarly
+	dialEarlyContext := d.DialEarlyContext
+	if dialEarlyContext == nil {
+		dialEarlyContext = quic.DialEarlyContext
 	}
 	var errorslist []error
 	for _, addr := range addrs {
@@ -46,7 +48,7 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 			errorslist = append(errorslist, err)
 			break
 		}
-		sess, err := dialEarly(udpConn, udpAddr, host, tlsCfg, cfg)
+		sess, err := dialEarlyContext(ctx, udpConn, udpAddr, host, tlsCfg, cfg)
 		if err == nil {
 			return sess, nil
 		}
@@ -57,11 +59,9 @@ func (d HTTP3DNSDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic
 }
 
 // LookupHost implements Resolver.LookupHost
-func (d HTTP3DNSDialer) LookupHost(hostname string) ([]string, error) {
+func (d HTTP3DNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}
-	// TODO(bassosimone,kelmenhorst): here we should actually use the context
-	// passed to dial when we upgrade to a version of quic-go that allows us to do so.
-	return d.Resolver.LookupHost(context.Background(), hostname)
+	return d.Resolver.LookupHost(ctx, hostname)
 }
