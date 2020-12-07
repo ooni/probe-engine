@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/experiment/riseupvpn"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
@@ -428,15 +429,69 @@ func runGatewayTest(t *testing.T, censoredGateway *SelfCensoredGateway) {
 	}
 }
 
-func TestSummaryKeysGeneric(t *testing.T) {
-	measurement := &model.Measurement{TestKeys: &riseupvpn.TestKeys{}}
+func TestSummaryKeysInvalidType(t *testing.T) {
+	measurement := new(model.Measurement)
 	m := &riseupvpn.Measurer{}
-	osk, err := m.GetSummaryKeys(measurement)
-	if err != nil {
-		t.Fatal(err)
+	_, err := m.GetSummaryKeys(measurement)
+	if err.Error() != "invalid test keys type" {
+		t.Fatal("not the error we expected")
 	}
-	sk := osk.(riseupvpn.SummaryKeys)
-	if sk.IsAnomaly {
-		t.Fatal("invalid isAnomaly")
+}
+
+func TestSummaryKeysWorksAsIntended(t *testing.T) {
+	tests := []struct {
+		tk riseupvpn.TestKeys
+		sk riseupvpn.SummaryKeys
+	}{{
+		tk: riseupvpn.TestKeys{
+			APIStatus:       "blocked",
+			CACertStatus:    true,
+			FailingGateways: nil,
+		},
+		sk: riseupvpn.SummaryKeys{
+			APIBlocked:  true,
+			ValidCACert: true,
+			IsAnomaly:   true,
+		},
+	}, {
+		tk: riseupvpn.TestKeys{
+			APIStatus:       "ok",
+			CACertStatus:    false,
+			FailingGateways: nil,
+		},
+		sk: riseupvpn.SummaryKeys{
+			ValidCACert: false,
+			IsAnomaly:   true,
+		},
+	}, {
+		tk: riseupvpn.TestKeys{
+			APIStatus:    "ok",
+			CACertStatus: true,
+			FailingGateways: []riseupvpn.GatewayConnection{{
+				IP:            "1.1.1.1",
+				Port:          443,
+				TransportType: "obfs4",
+			}},
+		},
+		sk: riseupvpn.SummaryKeys{
+			FailingGateways: 1,
+			IsAnomaly:       true,
+			ValidCACert:     true,
+		},
+	}}
+	for idx, tt := range tests {
+		t.Run(fmt.Sprintf("%d", idx), func(t *testing.T) {
+			m := &riseupvpn.Measurer{}
+			measurement := &model.Measurement{TestKeys: &tt.tk}
+			got, err := m.GetSummaryKeys(measurement)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+			sk := got.(riseupvpn.SummaryKeys)
+			if diff := cmp.Diff(tt.sk, sk); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
