@@ -12,5 +12,6 @@
     "software_version": "0.1.0-dev"
   },
   "state_dir": ".",
-  "temp_dir": "."
+  "temp_dir": ".",
+  "version": 1
 }
