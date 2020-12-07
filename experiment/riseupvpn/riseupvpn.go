@@ -286,9 +286,9 @@ func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
 // Note that this structure is part of the ABI contract with probe-cli
 // therefore we should be careful when changing it.
 type SummaryKeys struct {
-	APIBlocked      bool `json:"riseupvpn_api_blocked"`
-	ValidCACert     bool `json:"riseupvpn_ca_cert_valid"`
-	FailingGateways int  `json:"riseupvpn_failing_gateways"`
+	APIBlocked      bool `json:"api_blocked"`
+	ValidCACert     bool `json:"valid_ca_cert"`
+	FailingGateways int  `json:"failing_gateways"`
 	IsAnomaly       bool `json:"-"`
 }
 
