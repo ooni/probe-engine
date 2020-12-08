@@ -3,10 +3,11 @@ package dialer
 import (
 	"context"
 	"crypto/tls"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
-	"github.com/marten-seemann/qtls-go1-15"
 	"github.com/ooni/probe-engine/internal/tlsx"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
@@ -66,8 +67,8 @@ func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, ad
 		return sess, err
 	}
 	state := tls.ConnectionState{}
-	if sess != nil {
-		state = qtls.ConnectionStateWith0RTT(sess.ConnectionState()).ConnectionState
+	if sess != nil && strings.HasPrefix(runtime.Version(), "go1.15") {
+		state = ConnectionState(sess)
 	}
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
