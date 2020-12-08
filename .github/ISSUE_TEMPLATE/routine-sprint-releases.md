@@ -19,9 +19,9 @@ assignees: bassosimone
 - [ ] engine: create release at GitHub
 - [ ] engine: update mobile-staging branch to create oonimkall
 - [ ] cli: pin to latest engine
-- [ ] cli: update version/version.go
+- [ ] cli: update internal/version/version.go
 - [ ] cli: tag a new version
-- [ ] cli: update version/version.go again to be alpha
+- [ ] cli: update internal/version/version.go again to be alpha
 - [ ] android: pin to latest oonimkall
 - [ ] ios: pin to latest oonimkall
 - [ ] desktop: pin to latest cli
