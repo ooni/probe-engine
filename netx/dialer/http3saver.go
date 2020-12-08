@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
+	"github.com/marten-seemann/qtls-go1-15"
 	"github.com/ooni/probe-engine/internal/tlsx"
 	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
@@ -66,7 +67,7 @@ func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, ad
 	}
 	state := tls.ConnectionState{}
 	if sess != nil {
-		state = sess.ConnectionState().ConnectionState
+		state = qtls.ConnectionStateWith0RTT(sess.ConnectionState()).ConnectionState
 	}
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
