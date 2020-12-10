@@ -27,7 +27,7 @@ type Config struct {
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
-	HTTP3Enabled      bool   `ooni:"Force http3"`
+	HTTP3Enabled      bool   `ooni:"use http3 instead of http/1.1 or http2"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`

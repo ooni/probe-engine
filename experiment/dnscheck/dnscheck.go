@@ -28,7 +28,8 @@ const (
 
 // Config contains the experiment's configuration.
 type Config struct {
-	Domain string `ooni:"domain to resolve using the specified resolver"`
+	Domain       string `json:"domain" ooni:"domain to resolve using the specified resolver"`
+	HTTP3Enabled bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
@@ -129,7 +130,8 @@ func (m Measurer) Run(
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
 				DNSHTTPHost:      URL.Host, // use original host (and optional port)
-				RejectDNSBogons:  true,     // bogons are errors in this context
+				HTTP3Enabled:     m.Config.HTTP3Enabled,
+				RejectDNSBogons:  true, // bogons are errors in this context
 				ResolverURL:      makeResolverURL(URL, addr),
 				DNSTLSServerName: URL.Hostname(), // just the domain/IP for SNI
 			},
