@@ -72,7 +72,7 @@ func init() {
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.InputFilePaths, "file", 'f',
+		&globalOptions.InputFilePaths, "input-file", 'f',
 		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
