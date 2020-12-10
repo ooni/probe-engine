@@ -22,7 +22,7 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.3.0"
+	testVersion   = "0.4.0"
 	defaultDomain = "example.org"
 )
 
@@ -37,6 +37,9 @@ type Config struct {
 // TestKeys contains the results of the dnscheck experiment.
 type TestKeys struct {
 	Domain           string                        `json:"domain"`
+	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
+	HTTPHost         string                        `json:"x_http_host,omitempty"`
+	TLSServerName    string                        `json:"x_tls_server_name,omitempty"`
 	Bootstrap        *urlgetter.TestKeys           `json:"bootstrap"`
 	BootstrapFailure *string                       `json:"bootstrap_failure"`
 	Lookups          map[string]urlgetter.TestKeys `json:"lookups"`
@@ -81,12 +84,16 @@ func (m Measurer) Run(
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
-	// 3. select the domain to resolve or use default
+	// 3. select the domain to resolve or use default and, while there, also
+	// ensure that we register all the other options we're using.
 	domain := m.Config.Domain
 	if domain == "" {
 		domain = defaultDomain
 	}
 	tk.Domain = domain
+	tk.HTTP3Enabled = m.Config.HTTP3Enabled
+	tk.HTTPHost = m.Config.HTTPHost
+	tk.TLSServerName = m.Config.TLSServerName
 
 	// 4. parse the input URL describing the resolver to use
 	input := string(measurement.Input)
