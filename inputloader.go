@@ -12,6 +12,7 @@ import (
 // The following errors are returned by the InputLoader.
 var (
 	ErrNoInputExpected = errors.New("we did not expect any input")
+	ErrInputRequired   = errors.New("no input provided")
 )
 
 // InputLoaderSession is the session according to an InputLoader.
@@ -37,11 +38,16 @@ type InputLoaderSession interface {
 // input, we return it. Otherwise we return a single, empty entry
 // that causes experiments that don't require input to run once.
 //
-// InputRequired
+// InputOrQueryTestLists
 //
 // We gather input from StaticInput and SourceFiles. If there is
 // input, we return it. Otherwise, we use OONI's probe services
 // to gather input using the test lists API.
+//
+// InputStrictlyRequired
+//
+// Like InputOrQueryTestLists but, if there is no input, it's an
+// user error and we just abort running the experiment.
 type InputLoader interface {
 	// Load attempts to load input using the specified input loader. We will
 	// return a list of URLs because this is the only input we support.
@@ -98,8 +104,10 @@ func (il inputLoader) Load(ctx context.Context) ([]model.URLInfo, error) {
 	switch il.InputPolicy {
 	case InputOptional:
 		return il.loadOptional()
-	case InputRequired:
-		return il.loadRequired(ctx)
+	case InputOrQueryTestLists:
+		return il.loadOrQueryTestList(ctx)
+	case InputStrictlyRequired:
+		return il.loadStrictlyRequired(ctx)
 	default:
 		return il.loadNone()
 	}
@@ -120,7 +128,15 @@ func (il inputLoader) loadOptional() ([]model.URLInfo, error) {
 	return inputs, err
 }
 
-func (il inputLoader) loadRequired(ctx context.Context) ([]model.URLInfo, error) {
+func (il inputLoader) loadStrictlyRequired(ctx context.Context) ([]model.URLInfo, error) {
+	inputs, err := il.loadLocal()
+	if err != nil || len(inputs) > 0 {
+		return inputs, err
+	}
+	return nil, ErrInputRequired
+}
+
+func (il inputLoader) loadOrQueryTestList(ctx context.Context) ([]model.URLInfo, error) {
 	inputs, err := il.loadLocal()
 	if err != nil || len(inputs) > 0 {
 		return inputs, err
