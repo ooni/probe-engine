@@ -11,12 +11,44 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
+func TestHTTPHostWithOverride(t *testing.T) {
+	m := Measurer{Config: Config{HTTPHost: "antani"}}
+	result := m.httpHost("mascetti")
+	if result != "antani" {
+		t.Fatal("not the result we expected")
+	}
+}
+
+func TestHTTPHostWithoutOverride(t *testing.T) {
+	m := Measurer{Config: Config{}}
+	result := m.httpHost("mascetti")
+	if result != "mascetti" {
+		t.Fatal("not the result we expected")
+	}
+}
+
+func TestTLSServerNameWithOverride(t *testing.T) {
+	m := Measurer{Config: Config{TLSServerName: "antani"}}
+	result := m.tlsServerName("mascetti")
+	if result != "antani" {
+		t.Fatal("not the result we expected")
+	}
+}
+
+func TestTLSServerNameWithoutOverride(t *testing.T) {
+	m := Measurer{Config: Config{}}
+	result := m.tlsServerName("mascetti")
+	if result != "mascetti" {
+		t.Fatal("not the result we expected")
+	}
+}
+
 func TestExperimentNameAndVersion(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{Domain: "example.com"})
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.2.0" {
+	if measurer.ExperimentVersion() != "0.3.0" {
 		t.Error("unexpected experiment version")
 	}
 }
