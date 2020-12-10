@@ -13,12 +13,10 @@ import (
 
 func TestExperimentNameAndVersion(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{Domain: "example.com"})
-
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Error("unexpected experiment version")
 	}
 }
