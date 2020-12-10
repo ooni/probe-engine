@@ -46,7 +46,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &dnscheck.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputStrictlyRequired,
 		}
 	},
 
@@ -78,7 +78,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
-			inputPolicy:   InputRequired,
+			inputPolicy:   InputStrictlyRequired,
 		}
 	},
 
@@ -98,7 +98,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(time.Second),
 			},
 			interruptible: false,
-			inputPolicy:   InputRequired,
+			inputPolicy:   InputStrictlyRequired,
 		}
 	},
 
@@ -151,7 +151,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &httphostheader.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -211,15 +211,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*run.Config),
 				))
 			},
-			config: &run.Config{},
-			// TODO(bassosimone): we need to distinguish between the
-			// case where input is mandatory (this case actually) and
-			// the case where it is mandatory and we have an API to
-			// fetch input if missing (web connectivity). Current the
-			// case of web connectivity (InputRequired) cannot be used
-			// safely here because using it would cause us to fetch
-			// and run the experiment with meaningless URLs.
-			inputPolicy: InputOptional,
+			config:      &run.Config{},
+			inputPolicy: InputStrictlyRequired,
 		}
 	},
 
@@ -231,7 +224,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &sniblocking.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -267,7 +260,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &tlstool.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -291,7 +284,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &urlgetter.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputStrictlyRequired,
 		}
 	},
 
@@ -303,7 +296,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &webconnectivity.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
