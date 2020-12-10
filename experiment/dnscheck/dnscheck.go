@@ -22,14 +22,16 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.2.0"
+	testVersion   = "0.3.0"
 	defaultDomain = "example.org"
 )
 
 // Config contains the experiment's configuration.
 type Config struct {
-	Domain       string `json:"domain" ooni:"domain to resolve using the specified resolver"`
-	HTTP3Enabled bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
+	Domain        string `json:"domain" ooni:"domain to resolve using the specified resolver"`
+	HTTP3Enabled  bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
+	HTTPHost      string `json:"http_host" ooni:"Force using specific HTTP Host header"`
+	TLSServerName string `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
@@ -129,11 +131,11 @@ func (m Measurer) Run(
 	for _, addr := range addrs {
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
-				DNSHTTPHost:      URL.Host, // use original host (and optional port)
+				DNSHTTPHost:      m.httpHost(URL.Host),            // use original host (and optional port)
+				DNSTLSServerName: m.tlsServerName(URL.Hostname()), // just the domain/IP for SNI
 				HTTP3Enabled:     m.Config.HTTP3Enabled,
 				RejectDNSBogons:  true, // bogons are errors in this context
 				ResolverURL:      makeResolverURL(URL, addr),
-				DNSTLSServerName: URL.Hostname(), // just the domain/IP for SNI
 			},
 			Target: fmt.Sprintf("dnslookup://%s", domain), // urlgetter wants a URL
 		})
@@ -144,6 +146,23 @@ func (m Measurer) Run(
 		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
 	}
 	return nil
+}
+
+// httpHost returns the configured HTTP host, if set, otherwise
+// it will return the host provide as argument.
+func (m Measurer) httpHost(httpHost string) string {
+	if m.Config.HTTPHost != "" {
+		return m.Config.HTTPHost
+	}
+	return httpHost
+}
+
+// tlsServerName is like httpHost for the TLS server name.
+func (m Measurer) tlsServerName(tlsServerName string) string {
+	if m.Config.TLSServerName != "" {
+		return m.Config.TLSServerName
+	}
+	return tlsServerName
 }
 
 // Collect prints on the output channel the result of running dnscheck
