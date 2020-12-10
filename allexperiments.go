@@ -13,6 +13,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/riseupvpn"
+	"github.com/ooni/probe-engine/experiment/run"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/experiment/telegram"
@@ -191,6 +192,37 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"riseupvpn": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, riseupvpn.NewExperimentMeasurer(
+					*config.(*riseupvpn.Config),
+				))
+			},
+			config:      &riseupvpn.Config{},
+			inputPolicy: InputNone,
+		}
+	},
+
+	"run": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, run.NewExperimentMeasurer(
+					*config.(*run.Config),
+				))
+			},
+			config: &run.Config{},
+			// TODO(bassosimone): we need to distinguish between the
+			// case where input is mandatory (this case actually) and
+			// the case where it is mandatory and we have an API to
+			// fetch input if missing (web connectivity). Current the
+			// case of web connectivity (InputRequired) cannot be used
+			// safely here because using it would cause us to fetch
+			// and run the experiment with meaningless URLs.
+			inputPolicy: InputOptional,
+		}
+	},
+
 	"sni_blocking": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
@@ -198,7 +230,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*sniblocking.Config),
 				))
 			},
-			config: &sniblocking.Config{},
+			config:      &sniblocking.Config{},
 			inputPolicy: InputRequired,
 		}
 	},
@@ -212,18 +244,6 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:      &stunreachability.Config{},
 			inputPolicy: InputOptional,
-		}
-	},
-
-	"riseupvpn": func(session *Session) *ExperimentBuilder {
-		return &ExperimentBuilder{
-			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, riseupvpn.NewExperimentMeasurer(
-					*config.(*riseupvpn.Config),
-				))
-			},
-			config:      &riseupvpn.Config{},
-			inputPolicy: InputNone,
 		}
 	},
 
