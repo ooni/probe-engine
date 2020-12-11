@@ -278,6 +278,7 @@ func TestFailureGeoIpServiceBlocked(t *testing.T) {
 }
 
 func TestFailureGateway(t *testing.T) {
+	t.Skip("See https://github.com/ooni/probe-engine/issues/1137")
 	var testCases = [...]string{"openvpn", "obfs4"}
 	eipService, err := fetchEipService()
 	if err != nil {
