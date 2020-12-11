@@ -31,7 +31,7 @@ func (Measurer) ExperimentVersion() string {
 // StructuredInput contains structured input for this experiment.
 type StructuredInput struct {
 	// DNSCheck contains settings for the dnscheck experiment.
-	DNSCheck dnscheck.Config `json:"dns_check"`
+	DNSCheck dnscheck.Config `json:"dnscheck"`
 
 	// Name is the name of the experiment to run.
 	Name string `json:"name"`
