@@ -9,15 +9,15 @@ import (
 	"github.com/ooni/probe-engine/legacy/netx/dialid"
 )
 
-// HTTP3DNSDialer is a dialer that uses the configured Resolver to resolve a
+// QUICDNSDialer is a dialer that uses the configured Resolver to resolve a
 // domain name to IP addresses
-type HTTP3DNSDialer struct {
-	Dialer   HTTP3ContextDialer
+type QUICDNSDialer struct {
+	Dialer   QUICContextDialer
 	Resolver Resolver
 }
 
-// DialContext implements HTTP3Dialer.DialContext
-func (d HTTP3DNSDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements QUICDialer.DialContext
+func (d QUICDNSDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(host)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (d HTTP3DNSDialer) DialContext(ctx context.Context, network, addr string, h
 }
 
 // LookupHost implements Resolver.LookupHost
-func (d HTTP3DNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (d QUICDNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}

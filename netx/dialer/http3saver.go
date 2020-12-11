@@ -12,16 +12,16 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-// HTTP3SaverDialer saves events occurring during the dial
-type HTTP3SaverDialer struct {
-	HTTP3ContextDialer
+// QUICSaverDialer saves events occurring during the dial
+type QUICSaverDialer struct {
+	QUICContextDialer
 	Saver *trace.Saver
 }
 
 // DialContext implements Dialer.DialContext
-func (d HTTP3SaverDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d QUICSaverDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
-	sess, err := d.HTTP3ContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+	sess, err := d.QUICContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
 	d.Saver.Write(trace.Event{
 		Address:  addr,
@@ -34,14 +34,14 @@ func (d HTTP3SaverDialer) DialContext(ctx context.Context, network, addr string,
 	return sess, err
 }
 
-// HTTP3HandshakeSaver saves events occurring during the handshake
-type HTTP3HandshakeSaver struct {
+// QUICHandshakeSaver saves events occurring during the handshake
+type QUICHandshakeSaver struct {
 	Saver  *trace.Saver
-	Dialer HTTP3ContextDialer
+	Dialer QUICContextDialer
 }
 
-// DialContext implements HTTP3ContextDialer.DialContext
-func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements QUICContextDialer.DialContext
+func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
 	h.Saver.Write(trace.Event{
 		Name:          "tls_handshake_start",

@@ -52,8 +52,8 @@ type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
-// HTTP3Dialer is the definition of a dialer for HTTP3 transport assumed by this package.
-type HTTP3Dialer interface {
+// QUICDialer is the definition of a dialer for QUIC assumed by this package.
+type QUICDialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
@@ -91,7 +91,7 @@ type Config struct {
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
-	HTTP3Dialer         HTTP3Dialer          // default: dialer.HTTP3DNSDialer
+	QUICDialer          QUICDialer           // default: dialer.QUICDNSDialer
 	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
@@ -175,19 +175,19 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
-// NewHTTP3Dialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
-func NewHTTP3Dialer(config Config) HTTP3Dialer {
+// NewQUICDialer creates a new DNS Dialer for QUIC, with the resolver from the specified config
+func NewQUICDialer(config Config) QUICDialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d dialer.HTTP3ContextDialer = &dialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
+	var d dialer.QUICContextDialer = &dialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
 	d = dialer.QUICErrorWrapperDialer{Dialer: d}
 	if config.TLSSaver != nil {
-		d = dialer.HTTP3HandshakeSaver{Saver: config.TLSSaver, Dialer: d}
+		d = dialer.QUICHandshakeSaver{Saver: config.TLSSaver, Dialer: d}
 	}
-	d = &dialer.HTTP3SaverDialer{HTTP3ContextDialer: d, Saver: config.DialSaver}
-	d = &dialer.HTTP3DNSDialer{Resolver: config.FullResolver, Dialer: d}
-	var dialer HTTP3Dialer = &httptransport.HTTP3WrapperDialer{Dialer: d}
+	d = &dialer.QUICSaverDialer{QUICContextDialer: d, Saver: config.DialSaver}
+	d = &dialer.QUICDNSDialer{Resolver: config.FullResolver, Dialer: d}
+	var dialer QUICDialer = &httptransport.QUICWrapperDialer{Dialer: d}
 	return dialer
 }
 
@@ -229,13 +229,13 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.TLSDialer == nil {
 		config.TLSDialer = NewTLSDialer(config)
 	}
-	if config.HTTP3Dialer == nil {
-		config.HTTP3Dialer = NewHTTP3Dialer(config)
+	if config.QUICDialer == nil {
+		config.QUICDialer = NewQUICDialer(config)
 	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
 	txp := tInfo.Factory(httptransport.Config{
-		Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer,
+		Dialer: config.Dialer, QUICDialer: config.QUICDialer, TLSDialer: config.TLSDialer,
 		TLSConfig: config.TLSConfig})
 	transport := tInfo.TransportName
 

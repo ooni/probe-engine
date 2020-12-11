@@ -12,10 +12,10 @@ import (
 
 // Config contains the configuration required for constructing an HTTP transport
 type Config struct {
-	Dialer      Dialer
-	HTTP3Dialer HTTP3Dialer
-	TLSDialer   TLSDialer
-	TLSConfig   *tls.Config
+	Dialer     Dialer
+	QUICDialer QUICDialer
+	TLSDialer  TLSDialer
+	TLSConfig  *tls.Config
 }
 
 // Dialer is the definition of dialer assumed by this package.
@@ -28,8 +28,8 @@ type TLSDialer interface {
 	DialTLSContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
-// HTTP3Dialer is the definition of dialer for HTTP3 transport assumed by this package.
-type HTTP3Dialer interface {
+// QUICDialer is the definition of dialer for QUIC assumed by this package.
+type QUICDialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
