@@ -185,6 +185,25 @@ func TestInputLoaderInputStrictlyRequiredWithoutInput(t *testing.T) {
 	}
 }
 
+func TestInputLoaderInputStrictlyRequiredWithEmptyFile(t *testing.T) {
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
+		InputPolicy: engine.InputStrictlyRequired,
+		SourceFiles: []string{
+			"testdata/inputloader1.txt",
+			"testdata/inputloader3.txt", // we want it before inputloader2.txt
+			"testdata/inputloader2.txt",
+		},
+	})
+	ctx := context.Background()
+	out, err := il.Load(ctx)
+	if !errors.Is(err, engine.ErrDetectedEmptyFile) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if out != nil {
+		t.Fatal("not the output we expected")
+	}
+}
+
 func TestInputLoaderInputOrQueryTestListsWithInput(t *testing.T) {
 	il := engine.NewInputLoader(engine.InputLoaderConfig{
 		StaticInputs: []string{"https://www.google.com/"},
@@ -242,7 +261,7 @@ func TestInputLoaderInputOrQueryTestListsWithNoInputAndCancelledContext(t *testi
 	}
 }
 
-func TestInputLoaderInputOrQueryTestListsWithNoInputGood(t *testing.T) {
+func TestInputLoaderInputOrQueryTestListsWithNoInput(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
@@ -274,5 +293,24 @@ func TestInputLoaderInputOrQueryTestListsWithNoInputGood(t *testing.T) {
 	}
 	if len(out) < 10 {
 		t.Fatal("not the output length we expected")
+	}
+}
+
+func TestInputLoaderInputOrQueryTestListsWithEmptyFile(t *testing.T) {
+	il := engine.NewInputLoader(engine.InputLoaderConfig{
+		InputPolicy: engine.InputOrQueryTestLists,
+		SourceFiles: []string{
+			"testdata/inputloader1.txt",
+			"testdata/inputloader3.txt", // we want it before inputloader2.txt
+			"testdata/inputloader2.txt",
+		},
+	})
+	ctx := context.Background()
+	out, err := il.Load(ctx)
+	if !errors.Is(err, engine.ErrDetectedEmptyFile) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if out != nil {
+		t.Fatal("not the output we expected")
 	}
 }

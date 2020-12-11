@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/model"
@@ -11,8 +12,9 @@ import (
 
 // The following errors are returned by the InputLoader.
 var (
-	ErrNoInputExpected = errors.New("we did not expect any input")
-	ErrInputRequired   = errors.New("no input provided")
+	ErrNoInputExpected   = errors.New("we did not expect any input")
+	ErrInputRequired     = errors.New("no input provided")
+	ErrDetectedEmptyFile = errors.New("file did not contain any input")
 )
 
 // InputLoaderSession is the session according to an InputLoader.
@@ -153,6 +155,10 @@ func (il inputLoader) loadLocal() ([]model.URLInfo, error) {
 		extra, err := il.readfile(filepath, fsx.Open)
 		if err != nil {
 			return nil, err
+		}
+		// See https://github.com/ooni/probe-engine/issues/1123.
+		if len(extra) <= 0 {
+			return nil, fmt.Errorf("%w: %s", ErrDetectedEmptyFile, filepath)
 		}
 		inputs = append(inputs, extra...)
 	}
