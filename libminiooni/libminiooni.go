@@ -246,7 +246,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	assetsDir := path.Join(miniooniDir, "assets")
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
-	log.Infof("miniooni state directory: %s", miniooniDir)
+	log.Debugf("miniooni state directory: %s", miniooniDir)
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
@@ -283,7 +283,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
-	log.Infof("miniooni temporary directory: %s", sess.TempDir())
+	log.Debugf("miniooni temporary directory: %s", sess.TempDir())
 
 	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
 	fatalOnError(err, "cannot start session tunnel")
@@ -294,7 +294,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	log.Info("Looking up your location; please be patient...")
 	err = sess.MaybeLookupLocation()
 	fatalOnError(err, "cannot lookup your location")
-	log.Infof("- IP: %s", sess.ProbeIP())
+	log.Debugf("- IP: %s", sess.ProbeIP())
 	log.Infof("- country: %s", sess.ProbeCC())
 	log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
 	log.Infof("- resolver's IP: %s", sess.ResolverIP())
