@@ -37,7 +37,7 @@ type HTTP3Transport struct {
 
 // CloseIdleConnections closes all the connections opened by this transport.
 func (t *HTTP3Transport) CloseIdleConnections() {
-	// TODO(kelmenhorst): implement
+	t.RoundTripper.Close()
 }
 
 // NewHTTP3Transport creates a new HTTP3Transport instance.
