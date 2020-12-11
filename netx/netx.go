@@ -180,7 +180,7 @@ func NewHTTP3Dialer(config Config) HTTP3Dialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d dialer.HTTP3ContextDialer = &dialer.QUICSystemDialer{}
+	var d dialer.HTTP3ContextDialer = &dialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
 	d = dialer.QUICErrorWrapperDialer{Dialer: d}
 	if config.TLSSaver != nil {
 		d = dialer.HTTP3HandshakeSaver{Saver: config.TLSSaver, Dialer: d}

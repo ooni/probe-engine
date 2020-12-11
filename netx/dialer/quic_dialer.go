@@ -10,6 +10,7 @@ import (
 	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/legacy/netx/dialid"
 	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/netx/trace"
 )
 
 // QUICBaseDialer is a system dialer for Quic
@@ -28,7 +29,9 @@ type HTTP3Dialer interface {
 }
 
 // QUICSystemDialer is a base dialer for QUIC
-type QUICSystemDialer struct{}
+type QUICSystemDialer struct {
+	Saver *trace.Saver
+}
 
 // DialContext implements HTTP3ContextDialer.DialContext
 func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
@@ -40,8 +43,12 @@ func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr 
 	ip := net.ParseIP(onlyhost)
 	udpAddr := &net.UDPAddr{IP: ip, Port: port, Zone: ""}
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+	var pconn net.PacketConn = udpConn
+	if d.Saver != nil {
+		pconn = saverUDPConn{UDPConn: udpConn, saver: d.Saver}
+	}
 
-	sess, err := quic.DialEarlyContext(ctx, udpConn, udpAddr, host, tlsCfg, cfg)
+	sess, err := quic.DialEarlyContext(ctx, pconn, udpAddr, host, tlsCfg, cfg)
 	go func() {
 		// wait before closing the connection
 		time.Sleep(2 * time.Second)

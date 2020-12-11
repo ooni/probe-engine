@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 	"crypto/tls"
+	"net"
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
@@ -82,4 +83,40 @@ func (h HTTP3HandshakeSaver) DialContext(ctx context.Context, network string, ad
 		Time:               stop,
 	})
 	return sess, err
+}
+
+// saverUDPConn is used by the QUIC System Dialer if a ReadWriteSaver is set in the netx config
+type saverUDPConn struct {
+	*net.UDPConn
+	saver *trace.Saver
+}
+
+func (c saverUDPConn) WriteTo(p []byte, addr net.Addr) (int, error) {
+	start := time.Now()
+	count, err := c.UDPConn.WriteTo(p, addr)
+	stop := time.Now()
+	c.saver.Write(trace.Event{
+		Data:     p[:count],
+		Duration: stop.Sub(start),
+		Err:      err,
+		NumBytes: count,
+		Name:     errorx.WriteOperation,
+		Time:     stop,
+	})
+	return count, err
+}
+
+func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error) {
+	start := time.Now()
+	_n, _oobn, _flags, _addr, err := c.UDPConn.ReadMsgUDP(b, oob)
+	stop := time.Now()
+	c.saver.Write(trace.Event{
+		Data:     b[:_n],
+		Duration: stop.Sub(start),
+		Err:      err,
+		NumBytes: _n,
+		Name:     errorx.ReadOperation,
+		Time:     stop,
+	})
+	return _n, _oobn, _flags, _addr, err
 }
