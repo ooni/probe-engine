@@ -24,7 +24,7 @@ func (d QUICSaverDialer) DialContext(ctx context.Context, network, addr string, 
 	sess, err := d.QUICContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
 	d.Saver.Write(trace.Event{
-		Address:  addr,
+		Address:  host,
 		Duration: stop.Sub(start),
 		Err:      err,
 		Name:     errorx.ConnectOperation,
