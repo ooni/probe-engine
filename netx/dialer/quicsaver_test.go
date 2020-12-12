@@ -162,23 +162,11 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 	if ev[1].Name != "tls_handshake_done" {
 		t.Fatal("unexpected Name")
 	}
-	if ev[1].TLSCipherSuite == "" {
-		t.Fatal("unexpected TLSCipherSuite")
-	}
-	if ev[1].TLSNegotiatedProto != "h3-29" {
-		t.Fatal("unexpected TLSNegotiatedProto")
-	}
 	if !reflect.DeepEqual(ev[1].TLSNextProtos, nextprotos) {
 		t.Fatal("unexpected TLSNextProtos")
 	}
-	if ev[1].TLSPeerCerts == nil {
-		t.Fatal("unexpected TLSPeerCerts")
-	}
 	if ev[1].TLSServerName != "www.google.com" {
 		t.Fatal("unexpected TLSServerName")
-	}
-	if ev[1].TLSVersion == "" {
-		t.Fatal("unexpected TLSVersion")
 	}
 	if ev[1].Time.Before(ev[0].Time) {
 		t.Fatal("unexpected Time")
