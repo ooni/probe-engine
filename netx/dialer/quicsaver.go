@@ -109,9 +109,13 @@ func (c saverUDPConn) WriteTo(p []byte, addr net.Addr) (int, error) {
 func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error) {
 	start := time.Now()
 	_n, _oobn, _flags, _addr, err := c.UDPConn.ReadMsgUDP(b, oob)
+	var data []byte
+	if _n > -1 {
+		data = b[:_n]
+	}
 	stop := time.Now()
 	c.saver.Write(trace.Event{
-		Data:     b[:_n],
+		Data:     data,
 		Duration: stop.Sub(start),
 		Err:      err,
 		NumBytes: _n,
