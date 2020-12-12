@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +29,9 @@ func (d MockQUICDialer) DialContext(ctx context.Context, network, addr string, h
 }
 
 func TestQUICSaverDialerFailure(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
 	dlr := dialer.QUICSaverDialer{
@@ -35,7 +40,7 @@ func TestQUICSaverDialerFailure(t *testing.T) {
 		},
 		Saver: saver,
 	}
-	sess, err := dlr.DialContext(context.Background(), "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
+	sess, err := dlr.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
 	if !errors.Is(err, expected) {
 		t.Fatal("expected another error here")
 	}
@@ -66,23 +71,7 @@ func TestQUICSaverDialerFailure(t *testing.T) {
 	}
 }
 
-func TestQUICSaverConnDialerFailure(t *testing.T) {
-	expected := errors.New("mocked error")
-	saver := &trace.Saver{}
-	systemdialer := dialer.QUICSystemDialer{Saver: saver}
-	dlr := MockQUICDialer{
-		Dialer: systemdialer,
-		Err:    expected,
-	}
-	sess, err := dlr.DialContext(context.Background(), "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
-	if !errors.Is(err, expected) {
-		t.Fatal("not the error we expected")
-	}
-	if sess != nil {
-		t.Fatal("expected nil conn here")
-	}
-}
-func TestQUICSaverConnDialerSuccess(t *testing.T) {
+func TestQUICSaverConnDialSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
@@ -128,300 +117,103 @@ func TestQUICSaverConnDialerSuccess(t *testing.T) {
 	}
 }
 
-// func TestSaverTLSHandshakerSuccessWithReadWrite(t *testing.T) {
-// 	// This is the most common use case for collecting reads, writes
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	nextprotos := []string{"h2"}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Config: &tls.Config{NextProtos: nextprotos},
-// 		Dialer: dialer.SaverConnDialer{
-// 			Dialer: new(net.Dialer),
-// 			Saver:  saver,
-// 		},
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	// Implementation note: we don't close the connection here because it is
-// 	// very handy to have the last event being the end of the handshake
-// 	_, err := tlsdlr.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	ev := saver.Read()
-// 	if len(ev) < 4 {
-// 		// it's a bit tricky to be sure about the right number of
-// 		// events because network conditions may influence that
-// 		t.Fatal("unexpected number of events")
-// 	}
-// 	if ev[0].Name != "tls_handshake_start" {
-// 		t.Fatal("unexpected Name")
-// 	}
-// 	if ev[0].TLSServerName != "www.google.com" {
-// 		t.Fatal("unexpected TLSServerName")
-// 	}
-// 	if !reflect.DeepEqual(ev[0].TLSNextProtos, nextprotos) {
-// 		t.Fatal("unexpected TLSNextProtos")
-// 	}
-// 	if ev[0].Time.After(time.Now()) {
-// 		t.Fatal("unexpected Time")
-// 	}
-// 	last := len(ev) - 1
-// 	for idx := 1; idx < last; idx++ {
-// 		if ev[idx].Data == nil {
-// 			t.Fatal("unexpected Data")
-// 		}
-// 		if ev[idx].Duration <= 0 {
-// 			t.Fatal("unexpected Duration")
-// 		}
-// 		if ev[idx].Err != nil {
-// 			t.Fatal("unexpected Err")
-// 		}
-// 		if ev[idx].NumBytes <= 0 {
-// 			t.Fatal("unexpected NumBytes")
-// 		}
-// 		switch ev[idx].Name {
-// 		case errorx.ReadOperation, errorx.WriteOperation:
-// 		default:
-// 			t.Fatal("unexpected Name")
-// 		}
-// 		if ev[idx].Time.Before(ev[idx-1].Time) {
-// 			t.Fatal("unexpected Time")
-// 		}
-// 	}
-// 	if ev[last].Duration <= 0 {
-// 		t.Fatal("unexpected Duration")
-// 	}
-// 	if ev[last].Err != nil {
-// 		t.Fatal("unexpected Err")
-// 	}
-// 	if ev[last].Name != "tls_handshake_done" {
-// 		t.Fatal("unexpected Name")
-// 	}
-// 	if ev[last].TLSCipherSuite == "" {
-// 		t.Fatal("unexpected TLSCipherSuite")
-// 	}
-// 	if ev[last].TLSNegotiatedProto != "h2" {
-// 		t.Fatal("unexpected TLSNegotiatedProto")
-// 	}
-// 	if !reflect.DeepEqual(ev[last].TLSNextProtos, nextprotos) {
-// 		t.Fatal("unexpected TLSNextProtos")
-// 	}
-// 	if ev[last].TLSPeerCerts == nil {
-// 		t.Fatal("unexpected TLSPeerCerts")
-// 	}
-// 	if ev[last].TLSServerName != "www.google.com" {
-// 		t.Fatal("unexpected TLSServerName")
-// 	}
-// 	if ev[last].TLSVersion == "" {
-// 		t.Fatal("unexpected TLSVersion")
-// 	}
-// 	if ev[last].Time.Before(ev[last-1].Time) {
-// 		t.Fatal("unexpected Time")
-// 	}
-// }
+func TestQUICHandshakeSaverSuccess(t *testing.T) {
+	nextprotos := []string{"h3-29"}
+	servername := "www.google.com"
+	tlsConf := &tls.Config{
+		NextProtos: nextprotos,
+		ServerName: servername,
+	}
+	saver := &trace.Saver{}
+	dlr := dialer.QUICHandshakeSaver{
+		Dialer: dialer.QUICSystemDialer{},
+		Saver:  saver,
+	}
 
-// func TestSaverTLSHandshakerSuccess(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	nextprotos := []string{"h2"}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Config: &tls.Config{NextProtos: nextprotos},
-// 		Dialer: new(net.Dialer),
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	conn, err := tlsdlr.DialTLSContext(context.Background(), "tcp", "www.google.com:443")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	conn.Close()
-// 	ev := saver.Read()
-// 	if len(ev) != 2 {
-// 		t.Fatal("unexpected number of events")
-// 	}
-// 	if ev[0].Name != "tls_handshake_start" {
-// 		t.Fatal("unexpected Name")
-// 	}
-// 	if ev[0].TLSServerName != "www.google.com" {
-// 		t.Fatal("unexpected TLSServerName")
-// 	}
-// 	if !reflect.DeepEqual(ev[0].TLSNextProtos, nextprotos) {
-// 		t.Fatal("unexpected TLSNextProtos")
-// 	}
-// 	if ev[0].Time.After(time.Now()) {
-// 		t.Fatal("unexpected Time")
-// 	}
-// 	if ev[1].Duration <= 0 {
-// 		t.Fatal("unexpected Duration")
-// 	}
-// 	if ev[1].Err != nil {
-// 		t.Fatal("unexpected Err")
-// 	}
-// 	if ev[1].Name != "tls_handshake_done" {
-// 		t.Fatal("unexpected Name")
-// 	}
-// 	if ev[1].TLSCipherSuite == "" {
-// 		t.Fatal("unexpected TLSCipherSuite")
-// 	}
-// 	if ev[1].TLSNegotiatedProto != "h2" {
-// 		t.Fatal("unexpected TLSNegotiatedProto")
-// 	}
-// 	if !reflect.DeepEqual(ev[1].TLSNextProtos, nextprotos) {
-// 		t.Fatal("unexpected TLSNextProtos")
-// 	}
-// 	if ev[1].TLSPeerCerts == nil {
-// 		t.Fatal("unexpected TLSPeerCerts")
-// 	}
-// 	if ev[1].TLSServerName != "www.google.com" {
-// 		t.Fatal("unexpected TLSServerName")
-// 	}
-// 	if ev[1].TLSVersion == "" {
-// 		t.Fatal("unexpected TLSVersion")
-// 	}
-// 	if ev[1].Time.Before(ev[0].Time) {
-// 		t.Fatal("unexpected Time")
-// 	}
-// }
+	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
+	if sess == nil {
+		t.Fatal("unexpected nil sess")
+	}
+	ev := saver.Read()
+	if len(ev) != 2 {
+		t.Fatal("unexpected number of events")
+	}
+	if ev[0].Name != "tls_handshake_start" {
+		t.Fatal("unexpected Name")
+	}
+	if ev[0].TLSServerName != "www.google.com" {
+		t.Fatal("unexpected TLSServerName")
+	}
+	if !reflect.DeepEqual(ev[0].TLSNextProtos, nextprotos) {
+		t.Fatal("unexpected TLSNextProtos")
+	}
+	if ev[0].Time.After(time.Now()) {
+		t.Fatal("unexpected Time")
+	}
+	if ev[1].Duration <= 0 {
+		t.Fatal("unexpected Duration")
+	}
+	if ev[1].Err != nil {
+		t.Fatal("unexpected Err", ev[1].Err)
+	}
+	if ev[1].Name != "tls_handshake_done" {
+		t.Fatal("unexpected Name")
+	}
+	if ev[1].TLSCipherSuite == "" {
+		t.Fatal("unexpected TLSCipherSuite")
+	}
+	if ev[1].TLSNegotiatedProto != "h3-29" {
+		t.Fatal("unexpected TLSNegotiatedProto")
+	}
+	if !reflect.DeepEqual(ev[1].TLSNextProtos, nextprotos) {
+		t.Fatal("unexpected TLSNextProtos")
+	}
+	if ev[1].TLSPeerCerts == nil {
+		t.Fatal("unexpected TLSPeerCerts")
+	}
+	if ev[1].TLSServerName != "www.google.com" {
+		t.Fatal("unexpected TLSServerName")
+	}
+	if ev[1].TLSVersion == "" {
+		t.Fatal("unexpected TLSVersion")
+	}
+	if ev[1].Time.Before(ev[0].Time) {
+		t.Fatal("unexpected Time")
+	}
+}
 
-// func TestSaverTLSHandshakerHostnameError(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Dialer: new(net.Dialer),
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	conn, err := tlsdlr.DialTLSContext(
-// 		context.Background(), "tcp", "wrong.host.badssl.com:443")
-// 	if err == nil {
-// 		t.Fatal("expected an error here")
-// 	}
-// 	if conn != nil {
-// 		t.Fatal("expected nil conn here")
-// 	}
-// 	for _, ev := range saver.Read() {
-// 		if ev.Name != "tls_handshake_done" {
-// 			continue
-// 		}
-// 		if ev.NoTLSVerify == true {
-// 			t.Fatal("expected NoTLSVerify to be false")
-// 		}
-// 		if len(ev.TLSPeerCerts) < 1 {
-// 			t.Fatal("expected at least a certificate here")
-// 		}
-// 	}
-// }
+func TestQUICHandshakeSaverHostNameError(t *testing.T) {
+	nextprotos := []string{"h3-29"}
+	servername := "wrong.host.badssl.com"
+	tlsConf := &tls.Config{
+		NextProtos: nextprotos,
+		ServerName: servername,
+	}
+	saver := &trace.Saver{}
+	dlr := dialer.QUICHandshakeSaver{
+		Dialer: dialer.QUICSystemDialer{},
+		Saver:  saver,
+	}
 
-// func TestSaverTLSHandshakerInvalidCertError(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Dialer: new(net.Dialer),
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	conn, err := tlsdlr.DialTLSContext(
-// 		context.Background(), "tcp", "expired.badssl.com:443")
-// 	if err == nil {
-// 		t.Fatal("expected an error here")
-// 	}
-// 	if conn != nil {
-// 		t.Fatal("expected nil conn here")
-// 	}
-// 	for _, ev := range saver.Read() {
-// 		if ev.Name != "tls_handshake_done" {
-// 			continue
-// 		}
-// 		if ev.NoTLSVerify == true {
-// 			t.Fatal("expected NoTLSVerify to be false")
-// 		}
-// 		if len(ev.TLSPeerCerts) < 1 {
-// 			t.Fatal("expected at least a certificate here")
-// 		}
-// 	}
-// }
-
-// func TestSaverTLSHandshakerAuthorityError(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Dialer: new(net.Dialer),
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	conn, err := tlsdlr.DialTLSContext(
-// 		context.Background(), "tcp", "self-signed.badssl.com:443")
-// 	if err == nil {
-// 		t.Fatal("expected an error here")
-// 	}
-// 	if conn != nil {
-// 		t.Fatal("expected nil conn here")
-// 	}
-// 	for _, ev := range saver.Read() {
-// 		if ev.Name != "tls_handshake_done" {
-// 			continue
-// 		}
-// 		if ev.NoTLSVerify == true {
-// 			t.Fatal("expected NoTLSVerify to be false")
-// 		}
-// 		if len(ev.TLSPeerCerts) < 1 {
-// 			t.Fatal("expected at least a certificate here")
-// 		}
-// 	}
-// }
-
-// func TestSaverTLSHandshakerNoTLSVerify(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("skip test in short mode")
-// 	}
-// 	saver := &trace.Saver{}
-// 	tlsdlr := dialer.TLSDialer{
-// 		Config: &tls.Config{InsecureSkipVerify: true},
-// 		Dialer: new(net.Dialer),
-// 		TLSHandshaker: dialer.SaverTLSHandshaker{
-// 			TLSHandshaker: dialer.SystemTLSHandshaker{},
-// 			Saver:         saver,
-// 		},
-// 	}
-// 	conn, err := tlsdlr.DialTLSContext(
-// 		context.Background(), "tcp", "self-signed.badssl.com:443")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if conn == nil {
-// 		t.Fatal("expected non-nil conn here")
-// 	}
-// 	conn.Close()
-// 	for _, ev := range saver.Read() {
-// 		if ev.Name != "tls_handshake_done" {
-// 			continue
-// 		}
-// 		if ev.NoTLSVerify != true {
-// 			t.Fatal("expected NoTLSVerify to be true")
-// 		}
-// 		if len(ev.TLSPeerCerts) < 1 {
-// 			t.Fatal("expected at least a certificate here")
-// 		}
-// 	}
-// }
+	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess here")
+	}
+	for _, ev := range saver.Read() {
+		if ev.Name != "tls_handshake_done" {
+			continue
+		}
+		if ev.NoTLSVerify == true {
+			t.Fatal("expected NoTLSVerify to be false")
+		}
+		if !strings.Contains(ev.Err.Error(), "certificate is valid for www.google.com, not "+servername) {
+			t.Fatal("unexpected error type")
+		}
+	}
+}
