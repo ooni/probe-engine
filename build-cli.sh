@@ -17,6 +17,6 @@ case $1 in
     export GOOS=linux GOARCH=arm64
     go build -o ./CLI/linux/arm64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
   *)
-    echo "usage: $0 darwin|linux|windows" 1>&2
+    echo "usage: $0 darwin|linux|windows|rpi3|rpi4" 1>&2
     exit 1
 esac
