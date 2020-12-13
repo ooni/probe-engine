@@ -254,7 +254,28 @@ func toFailureString(err error) string {
 }
 
 func toQUICFailureString(err error) string {
+	var errwrapper *ErrWrapper
+	if errors.As(err, &errwrapper) {
+		return errwrapper.Error() // we've already wrapped it
+	}
+	if errors.Is(err, ErrDNSBogon) {
+		return FailureDNSBogonError // not in MK
+	}
+	if errors.Is(err, context.Canceled) {
+		return FailureInterrupted
+	}
+	var x509HostnameError x509.HostnameError
+	if errors.As(err, &x509HostnameError) {
+		return FailureSSLInvalidHostname
+	}
+
 	s := err.Error()
+	if strings.HasSuffix(s, "EOF") {
+		return FailureEOFError
+	}
+	if strings.HasSuffix(s, "operation was canceled") {
+		return FailureInterrupted
+	}
 	matched, err := regexp.MatchString(`.*x509: certificate is valid for.*not.*`, s)
 	if matched {
 		return FailureSSLInvalidHostname
@@ -274,12 +295,15 @@ func toQUICFailureString(err error) string {
 	if strings.HasSuffix(s, "Handshake did not complete in time") {
 		return FailureGenericTimeoutError
 	}
-	if strings.HasSuffix(s, "connection refused") {
+	if strings.HasSuffix(s, "connection_refused") {
 		return FailureConnectionRefused
 	}
 
-	if strings.Contains(s, "stateless reset") {
+	if strings.Contains(s, "stateless_reset") {
 		return FailureConnectionReset
+	}
+	if strings.Contains(s, "deadline exceeded") {
+		return FailureGenericTimeoutError
 	}
 	formatted := fmt.Sprintf("unknown_failure: %s", s)
 	return Scrub(formatted) // scrub IP addresses in the error
