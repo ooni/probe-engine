@@ -16,7 +16,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "run" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Error("unexpected experiment version")
 	}
 }

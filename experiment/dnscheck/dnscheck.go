@@ -111,9 +111,9 @@ func (m Measurer) Run(
 		return ErrUnsupportedURLScheme
 	}
 
-	// 5. possibly expand a domain to a list of IP addresses
+	// 5. possibly expand a domain to a list of IP addresses.
 	//
-	// implementation note: because the resolver we constructed also deals
+	// Implementation note: because the resolver we constructed also deals
 	// with IP addresses successfully, we just get back the IPs when we are
 	// passing as input an IP address rather than a domain name.
 	begin := time.Now()

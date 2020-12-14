@@ -25,11 +25,15 @@ func (Measurer) ExperimentName() string {
 
 // ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
 func (Measurer) ExperimentVersion() string {
-	return "0.1.0"
+	return "0.2.0"
 }
 
 // StructuredInput contains structured input for this experiment.
 type StructuredInput struct {
+	// Annotations contains extra annotations to add to the
+	// final measurement.
+	Annotations map[string]string `json:"annotations"`
+
 	// DNSCheck contains settings for the dnscheck experiment.
 	DNSCheck dnscheck.Config `json:"dnscheck"`
 
@@ -53,6 +57,7 @@ func (Measurer) Run(
 	if !found {
 		return fmt.Errorf("no such experiment: %s", input.Name)
 	}
+	measurement.AddAnnotations(input.Annotations)
 	return mainfunc(ctx, input, sess, measurement, callbacks)
 }
 
