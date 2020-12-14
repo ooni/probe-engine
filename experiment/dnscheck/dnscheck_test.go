@@ -48,7 +48,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.5.0" {
+	if measurer.ExperimentVersion() != "0.6.0" {
 		t.Error("unexpected experiment version")
 	}
 }
@@ -96,7 +96,7 @@ func TestWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
 	measurer := NewExperimentMeasurer(Config{
-		DefaultAddrs: []string{"1.1.1.1"},
+		DefaultAddrs: "1.1.1.1 1.0.0.1",
 	})
 	measurement := &model.Measurement{Input: "dot://one.one.one.one"}
 	err := measurer.Run(

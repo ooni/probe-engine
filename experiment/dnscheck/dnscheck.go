@@ -22,22 +22,22 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.5.0"
+	testVersion   = "0.6.0"
 	defaultDomain = "example.org"
 )
 
 // Config contains the experiment's configuration.
 type Config struct {
-	DefaultAddrs  []string `json:"default_addrs" ooni:"default addresses for domain"`
-	Domain        string   `json:"domain" ooni:"domain to resolve using the specified resolver"`
-	HTTP3Enabled  bool     `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
-	HTTPHost      string   `json:"http_host" ooni:"force using specific HTTP Host header"`
-	TLSServerName string   `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
+	DefaultAddrs  string `json:"default_addrs" ooni:"default addresses for domain"`
+	Domain        string `json:"domain" ooni:"domain to resolve using the specified resolver"`
+	HTTP3Enabled  bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
+	HTTPHost      string `json:"http_host" ooni:"force using specific HTTP Host header"`
+	TLSServerName string `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
 type TestKeys struct {
-	DefaultAddrs     []string                      `json:"x_default_addrs"`
+	DefaultAddrs     string                        `json:"x_default_addrs"`
 	Domain           string                        `json:"domain"`
 	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
 	HTTPHost         string                        `json:"x_http_host,omitempty"`
@@ -141,8 +141,10 @@ func (m Measurer) Run(
 	for _, addr := range addrs {
 		allAddrs[addr] = true
 	}
-	for _, addr := range m.Config.DefaultAddrs {
-		allAddrs[addr] = true
+	for _, addr := range strings.Split(m.Config.DefaultAddrs, " ") {
+		if addr != "" {
+			allAddrs[addr] = true
+		}
 	}
 
 	// 7. determine all the domain lookups we need to perform
@@ -151,8 +153,8 @@ func (m Measurer) Run(
 	for addr := range allAddrs {
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
-				DNSHTTPHost:      m.httpHost(URL.Host),            // use original host (and optional port)
-				DNSTLSServerName: m.tlsServerName(URL.Hostname()), // just the domain/IP for SNI
+				DNSHTTPHost:      m.httpHost(URL.Host),
+				DNSTLSServerName: m.tlsServerName(URL.Hostname()),
 				HTTP3Enabled:     m.Config.HTTP3Enabled,
 				RejectDNSBogons:  true, // bogons are errors in this context
 				ResolverURL:      makeResolverURL(URL, addr),
