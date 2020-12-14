@@ -22,20 +22,22 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.4.0"
+	testVersion   = "0.5.0"
 	defaultDomain = "example.org"
 )
 
 // Config contains the experiment's configuration.
 type Config struct {
-	Domain        string `json:"domain" ooni:"domain to resolve using the specified resolver"`
-	HTTP3Enabled  bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
-	HTTPHost      string `json:"http_host" ooni:"Force using specific HTTP Host header"`
-	TLSServerName string `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
+	DefaultAddrs  []string `json:"default_addrs" ooni:"default addresses for domain"`
+	Domain        string   `json:"domain" ooni:"domain to resolve using the specified resolver"`
+	HTTP3Enabled  bool     `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
+	HTTPHost      string   `json:"http_host" ooni:"force using specific HTTP Host header"`
+	TLSServerName string   `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
 type TestKeys struct {
+	DefaultAddrs     []string                      `json:"x_default_addrs"`
 	Domain           string                        `json:"domain"`
 	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
 	HTTPHost         string                        `json:"x_http_host,omitempty"`
@@ -90,6 +92,7 @@ func (m Measurer) Run(
 	if domain == "" {
 		domain = defaultDomain
 	}
+	tk.DefaultAddrs = m.Config.DefaultAddrs
 	tk.Domain = domain
 	tk.HTTP3Enabled = m.Config.HTTP3Enabled
 	tk.HTTPHost = m.Config.HTTPHost
@@ -132,10 +135,20 @@ func (m Measurer) Run(
 		tk.Bootstrap = &urlgetter.TestKeys{Queries: queries}
 	}
 
-	// 6. determine all the domain lookups we need to perform
+	// 6. merge default addresses for the domain with the ones that
+	// we did discover here and measure them all.
+	allAddrs := make(map[string]bool)
+	for _, addr := range addrs {
+		allAddrs[addr] = true
+	}
+	for _, addr := range m.Config.DefaultAddrs {
+		allAddrs[addr] = true
+	}
+
+	// 7. determine all the domain lookups we need to perform
 	var inputs []urlgetter.MultiInput
 	multi := urlgetter.Multi{Begin: begin, Session: sess}
-	for _, addr := range addrs {
+	for addr := range allAddrs {
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
 				DNSHTTPHost:      m.httpHost(URL.Host),            // use original host (and optional port)
@@ -148,7 +161,7 @@ func (m Measurer) Run(
 		})
 	}
 
-	// 7. perform all the required resolutions
+	// 8. perform all the required resolutions
 	for output := range Collect(ctx, multi, inputs, callbacks) {
 		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
 	}
