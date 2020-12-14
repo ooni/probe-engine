@@ -48,49 +48,45 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.4.0" {
+	if measurer.ExperimentVersion() != "0.5.0" {
 		t.Error("unexpected experiment version")
 	}
 }
 
 func TestDNSCheckFailsWithoutInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{Domain: "example.com"})
-
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrInputRequired) {
 		t.Fatal("expected no input error")
 	}
 }
 
-func TestDNSCheckFailsInvalidInput(t *testing.T) {
+func TestDNSCheckFailsWithInvalidURL(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
-
-	// test with invalid URL
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&model.Measurement{Input: "Not a valid URL \x7f"},
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrInvalidURL) {
 		t.Fatal("expected invalid input error")
 	}
+}
 
-	// test with unsupported protocol
-	err = measurer.Run(
+func TestDNSCheckFailsWithUnsupportedProtocol(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&model.Measurement{Input: "file://1.1.1.1"},
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrUnsupportedURLScheme) {
 		t.Fatal("expected unsupported scheme error")
 	}
@@ -99,11 +95,10 @@ func TestDNSCheckFailsInvalidInput(t *testing.T) {
 func TestWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := NewExperimentMeasurer(Config{})
-
-	measurement := &model.Measurement{Input: "dot://1.1.1.1"}
-
-	// test with valid DNS endpoint
+	measurer := NewExperimentMeasurer(Config{
+		DefaultAddrs: []string{"1.1.1.1"},
+	})
+	measurement := &model.Measurement{Input: "dot://one.one.one.one"}
 	err := measurer.Run(
 		ctx,
 		newsession(),
@@ -113,7 +108,6 @@ func TestWithCancelledContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	sk, err := measurer.GetSummaryKeys(measurement)
 	if err != nil {
 		t.Fatal(err)
