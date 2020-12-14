@@ -116,7 +116,7 @@ func (m Measurer) Run(
 	// Implementation note: because the resolver we constructed also deals
 	// with IP addresses successfully, we just get back the IPs when we are
 	// passing as input an IP address rather than a domain name.
-	begin := time.Now()
+	begin := measurement.MeasurementStartTimeSaved
 	evsaver := new(trace.Saver)
 	resolver := netx.NewResolver(netx.Config{
 		BogonIsError: true,
