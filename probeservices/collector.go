@@ -137,17 +137,24 @@ func (r reportChan) CanSubmit(m *model.Measurement) bool {
 }
 
 // SubmitMeasurement submits a measurement belonging to the report
-// to the OONI collector. We will unconditionally modify the measurement
-// with the ReportID it should contain.
+// to the OONI collector. On success, we will modify the measurement
+// such that it contains the report ID for which it has been
+// submitted. Otherwise, we'll set the report ID to the empty
+// string, so that you know which measurements weren't submitted.
 func (r reportChan) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse collectorUpdateResponse
 	m.ReportID = r.ID
-	return r.client.Client.PostJSON(
+	err := r.client.Client.PostJSON(
 		ctx, fmt.Sprintf("/report/%s", r.ID), collectorUpdateRequest{
 			Format:  "json",
 			Content: m,
 		}, &updateResponse,
 	)
+	if err != nil {
+		m.ReportID = ""
+		return err
+	}
+	return nil
 }
 
 // ReportID returns the report ID.

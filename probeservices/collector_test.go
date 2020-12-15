@@ -94,6 +94,9 @@ func TestReportLifecycle(t *testing.T) {
 	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
 		t.Fatal(err)
 	}
+	if measurement.ReportID != report.ReportID() {
+		t.Fatal("report ID mismatch")
+	}
 }
 
 func TestReportLifecycleWrongExperiment(t *testing.T) {
@@ -326,26 +329,6 @@ func (rro *RecordingReportOpener) OpenReport(
 	return rrc, nil
 }
 
-func TestOpenReportGood(t *testing.T) {
-	ctx := context.Background()
-	template := probeservices.ReportTemplate{
-		DataFormatVersion: probeservices.DefaultDataFormatVersion,
-		Format:            probeservices.DefaultFormat,
-		ProbeASN:          "AS0",
-		ProbeCC:           "ZZ",
-		SoftwareName:      "ooniprobe-engine",
-		SoftwareVersion:   "0.1.0",
-		TestName:          "dummy",
-		TestStartTime:     "2019-10-28 12:51:06",
-		TestVersion:       "0.1.0",
-	}
-	client := newclient()
-	_, err := client.OpenReport(ctx, template)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestOpenReportCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately abort
@@ -367,6 +350,39 @@ func TestOpenReportCancelledContext(t *testing.T) {
 	}
 	if report != nil {
 		t.Fatal("expected nil report here")
+	}
+}
+
+func TestSubmitMeasurementCancelledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	template := probeservices.ReportTemplate{
+		DataFormatVersion: probeservices.DefaultDataFormatVersion,
+		Format:            probeservices.DefaultFormat,
+		ProbeASN:          "AS0",
+		ProbeCC:           "ZZ",
+		SoftwareName:      "ooniprobe-engine",
+		SoftwareVersion:   "0.1.0",
+		TestName:          "dummy",
+		TestStartTime:     "2019-10-28 12:51:06",
+		TestVersion:       "0.1.0",
+	}
+	client := newclient()
+	report, err := client.OpenReport(ctx, template)
+	if err != nil {
+		t.Fatal(err)
+	}
+	measurement := makeMeasurement(template, report.ReportID())
+	if report.CanSubmit(&measurement) != true {
+		t.Fatal("report should be able to submit this measurement")
+	}
+	cancel() // cause submission to fail
+	err = report.SubmitMeasurement(ctx, &measurement)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if measurement.ReportID != "" {
+		t.Fatal("report ID should be empty here")
 	}
 }
 
