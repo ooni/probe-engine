@@ -48,9 +48,6 @@ type Measurement struct {
 	// and is only used within probe-engine as a "zero" time.
 	MeasurementStartTimeSaved time.Time `json:"-"`
 
-	// OOID is the measurement ID stamped by the OONI collector.
-	OOID string `json:"ooid,omitempty"`
-
 	// Options contains command line options
 	Options []string `json:"options,omitempty"`
 
