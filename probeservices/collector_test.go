@@ -87,14 +87,11 @@ func TestReportLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	measurement := makeMeasurement(template, report.ID)
+	measurement := makeMeasurement(template, report.ReportID())
 	if report.CanSubmit(&measurement) != true {
 		t.Fatal("report should be able to submit this measurement")
 	}
 	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
-		t.Fatal(err)
-	}
-	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -117,8 +114,7 @@ func TestReportLifecycleWrongExperiment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer report.Close(ctx)
-	measurement := makeMeasurement(template, report.ID)
+	measurement := makeMeasurement(template, report.ReportID())
 	measurement.TestName = "antani"
 	if report.CanSubmit(&measurement) != false {
 		t.Fatal("report should not be able to submit this measurement")
@@ -273,17 +269,13 @@ func TestEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	measurement := makeMeasurement(template, report.ID)
+	measurement := makeMeasurement(template, report.ReportID())
 	if err = report.SubmitMeasurement(ctx, &measurement); err != nil {
-		t.Fatal(err)
-	}
-	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
 
 type RecordingReportChannel struct {
-	cc   int64
 	tmpl probeservices.ReportTemplate
 	m    []*model.Measurement
 	mu   sync.Mutex
@@ -309,8 +301,11 @@ func (rrc *RecordingReportChannel) Close(ctx context.Context) error {
 	}
 	rrc.mu.Lock()
 	defer rrc.mu.Unlock()
-	rrc.cc++
 	return nil
+}
+
+func (rrc *RecordingReportChannel) ReportID() string {
+	return ""
 }
 
 type RecordingReportOpener struct {
@@ -318,7 +313,7 @@ type RecordingReportOpener struct {
 	mu       sync.Mutex
 }
 
-func (rro *RecordingReportOpener) NewReportChannel(
+func (rro *RecordingReportOpener) OpenReport(
 	ctx context.Context, rt probeservices.ReportTemplate,
 ) (probeservices.ReportChannel, error) {
 	if ctx.Err() != nil {
@@ -331,7 +326,7 @@ func (rro *RecordingReportOpener) NewReportChannel(
 	return rrc, nil
 }
 
-func TestNewReportChannelGood(t *testing.T) {
+func TestOpenReportGood(t *testing.T) {
 	ctx := context.Background()
 	template := probeservices.ReportTemplate{
 		DataFormatVersion: probeservices.DefaultDataFormatVersion,
@@ -345,16 +340,13 @@ func TestNewReportChannelGood(t *testing.T) {
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
-	report, err := client.NewReportChannel(ctx, template)
+	_, err := client.OpenReport(ctx, template)
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err = report.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestNewReportChannelCancelledContext(t *testing.T) {
+func TestOpenReportCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately abort
 	template := probeservices.ReportTemplate{
@@ -369,7 +361,7 @@ func TestNewReportChannelCancelledContext(t *testing.T) {
 		TestVersion:       "0.1.0",
 	}
 	client := newclient()
-	report, err := client.NewReportChannel(ctx, template)
+	report, err := client.OpenReport(ctx, template)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("not the error we expected")
 	}
@@ -416,23 +408,14 @@ func TestSubmitterLifecyle(t *testing.T) {
 	if err := submitter.Submit(ctx, m3); err != nil {
 		t.Fatal(err)
 	}
-	if err := submitter.Close(ctx); err != nil {
-		t.Fatal(err)
-	}
 	if len(rro.channels) != 2 {
 		t.Fatal("unexpected number of channels")
 	}
 	if len(rro.channels[0].m) != 2 {
 		t.Fatal("unexpected number of measurements in first channel")
 	}
-	if rro.channels[0].cc != 1 {
-		t.Fatal("first channel was not closed exactly once")
-	}
 	if len(rro.channels[1].m) != 1 {
 		t.Fatal("unexpected number of measurements in second channel")
-	}
-	if rro.channels[1].cc != 1 {
-		t.Fatal("second channel was not closed exactly once")
 	}
 }
 
@@ -451,9 +434,6 @@ func TestSubmitterCannotOpenNewChannel(t *testing.T) {
 	}
 	m3 := makeMeasurementWithoutTemplate("antani", "example_extended")
 	if err := submitter.Submit(ctx, m3); !errors.Is(err, context.Canceled) {
-		t.Fatal(err)
-	}
-	if err := submitter.Close(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if len(rro.channels) != 0 {

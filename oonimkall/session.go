@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-	"time"
 
 	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/atomicx"
@@ -140,11 +139,6 @@ func NewSession(config *SessionConfig) (*Session, error) {
 func sessionFinalizer(sess *Session) {
 	for _, fn := range sess.cl {
 		fn()
-	}
-	if sess.submitter != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-		defer cancel()
-		sess.submitter.Close(ctx) // ignore return value
 	}
 	sess.sessp.Close() // ignore return value
 	ActiveSessions.Add(-1)
