@@ -26,7 +26,7 @@ import (
 
 func newclient() probeservices.Client {
 	txp := netx.NewHTTPTransport(netx.Config{Logger: log.Log})
-	ua := fmt.Sprintf("mtool/%s ooniprobe-engine/%s", version.Version, version.Version)
+	ua := fmt.Sprintf("apitool/%s ooniprobe-engine/%s", version.Version, version.Version)
 	return probeservices.Client{
 		Client: httpx.Client{
 			BaseURL:    "https://ams-pg.ooni.org/",
