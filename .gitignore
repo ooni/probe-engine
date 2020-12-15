@@ -1,5 +1,6 @@
 /*.jsonl
 /.vscode
+/apitool
 /asn.mmdb
 /badproxy.pem
 /ca-bundle.pem
