@@ -16,7 +16,6 @@ import (
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
-	"github.com/ooni/probe-engine/internal/runtimex"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
 	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
@@ -450,11 +449,13 @@ func (s *Session) initOrchestraClient(
 	return clnt, nil
 }
 
-func (s *Session) lookupASN(dbPath, ip string) (uint, string, error) {
+// LookupASN maps an IP address to its ASN and network name.
+func (s *Session) LookupASN(dbPath, ip string) (uint, string, error) {
 	return geolocate.LookupASN(dbPath, ip)
 }
 
-func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
+// LookupProbeIP performs the probe IP lookup.
+func (s *Session) LookupProbeIP(ctx context.Context) (string, error) {
 	return (&geolocate.IPLookupClient{
 		HTTPClient: s.DefaultHTTPClient(),
 		Logger:     s.logger,
@@ -462,11 +463,13 @@ func (s *Session) lookupProbeIP(ctx context.Context) (string, error) {
 	}).Do(ctx)
 }
 
-func (s *Session) lookupProbeCC(dbPath, probeIP string) (string, error) {
+// LookupCC maps an IP address to a country code.
+func (s *Session) LookupCC(dbPath, probeIP string) (string, error) {
 	return geolocate.LookupCC(dbPath, probeIP)
 }
 
-func (s *Session) lookupResolverIP(ctx context.Context) (string, error) {
+// LookupResolverIP performs the lookup of the resolver IP.
+func (s *Session) LookupResolverIP(ctx context.Context) (string, error) {
 	return geolocate.LookupFirstResolverIP(ctx, nil)
 }
 
@@ -492,47 +495,19 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 
 // LookupLocationContext performs a location lookup. If you want memoisation
 // of the results, you should use MaybeLookupLocationContext.
-func (s *Session) LookupLocationContext(ctx context.Context) (out *model.LocationInfo, err error) {
-	defer func() {
-		if recover() != nil {
-			// JUST KNOW WE'VE BEEN HERE
-		}
-	}()
-	var (
-		probeIP     string
-		asn         uint
-		org         string
-		cc          string
-		resolverASN uint   = model.DefaultResolverASN
-		resolverIP  string = model.DefaultResolverIP
-		resolverOrg string
-	)
-	err = s.MaybeUpdateResources(ctx)
-	runtimex.PanicOnError(err, "s.fetchResourcesIdempotent failed")
-	probeIP, err = s.lookupProbeIP(ctx)
-	runtimex.PanicOnError(err, "s.lookupProbeIP failed")
-	asn, org, err = s.lookupASN(s.ASNDatabasePath(), probeIP)
-	runtimex.PanicOnError(err, "s.lookupASN #1 failed")
-	cc, err = s.lookupProbeCC(s.CountryDatabasePath(), probeIP)
-	runtimex.PanicOnError(err, "s.lookupProbeCC failed")
-	if s.proxyURL == nil {
-		resolverIP, err = s.lookupResolverIP(ctx)
-		runtimex.PanicOnError(err, "s.lookupResolverIP failed")
-		resolverASN, resolverOrg, err = s.lookupASN(
-			s.ASNDatabasePath(), resolverIP,
-		)
-		runtimex.PanicOnError(err, "s.lookupASN #2 failed")
-	}
-	out = &model.LocationInfo{
-		ASN:                 asn,
-		CountryCode:         cc,
-		NetworkName:         org,
-		ProbeIP:             probeIP,
-		ResolverASN:         resolverASN,
-		ResolverIP:          resolverIP,
-		ResolverNetworkName: resolverOrg,
-	}
-	return
+func (s *Session) LookupLocationContext(ctx context.Context) (*model.LocationInfo, error) {
+	// Implementation note: we don't perform the lookup of the resolver IP
+	// when we are using a proxy because that might leak information.
+	return LocationLookup{
+		CountryLookupper:     s,
+		EnableResolverLookup: s.proxyURL == nil,
+		PathsProvider:        s,
+		ProbeIPLookupper:     s,
+		ProbeASNLookupper:    s,
+		ResolverASNLookupper: s,
+		ResolverIPLookupper:  s,
+		ResourceUpdater:      s,
+	}.Do(ctx)
 }
 
 // MaybeLookupLocationContext is like MaybeLookupLocation but with a context
