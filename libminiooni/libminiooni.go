@@ -289,9 +289,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	log.Debugf("miniooni state directory: %s", miniooniDir)
 
 	consentFile := path.Join(miniooniDir, "informed")
-	fatalIfFalse(canOpen(consentFile) || currentOptions.Yes, riskOfRunningOONI)
 	fatalOnError(maybeWriteConsentFile(currentOptions.Yes, consentFile),
 		"cannot write informed consent file")
+	fatalIfFalse(canOpen(consentFile), riskOfRunningOONI)
 	log.Info("miniooni home directory: $HOME/.miniooni")
 
 	var proxyURL *url.URL
