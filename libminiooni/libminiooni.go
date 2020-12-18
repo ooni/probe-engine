@@ -233,7 +233,8 @@ network performance:
 - Anyone monitoring your internet activity (such as a government
 or Internet provider) may be able to tell that you are using OONI Probe;
  
-- The network data you collect will be published automatically.
+- The network data you collect will be published automatically
+unless you use miniooni's -n command line flag.
  
 To learn more, see https://ooni.org/about/risks/.
 
