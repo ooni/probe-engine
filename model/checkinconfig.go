@@ -5,8 +5,8 @@ type CategoryCodes struct {
 	CategoryCodes []string `json:"category_codes"` // CategoryCodes is an array of category codes
 }
 
-// CheckinConfig contains configuration for calling the checkin API.
-type CheckinConfig struct {
+// CheckInConfig contains configuration for calling the checkin API.
+type CheckInConfig struct {
 	Charging        bool          `json:"charging"`         // Charging indicate if the phone is actually charging
 	OnWiFi          bool          `json:"on_wifi"`          // OnWiFi indicate if the phone is actually connected to a WiFi network
 	Platform        string        `json:"platform"`         // Platform of the probe
