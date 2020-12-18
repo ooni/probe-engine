@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
+	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
@@ -51,6 +53,7 @@ type Options struct {
 	TorBinary        string
 	Tunnel           string
 	Verbose          bool
+	Yes              bool
 }
 
 const (
@@ -119,6 +122,9 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
 	)
+	getopt.FlagLong(
+		&globalOptions.Yes, "yes", 0, "I accept the risk of running OONI",
+	)
 }
 
 func fatalWithString(msg string) {
@@ -127,7 +133,6 @@ func fatalWithString(msg string) {
 
 func fatalIfFalse(cond bool, msg string) {
 	if !cond {
-		log.Warn(msg)
 		panic(msg)
 	}
 }
@@ -217,6 +222,40 @@ func gethomedir(optionsHome string) string {
 	return os.Getenv("HOME")
 }
 
+const riskOfRunningOONI = `
+Do you consent to OONI Probe data collection?
+
+OONI Probe collects evidence of internet censorship and measures
+network performance:
+ 
+- OONI Probe will likely test objectionable sites and services;
+ 
+- Anyone monitoring your internet activity (such as a government
+or Internet provider) may be able to tell that you are using OONI Probe;
+ 
+- The network data you collect will be published automatically.
+ 
+To learn more, see https://ooni.org/about/risks/.
+
+If you're onboard, re-run the same command and add the --yes flag, to
+indicate that you understand the risks. This will create an empty file
+named 'consent' in $HOME/.miniooni, meaning that we know you opted in
+and we will not ask you this question again.
+
+`
+
+func canOpen(filepath string) bool {
+	_, err := fsx.Open(filepath)
+	return err == nil
+}
+
+func maybeWriteConsentFile(yes bool, filepath string) (err error) {
+	if yes {
+		err = ioutil.WriteFile(filepath, []byte("\n"), 0644)
+	}
+	return
+}
+
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
 //
@@ -247,6 +286,12 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
 	log.Debugf("miniooni state directory: %s", miniooniDir)
+
+	consentFile := path.Join(miniooniDir, "informed")
+	fatalIfFalse(canOpen(consentFile) || currentOptions.Yes, riskOfRunningOONI)
+	fatalOnError(maybeWriteConsentFile(currentOptions.Yes, consentFile),
+		"cannot write informed consent file")
+	log.Info("miniooni home directory: $HOME/.miniooni")
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
