@@ -70,8 +70,8 @@ func (m Measurer) Run(
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.config.SleepTime))
 	defer cancel()
 	<-ctx.Done()
-	sess.Logger().Warnf("example: %s", "remember to drink")
-	sess.Logger().Infof("example: %s", "water is key to survival")
+	sess.Logger().Warnf("example: %s", "remember to sleep")
+	sess.Logger().Infof("example: %s", "sleeping is key to survival")
 	callbacks.OnProgress(1.0, m.config.Message)
 	return err
 }
