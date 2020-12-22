@@ -8,7 +8,7 @@ import (
 
 type checkInResult struct {
 	Tests model.CheckInInfo `json:"tests"`
-	V     string            `json:"v"`
+	V     int               `json:"v"`
 }
 
 // CheckIn pobes ask for tests to be run or otherwise go back to sleep
