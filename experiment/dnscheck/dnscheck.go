@@ -82,7 +82,7 @@ func (m Measurer) Run(
 	measurement.TestKeys = tk
 	urlgetter.RegisterExtensions(measurement)
 
-	// 3. select the domain to resolve or use default and, while there, also
+	// 2. select the domain to resolve or use default and, while there, also
 	// ensure that we register all the other options we're using.
 	domain := m.Config.Domain
 	if domain == "" {
@@ -94,7 +94,7 @@ func (m Measurer) Run(
 	tk.HTTPHost = m.Config.HTTPHost
 	tk.TLSServerName = m.Config.TLSServerName
 
-	// 4. parse the input URL describing the resolver to use
+	// 3. parse the input URL describing the resolver to use
 	input := string(measurement.Input)
 	if input == "" {
 		return ErrInputRequired
@@ -110,7 +110,7 @@ func (m Measurer) Run(
 		return ErrUnsupportedURLScheme
 	}
 
-	// 5. possibly expand a domain to a list of IP addresses.
+	// 4. possibly expand a domain to a list of IP addresses.
 	//
 	// Implementation note: because the resolver we constructed also deals
 	// with IP addresses successfully, we just get back the IPs when we are
@@ -131,7 +131,7 @@ func (m Measurer) Run(
 		tk.Bootstrap = &urlgetter.TestKeys{Queries: queries}
 	}
 
-	// 6. merge default addresses for the domain with the ones that
+	// 5. merge default addresses for the domain with the ones that
 	// we did discover here and measure them all.
 	allAddrs := make(map[string]bool)
 	for _, addr := range addrs {
@@ -143,7 +143,7 @@ func (m Measurer) Run(
 		}
 	}
 
-	// 7. determine all the domain lookups we need to perform
+	// 6. determine all the domain lookups we need to perform
 	const maxParallelism = 10
 	parallelism := maxParallelism
 	if parallelism > len(allAddrs) {
@@ -165,7 +165,7 @@ func (m Measurer) Run(
 		})
 	}
 
-	// 8. perform all the required resolutions
+	// 7. perform all the required resolutions
 	for output := range Collect(ctx, multi, inputs, callbacks) {
 		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
 	}
