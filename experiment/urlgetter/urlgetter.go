@@ -27,6 +27,7 @@ type Config struct {
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
+	DNSTLSVersion     string `ooni:"Force specific TLS version used for DoT/DoH (e.g. 'TLSv1.3')"`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
 	HTTP3Enabled      bool   `ooni:"use http3 instead of http/1.1 or http2"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
