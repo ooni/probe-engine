@@ -21,6 +21,7 @@ const (
 type Config struct {
 	// not settable from command line
 	CertPool *x509.CertPool
+	Timeout  time.Duration
 
 	// settable from command line
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
@@ -98,8 +99,9 @@ func (m Measurer) Run(
 	// default timeout that applies. When urlgetter is used as a library, it's
 	// instead the responsibility of the user of urlgetter to set timeouts. Note
 	// that this code is indeed only called when using urlgetter directly.
-	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
-	defer cancel()
+	if m.Config.Timeout <= 0 {
+		m.Config.Timeout = 45 * time.Second
+	}
 	RegisterExtensions(measurement)
 	g := Getter{
 		Config:  m.Config,

@@ -39,6 +39,11 @@ type Getter struct {
 // Get performs the action described by g using the given context
 // and returning the test keys and eventually an error
 func (g Getter) Get(ctx context.Context) (TestKeys, error) {
+	if g.Config.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, g.Config.Timeout)
+		defer cancel()
+	}
 	if g.Begin.IsZero() {
 		g.Begin = time.Now()
 	}
