@@ -305,12 +305,41 @@ func (c DNSClient) CloseIdleConnections() {
 // If config.ResolveSaver is not nil and we're creating an underlying
 // resolver where this is possible, we will also save events.
 func NewDNSClient(config Config, URL string) (DNSClient, error) {
-	return NewDNSClientWithOverrides(config, URL, "", "")
+	return NewDNSClientWithOverrides(config, URL, "", "", "")
+}
+
+// ErrInvalidTLSVersion indicates that you passed us a string
+// that does not represent a valid TLS version.
+var ErrInvalidTLSVersion = errors.New("invalid TLS version")
+
+// ConfigureTLSVersion configures the correct TLS version into
+// the specified *tls.Config or returns an error.
+func ConfigureTLSVersion(config *tls.Config, version string) error {
+	switch version {
+	case "TLSv1.3":
+		config.MinVersion = tls.VersionTLS13
+		config.MaxVersion = tls.VersionTLS13
+	case "TLSv1.2":
+		config.MinVersion = tls.VersionTLS12
+		config.MaxVersion = tls.VersionTLS12
+	case "TLSv1.1":
+		config.MinVersion = tls.VersionTLS11
+		config.MaxVersion = tls.VersionTLS11
+	case "TLSv1.0", "TLSv1":
+		config.MinVersion = tls.VersionTLS10
+		config.MaxVersion = tls.VersionTLS10
+	case "":
+		// nothing
+	default:
+		return ErrInvalidTLSVersion
+	}
+	return nil
 }
 
 // NewDNSClientWithOverrides creates a new DNS client, similar to NewDNSClient,
 // with the option to override the default Hostname and SNI.
-func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride string) (DNSClient, error) {
+func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride,
+	TLSVersion string) (DNSClient, error) {
 	var c DNSClient
 	switch URL {
 	case "doh://powerdns":
@@ -327,6 +356,9 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		return c, err
 	}
 	config.TLSConfig = &tls.Config{ServerName: SNIOverride}
+	if err := ConfigureTLSVersion(config.TLSConfig, TLSVersion); err != nil {
+		return c, err
+	}
 	switch resolverURL.Scheme {
 	case "system":
 		c.Resolver = resolver.SystemResolver{}

@@ -33,6 +33,7 @@ type Config struct {
 	HTTP3Enabled  bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
 	HTTPHost      string `json:"http_host" ooni:"force using specific HTTP Host header"`
 	TLSServerName string `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
+	TLSVersion    string `json:"tls_version" ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
@@ -42,6 +43,7 @@ type TestKeys struct {
 	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
 	HTTPHost         string                        `json:"x_http_host,omitempty"`
 	TLSServerName    string                        `json:"x_tls_server_name,omitempty"`
+	TLSVersion       string                        `json:"x_tls_version"`
 	Bootstrap        *urlgetter.TestKeys           `json:"bootstrap"`
 	BootstrapFailure *string                       `json:"bootstrap_failure"`
 	Lookups          map[string]urlgetter.TestKeys `json:"lookups"`
@@ -93,6 +95,7 @@ func (m Measurer) Run(
 	tk.HTTP3Enabled = m.Config.HTTP3Enabled
 	tk.HTTPHost = m.Config.HTTPHost
 	tk.TLSServerName = m.Config.TLSServerName
+	tk.TLSVersion = m.Config.TLSVersion
 
 	// 3. parse the input URL describing the resolver to use
 	input := string(measurement.Input)
@@ -156,6 +159,7 @@ func (m Measurer) Run(
 			Config: urlgetter.Config{
 				DNSHTTPHost:      m.httpHost(URL.Host),
 				DNSTLSServerName: m.tlsServerName(URL.Hostname()),
+				DNSTLSVersion:    m.Config.TLSVersion,
 				HTTP3Enabled:     m.Config.HTTP3Enabled,
 				RejectDNSBogons:  true, // bogons are errors in this context
 				ResolverURL:      makeResolverURL(URL, addr),

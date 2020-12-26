@@ -111,7 +111,7 @@ func (m Measurer) newDialer(logger model.Logger) netx.Dialer {
 	// TODO(bassosimone): this is a resolver that should hopefully work
 	// in many places. Maybe allow to configure it?
 	resolver, err := netx.NewDNSClientWithOverrides(netx.Config{Logger: logger},
-		"https://cloudflare.com/dns-query", "dns.cloudflare.com", "")
+		"https://cloudflare.com/dns-query", "dns.cloudflare.com", "", "")
 	runtimex.PanicOnError(err, "cannot initialize resolver")
 	return netx.NewDialer(netx.Config{FullResolver: resolver, Logger: logger})
 }

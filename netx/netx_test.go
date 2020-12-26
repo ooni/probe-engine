@@ -1130,7 +1130,7 @@ func TestNewDNSClientDoTDNSSaver(t *testing.T) {
 
 func TestNewDNSCLientDoTWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "dot://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "dot://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1141,7 +1141,7 @@ func TestNewDNSCLientDoTWithoutPort(t *testing.T) {
 
 func TestNewDNSCLientTCPWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "tcp://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "tcp://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1152,7 +1152,7 @@ func TestNewDNSCLientTCPWithoutPort(t *testing.T) {
 
 func TestNewDNSCLientUDPWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "udp://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "udp://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
