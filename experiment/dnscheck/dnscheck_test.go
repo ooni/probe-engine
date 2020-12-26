@@ -48,7 +48,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.7.0" {
+	if measurer.ExperimentVersion() != "0.8.0" {
 		t.Error("unexpected experiment version")
 	}
 }

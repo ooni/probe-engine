@@ -22,7 +22,7 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.7.0"
+	testVersion   = "0.8.0"
 	defaultDomain = "example.org"
 )
 
@@ -43,7 +43,7 @@ type TestKeys struct {
 	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
 	HTTPHost         string                        `json:"x_http_host,omitempty"`
 	TLSServerName    string                        `json:"x_tls_server_name,omitempty"`
-	TLSVersion       string                        `json:"x_tls_version"`
+	TLSVersion       string                        `json:"x_tls_version,omitempty"`
 	Bootstrap        *urlgetter.TestKeys           `json:"bootstrap"`
 	BootstrapFailure *string                       `json:"bootstrap_failure"`
 	Lookups          map[string]urlgetter.TestKeys `json:"lookups"`

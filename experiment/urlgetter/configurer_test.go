@@ -2,12 +2,14 @@ package urlgetter_test
 
 import (
 	"crypto/tls"
+	"errors"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/urlgetter"
+	"github.com/ooni/probe-engine/netx"
 	"github.com/ooni/probe-engine/netx/resolver"
 	"github.com/ooni/probe-engine/netx/trace"
 )
@@ -709,8 +711,8 @@ func TestConfigurerNewConfigurationTLSvInvalid(t *testing.T) {
 		Saver:  saver,
 	}
 	_, err := configurer.NewConfiguration()
-	if err.Error() != "unsupported TLS version" {
-		t.Fatal("not the error we expected")
+	if !errors.Is(err, netx.ErrInvalidTLSVersion) {
+		t.Fatalf("not the error we expected: %+v", err)
 	}
 }
 
