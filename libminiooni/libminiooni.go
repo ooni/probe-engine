@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"path"
@@ -45,6 +46,7 @@ type Options struct {
 	NoCollector      bool
 	ProbeServicesURL string
 	Proxy            string
+	Random           bool
 	ReportFile       string
 	SelfCensorSpec   string
 	TorArgs          []string
@@ -95,6 +97,9 @@ func init() {
 	)
 	getopt.FlagLong(
 		&globalOptions.Proxy, "proxy", 0, "Set the proxy URL", "URL",
+	)
+	getopt.FlagLong(
+		&globalOptions.Random, "random", 0, "Randomize inputs",
 	)
 	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',
@@ -313,6 +318,13 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	})
 	inputs, err := inputLoader.Load(context.Background())
 	fatalOnError(err, "cannot load inputs")
+
+	if currentOptions.Random {
+		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+		rnd.Shuffle(len(inputs), func(i, j int) {
+			inputs[i], inputs[j] = inputs[j], inputs[i]
+		})
+	}
 
 	err = builder.SetOptionsGuessType(extraOptions)
 	fatalOnError(err, "cannot parse extraOptions")
