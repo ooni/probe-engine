@@ -3,12 +3,15 @@ package run
 import (
 	"context"
 
+	"github.com/ooni/probe-engine/experiment/dnscheck"
 	"github.com/ooni/probe-engine/model"
 )
 
-type experimentMain func(ctx context.Context, input StructuredInput,
-	sess model.ExperimentSession, measurement *model.Measurement,
-	callbacks model.ExperimentCallbacks) error
+type experimentMain interface {
+	do(ctx context.Context, input StructuredInput,
+		sess model.ExperimentSession, measurement *model.Measurement,
+		callbacks model.ExperimentCallbacks) error
+}
 
 var table = map[string]experimentMain{
 	// TODO(bassosimone): before extending run to support more than
@@ -16,5 +19,7 @@ var table = map[string]experimentMain{
 	// including different experiments into the same report ID.
 	// Probably, the right way to implement this functionality is to
 	// use proveservices.Submitter to submit reports.
-	"dnscheck": dodnscheck,
+	"dnscheck": &dnsCheckMain{
+		Endpoints: &dnscheck.Endpoints{},
+	},
 }

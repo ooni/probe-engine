@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -22,9 +24,49 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.8.0"
+	testVersion   = "0.9.0"
 	defaultDomain = "example.org"
 )
+
+// Endpoints keeps track of repeatedly measured endpoints.
+type Endpoints struct {
+	WaitTime  time.Duration
+	count     uint32
+	nextVisit map[string]time.Time
+	mu        sync.Mutex
+}
+
+func (e *Endpoints) maybeSleep(resolverURL string, logger model.Logger) {
+	if e == nil {
+		return
+	}
+	defer e.mu.Unlock()
+	e.mu.Lock()
+	nextTime, found := e.nextVisit[resolverURL]
+	now := time.Now()
+	if !found || now.After(nextTime) {
+		return
+	}
+	sleepTime := nextTime.Sub(now)
+	atomic.AddUint32(&e.count, 1)
+	logger.Infof("waiting %v before testing %s again", sleepTime, resolverURL)
+	time.Sleep(sleepTime)
+}
+
+func (e *Endpoints) maybeRegister(resolverURL string) {
+	if e != nil && !strings.HasPrefix(resolverURL, "udp://") {
+		defer e.mu.Unlock()
+		e.mu.Lock()
+		if e.nextVisit == nil {
+			e.nextVisit = make(map[string]time.Time)
+		}
+		waitTime := 180 * time.Second
+		if e.WaitTime > 0 {
+			waitTime = e.WaitTime
+		}
+		e.nextVisit[resolverURL] = time.Now().Add(waitTime)
+	}
+}
 
 // Config contains the experiment's configuration.
 type Config struct {
@@ -52,15 +94,16 @@ type TestKeys struct {
 // Measurer performs the measurement.
 type Measurer struct {
 	Config
+	Endpoints *Endpoints
 }
 
 // ExperimentName implements model.ExperimentSession.ExperimentName
-func (m Measurer) ExperimentName() string {
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
 // ExperimentVersion implements model.ExperimentSession.ExperimentVersion
-func (m Measurer) ExperimentVersion() string {
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
@@ -74,7 +117,7 @@ var (
 )
 
 // Run implements model.ExperimentSession.Run
-func (m Measurer) Run(
+func (m *Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -169,14 +212,23 @@ func (m Measurer) Run(
 		})
 	}
 
-	// 7. perform all the required resolutions
+	// 7. make sure we don't test the same endpoint too frequently
+	// because this may cause residual censorship.
+	for _, input := range inputs {
+		resolverURL := input.Config.ResolverURL
+		m.Endpoints.maybeSleep(resolverURL, sess.Logger())
+	}
+
+	// 8. perform all the required resolutions
 	for output := range Collect(ctx, multi, inputs, callbacks) {
-		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
+		resolverURL := output.Input.Config.ResolverURL
+		tk.Lookups[resolverURL] = output.TestKeys
+		m.Endpoints.maybeRegister(resolverURL)
 	}
 	return nil
 }
 
-func (m Measurer) lookupHost(ctx context.Context, hostname string, r netx.Resolver) ([]string, error) {
+func (m *Measurer) lookupHost(ctx context.Context, hostname string, r netx.Resolver) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 	return r.LookupHost(ctx, hostname)
@@ -184,7 +236,7 @@ func (m Measurer) lookupHost(ctx context.Context, hostname string, r netx.Resolv
 
 // httpHost returns the configured HTTP host, if set, otherwise
 // it will return the host provide as argument.
-func (m Measurer) httpHost(httpHost string) string {
+func (m *Measurer) httpHost(httpHost string) string {
 	if m.Config.HTTPHost != "" {
 		return m.Config.HTTPHost
 	}
@@ -192,7 +244,7 @@ func (m Measurer) httpHost(httpHost string) string {
 }
 
 // tlsServerName is like httpHost for the TLS server name.
-func (m Measurer) tlsServerName(tlsServerName string) string {
+func (m *Measurer) tlsServerName(tlsServerName string) string {
 	if m.Config.TLSServerName != "" {
 		return m.Config.TLSServerName
 	}
@@ -254,7 +306,7 @@ func makeResolverURL(URL *url.URL, addr string) string {
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return Measurer{Config: config}
+	return &Measurer{Config: config}
 }
 
 // SummaryKeys contains summary keys for this experiment.
@@ -266,6 +318,6 @@ type SummaryKeys struct {
 }
 
 // GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
-func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+func (m *Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
 	return SummaryKeys{IsAnomaly: false}, nil
 }
