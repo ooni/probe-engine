@@ -75,6 +75,7 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	dnsclient, err := netx.NewDNSClientWithOverrides(
 		configuration.HTTPConfig, c.Config.ResolverURL,
 		c.Config.DNSHTTPHost, c.Config.DNSTLSServerName,
+		c.Config.DNSTLSVersion,
 	)
 	if err != nil {
 		return configuration, err
@@ -88,23 +89,11 @@ func (c Configurer) NewConfiguration() (Configuration, error) {
 	if c.Config.TLSServerName != "" {
 		configuration.HTTPConfig.TLSConfig.ServerName = c.Config.TLSServerName
 	}
-	switch c.Config.TLSVersion {
-	case "TLSv1.3":
-		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS13
-		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS13
-	case "TLSv1.2":
-		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS12
-		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS12
-	case "TLSv1.1":
-		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS11
-		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS11
-	case "TLSv1.0", "TLSv1":
-		configuration.HTTPConfig.TLSConfig.MinVersion = tls.VersionTLS10
-		configuration.HTTPConfig.TLSConfig.MaxVersion = tls.VersionTLS10
-	case "":
-		// nothing
-	default:
-		return configuration, errors.New("unsupported TLS version")
+	err = netx.ConfigureTLSVersion(
+		configuration.HTTPConfig.TLSConfig, c.Config.TLSVersion,
+	)
+	if err != nil {
+		return configuration, err
 	}
 	configuration.HTTPConfig.NoTLSVerify = c.Config.NoTLSVerify
 	// configure proxy

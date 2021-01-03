@@ -86,6 +86,9 @@ func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry 
 		if event.Name != errorx.ConnectOperation {
 			continue
 		}
+		if event.Proto != "tcp" {
+			continue
+		}
 		// We assume Go is passing us legit data structures
 		ip, sport, _ := net.SplitHostPort(event.Address)
 		iport, _ := strconv.Atoi(sport)

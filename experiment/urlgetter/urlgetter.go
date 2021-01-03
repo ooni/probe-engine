@@ -21,13 +21,15 @@ const (
 type Config struct {
 	// not settable from command line
 	CertPool *x509.CertPool
+	Timeout  time.Duration
 
 	// settable from command line
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`
+	DNSTLSVersion     string `ooni:"Force specific TLS version used for DoT/DoH (e.g. 'TLSv1.3')"`
 	FailOnHTTPError   bool   `ooni:"Fail HTTP request if status code is 400 or above"`
-	HTTP3Enabled      bool   `ooni:"Force http3"`
+	HTTP3Enabled      bool   `ooni:"use http3 instead of http/1.1 or http2"`
 	HTTPHost          string `ooni:"Force using specific HTTP Host header"`
 	Method            string `ooni:"Force HTTP method different than GET"`
 	NoFollowRedirects bool   `ooni:"Disable following redirects"`
@@ -98,8 +100,9 @@ func (m Measurer) Run(
 	// default timeout that applies. When urlgetter is used as a library, it's
 	// instead the responsibility of the user of urlgetter to set timeouts. Note
 	// that this code is indeed only called when using urlgetter directly.
-	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
-	defer cancel()
+	if m.Config.Timeout <= 0 {
+		m.Config.Timeout = 45 * time.Second
+	}
 	RegisterExtensions(measurement)
 	g := Getter{
 		Config:  m.Config,

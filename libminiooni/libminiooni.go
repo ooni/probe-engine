@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"path"
@@ -45,6 +46,7 @@ type Options struct {
 	NoCollector      bool
 	ProbeServicesURL string
 	Proxy            string
+	Random           bool
 	ReportFile       string
 	SelfCensorSpec   string
 	TorArgs          []string
@@ -72,7 +74,7 @@ func init() {
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.InputFilePaths, "file", 'f',
+		&globalOptions.InputFilePaths, "input-file", 'f',
 		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
@@ -95,6 +97,9 @@ func init() {
 	)
 	getopt.FlagLong(
 		&globalOptions.Proxy, "proxy", 0, "Set the proxy URL", "URL",
+	)
+	getopt.FlagLong(
+		&globalOptions.Random, "random", 0, "Randomize inputs",
 	)
 	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',
@@ -246,7 +251,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	assetsDir := path.Join(miniooniDir, "assets")
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
-	log.Infof("miniooni state directory: %s", miniooniDir)
+	log.Debugf("miniooni state directory: %s", miniooniDir)
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
@@ -283,7 +288,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
-	log.Infof("miniooni temporary directory: %s", sess.TempDir())
+	log.Debugf("miniooni temporary directory: %s", sess.TempDir())
 
 	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
 	fatalOnError(err, "cannot start session tunnel")
@@ -294,7 +299,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	log.Info("Looking up your location; please be patient...")
 	err = sess.MaybeLookupLocation()
 	fatalOnError(err, "cannot lookup your location")
-	log.Infof("- IP: %s", sess.ProbeIP())
+	log.Debugf("- IP: %s", sess.ProbeIP())
 	log.Infof("- country: %s", sess.ProbeCC())
 	log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
 	log.Infof("- resolver's IP: %s", sess.ResolverIP())
@@ -313,6 +318,13 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	})
 	inputs, err := inputLoader.Load(context.Background())
 	fatalOnError(err, "cannot load inputs")
+
+	if currentOptions.Random {
+		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+		rnd.Shuffle(len(inputs), func(i, j int) {
+			inputs[i], inputs[j] = inputs[j], inputs[i]
+		})
+	}
 
 	err = builder.SetOptionsGuessType(extraOptions)
 	fatalOnError(err, "cannot parse extraOptions")

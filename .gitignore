@@ -1,5 +1,6 @@
 /*.jsonl
 /.vscode
+/apitool
 /asn.mmdb
 /badproxy.pem
 /ca-bundle.pem
@@ -13,3 +14,4 @@
 /oohelper
 /oohelperd
 /oonipsiphon/
+.DS_Store

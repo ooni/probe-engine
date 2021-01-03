@@ -53,6 +53,12 @@ func TestNewTCPConnectList(t *testing.T) {
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
+				Address:  "8.8.8.8:853",
+				Duration: 55 * time.Millisecond,
+				Name:     errorx.ConnectOperation,
+				Proto:    "udp",
+				Time:     begin.Add(130 * time.Millisecond),
+			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
