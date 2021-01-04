@@ -59,6 +59,9 @@ const (
 	// TLSHandshakeOperation is the TLS handshake
 	TLSHandshakeOperation = "tls_handshake"
 
+	// QUICHandshakeOperation is the handshake to setup a QUIC connection
+	QUICHandshakeOperation = "quic_handshake"
+
 	// HTTPRoundTripOperation is the HTTP round trip
 	HTTPRoundTripOperation = "http_round_trip"
 

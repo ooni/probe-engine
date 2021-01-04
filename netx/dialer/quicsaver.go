@@ -27,7 +27,7 @@ func (d QUICSaverDialer) DialContext(ctx context.Context, network, addr string, 
 		Address:  host,
 		Duration: stop.Sub(start),
 		Err:      err,
-		Name:     errorx.ConnectOperation,
+		Name:     errorx.QUICHandshakeOperation,
 		Proto:    network,
 		Time:     stop,
 	})
@@ -44,7 +44,7 @@ type QUICHandshakeSaver struct {
 func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
 	h.Saver.Write(trace.Event{
-		Name:          "tls_handshake_start",
+		Name:          "quic_handshake_start",
 		NoTLSVerify:   tlsCfg.InsecureSkipVerify,
 		TLSNextProtos: tlsCfg.NextProtos,
 		TLSServerName: tlsCfg.ServerName,
@@ -57,7 +57,7 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 		h.Saver.Write(trace.Event{
 			Duration:      stop.Sub(start),
 			Err:           err,
-			Name:          "tls_handshake_done",
+			Name:          "quic_handshake_done",
 			NoTLSVerify:   tlsCfg.InsecureSkipVerify,
 			TLSNextProtos: tlsCfg.NextProtos,
 			TLSServerName: tlsCfg.ServerName,
@@ -72,7 +72,7 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
 		Err:                err,
-		Name:               "tls_handshake_done",
+		Name:               "quic_handshake_done",
 		NoTLSVerify:        tlsCfg.InsecureSkipVerify,
 		TLSCipherSuite:     tlsx.CipherSuiteString(state.CipherSuite),
 		TLSNegotiatedProto: state.NegotiatedProtocol,

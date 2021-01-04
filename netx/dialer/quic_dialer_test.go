@@ -19,7 +19,7 @@ func TestQUICErrorWrapperFailure(t *testing.T) {
 	if sess != nil {
 		t.Fatal("expected a nil sess here")
 	}
-	errorWrapperCheckErr(t, err, errorx.ConnectOperation)
+	errorWrapperCheckErr(t, err, errorx.QUICHandshakeOperation)
 }
 
 func TestQUICSystemDialerSuccess(t *testing.T) {

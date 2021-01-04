@@ -72,7 +72,7 @@ func (d QUICErrorWrapperDialer) DialContext(ctx context.Context, network string,
 		// does not make any sense (and is nil) if we succeded.
 		DialID:    dialID,
 		Error:     err,
-		Operation: errorx.ConnectOperation,
+		Operation: errorx.QUICHandshakeOperation,
 		QuicErr:   true,
 	}.MaybeBuild()
 	if err != nil {
