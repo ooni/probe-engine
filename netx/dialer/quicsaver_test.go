@@ -60,7 +60,7 @@ func TestQUICSaverDialerFailure(t *testing.T) {
 	if !errors.Is(ev[0].Err, expected) {
 		t.Fatal("unexpected Err")
 	}
-	if ev[0].Name != errorx.ConnectOperation {
+	if ev[0].Name != errorx.QUICHandshakeOperation {
 		t.Fatal("unexpected Name")
 	}
 	if ev[0].Proto != "udp" {
@@ -141,7 +141,7 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 	if len(ev) != 2 {
 		t.Fatal("unexpected number of events")
 	}
-	if ev[0].Name != "tls_handshake_start" {
+	if ev[0].Name != "quic_handshake_start" {
 		t.Fatal("unexpected Name")
 	}
 	if ev[0].TLSServerName != "www.google.com" {
@@ -159,7 +159,7 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 	if ev[1].Err != nil {
 		t.Fatal("unexpected Err", ev[1].Err)
 	}
-	if ev[1].Name != "tls_handshake_done" {
+	if ev[1].Name != "quic_handshake_done" {
 		t.Fatal("unexpected Name")
 	}
 	if !reflect.DeepEqual(ev[1].TLSNextProtos, nextprotos) {
@@ -194,7 +194,7 @@ func TestQUICHandshakeSaverHostNameError(t *testing.T) {
 		t.Fatal("expected nil sess here")
 	}
 	for _, ev := range saver.Read() {
-		if ev.Name != "tls_handshake_done" {
+		if ev.Name != "quic_handshake_done" {
 			continue
 		}
 		if ev.NoTLSVerify == true {
