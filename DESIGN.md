@@ -5,7 +5,7 @@
 | Last-Updated | 2020-07-09   |
 | Status       | historical   |
 
-*Abstract* we describe our plan of replacing Measurement Kit for OONI
+*Abstract* We describe our plan of replacing Measurement Kit for OONI
 Probe Android and iOS (in particular) and (also) the CLI.
 
 ## Introduction
