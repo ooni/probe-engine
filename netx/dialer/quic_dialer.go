@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/legacy/netx/dialid"
@@ -49,11 +48,7 @@ func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr 
 	}
 
 	sess, err := quic.DialEarlyContext(ctx, pconn, udpAddr, host, tlsCfg, cfg)
-	go func() {
-		// wait before closing the connection
-		time.Sleep(2 * time.Second)
-		udpConn.Close()
-	}()
+	// TODO(kelmenhorst): Do we have to close udpConn ourselves? If so, when?
 	return sess, err
 
 }
