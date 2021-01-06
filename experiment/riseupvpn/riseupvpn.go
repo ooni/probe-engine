@@ -205,7 +205,7 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	}
 	multi := urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
 
-	for entry := range multi.Collect(ctx, inputs, "riseupvpn", callbacks) {
+	for entry := range multi.CollectOverall(ctx, inputs, 0, 50, "riseupvpn", callbacks) {
 		testkeys.UpdateProviderAPITestKeys(entry)
 	}
 
@@ -213,16 +213,17 @@ func (m Measurer) Run(ctx context.Context, sess model.ExperimentSession,
 	gateways := parseGateways(testkeys)
 	openvpnEndpoints := generateMultiInputs(gateways, "openvpn")
 	obfs4Endpoints := generateMultiInputs(gateways, "obfs4")
+	overallCount := len(inputs) + len(openvpnEndpoints) + len(obfs4Endpoints)
 
 	// measure openvpn in parallel
 	multi = urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
-	for entry := range multi.Collect(ctx, openvpnEndpoints, "riseupvpn", callbacks) {
+	for entry := range multi.CollectOverall(ctx, openvpnEndpoints, len(inputs), overallCount, "riseupvpn", callbacks) {
 		testkeys.AddGatewayConnectTestKeys(entry, "openvpn")
 	}
 
 	// measure obfs4 in parallel
 	multi = urlgetter.Multi{Begin: measurement.MeasurementStartTimeSaved, Getter: m.Getter, Session: sess}
-	for entry := range multi.Collect(ctx, obfs4Endpoints, "riseupvpn", callbacks) {
+	for entry := range multi.CollectOverall(ctx, obfs4Endpoints, len(inputs)+len(openvpnEndpoints), overallCount, "riseupvpn", callbacks) {
 		testkeys.AddGatewayConnectTestKeys(entry, "obfs4")
 	}
 
