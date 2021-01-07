@@ -23,7 +23,7 @@ type MockQUICDialer struct {
 
 func (d MockQUICDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	if d.Dialer != nil {
-		d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+		return d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	}
 	return d.Sess, d.Err
 }

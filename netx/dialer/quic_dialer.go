@@ -12,7 +12,7 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-// QUICBaseDialer is a system dialer for Quic
+// QUICBaseDialer is a system dialer for QUIC
 type QUICBaseDialer interface {
 	DialEarlyContext(context.Context, net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error)
 }
@@ -27,7 +27,7 @@ type QUICDialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
-// QUICSystemDialer is a base dialer for QUIC
+// QUICSystemDialer is the base dialer for QUIC
 type QUICSystemDialer struct {
 	Saver *trace.Saver
 }
@@ -48,7 +48,6 @@ func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr 
 	}
 
 	sess, err := quic.DialEarlyContext(ctx, pconn, udpAddr, host, tlsCfg, cfg)
-	// TODO(kelmenhorst): Do we have to close udpConn ourselves? If so, when?
 	return sess, err
 
 }
