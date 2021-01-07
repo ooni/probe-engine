@@ -26,7 +26,7 @@ func TestQUICSystemDialerSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	systemdialer := dialer.QUICSystemDialer{}
+	var systemdialer dialer.QUICSystemDialer
 
 	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {

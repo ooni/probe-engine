@@ -53,7 +53,7 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 	sess, err := h.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
 
-	if sess == nil {
+	if err != nil {
 		h.Saver.Write(trace.Event{
 			Duration:      stop.Sub(start),
 			Err:           err,
@@ -63,7 +63,7 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 			TLSServerName: tlsCfg.ServerName,
 			Time:          stop,
 		})
-		return sess, err
+		return nil, err
 	}
 	state := tls.ConnectionState{}
 	if sess != nil {
@@ -106,21 +106,21 @@ func (c saverUDPConn) WriteTo(p []byte, addr net.Addr) (int, error) {
 	return count, err
 }
 
-func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (n, oobn, flags int, addr *net.UDPAddr, err error) {
+func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (int, int, int, *net.UDPAddr, error) {
 	start := time.Now()
-	_n, _oobn, _flags, _addr, err := c.UDPConn.ReadMsgUDP(b, oob)
+	n, oobn, flags, addr, err := c.UDPConn.ReadMsgUDP(b, oob)
 	var data []byte
-	if _n > -1 {
-		data = b[:_n]
+	if n > 0 {
+		data = b[:n]
 	}
 	stop := time.Now()
 	c.saver.Write(trace.Event{
 		Data:     data,
 		Duration: stop.Sub(start),
 		Err:      err,
-		NumBytes: _n,
+		NumBytes: n,
 		Name:     errorx.ReadOperation,
 		Time:     stop,
 	})
-	return _n, _oobn, _flags, _addr, err
+	return n, oobn, flags, addr, err
 }
