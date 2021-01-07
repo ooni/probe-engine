@@ -33,7 +33,7 @@ const (
 	FailureInterrupted = "interrupted"
 
 	// FailureNoCompatibleQUICVersion means that the server does not support the proposed QUIC version
-	FailureNoCompatibleQUICVersion = "incompatible_quic_version"
+	FailureNoCompatibleQUICVersion = "quic_incompatible_version"
 
 	// FailureSSLInvalidHostname means we got certificate is not valid for SNI.
 	FailureSSLInvalidHostname = "ssl_invalid_hostname"
