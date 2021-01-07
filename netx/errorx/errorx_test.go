@@ -154,6 +154,44 @@ func TestToFailureString(t *testing.T) {
 			t.Fatal(cmp.Diff(expected, out))
 		}
 	})
+	// QUIC failures
+	t.Run("for connection_refused", func(t *testing.T) {
+		if toFailureString(errors.New("connection_refused")) != FailureConnectionRefused {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for connection_reset", func(t *testing.T) {
+		if toFailureString(errors.New("stateless_reset")) != FailureConnectionReset {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for incompatible quic version", func(t *testing.T) {
+		if toFailureString(errors.New("No compatible QUIC version found")) != FailureNoCompatibleQUICVersion {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for i/o error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1)
+		defer cancel()
+		udpAddr := &net.UDPAddr{IP: net.ParseIP("216.58.212.164"), Port: 80, Zone: ""}
+		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+		sess, err := quic.DialEarlyContext(ctx, udpConn, udpAddr, "google.com:80", &tls.Config{}, &quic.Config{})
+		if err == nil {
+			t.Fatal("expected an error here")
+		}
+		if sess != nil {
+			t.Fatal("expected nil session here")
+		}
+		if toFailureString(err) != FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for QUIC handshake timeout error", func(t *testing.T) {
+		err := errors.New("Handshake did not complete in time")
+		if toFailureString(err) != FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
+		}
+	})
 }
 
 func TestToOperationString(t *testing.T) {
@@ -198,6 +236,14 @@ func TestToOperationString(t *testing.T) {
 			t.Fatal("unexpected result")
 		}
 	})
+	t.Run("for quic_handshake", func(t *testing.T) {
+		// You're doing HTTP and the TLS handshake fails. You want
+		// to know about a TLS handshake error.
+		err := &ErrWrapper{Operation: QUICHandshakeOperation}
+		if toOperationString(err, HTTPRoundTripOperation) != QUICHandshakeOperation {
+			t.Fatal("unexpected result")
+		}
+	})
 }
 
 func TestMaybeBuildFactoryQUIC(t *testing.T) {
@@ -206,7 +252,6 @@ func TestMaybeBuildFactoryQUIC(t *testing.T) {
 		DialID:        10,
 		Error:         errors.New("mocked error"),
 		TransactionID: 100,
-		QuicErr:       true,
 	}.MaybeBuild()
 	var target *ErrWrapper
 	if errors.As(err, &target) == false {
@@ -227,112 +272,4 @@ func TestMaybeBuildFactoryQUIC(t *testing.T) {
 	if target.WrappedErr.Error() != "mocked error" {
 		t.Fatal("the wrapped error is wrong")
 	}
-}
-
-func TestToQUICFailureString(t *testing.T) {
-	t.Run("for already wrapped error", func(t *testing.T) {
-		err := SafeErrWrapperBuilder{Error: io.EOF, QuicErr: true}.MaybeBuild()
-		if toQUICFailureString(err) != FailureEOFError {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for ErrDNSBogon", func(t *testing.T) {
-		if toQUICFailureString(ErrDNSBogon) != FailureDNSBogonError {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for context.Canceled", func(t *testing.T) {
-		if toQUICFailureString(context.Canceled) != FailureInterrupted {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for x509.HostnameError", func(t *testing.T) {
-		var err x509.HostnameError
-		if toQUICFailureString(err) != FailureSSLInvalidHostname {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for x509.UnknownAuthorityError", func(t *testing.T) {
-		var err x509.UnknownAuthorityError
-		if toQUICFailureString(err) != FailureSSLUnknownAuthority {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for x509.CertificateInvalidError", func(t *testing.T) {
-		var err x509.CertificateInvalidError
-		if toQUICFailureString(err) != FailureSSLInvalidCertificate {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for operation was canceled error", func(t *testing.T) {
-		if toQUICFailureString(errors.New("operation was canceled")) != FailureInterrupted {
-			t.Fatal("unexpected result")
-		}
-	})
-	t.Run("for EOF", func(t *testing.T) {
-		if toQUICFailureString(io.EOF) != FailureEOFError {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for connection_refused", func(t *testing.T) {
-		if toQUICFailureString(errors.New("connection_refused")) != FailureConnectionRefused {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for connection_reset", func(t *testing.T) {
-		if toQUICFailureString(errors.New("stateless_reset")) != FailureConnectionReset {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for incompatible quic version", func(t *testing.T) {
-		if toQUICFailureString(errors.New("No compatible QUIC version found.")) != FailureNoCompatibleQUICVersion {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for context deadline exceeded", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1)
-		defer cancel()
-		<-ctx.Done()
-		if toQUICFailureString(ctx.Err()) != FailureGenericTimeoutError {
-			t.Fatal("unexpected results", toQUICFailureString(ctx.Err()))
-		}
-	})
-	t.Run("for i/o error", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 1)
-		defer cancel()
-		udpAddr := &net.UDPAddr{IP: net.ParseIP("216.58.212.164"), Port: 80, Zone: ""}
-		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
-		sess, err := quic.DialEarlyContext(ctx, udpConn, udpAddr, "google.com:80", &tls.Config{}, &quic.Config{})
-		if err == nil {
-			t.Fatal("expected an error here")
-		}
-		if sess != nil {
-			t.Fatal("expected nil session here")
-		}
-		if toQUICFailureString(err) != FailureGenericTimeoutError {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for TLS handshake timeout error", func(t *testing.T) {
-		err := errors.New("Handshake did not complete in time")
-		if toQUICFailureString(err) != FailureGenericTimeoutError {
-			t.Fatal("unexpected results")
-		}
-	})
-	t.Run("for errors including IPv4 address", func(t *testing.T) {
-		input := errors.New("read tcp 10.0.2.15:56948->93.184.216.34:443: use of closed network connection")
-		expected := "unknown_failure: read tcp [scrubbed]->[scrubbed]: use of closed network connection"
-		out := toQUICFailureString(input)
-		if out != expected {
-			t.Fatal(cmp.Diff(expected, out))
-		}
-	})
-	t.Run("for errors including IPv6 address", func(t *testing.T) {
-		input := errors.New("read tcp [::1]:56948->[::1]:443: use of closed network connection")
-		expected := "unknown_failure: read tcp [scrubbed]->[scrubbed]: use of closed network connection"
-		out := toQUICFailureString(input)
-		if out != expected {
-			t.Fatal(cmp.Diff(expected, out))
-		}
-	})
 }

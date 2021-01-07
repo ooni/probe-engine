@@ -163,23 +163,16 @@ type SafeErrWrapperBuilder struct {
 
 	// TransactionID is the transaction ID, if any
 	TransactionID int64
-
-	// QuicErr indicates that the QUIC transport is used
-	QuicErr bool
 }
 
 // MaybeBuild builds a new ErrWrapper, if b.Error is not nil, and returns
 // a nil error value, instead, if b.Error is nil.
 func (b SafeErrWrapperBuilder) MaybeBuild() (err error) {
-	failureString := toFailureString
-	if b.QuicErr {
-		failureString = toQUICFailureString
-	}
 	if b.Error != nil {
 		err = &ErrWrapper{
 			ConnID:        b.ConnID,
 			DialID:        b.DialID,
-			Failure:       failureString(b.Error),
+			Failure:       toFailureString(b.Error),
 			Operation:     toOperationString(b.Error, b.Operation),
 			TransactionID: b.TransactionID,
 			WrappedErr:    b.Error,
@@ -251,34 +244,7 @@ func toFailureString(err error) string {
 		// that we return here is significantly more specific.
 		return FailureDNSNXDOMAINError
 	}
-
-	formatted := fmt.Sprintf("unknown_failure: %s", s)
-	return Scrub(formatted) // scrub IP addresses in the error
-}
-
-func toQUICFailureString(err error) string {
-	var errwrapper *ErrWrapper
-	if errors.As(err, &errwrapper) {
-		return errwrapper.Error() // we've already wrapped it
-	}
-	if errors.Is(err, ErrDNSBogon) {
-		return FailureDNSBogonError // not in MK
-	}
-	if errors.Is(err, context.Canceled) {
-		return FailureInterrupted
-	}
-	var x509HostnameError x509.HostnameError
-	if errors.As(err, &x509HostnameError) {
-		return FailureSSLInvalidHostname
-	}
-
-	s := err.Error()
-	if strings.HasSuffix(s, "EOF") {
-		return FailureEOFError
-	}
-	if strings.HasSuffix(s, "operation was canceled") {
-		return FailureInterrupted
-	}
+	// special QUIC errors
 	matched, err := regexp.MatchString(`.*x509: certificate is valid for.*not.*`, s)
 	if matched {
 		return FailureSSLInvalidHostname
@@ -292,7 +258,7 @@ func toQUICFailureString(err error) string {
 			return FailureSSLInvalidCertificate
 		}
 	}
-	if strings.HasPrefix(s, "No compatible QUIC version found.") {
+	if strings.HasPrefix(s, "No compatible QUIC version found") {
 		return FailureNoCompatibleQUICVersion
 	}
 	if strings.HasSuffix(s, "Handshake did not complete in time") {
@@ -301,7 +267,6 @@ func toQUICFailureString(err error) string {
 	if strings.HasSuffix(s, "connection_refused") {
 		return FailureConnectionRefused
 	}
-
 	if strings.Contains(s, "stateless_reset") {
 		return FailureConnectionReset
 	}
@@ -327,6 +292,9 @@ func toOperationString(err error, operation string) string {
 			return errwrapper.Operation
 		}
 		if errwrapper.Operation == TLSHandshakeOperation {
+			return errwrapper.Operation
+		}
+		if errwrapper.Operation == QUICHandshakeOperation {
 			return errwrapper.Operation
 		}
 		// FALLTHROUGH

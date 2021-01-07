@@ -65,7 +65,6 @@ func (d QUICErrorWrapperDialer) DialContext(ctx context.Context, network string,
 		DialID:    dialID,
 		Error:     err,
 		Operation: errorx.QUICHandshakeOperation,
-		QuicErr:   true,
 	}.MaybeBuild()
 	if err != nil {
 		return nil, err
