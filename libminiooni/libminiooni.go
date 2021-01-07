@@ -29,7 +29,6 @@ import (
 
 	"github.com/apex/log"
 	engine "github.com/ooni/probe-engine"
-	"github.com/ooni/probe-engine/internal/fsx"
 	"github.com/ooni/probe-engine/internal/humanizex"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/selfcensor"
@@ -251,8 +250,8 @@ and we will not ask you this question again.
 `
 
 func canOpen(filepath string) bool {
-	_, err := fsx.Open(filepath)
-	return err == nil
+	stat, err := os.Stat(filepath)
+	return err == nil && stat.Mode().IsRegular()
 }
 
 func maybeWriteConsentFile(yes bool, filepath string) (err error) {
