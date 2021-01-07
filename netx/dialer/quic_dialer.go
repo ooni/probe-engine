@@ -12,11 +12,6 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-// QUICBaseDialer is a system dialer for QUIC
-type QUICBaseDialer interface {
-	DialEarlyContext(context.Context, net.PacketConn, net.Addr, string, *tls.Config, *quic.Config) (quic.EarlySession, error)
-}
-
 // QUICContextDialer is a dialer for QUIC using Context.
 type QUICContextDialer interface {
 	DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
