@@ -3,6 +3,7 @@ package dialer
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"strconv"
 
@@ -35,15 +36,17 @@ func (d QUICSystemDialer) DialContext(ctx context.Context, network string, addr 
 		return nil, err
 	}
 	ip := net.ParseIP(onlyhost)
-	udpAddr := &net.UDPAddr{IP: ip, Port: port, Zone: ""}
+	if ip == nil {
+		return nil, errors.New("invalid IP representation")
+	}
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
 	var pconn net.PacketConn = udpConn
 	if d.Saver != nil {
 		pconn = saverUDPConn{UDPConn: udpConn, saver: d.Saver}
 	}
 
-	sess, err := quic.DialEarlyContext(ctx, pconn, udpAddr, host, tlsCfg, cfg)
-	return sess, err
+	udpAddr := &net.UDPAddr{IP: ip, Port: port, Zone: ""}
+	return quic.DialEarlyContext(ctx, pconn, udpAddr, host, tlsCfg, cfg)
 
 }
 
