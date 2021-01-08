@@ -1,4 +1,4 @@
-package dialer_test
+package quicdialer_test
 
 import (
 	"context"
@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
-	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/netx/quicdialer"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 type MockQUICDialer struct {
-	Dialer dialer.QUICContextDialer
+	Dialer quicdialer.QUICContextDialer
 	Sess   quic.EarlySession
 	Err    error
 }
@@ -34,7 +34,7 @@ func TestQUICSaverDialerFailure(t *testing.T) {
 	}
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
-	dlr := dialer.QUICSaverDialer{
+	dlr := quicdialer.QUICSaverDialer{
 		QUICContextDialer: MockQUICDialer{
 			Err: expected,
 		},
@@ -76,7 +76,7 @@ func TestQUICSaverConnDialSuccess(t *testing.T) {
 		NextProtos: []string{"h3-29"},
 	}
 	saver := &trace.Saver{}
-	systemdialer := dialer.QUICSystemDialer{Saver: saver}
+	systemdialer := quicdialer.QUICSystemDialer{Saver: saver}
 
 	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {
@@ -125,8 +125,8 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 		ServerName: servername,
 	}
 	saver := &trace.Saver{}
-	dlr := dialer.QUICHandshakeSaver{
-		Dialer: dialer.QUICSystemDialer{},
+	dlr := quicdialer.QUICHandshakeSaver{
+		Dialer: quicdialer.QUICSystemDialer{},
 		Saver:  saver,
 	}
 
@@ -181,8 +181,8 @@ func TestQUICHandshakeSaverHostNameError(t *testing.T) {
 		ServerName: servername,
 	}
 	saver := &trace.Saver{}
-	dlr := dialer.QUICHandshakeSaver{
-		Dialer: dialer.QUICSystemDialer{},
+	dlr := quicdialer.QUICHandshakeSaver{
+		Dialer: quicdialer.QUICSystemDialer{},
 		Saver:  saver,
 	}
 

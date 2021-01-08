@@ -7,13 +7,13 @@ import (
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
-	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/quicdialer"
 )
 
 // QUICWrapperDialer is a QUICDialer that wraps a ContextDialer
 // This is necessary because the http3 RoundTripper does not support a DialContext method.
 type QUICWrapperDialer struct {
-	Dialer dialer.QUICContextDialer
+	Dialer quicdialer.QUICContextDialer
 }
 
 // Dial implements QUICDialer.Dial

@@ -1,9 +1,10 @@
-package dialer
+package quicdialer
 
 import (
 	"context"
 	"crypto/tls"
-	"net"
+	"crypto/x509"
+	"errors"
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
@@ -65,10 +66,7 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 		})
 		return nil, err
 	}
-	state := tls.ConnectionState{}
-	if sess != nil {
-		state = ConnectionState(sess)
-	}
+	state := ConnectionState(sess)
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
 		Err:                err,
@@ -85,42 +83,24 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 	return sess, err
 }
 
-// saverUDPConn is used by the QUIC System Dialer if a ReadWriteSaver is set in the netx config
-type saverUDPConn struct {
-	*net.UDPConn
-	saver *trace.Saver
-}
-
-func (c saverUDPConn) WriteTo(p []byte, addr net.Addr) (int, error) {
-	start := time.Now()
-	count, err := c.UDPConn.WriteTo(p, addr)
-	stop := time.Now()
-	c.saver.Write(trace.Event{
-		Data:     p[:count],
-		Duration: stop.Sub(start),
-		Err:      err,
-		NumBytes: count,
-		Name:     errorx.WriteOperation,
-		Time:     stop,
-	})
-	return count, err
-}
-
-func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (int, int, int, *net.UDPAddr, error) {
-	start := time.Now()
-	n, oobn, flags, addr, err := c.UDPConn.ReadMsgUDP(b, oob)
-	var data []byte
-	if n > 0 {
-		data = b[:n]
+// peerCerts returns the certificates presented by the peer regardless
+// of whether the TLS handshake was successful
+func peerCerts(state tls.ConnectionState, err error) []*x509.Certificate {
+	var x509HostnameError x509.HostnameError
+	if errors.As(err, &x509HostnameError) {
+		// Test case: https://wrong.host.badssl.com/
+		return []*x509.Certificate{x509HostnameError.Certificate}
 	}
-	stop := time.Now()
-	c.saver.Write(trace.Event{
-		Data:     data,
-		Duration: stop.Sub(start),
-		Err:      err,
-		NumBytes: n,
-		Name:     errorx.ReadOperation,
-		Time:     stop,
-	})
-	return n, oobn, flags, addr, err
+	var x509UnknownAuthorityError x509.UnknownAuthorityError
+	if errors.As(err, &x509UnknownAuthorityError) {
+		// Test case: https://self-signed.badssl.com/. This error has
+		// never been among the ones returned by MK.
+		return []*x509.Certificate{x509UnknownAuthorityError.Cert}
+	}
+	var x509CertificateInvalidError x509.CertificateInvalidError
+	if errors.As(err, &x509CertificateInvalidError) {
+		// Test case: https://expired.badssl.com/
+		return []*x509.Certificate{x509CertificateInvalidError.Cert}
+	}
+	return state.PeerCertificates
 }

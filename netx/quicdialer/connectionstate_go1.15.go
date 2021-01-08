@@ -1,6 +1,6 @@
 // +build go1.15
 
-package dialer
+package quicdialer
 
 import (
 	"crypto/tls"

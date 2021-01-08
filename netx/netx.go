@@ -36,6 +36,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/gocertifi"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/quicdialer"
 	"github.com/ooni/probe-engine/netx/resolver"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/netx/trace"
@@ -180,13 +181,13 @@ func NewQUICDialer(config Config) QUICDialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d dialer.QUICContextDialer = &dialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
-	d = dialer.QUICErrorWrapperDialer{Dialer: d}
+	var d quicdialer.QUICContextDialer = &quicdialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
+	d = quicdialer.QUICErrorWrapperDialer{Dialer: d}
 	if config.TLSSaver != nil {
-		d = dialer.QUICHandshakeSaver{Saver: config.TLSSaver, Dialer: d}
+		d = quicdialer.QUICHandshakeSaver{Saver: config.TLSSaver, Dialer: d}
 	}
-	d = &dialer.QUICSaverDialer{QUICContextDialer: d, Saver: config.DialSaver}
-	d = &dialer.QUICDNSDialer{Resolver: config.FullResolver, Dialer: d}
+	d = &quicdialer.QUICSaverDialer{QUICContextDialer: d, Saver: config.DialSaver}
+	d = &quicdialer.QUICDNSDialer{Resolver: config.FullResolver, Dialer: d}
 	var dialer QUICDialer = &httptransport.QUICWrapperDialer{Dialer: d}
 	return dialer
 }

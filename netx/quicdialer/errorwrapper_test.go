@@ -1,0 +1,58 @@
+package quicdialer_test
+
+import (
+	"context"
+	"crypto/tls"
+	"errors"
+	"io"
+	"testing"
+
+	"github.com/lucas-clemente/quic-go"
+	"github.com/ooni/probe-engine/legacy/netx/dialid"
+	"github.com/ooni/probe-engine/netx/errorx"
+	"github.com/ooni/probe-engine/netx/quicdialer"
+)
+
+func TestQUICErrorWrapperFailure(t *testing.T) {
+	ctx := dialid.WithDialID(context.Background())
+	d := quicdialer.QUICErrorWrapperDialer{Dialer: MockQUICDialer{Sess: nil, Err: io.EOF}}
+	sess, err := d.DialContext(ctx, "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
+	if sess != nil {
+		t.Fatal("expected a nil sess here")
+	}
+	errorWrapperCheckErr(t, err, errorx.QUICHandshakeOperation)
+}
+
+func errorWrapperCheckErr(t *testing.T, err error, op string) {
+	if !errors.Is(err, io.EOF) {
+		t.Fatal("expected another error here")
+	}
+	var errWrapper *errorx.ErrWrapper
+	if !errors.As(err, &errWrapper) {
+		t.Fatal("cannot cast to ErrWrapper")
+	}
+	if errWrapper.DialID == 0 {
+		t.Fatal("unexpected DialID")
+	}
+	if errWrapper.Operation != op {
+		t.Fatal("unexpected Operation")
+	}
+	if errWrapper.Failure != errorx.FailureEOFError {
+		t.Fatal("unexpected failure")
+	}
+}
+
+func TestQUICErrorWrapperSuccess(t *testing.T) {
+	ctx := dialid.WithDialID(context.Background())
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+	}
+	d := quicdialer.QUICErrorWrapperDialer{Dialer: quicdialer.QUICSystemDialer{}}
+	sess, err := d.DialContext(ctx, "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sess == nil {
+		t.Fatal("expected non-nil sess here")
+	}
+}

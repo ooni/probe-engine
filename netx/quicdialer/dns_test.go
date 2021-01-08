@@ -1,4 +1,4 @@
-package dialer_test
+package quicdialer_test
 
 import (
 	"context"
@@ -10,14 +10,22 @@ import (
 	"testing"
 
 	"github.com/lucas-clemente/quic-go"
-	"github.com/ooni/probe-engine/netx/dialer"
+	"github.com/ooni/probe-engine/netx/quicdialer"
 )
 
+type MockableResolver struct {
+	Addresses []string
+	Err       error
+}
+
+func (r MockableResolver) LookupHost(ctx context.Context, host string) ([]string, error) {
+	return r.Addresses, r.Err
+}
 func TestQUICDNSDialerSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: dialer.QUICSystemDialer{}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: quicdialer.QUICSystemDialer{}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error")
@@ -31,7 +39,7 @@ func TestQUICDNSDialerNoPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: dialer.QUICSystemDialer{}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: quicdialer.QUICSystemDialer{}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "antani.ooni.nu", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -45,7 +53,7 @@ func TestQUICDNSDialerNoPort(t *testing.T) {
 }
 
 func TestQUICDNSDialerLookupHostAddress(t *testing.T) {
-	dialer := dialer.QUICDNSDialer{Resolver: MockableResolver{
+	dialer := quicdialer.QUICDNSDialer{Resolver: MockableResolver{
 		Err: errors.New("mocked error"),
 	}}
 	addrs, err := dialer.LookupHost(context.Background(), "1.1.1.1")
@@ -62,7 +70,7 @@ func TestQUICDNSDialerLookupHostFailure(t *testing.T) {
 		NextProtos: []string{"h3-29"},
 	}
 	expected := errors.New("mocked error")
-	dialer := dialer.QUICDNSDialer{Resolver: MockableResolver{
+	dialer := quicdialer.QUICDNSDialer{Resolver: MockableResolver{
 		Err: expected,
 	}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "dns.google.com:853", tlsConf, &quic.Config{})
@@ -78,7 +86,7 @@ func TestQUICDNSDialerInvalidPort(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: dialer.QUICSystemDialer{}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: quicdialer.QUICSystemDialer{}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:0", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -96,7 +104,7 @@ func TestQUICDNSDialerInvalidPortSyntax(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: dialer.QUICSystemDialer{}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: quicdialer.QUICSystemDialer{}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:port", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -110,7 +118,7 @@ func TestQUICDNSDialerInvalidPortSyntax(t *testing.T) {
 }
 
 func TestQUICDNSDialerNilTLSConf(t *testing.T) {
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: dialer.QUICSystemDialer{}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: quicdialer.QUICSystemDialer{}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", nil, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
@@ -137,7 +145,7 @@ func TestQUICDNSDialerDialEarlyFails(t *testing.T) {
 	}
 	expected := errors.New("mocked DialEarly error")
 
-	dialer := dialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: MockDialer{expected}}
+	dialer := quicdialer.QUICDNSDialer{Resolver: new(net.Resolver), Dialer: MockDialer{expected}}
 	sess, err := dialer.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
