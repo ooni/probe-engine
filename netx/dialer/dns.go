@@ -38,10 +38,11 @@ func (d DNSDialer) DialContext(ctx context.Context, network, address string) (ne
 		}
 		errorslist = append(errorslist, err)
 	}
-	return nil, reduceErrors(errorslist)
+	return nil, ReduceErrors(errorslist)
 }
 
-func reduceErrors(errorslist []error) error {
+// ReduceErrors finds a known error in a list of errors since it's probably most relevant
+func ReduceErrors(errorslist []error) error {
 	if len(errorslist) == 0 {
 		return nil
 	}
