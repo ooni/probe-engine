@@ -2,6 +2,7 @@ package errorx
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/lucas-clemente/quic-go"
 	"github.com/pion/stun"
 )
 
@@ -111,7 +113,7 @@ func TestToFailureString(t *testing.T) {
 	})
 	t.Run("for i/o error", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
-		defer cancel()
+		defer cancel() // fail immediately
 		conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "www.google.com:80")
 		if err == nil {
 			t.Fatal("expected an error here")
@@ -150,6 +152,44 @@ func TestToFailureString(t *testing.T) {
 		out := toFailureString(input)
 		if out != expected {
 			t.Fatal(cmp.Diff(expected, out))
+		}
+	})
+	// QUIC failures
+	t.Run("for connection_refused", func(t *testing.T) {
+		if toFailureString(errors.New("connection_refused")) != FailureConnectionRefused {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for connection_reset", func(t *testing.T) {
+		if toFailureString(errors.New("stateless_reset")) != FailureConnectionReset {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for incompatible quic version", func(t *testing.T) {
+		if toFailureString(errors.New("No compatible QUIC version found")) != FailureNoCompatibleQUICVersion {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for i/o error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1)
+		defer cancel() // fail immediately
+		udpAddr := &net.UDPAddr{IP: net.ParseIP("216.58.212.164"), Port: 80, Zone: ""}
+		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
+		sess, err := quic.DialEarlyContext(ctx, udpConn, udpAddr, "google.com:80", &tls.Config{}, &quic.Config{})
+		if err == nil {
+			t.Fatal("expected an error here")
+		}
+		if sess != nil {
+			t.Fatal("expected nil session here")
+		}
+		if toFailureString(err) != FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
+		}
+	})
+	t.Run("for QUIC handshake timeout error", func(t *testing.T) {
+		err := errors.New("Handshake did not complete in time")
+		if toFailureString(err) != FailureGenericTimeoutError {
+			t.Fatal("unexpected results")
 		}
 	})
 }
@@ -193,6 +233,14 @@ func TestToOperationString(t *testing.T) {
 		// you want to know about a TLS handshake error.
 		err := &ErrWrapper{Operation: ReadOperation}
 		if toOperationString(err, TLSHandshakeOperation) != TLSHandshakeOperation {
+			t.Fatal("unexpected result")
+		}
+	})
+	t.Run("for quic_handshake", func(t *testing.T) {
+		// You're doing HTTP and the TLS handshake fails. You want
+		// to know about a TLS handshake error.
+		err := &ErrWrapper{Operation: QUICHandshakeOperation}
+		if toOperationString(err, HTTPRoundTripOperation) != QUICHandshakeOperation {
 			t.Fatal("unexpected result")
 		}
 	})
