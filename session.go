@@ -454,7 +454,8 @@ func (s *Session) LookupASN(dbPath, ip string) (uint, string, error) {
 	return geolocate.LookupASN(dbPath, ip)
 }
 
-// LookupProbeIP performs the probe IP lookup.
+// LookupProbeIP performs the probe IP lookup. This method implements
+// LocationLookupProbeIPLookupper.LookupProbeIP.
 func (s *Session) LookupProbeIP(ctx context.Context) (string, error) {
 	return (&geolocate.IPLookupClient{
 		HTTPClient: s.DefaultHTTPClient(),
@@ -463,12 +464,14 @@ func (s *Session) LookupProbeIP(ctx context.Context) (string, error) {
 	}).Do(ctx)
 }
 
-// LookupCC maps an IP address to a country code.
+// LookupCC maps an IP address to a country code. This method implements
+// LocationLookupCountryLookupper.LookupCC.
 func (s *Session) LookupCC(dbPath, probeIP string) (string, error) {
 	return geolocate.LookupCC(dbPath, probeIP)
 }
 
-// LookupResolverIP performs the lookup of the resolver IP.
+// LookupResolverIP performs the lookup of the resolver IP. This method implements
+// LocationLookupResolverIPLookupper.LookupResolverIP.
 func (s *Session) LookupResolverIP(ctx context.Context) (string, error) {
 	return geolocate.LookupFirstResolverIP(ctx, nil)
 }
