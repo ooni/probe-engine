@@ -246,7 +246,11 @@ func toFailureString(err error) string {
 	}
 
 	// TODO(kelmenhorst): see whether it is possible to match errors
-	// from qtls rather than strings for TLS errors below:
+	// from qtls rather than strings for TLS errors below.
+	//
+	// TODO(kelmenhorst): make sure we have tests for all errors. Also,
+	// how to ensure we are robust to changes in other libs?
+	//
 	// special QUIC errors
 	matched, err := regexp.MatchString(`.*x509: certificate is valid for.*not.*`, s)
 	if matched {
