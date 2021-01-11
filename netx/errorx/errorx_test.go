@@ -113,7 +113,7 @@ func TestToFailureString(t *testing.T) {
 	})
 	t.Run("for i/o error", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
-		defer cancel()
+		defer cancel() // fail immediately
 		conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", "www.google.com:80")
 		if err == nil {
 			t.Fatal("expected an error here")
@@ -172,7 +172,7 @@ func TestToFailureString(t *testing.T) {
 	})
 	t.Run("for i/o error", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1)
-		defer cancel()
+		defer cancel() // fail immediately
 		udpAddr := &net.UDPAddr{IP: net.ParseIP("216.58.212.164"), Port: 80, Zone: ""}
 		udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
 		sess, err := quic.DialEarlyContext(ctx, udpConn, udpAddr, "google.com:80", &tls.Config{}, &quic.Config{})

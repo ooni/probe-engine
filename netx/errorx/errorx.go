@@ -244,6 +244,9 @@ func toFailureString(err error) string {
 		// that we return here is significantly more specific.
 		return FailureDNSNXDOMAINError
 	}
+
+	// TODO(kelmenhorst): see whether it is possible to match errors
+	// from qtls rather than strings for TLS errors below:
 	// special QUIC errors
 	matched, err := regexp.MatchString(`.*x509: certificate is valid for.*not.*`, s)
 	if matched {
