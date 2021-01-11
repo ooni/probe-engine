@@ -181,13 +181,13 @@ func NewQUICDialer(config Config) QUICDialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	var d quicdialer.QUICContextDialer = &quicdialer.QUICSystemDialer{Saver: config.ReadWriteSaver}
-	d = quicdialer.QUICErrorWrapperDialer{Dialer: d}
+	var d quicdialer.ContextDialer = &quicdialer.SystemDialer{Saver: config.ReadWriteSaver}
+	d = quicdialer.ErrorWrapperDialer{Dialer: d}
 	if config.TLSSaver != nil {
-		d = quicdialer.QUICHandshakeSaver{Saver: config.TLSSaver, Dialer: d}
+		d = quicdialer.HandshakeSaver{Saver: config.TLSSaver, Dialer: d}
 	}
-	d = &quicdialer.QUICSaverDialer{QUICContextDialer: d, Saver: config.DialSaver}
-	d = &quicdialer.QUICDNSDialer{Resolver: config.FullResolver, Dialer: d}
+	d = &quicdialer.SaverDialer{ContextDialer: d, Saver: config.DialSaver}
+	d = &quicdialer.DNSDialer{Resolver: config.FullResolver, Dialer: d}
 	var dialer QUICDialer = &httptransport.QUICWrapperDialer{Dialer: d}
 	return dialer
 }

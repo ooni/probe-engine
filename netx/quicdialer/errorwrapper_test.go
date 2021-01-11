@@ -13,10 +13,12 @@ import (
 	"github.com/ooni/probe-engine/netx/quicdialer"
 )
 
-func TestQUICErrorWrapperFailure(t *testing.T) {
+func TestErrorWrapperFailure(t *testing.T) {
 	ctx := dialid.WithDialID(context.Background())
-	d := quicdialer.QUICErrorWrapperDialer{Dialer: MockQUICDialer{Sess: nil, Err: io.EOF}}
-	sess, err := d.DialContext(ctx, "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
+	d := quicdialer.ErrorWrapperDialer{
+		Dialer: MockDialer{Sess: nil, Err: io.EOF}}
+	sess, err := d.DialContext(
+		ctx, "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
 	if sess != nil {
 		t.Fatal("expected a nil sess here")
 	}
@@ -42,13 +44,12 @@ func errorWrapperCheckErr(t *testing.T, err error, op string) {
 	}
 }
 
-func TestQUICErrorWrapperSuccess(t *testing.T) {
+func TestErrorWrapperSuccess(t *testing.T) {
 	ctx := dialid.WithDialID(context.Background())
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-	}
-	d := quicdialer.QUICErrorWrapperDialer{Dialer: quicdialer.QUICSystemDialer{}}
-	sess, err := d.DialContext(ctx, "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	tlsConf := &tls.Config{NextProtos: []string{"h3-29"}}
+	d := quicdialer.ErrorWrapperDialer{Dialer: quicdialer.SystemDialer{}}
+	sess, err := d.DialContext(ctx, "udp", "216.58.212.164:443",
+		"www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}

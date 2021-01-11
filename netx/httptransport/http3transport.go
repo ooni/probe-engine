@@ -13,7 +13,7 @@ import (
 // QUICWrapperDialer is a QUICDialer that wraps a ContextDialer
 // This is necessary because the http3 RoundTripper does not support a DialContext method.
 type QUICWrapperDialer struct {
-	Dialer quicdialer.QUICContextDialer
+	Dialer quicdialer.ContextDialer
 }
 
 // Dial implements QUICDialer.Dial

@@ -9,13 +9,15 @@ import (
 	"github.com/ooni/probe-engine/netx/errorx"
 )
 
-// QUICErrorWrapperDialer is a dialer that performs quic err wrapping
-type QUICErrorWrapperDialer struct {
-	Dialer QUICContextDialer
+// ErrorWrapperDialer is a dialer that performs quic err wrapping
+type ErrorWrapperDialer struct {
+	Dialer ContextDialer
 }
 
-// DialContext implements QUICContextDialer.DialContext
-func (d QUICErrorWrapperDialer) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements ContextDialer.DialContext
+func (d ErrorWrapperDialer) DialContext(
+	ctx context.Context, network string, addr string, host string,
+	tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	dialID := dialid.ContextDialID(ctx)
 	sess, err := d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	err = errorx.SafeErrWrapperBuilder{

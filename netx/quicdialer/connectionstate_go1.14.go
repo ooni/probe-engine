@@ -8,7 +8,7 @@ import (
 	"github.com/lucas-clemente/quic-go"
 )
 
-// ConnectionState returns an empty ConnectionState because a QUIC Session's ConnectionState is only exposed using go1.15
+// ConnectionState returns the ConnectionState of a QUIC Session.
 func ConnectionState(sess quic.EarlySession) tls.ConnectionState {
 	return tls.ConnectionState{}
 }

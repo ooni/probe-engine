@@ -15,27 +15,27 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-type MockQUICDialer struct {
-	Dialer quicdialer.QUICContextDialer
+type MockDialer struct {
+	Dialer quicdialer.ContextDialer
 	Sess   quic.EarlySession
 	Err    error
 }
 
-func (d MockQUICDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	if d.Dialer != nil {
 		return d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	}
 	return d.Sess, d.Err
 }
 
-func TestQUICSaverDialerFailure(t *testing.T) {
+func TestSaverDialerFailure(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
 	expected := errors.New("mocked error")
 	saver := &trace.Saver{}
-	dlr := quicdialer.QUICSaverDialer{
-		QUICContextDialer: MockQUICDialer{
+	dlr := quicdialer.SaverDialer{
+		ContextDialer: MockDialer{
 			Err: expected,
 		},
 		Saver: saver,
@@ -71,12 +71,12 @@ func TestQUICSaverDialerFailure(t *testing.T) {
 	}
 }
 
-func TestQUICSaverConnDialSuccess(t *testing.T) {
+func TestSaverConnDialSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 	}
 	saver := &trace.Saver{}
-	systemdialer := quicdialer.QUICSystemDialer{Saver: saver}
+	systemdialer := quicdialer.SystemDialer{Saver: saver}
 
 	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
 	if err != nil {
@@ -117,7 +117,7 @@ func TestQUICSaverConnDialSuccess(t *testing.T) {
 	}
 }
 
-func TestQUICHandshakeSaverSuccess(t *testing.T) {
+func TestHandshakeSaverSuccess(t *testing.T) {
 	nextprotos := []string{"h3-29"}
 	servername := "www.google.com"
 	tlsConf := &tls.Config{
@@ -125,8 +125,8 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 		ServerName: servername,
 	}
 	saver := &trace.Saver{}
-	dlr := quicdialer.QUICHandshakeSaver{
-		Dialer: quicdialer.QUICSystemDialer{},
+	dlr := quicdialer.HandshakeSaver{
+		Dialer: quicdialer.SystemDialer{},
 		Saver:  saver,
 	}
 
@@ -173,7 +173,7 @@ func TestQUICHandshakeSaverSuccess(t *testing.T) {
 	}
 }
 
-func TestQUICHandshakeSaverHostNameError(t *testing.T) {
+func TestHandshakeSaverHostNameError(t *testing.T) {
 	nextprotos := []string{"h3-29"}
 	servername := "wrong.host.badssl.com"
 	tlsConf := &tls.Config{
@@ -181,8 +181,8 @@ func TestQUICHandshakeSaverHostNameError(t *testing.T) {
 		ServerName: servername,
 	}
 	saver := &trace.Saver{}
-	dlr := quicdialer.QUICHandshakeSaver{
-		Dialer: quicdialer.QUICSystemDialer{},
+	dlr := quicdialer.HandshakeSaver{
+		Dialer: quicdialer.SystemDialer{},
 		Saver:  saver,
 	}
 

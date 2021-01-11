@@ -10,15 +10,19 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 )
 
-// QUICDNSDialer is a dialer that uses the configured Resolver to resolve a
+// DNSDialer is a dialer that uses the configured Resolver to resolve a
 // domain name to IP addresses
-type QUICDNSDialer struct {
-	Dialer   QUICContextDialer
-	Resolver dialer.Resolver
+type DNSDialer struct {
+	Dialer   ContextDialer
+	Resolver Resolver
 }
 
-// DialContext implements QUICDialer.DialContext
-func (d QUICDNSDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// TODO(bassosimone): figure out what `addr` is used for?
+
+// DialContext implements ContextDialer.DialContext
+func (d DNSDialer) DialContext(
+	ctx context.Context, network, addr string, host string,
+	tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(host)
 	if err != nil {
 		return nil, err
@@ -32,17 +36,19 @@ func (d QUICDNSDialer) DialContext(ctx context.Context, network, addr string, ho
 	var errorslist []error
 	for _, addr := range addrs {
 		target := net.JoinHostPort(addr, onlyport)
-		sess, err := d.Dialer.DialContext(ctx, network, target, host, tlsCfg, cfg)
+		sess, err := d.Dialer.DialContext(
+			ctx, network, target, host, tlsCfg, cfg)
 		if err == nil {
 			return sess, nil
 		}
 		errorslist = append(errorslist, err)
 	}
+	// TODO(bassosimone): maybe ReduceErrors could be in netx/internal.
 	return nil, dialer.ReduceErrors(errorslist)
 }
 
 // LookupHost implements Resolver.LookupHost
-func (d QUICDNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
+func (d DNSDialer) LookupHost(ctx context.Context, hostname string) ([]string, error) {
 	if net.ParseIP(hostname) != nil {
 		return []string{hostname}, nil
 	}

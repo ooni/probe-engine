@@ -11,16 +11,20 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-// QUICSaverDialer saves events occurring during the dial
-type QUICSaverDialer struct {
-	QUICContextDialer
+// TODO(bassosimone): investigate why we have a saver for dialing
+// and a saver for handshake. Not super clear currently.
+
+// SaverDialer saves events occurring during the dial
+type SaverDialer struct {
+	ContextDialer
 	Saver *trace.Saver
 }
 
 // DialContext implements Dialer.DialContext
-func (d QUICSaverDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d SaverDialer) DialContext(ctx context.Context, network, addr string,
+	host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
-	sess, err := d.QUICContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+	sess, err := d.ContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
 	d.Saver.Write(trace.Event{
 		Address:  host,
@@ -33,15 +37,17 @@ func (d QUICSaverDialer) DialContext(ctx context.Context, network, addr string, 
 	return sess, err
 }
 
-// QUICHandshakeSaver saves events occurring during the handshake
-type QUICHandshakeSaver struct {
+// HandshakeSaver saves events occurring during the handshake
+type HandshakeSaver struct {
 	Saver  *trace.Saver
-	Dialer QUICContextDialer
+	Dialer ContextDialer
 }
 
-// DialContext implements QUICContextDialer.DialContext
-func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+// DialContext implements ContextDialer.DialContext
+func (h HandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
+	// TODO(bassosimone): in the future we probably want to also save
+	// information about what versions we're willing to accept.
 	h.Saver.Write(trace.Event{
 		Name:          "quic_handshake_start",
 		NoTLSVerify:   tlsCfg.InsecureSkipVerify,
@@ -51,7 +57,6 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 	})
 	sess, err := h.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	stop := time.Now()
-
 	if err != nil {
 		h.Saver.Write(trace.Event{
 			Duration:      stop.Sub(start),
@@ -67,7 +72,6 @@ func (h QUICHandshakeSaver) DialContext(ctx context.Context, network string, add
 	state := ConnectionState(sess)
 	h.Saver.Write(trace.Event{
 		Duration:           stop.Sub(start),
-		Err:                err,
 		Name:               "quic_handshake_done",
 		NoTLSVerify:        tlsCfg.InsecureSkipVerify,
 		TLSCipherSuite:     tlsx.CipherSuiteString(state.CipherSuite),
