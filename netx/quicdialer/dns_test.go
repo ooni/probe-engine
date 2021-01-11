@@ -21,11 +21,9 @@ type MockableResolver struct {
 func (r MockableResolver) LookupHost(ctx context.Context, host string) ([]string, error) {
 	return r.Addresses, r.Err
 }
+
 func TestDNSDialerSuccess(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-		ServerName: "www.google.com",
-	}
+	tlsConf := &tls.Config{NextProtos: []string{"h3-29"}}
 	dialer := quicdialer.DNSDialer{
 		Resolver: new(net.Resolver), Dialer: quicdialer.SystemDialer{}}
 	sess, err := dialer.DialContext(
@@ -40,10 +38,7 @@ func TestDNSDialerSuccess(t *testing.T) {
 }
 
 func TestDNSDialerNoPort(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-		ServerName: "www.google.com",
-	}
+	tlsConf := &tls.Config{NextProtos: []string{"h3-29"}}
 	dialer := quicdialer.DNSDialer{
 		Resolver: new(net.Resolver), Dialer: quicdialer.SystemDialer{}}
 	sess, err := dialer.DialContext(
@@ -130,7 +125,6 @@ func TestDNSDialerInvalidPortSyntax(t *testing.T) {
 func TestDNSDialerDialEarlyFails(t *testing.T) {
 	tlsConf := &tls.Config{NextProtos: []string{"h3-29"}}
 	expected := errors.New("mocked DialEarly error")
-
 	dialer := quicdialer.DNSDialer{
 		Resolver: new(net.Resolver), Dialer: MockDialer{Err: expected}}
 	sess, err := dialer.DialContext(

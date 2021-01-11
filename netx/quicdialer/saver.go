@@ -10,9 +10,6 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-// TODO(bassosimone): investigate why we have a saver for dialing
-// and a saver for handshake. Not super clear currently.
-
 // HandshakeSaver saves events occurring during the handshake
 type HandshakeSaver struct {
 	Saver  *trace.Saver
@@ -20,7 +17,8 @@ type HandshakeSaver struct {
 }
 
 // DialContext implements ContextDialer.DialContext
-func (h HandshakeSaver) DialContext(ctx context.Context, network string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (h HandshakeSaver) DialContext(ctx context.Context, network string,
+	host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
 	// TODO(bassosimone): in the future we probably want to also save
 	// information about what versions we're willing to accept.

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
-	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/quicdialer"
 	"github.com/ooni/probe-engine/netx/trace"
 )
@@ -20,57 +19,12 @@ type MockDialer struct {
 	Err    error
 }
 
-func (d MockDialer) DialContext(ctx context.Context, network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockDialer) DialContext(ctx context.Context, network, host string,
+	tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	if d.Dialer != nil {
 		return d.Dialer.DialContext(ctx, network, host, tlsCfg, cfg)
 	}
 	return d.Sess, d.Err
-}
-
-func TestSaverConnDialSuccess(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-		ServerName: "www.google.com",
-	}
-	saver := &trace.Saver{}
-	systemdialer := quicdialer.SystemDialer{Saver: saver}
-	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
-	if err != nil {
-		t.Fatal("unexpected error", err)
-	}
-	if sess == nil {
-		t.Fatal("unexpected nil session")
-	}
-	ev := saver.Read()
-	if len(ev) < 4 {
-		// it's a bit tricky to be sure about the right number of
-		// events because network conditions may influence that
-		t.Fatal("unexpected number of events")
-	}
-
-	last := len(ev) - 1
-	for idx := 1; idx < last; idx++ {
-		if ev[idx].Data == nil {
-			t.Fatal("unexpected Data")
-		}
-		if ev[idx].Duration <= 0 {
-			t.Fatal("unexpected Duration")
-		}
-		if ev[idx].Err != nil {
-			t.Fatal("unexpected Err")
-		}
-		if ev[idx].NumBytes <= 0 {
-			t.Fatal("unexpected NumBytes")
-		}
-		switch ev[idx].Name {
-		case errorx.ReadOperation, errorx.WriteOperation:
-		default:
-			t.Fatal("unexpected Name")
-		}
-		if ev[idx].Time.Before(ev[idx-1].Time) {
-			t.Fatal("unexpected Time")
-		}
-	}
 }
 
 func TestHandshakeSaverSuccess(t *testing.T) {
@@ -85,8 +39,8 @@ func TestHandshakeSaverSuccess(t *testing.T) {
 		Dialer: quicdialer.SystemDialer{},
 		Saver:  saver,
 	}
-
-	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
+	sess, err := dlr.DialContext(context.Background(), "udp",
+		"216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error", err)
 	}
@@ -141,8 +95,8 @@ func TestHandshakeSaverHostNameError(t *testing.T) {
 		Dialer: quicdialer.SystemDialer{},
 		Saver:  saver,
 	}
-
-	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
+	sess, err := dlr.DialContext(context.Background(), "udp",
+		"216.58.212.164:443", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
@@ -156,8 +110,9 @@ func TestHandshakeSaverHostNameError(t *testing.T) {
 		if ev.NoTLSVerify == true {
 			t.Fatal("expected NoTLSVerify to be false")
 		}
-		if !strings.Contains(ev.Err.Error(), "certificate is valid for www.google.com, not "+servername) {
-			t.Fatal("unexpected error type")
+		if !strings.Contains(ev.Err.Error(),
+			"certificate is valid for www.google.com, not "+servername) {
+			t.Fatal("unexpected error", ev.Err)
 		}
 	}
 }

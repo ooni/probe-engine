@@ -11,36 +11,16 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestSystemDialerSuccess(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-		ServerName: "www.google.com",
-	}
-	var systemdialer quicdialer.SystemDialer
-
-	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
-	if err != nil {
-		t.Fatal("unexpected error", err)
-	}
-	if sess == nil {
-		t.Fatal("unexpected nil session")
-	}
-}
-
 func TestSystemDialerSuccessWithReadWrite(t *testing.T) {
 	// This is the most common use case for collecting reads, writes
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
 		ServerName: "www.google.com",
 	}
 	saver := &trace.Saver{}
-	systemdialer := quicdialer.SystemDialer{
-		Saver: saver,
-	}
-	_, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
+	systemdialer := quicdialer.SystemDialer{Saver: saver}
+	_, err := systemdialer.DialContext(context.Background(), "udp",
+		"216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}
