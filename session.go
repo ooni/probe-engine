@@ -449,7 +449,8 @@ func (s *Session) initOrchestraClient(
 	return clnt, nil
 }
 
-// LookupASN maps an IP address to its ASN and network name.
+// LookupASN maps an IP address to its ASN and network name. This method implements
+// LocationLookupASNLookupper.LookupASN.
 func (s *Session) LookupASN(dbPath, ip string) (uint, string, error) {
 	return geolocate.LookupASN(dbPath, ip)
 }
