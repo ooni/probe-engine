@@ -297,6 +297,12 @@ func toOperationString(err error, operation string) string {
 		if errwrapper.Operation == QUICHandshakeOperation {
 			return errwrapper.Operation
 		}
+		if errwrapper.Operation == "quic_handshake_start" {
+			return QUICHandshakeOperation
+		}
+		if errwrapper.Operation == "quic_handshake_done" {
+			return QUICHandshakeOperation
+		}
 		// FALLTHROUGH
 	}
 	return operation

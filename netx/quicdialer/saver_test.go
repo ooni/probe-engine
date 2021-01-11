@@ -3,7 +3,6 @@ package quicdialer_test
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -26,49 +25,6 @@ func (d MockDialer) DialContext(ctx context.Context, network, addr string, host 
 		return d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
 	}
 	return d.Sess, d.Err
-}
-
-func TestSaverDialerFailure(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-	}
-	expected := errors.New("mocked error")
-	saver := &trace.Saver{}
-	dlr := quicdialer.SaverDialer{
-		ContextDialer: MockDialer{
-			Err: expected,
-		},
-		Saver: saver,
-	}
-	sess, err := dlr.DialContext(context.Background(), "udp", "", "www.google.com:443", tlsConf, &quic.Config{})
-	if !errors.Is(err, expected) {
-		t.Fatal("expected another error here")
-	}
-	if sess != nil {
-		t.Fatal("expected nil sess here")
-	}
-	ev := saver.Read()
-	if len(ev) != 1 {
-		t.Fatal("expected a single event here")
-	}
-	if ev[0].Address != "www.google.com:443" {
-		t.Fatal("unexpected Address", ev[0].Address)
-	}
-	if ev[0].Duration <= 0 {
-		t.Fatal("unexpected Duration")
-	}
-	if !errors.Is(ev[0].Err, expected) {
-		t.Fatal("unexpected Err")
-	}
-	if ev[0].Name != errorx.QUICHandshakeOperation {
-		t.Fatal("unexpected Name")
-	}
-	if ev[0].Proto != "udp" {
-		t.Fatal("unexpected Proto")
-	}
-	if !ev[0].Time.Before(time.Now()) {
-		t.Fatal("unexpected Time")
-	}
 }
 
 func TestSaverConnDialSuccess(t *testing.T) {

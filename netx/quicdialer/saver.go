@@ -7,35 +7,11 @@ import (
 
 	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/internal/tlsx"
-	"github.com/ooni/probe-engine/netx/errorx"
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
 // TODO(bassosimone): investigate why we have a saver for dialing
 // and a saver for handshake. Not super clear currently.
-
-// SaverDialer saves events occurring during the dial
-type SaverDialer struct {
-	ContextDialer
-	Saver *trace.Saver
-}
-
-// DialContext implements Dialer.DialContext
-func (d SaverDialer) DialContext(ctx context.Context, network, addr string,
-	host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
-	start := time.Now()
-	sess, err := d.ContextDialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
-	stop := time.Now()
-	d.Saver.Write(trace.Event{
-		Address:  host,
-		Duration: stop.Sub(start),
-		Err:      err,
-		Name:     errorx.QUICHandshakeOperation,
-		Proto:    network,
-		Time:     stop,
-	})
-	return sess, err
-}
 
 // HandshakeSaver saves events occurring during the handshake
 type HandshakeSaver struct {
@@ -49,8 +25,10 @@ func (h HandshakeSaver) DialContext(ctx context.Context, network string, addr st
 	// TODO(bassosimone): in the future we probably want to also save
 	// information about what versions we're willing to accept.
 	h.Saver.Write(trace.Event{
+		Address:       host,
 		Name:          "quic_handshake_start",
 		NoTLSVerify:   tlsCfg.InsecureSkipVerify,
+		Proto:         network,
 		TLSNextProtos: tlsCfg.NextProtos,
 		TLSServerName: tlsCfg.ServerName,
 		Time:          start,
