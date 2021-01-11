@@ -133,6 +133,7 @@ func (m Measurer) Run(
 	tk.Queries = append(tk.Queries, dnsResult.TestKeys.Queries...)
 	tk.DNSExperimentFailure = dnsResult.Failure
 	epnts := NewEndpoints(URL, dnsResult.Addresses())
+	sess.Logger().Infof("using control: %s", testhelper.Address)
 	// 3. perform the control measurement
 	tk.Control, err = Control(ctx, sess, testhelper.Address, ControlRequest{
 		HTTPRequest: URL.String(),

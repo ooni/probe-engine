@@ -2,15 +2,24 @@ package run
 
 import (
 	"context"
+	"sync"
 
 	"github.com/ooni/probe-engine/experiment/dnscheck"
 	"github.com/ooni/probe-engine/model"
 )
 
-func dodnscheck(ctx context.Context, input StructuredInput,
+type dnsCheckMain struct {
+	Endpoints *dnscheck.Endpoints
+	mu        sync.Mutex
+}
+
+func (m *dnsCheckMain) do(ctx context.Context, input StructuredInput,
 	sess model.ExperimentSession, measurement *model.Measurement,
 	callbacks model.ExperimentCallbacks) error {
-	exp := dnscheck.Measurer{Config: input.DNSCheck}
+	exp := dnscheck.Measurer{
+		Config:    input.DNSCheck,
+		Endpoints: m.Endpoints,
+	}
 	measurement.TestName = exp.ExperimentName()
 	measurement.TestVersion = exp.ExperimentVersion()
 	measurement.Input = model.MeasurementTarget(input.Input)
