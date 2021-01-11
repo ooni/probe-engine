@@ -92,7 +92,7 @@ type Config struct {
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
-	QUICDialer          QUICDialer           // default: dialer.QUICDNSDialer
+	QUICDialer          QUICDialer           // default: quicdialer.DNSDialer
 	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
