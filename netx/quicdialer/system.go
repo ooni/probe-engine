@@ -21,9 +21,9 @@ type SystemDialer struct {
 }
 
 // DialContext implements ContextDialer.DialContext
-func (d SystemDialer) DialContext(ctx context.Context, network string, addr string,
+func (d SystemDialer) DialContext(ctx context.Context, network string,
 	host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
-	onlyhost, onlyport, err := net.SplitHostPort(addr)
+	onlyhost, onlyport, err := net.SplitHostPort(host)
 	port, err := strconv.Atoi(onlyport)
 	if err != nil {
 		return nil, err

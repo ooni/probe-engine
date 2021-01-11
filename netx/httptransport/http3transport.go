@@ -18,7 +18,7 @@ type QUICWrapperDialer struct {
 
 // Dial implements QUICDialer.Dial
 func (d QUICWrapperDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
-	return d.Dialer.DialContext(context.Background(), network, "", host, tlsCfg, cfg)
+	return d.Dialer.DialContext(context.Background(), network, host, tlsCfg, cfg)
 }
 
 // HTTP3Transport is a httptransport.RoundTripper using the http3 protocol.

@@ -17,15 +17,18 @@ type DNSDialer struct {
 	Resolver Resolver
 }
 
-// TODO(bassosimone): figure out what `addr` is used for?
-
 // DialContext implements ContextDialer.DialContext
 func (d DNSDialer) DialContext(
-	ctx context.Context, network, addr string, host string,
+	ctx context.Context, network, host string,
 	tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	onlyhost, onlyport, err := net.SplitHostPort(host)
 	if err != nil {
 		return nil, err
+	}
+	// TODO(kelmenhorst): Should this be somewhere else?
+	// failure if tlsCfg is nil but that should not happen
+	if tlsCfg.ServerName == "" {
+		tlsCfg.ServerName = onlyhost
 	}
 	ctx = dialid.WithDialID(ctx)
 	var addrs []string
@@ -37,7 +40,7 @@ func (d DNSDialer) DialContext(
 	for _, addr := range addrs {
 		target := net.JoinHostPort(addr, onlyport)
 		sess, err := d.Dialer.DialContext(
-			ctx, network, target, host, tlsCfg, cfg)
+			ctx, network, target, tlsCfg, cfg)
 		if err == nil {
 			return sess, nil
 		}

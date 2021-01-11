@@ -16,10 +16,10 @@ type ErrorWrapperDialer struct {
 
 // DialContext implements ContextDialer.DialContext
 func (d ErrorWrapperDialer) DialContext(
-	ctx context.Context, network string, addr string, host string,
+	ctx context.Context, network string, host string,
 	tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	dialID := dialid.ContextDialID(ctx)
-	sess, err := d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+	sess, err := d.Dialer.DialContext(ctx, network, host, tlsCfg, cfg)
 	err = errorx.SafeErrWrapperBuilder{
 		// ConnID does not make any sense if we've failed and the error
 		// does not make any sense (and is nil) if we succeded.

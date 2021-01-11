@@ -20,7 +20,7 @@ type HandshakeSaver struct {
 }
 
 // DialContext implements ContextDialer.DialContext
-func (h HandshakeSaver) DialContext(ctx context.Context, network string, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (h HandshakeSaver) DialContext(ctx context.Context, network string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	start := time.Now()
 	// TODO(bassosimone): in the future we probably want to also save
 	// information about what versions we're willing to accept.
@@ -33,7 +33,7 @@ func (h HandshakeSaver) DialContext(ctx context.Context, network string, addr st
 		TLSServerName: tlsCfg.ServerName,
 		Time:          start,
 	})
-	sess, err := h.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+	sess, err := h.Dialer.DialContext(ctx, network, host, tlsCfg, cfg)
 	stop := time.Now()
 	if err != nil {
 		h.Saver.Write(trace.Event{

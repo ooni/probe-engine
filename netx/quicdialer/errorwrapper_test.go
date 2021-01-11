@@ -18,7 +18,7 @@ func TestErrorWrapperFailure(t *testing.T) {
 	d := quicdialer.ErrorWrapperDialer{
 		Dialer: MockDialer{Sess: nil, Err: io.EOF}}
 	sess, err := d.DialContext(
-		ctx, "udp", "", "www.google.com:443", &tls.Config{}, &quic.Config{})
+		ctx, "udp", "www.google.com:443", &tls.Config{}, &quic.Config{})
 	if sess != nil {
 		t.Fatal("expected a nil sess here")
 	}
@@ -46,10 +46,12 @@ func errorWrapperCheckErr(t *testing.T, err error, op string) {
 
 func TestErrorWrapperSuccess(t *testing.T) {
 	ctx := dialid.WithDialID(context.Background())
-	tlsConf := &tls.Config{NextProtos: []string{"h3-29"}}
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+		ServerName: "www.google.com",
+	}
 	d := quicdialer.ErrorWrapperDialer{Dialer: quicdialer.SystemDialer{}}
-	sess, err := d.DialContext(ctx, "udp", "216.58.212.164:443",
-		"www.google.com:443", tlsConf, &quic.Config{})
+	sess, err := d.DialContext(ctx, "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}

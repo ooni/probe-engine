@@ -20,9 +20,9 @@ type MockDialer struct {
 	Err    error
 }
 
-func (d MockDialer) DialContext(ctx context.Context, network, addr string, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockDialer) DialContext(ctx context.Context, network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	if d.Dialer != nil {
-		return d.Dialer.DialContext(ctx, network, addr, host, tlsCfg, cfg)
+		return d.Dialer.DialContext(ctx, network, host, tlsCfg, cfg)
 	}
 	return d.Sess, d.Err
 }
@@ -30,11 +30,11 @@ func (d MockDialer) DialContext(ctx context.Context, network, addr string, host 
 func TestSaverConnDialSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
+		ServerName: "www.google.com",
 	}
 	saver := &trace.Saver{}
 	systemdialer := quicdialer.SystemDialer{Saver: saver}
-
-	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error", err)
 	}
@@ -86,7 +86,7 @@ func TestHandshakeSaverSuccess(t *testing.T) {
 		Saver:  saver,
 	}
 
-	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error", err)
 	}
@@ -142,7 +142,7 @@ func TestHandshakeSaverHostNameError(t *testing.T) {
 		Saver:  saver,
 	}
 
-	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	sess, err := dlr.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err == nil {
 		t.Fatal("expected an error here")
 	}

@@ -14,10 +14,11 @@ import (
 func TestSystemDialerSuccess(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
+		ServerName: "www.google.com",
 	}
 	var systemdialer quicdialer.SystemDialer
 
-	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal("unexpected error", err)
 	}
@@ -33,12 +34,13 @@ func TestSystemDialerSuccessWithReadWrite(t *testing.T) {
 	}
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
+		ServerName: "www.google.com",
 	}
 	saver := &trace.Saver{}
 	systemdialer := quicdialer.SystemDialer{
 		Saver: saver,
 	}
-	_, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", "www.google.com:443", tlsConf, &quic.Config{})
+	_, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}

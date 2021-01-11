@@ -9,7 +9,7 @@ import (
 
 // ContextDialer is a dialer for QUIC using Context.
 type ContextDialer interface {
-	DialContext(ctx context.Context, network, addr string, host string,
+	DialContext(ctx context.Context, network, host string,
 		tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
