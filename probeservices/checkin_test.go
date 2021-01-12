@@ -14,10 +14,10 @@ func TestCheckInSuccess(t *testing.T) {
 	config := model.CheckInConfig{
 		Charging:        true,
 		OnWiFi:          true,
-		Platform:        "Android",
+		Platform:        "android",
 		ProbeASN:        "AS12353",
 		ProbeCC:         "PT",
-		RunType:         "?",
+		RunType:         "timed",
 		SoftwareVersion: "2.7.1",
 		WebConnectivity: model.CategoryCodes{
 			CategoryCodes: []string{"NEWS", "CULTR"},
@@ -28,8 +28,8 @@ func TestCheckInSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.WebConnectivity == nil {
-		t.Fatal("got nil structure")
+	if result == nil || result.WebConnectivity == nil {
+		t.Fatal("got nil result or WebConnectivity")
 	}
 	if len(result.WebConnectivity.URLs) < 1 {
 		t.Fatal("unexpected number of results")
@@ -47,10 +47,10 @@ func TestCheckInFailure(t *testing.T) {
 	config := model.CheckInConfig{
 		Charging:        true,
 		OnWiFi:          true,
-		Platform:        "Android",
+		Platform:        "android",
 		ProbeASN:        "AS12353",
 		ProbeCC:         "PT",
-		RunType:         "?",
+		RunType:         "timed",
 		SoftwareVersion: "2.7.1",
 		WebConnectivity: model.CategoryCodes{
 			CategoryCodes: []string{"NEWS", "CULTR"},
@@ -61,7 +61,7 @@ func TestCheckInFailure(t *testing.T) {
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}
-	if result.WebConnectivity == nil {
+	if result != nil {
 		t.Fatal("results?!")
 	}
 }

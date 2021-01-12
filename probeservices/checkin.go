@@ -17,7 +17,7 @@ type checkInResult struct {
 func (c Client) CheckIn(ctx context.Context, config model.CheckInConfig) (*model.CheckInInfo, error) {
 	var response checkInResult
 	if err := c.Client.PostJSON(ctx, "/api/v1/check-in", config, &response); err != nil {
-		return model.CheckInInfo{}, err
+		return nil, err
 	}
-	return response.Tests, nil
+	return &response.Tests, nil
 }
