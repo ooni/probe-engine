@@ -2,7 +2,6 @@ package probeservices
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -86,8 +85,7 @@ type collectorOpenResponse struct {
 	SupportedFormats []string `json:"supported_formats"`
 }
 
-// Report is an open report
-type Report struct {
+type reportChan struct {
 	// ID is the report ID
 	ID string
 
@@ -99,9 +97,7 @@ type Report struct {
 }
 
 // OpenReport opens a new report.
-//
-// This method will eventually be replaced by NewReportChannel.
-func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, error) {
+func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (ReportChannel, error) {
 	if rt.DataFormatVersion != DefaultDataFormatVersion {
 		return nil, ErrUnsupportedDataFormatVersion
 	}
@@ -114,7 +110,7 @@ func (c Client) OpenReport(ctx context.Context, rt ReportTemplate) (*Report, err
 	}
 	for _, format := range cor.SupportedFormats {
 		if format == "json" {
-			return &Report{ID: cor.ID, client: c, tmpl: rt}, nil
+			return &reportChan{ID: cor.ID, client: c, tmpl: rt}, nil
 		}
 	}
 	return nil, ErrJSONFormatNotSupported
@@ -136,15 +132,16 @@ type collectorUpdateResponse struct {
 // CanSubmit returns true whether the provided measurement belongs to
 // this report, false otherwise. We say that a given measurement belongs
 // to this report if its report template matches the report's one.
-func (r Report) CanSubmit(m *model.Measurement) bool {
+func (r reportChan) CanSubmit(m *model.Measurement) bool {
 	return reflect.DeepEqual(NewReportTemplate(m), r.tmpl)
 }
 
 // SubmitMeasurement submits a measurement belonging to the report
-// to the OONI collector. We will unconditionally modify the measurement
-// with the ReportID it should contain. If the collector supports sending
-// back to us a measurement ID, we also update the m.OOID field with it.
-func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
+// to the OONI collector. On success, we will modify the measurement
+// such that it contains the report ID for which it has been
+// submitted. Otherwise, we'll set the report ID to the empty
+// string, so that you know which measurements weren't submitted.
+func (r reportChan) SubmitMeasurement(ctx context.Context, m *model.Measurement) error {
 	var updateResponse collectorUpdateResponse
 	m.ReportID = r.ID
 	err := r.client.Client.PostJSON(
@@ -153,55 +150,32 @@ func (r Report) SubmitMeasurement(ctx context.Context, m *model.Measurement) err
 			Content: m,
 		}, &updateResponse,
 	)
-	if err == nil {
-		m.OOID = updateResponse.ID
+	if err != nil {
+		m.ReportID = ""
+		return err
 	}
-	return err
+	return nil
 }
 
-// Close closes the report. Returns nil on success; an error on failure.
-func (r Report) Close(ctx context.Context) error {
-	var input, output struct{}
-	err := r.client.Client.PostJSON(
-		ctx, fmt.Sprintf("/report/%s/close", r.ID), input, &output,
-	)
-	// Implementation note: the server is not compliant with
-	// the spec, which says it MUST return a JSON. It does
-	// instead return an empty string. Intercept this error
-	// and turn it to nil, since we cannot really act upon
-	// this error, and we ought be flexible.
-	if _, ok := err.(*json.SyntaxError); ok && err.Error() == "unexpected end of JSON input" {
-		r.client.Logger.Debug(
-			"collector.go: working around collector-returning-empty-string bug",
-		)
-		err = nil
-	}
-	return err
+// ReportID returns the report ID.
+func (r reportChan) ReportID() string {
+	return r.ID
 }
 
 // ReportChannel is a channel through which one could submit measurements
 // belonging to the same report. The Report struct belongs to this interface.
 type ReportChannel interface {
 	CanSubmit(m *model.Measurement) bool
+	ReportID() string
 	SubmitMeasurement(ctx context.Context, m *model.Measurement) error
-	Close(ctx context.Context) error
 }
 
-var _ ReportChannel = &Report{}
+var _ ReportChannel = &reportChan{}
 
 // ReportOpener is any struct that is able to open a new ReportChannel. The
 // Client struct belongs to this interface.
 type ReportOpener interface {
-	NewReportChannel(ctx context.Context, rt ReportTemplate) (ReportChannel, error)
-}
-
-// NewReportChannel creates a new ReportChannel
-func (c Client) NewReportChannel(ctx context.Context, rt ReportTemplate) (ReportChannel, error) {
-	report, err := c.OpenReport(ctx, rt)
-	if err != nil {
-		return nil, err
-	}
-	return report, nil
+	OpenReport(ctx context.Context, rt ReportTemplate) (ReportChannel, error)
 }
 
 var _ ReportOpener = Client{}
@@ -229,26 +203,10 @@ func (sub *Submitter) Submit(ctx context.Context, m *model.Measurement) error {
 	sub.mu.Lock()
 	defer sub.mu.Unlock()
 	if sub.channel == nil || !sub.channel.CanSubmit(m) {
-		sub.maybeCloseUnlocked(ctx)
-		sub.channel, err = sub.opener.NewReportChannel(ctx, NewReportTemplate(m))
+		sub.channel, err = sub.opener.OpenReport(ctx, NewReportTemplate(m))
 		if err != nil {
 			return err
 		}
 	}
 	return sub.channel.SubmitMeasurement(ctx, m)
-}
-
-func (sub *Submitter) maybeCloseUnlocked(ctx context.Context) (err error) {
-	if sub.channel != nil {
-		err = sub.channel.Close(ctx)
-		sub.channel = nil
-	}
-	return
-}
-
-// Close will ensure Submitter is not leaking resources.
-func (sub *Submitter) Close(ctx context.Context) error {
-	sub.mu.Lock()
-	defer sub.mu.Unlock()
-	return sub.maybeCloseUnlocked(ctx)
 }

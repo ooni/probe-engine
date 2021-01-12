@@ -14,26 +14,26 @@ import (
 	"github.com/ooni/probe-engine/netx/selfcensor"
 )
 
-type MockHTTP3Dialer struct{}
+type MockQUICDialer struct{}
 
-func (d MockHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockQUICDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
 
-type MockSNIHTTP3Dialer struct {
+type MockSNIQUICDialer struct {
 	namech chan string
 }
 
-func (d MockSNIHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockSNIQUICDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	d.namech <- tlsCfg.ServerName
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
 
-type MockCertHTTP3Dialer struct {
+type MockCertQUICDialer struct {
 	certch chan *x509.CertPool
 }
 
-func (d MockCertHTTP3Dialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
+func (d MockCertQUICDialer) Dial(network, host string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error) {
 	d.certch <- tlsCfg.RootCAs
 	return quic.DialAddrEarly(host, tlsCfg, cfg)
 }
@@ -42,7 +42,7 @@ func TestHTTP3TransportSNI(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
-		Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni}})
+		Dialer: selfcensor.SystemDialer{}, QUICDialer: MockSNIQUICDialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestHTTP3TransportSNINoVerify(t *testing.T) {
 	namech := make(chan string, 1)
 	sni := "sni.org"
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
-		Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockSNIHTTP3Dialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni, InsecureSkipVerify: true}})
+		Dialer: selfcensor.SystemDialer{}, QUICDialer: MockSNIQUICDialer{namech: namech}, TLSConfig: &tls.Config{ServerName: sni, InsecureSkipVerify: true}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +89,7 @@ func TestHTTP3TransportCABundle(t *testing.T) {
 	certch := make(chan *x509.CertPool, 1)
 	certpool := x509.NewCertPool()
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
-		Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockCertHTTP3Dialer{certch: certch}, TLSConfig: &tls.Config{RootCAs: certpool}})
+		Dialer: selfcensor.SystemDialer{}, QUICDialer: MockCertQUICDialer{certch: certch}, TLSConfig: &tls.Config{RootCAs: certpool}})
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestHTTP3TransportCABundle(t *testing.T) {
 
 func TestUnitHTTP3TransportSuccess(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
-		Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}})
+		Dialer: selfcensor.SystemDialer{}, QUICDialer: MockQUICDialer{}})
 
 	req, err := http.NewRequest("GET", "https://www.google.com", nil)
 	if err != nil {
@@ -134,7 +134,7 @@ func TestUnitHTTP3TransportSuccess(t *testing.T) {
 
 func TestUnitHTTP3TransportFailure(t *testing.T) {
 	txp := httptransport.NewHTTP3Transport(httptransport.Config{
-		Dialer: selfcensor.SystemDialer{}, HTTP3Dialer: MockHTTP3Dialer{}})
+		Dialer: selfcensor.SystemDialer{}, QUICDialer: MockQUICDialer{}})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // so that the request immediately fails

@@ -80,21 +80,31 @@ func (m Multi) Run(ctx context.Context, inputs []MultiInput) <-chan MultiOutput 
 // on every provided input. It closes the output channel when done.
 func (m Multi) Collect(ctx context.Context, inputs []MultiInput,
 	prefix string, callbacks model.ExperimentCallbacks) <-chan MultiOutput {
+	return m.CollectOverall(ctx, inputs, 0, len(inputs), prefix, callbacks)
+}
+
+// CollectOverall prints on the output channel the result of running urlgetter
+// on every provided input. You can use this method if you perform multiple collection
+// tasks within one experiment as it allows to calculate the overall progress correctly
+func (m Multi) CollectOverall(ctx context.Context, inputChunk []MultiInput, overallStartIndex int, overallCount int,
+	prefix string, callbacks model.ExperimentCallbacks) <-chan MultiOutput {
 	outputch := make(chan MultiOutput)
-	go m.collect(len(inputs), prefix, callbacks, m.Run(ctx, inputs), outputch)
+	go m.collect(len(inputChunk), overallStartIndex, overallCount, prefix, callbacks, m.Run(ctx, inputChunk), outputch)
 	return outputch
 }
 
 // collect drains inputch, prints progress, and emits to outputch. When done, this
 // function will close outputch to notify the calller.
-func (m Multi) collect(expect int, prefix string, callbacks model.ExperimentCallbacks,
+func (m Multi) collect(expect int, overallStartIndex int, overallCount int, prefix string, callbacks model.ExperimentCallbacks,
 	inputch <-chan MultiOutput, outputch chan<- MultiOutput) {
-	var count int
+	count := overallStartIndex
+	var index int
 	defer close(outputch)
-	for count < expect {
+	for index < expect {
 		entry := <-inputch
+		index++
 		count++
-		percentage := float64(count) / float64(expect)
+		percentage := float64(count) / float64(overallCount)
 		callbacks.OnProgress(percentage, fmt.Sprintf(
 			"%s: measure %s: %+v", prefix, entry.Input.Target, entry.Err,
 		))

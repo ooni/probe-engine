@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"math/rand"
 	"net/url"
 	"os"
 	"path"
@@ -45,12 +47,14 @@ type Options struct {
 	NoCollector      bool
 	ProbeServicesURL string
 	Proxy            string
+	Random           bool
 	ReportFile       string
 	SelfCensorSpec   string
 	TorArgs          []string
 	TorBinary        string
 	Tunnel           string
 	Verbose          bool
+	Yes              bool
 }
 
 const (
@@ -72,7 +76,7 @@ func init() {
 		"Pass an option to the experiment", "KEY=VALUE",
 	)
 	getopt.FlagLong(
-		&globalOptions.InputFilePaths, "file", 'f',
+		&globalOptions.InputFilePaths, "input-file", 'f',
 		"Path to input file to supply test-dependent input. File must contain one input per line.", "PATH",
 	)
 	getopt.FlagLong(
@@ -97,6 +101,9 @@ func init() {
 		&globalOptions.Proxy, "proxy", 0, "Set the proxy URL", "URL",
 	)
 	getopt.FlagLong(
+		&globalOptions.Random, "random", 0, "Randomize inputs",
+	)
+	getopt.FlagLong(
 		&globalOptions.ReportFile, "reportfile", 'o',
 		"Set the report file path", "PATH",
 	)
@@ -119,6 +126,9 @@ func init() {
 	getopt.FlagLong(
 		&globalOptions.Verbose, "verbose", 'v', "Increase verbosity",
 	)
+	getopt.FlagLong(
+		&globalOptions.Yes, "yes", 0, "I accept the risk of running OONI",
+	)
 }
 
 func fatalWithString(msg string) {
@@ -127,7 +137,6 @@ func fatalWithString(msg string) {
 
 func fatalIfFalse(cond bool, msg string) {
 	if !cond {
-		log.Warn(msg)
 		panic(msg)
 	}
 }
@@ -217,6 +226,41 @@ func gethomedir(optionsHome string) string {
 	return os.Getenv("HOME")
 }
 
+const riskOfRunningOONI = `
+Do you consent to OONI Probe data collection?
+
+OONI Probe collects evidence of internet censorship and measures
+network performance:
+ 
+- OONI Probe will likely test objectionable sites and services;
+ 
+- Anyone monitoring your internet activity (such as a government
+or Internet provider) may be able to tell that you are using OONI Probe;
+ 
+- The network data you collect will be published automatically
+unless you use miniooni's -n command line flag.
+ 
+To learn more, see https://ooni.org/about/risks/.
+
+If you're onboard, re-run the same command and add the --yes flag, to
+indicate that you understand the risks. This will create an empty file
+named 'consent' in $HOME/.miniooni, meaning that we know you opted in
+and we will not ask you this question again.
+
+`
+
+func canOpen(filepath string) bool {
+	stat, err := os.Stat(filepath)
+	return err == nil && stat.Mode().IsRegular()
+}
+
+func maybeWriteConsentFile(yes bool, filepath string) (err error) {
+	if yes {
+		err = ioutil.WriteFile(filepath, []byte("\n"), 0644)
+	}
+	return
+}
+
 // MainWithConfiguration is the miniooni main with a specific configuration
 // represented by the experiment name and the current options.
 //
@@ -246,7 +290,13 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	assetsDir := path.Join(miniooniDir, "assets")
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
-	log.Infof("miniooni state directory: %s", miniooniDir)
+	log.Debugf("miniooni state directory: %s", miniooniDir)
+
+	consentFile := path.Join(miniooniDir, "informed")
+	fatalOnError(maybeWriteConsentFile(currentOptions.Yes, consentFile),
+		"cannot write informed consent file")
+	fatalIfFalse(canOpen(consentFile), riskOfRunningOONI)
+	log.Info("miniooni home directory: $HOME/.miniooni")
 
 	var proxyURL *url.URL
 	if currentOptions.Proxy != "" {
@@ -283,7 +333,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 			humanizex.SI(sess.KibiBytesSent()*1024, "byte"),
 		)
 	}()
-	log.Infof("miniooni temporary directory: %s", sess.TempDir())
+	log.Debugf("miniooni temporary directory: %s", sess.TempDir())
 
 	err = sess.MaybeStartTunnel(context.Background(), currentOptions.Tunnel)
 	fatalOnError(err, "cannot start session tunnel")
@@ -294,7 +344,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	log.Info("Looking up your location; please be patient...")
 	err = sess.MaybeLookupLocation()
 	fatalOnError(err, "cannot lookup your location")
-	log.Infof("- IP: %s", sess.ProbeIP())
+	log.Debugf("- IP: %s", sess.ProbeIP())
 	log.Infof("- country: %s", sess.ProbeCC())
 	log.Infof("- network: %s (%s)", sess.ProbeNetworkName(), sess.ProbeASNString())
 	log.Infof("- resolver's IP: %s", sess.ResolverIP())
@@ -313,6 +363,13 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	})
 	inputs, err := inputLoader.Load(context.Background())
 	fatalOnError(err, "cannot load inputs")
+
+	if currentOptions.Random {
+		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+		rnd.Shuffle(len(inputs), func(i, j int) {
+			inputs[i], inputs[j] = inputs[j], inputs[i]
+		})
+	}
 
 	err = builder.SetOptionsGuessType(extraOptions)
 	fatalOnError(err, "cannot parse extraOptions")

@@ -53,6 +53,12 @@ func TestNewTCPConnectList(t *testing.T) {
 				Proto:    "tcp",
 				Time:     begin.Add(130 * time.Millisecond),
 			}, {
+				Address:  "8.8.8.8:853",
+				Duration: 55 * time.Millisecond,
+				Name:     errorx.ConnectOperation,
+				Proto:    "udp",
+				Time:     begin.Add(130 * time.Millisecond),
+			}, {
 				Address:  "8.8.4.4:53",
 				Duration: 50 * time.Millisecond,
 				Err:      io.EOF,
@@ -460,7 +466,19 @@ func TestNewNetworkEventsList(t *testing.T) {
 				NumBytes: 7117,
 				Time:     begin.Add(11 * time.Millisecond),
 			}, {
+				Address:  "8.8.8.8:853",
+				Name:     errorx.ReadFromOperation,
+				Err:      context.Canceled,
+				NumBytes: 7117,
+				Time:     begin.Add(11 * time.Millisecond),
+			}, {
 				Name:     errorx.WriteOperation,
+				Err:      websocket.ErrBadHandshake,
+				NumBytes: 4114,
+				Time:     begin.Add(14 * time.Millisecond),
+			}, {
+				Address:  "8.8.8.8:853",
+				Name:     errorx.WriteToOperation,
 				Err:      websocket.ErrBadHandshake,
 				NumBytes: 4114,
 				Time:     begin.Add(14 * time.Millisecond),
@@ -482,9 +500,21 @@ func TestNewNetworkEventsList(t *testing.T) {
 			Operation: errorx.ReadOperation,
 			T:         0.011,
 		}, {
+			Address:   "8.8.8.8:853",
+			Failure:   archival.NewFailure(context.Canceled),
+			NumBytes:  7117,
+			Operation: errorx.ReadFromOperation,
+			T:         0.011,
+		}, {
 			Failure:   archival.NewFailure(websocket.ErrBadHandshake),
 			NumBytes:  4114,
 			Operation: errorx.WriteOperation,
+			T:         0.014,
+		}, {
+			Address:   "8.8.8.8:853",
+			Failure:   archival.NewFailure(websocket.ErrBadHandshake),
+			NumBytes:  4114,
+			Operation: errorx.WriteToOperation,
 			T:         0.014,
 		}, {
 			Failure:   archival.NewFailure(websocket.ErrReadLimit),

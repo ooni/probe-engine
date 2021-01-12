@@ -13,6 +13,7 @@ import (
 	"github.com/ooni/probe-engine/experiment/ndt7"
 	"github.com/ooni/probe-engine/experiment/psiphon"
 	"github.com/ooni/probe-engine/experiment/riseupvpn"
+	"github.com/ooni/probe-engine/experiment/run"
 	"github.com/ooni/probe-engine/experiment/sniblocking"
 	"github.com/ooni/probe-engine/experiment/stunreachability"
 	"github.com/ooni/probe-engine/experiment/telegram"
@@ -45,7 +46,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &dnscheck.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputStrictlyRequired,
 		}
 	},
 
@@ -77,7 +78,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(time.Second),
 			},
 			interruptible: true,
-			inputPolicy:   InputRequired,
+			inputPolicy:   InputStrictlyRequired,
 		}
 	},
 
@@ -97,7 +98,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				SleepTime: int64(time.Second),
 			},
 			interruptible: false,
-			inputPolicy:   InputRequired,
+			inputPolicy:   InputStrictlyRequired,
 		}
 	},
 
@@ -150,7 +151,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &httphostheader.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -191,6 +192,30 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 		}
 	},
 
+	"riseupvpn": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, riseupvpn.NewExperimentMeasurer(
+					*config.(*riseupvpn.Config),
+				))
+			},
+			config:      &riseupvpn.Config{},
+			inputPolicy: InputNone,
+		}
+	},
+
+	"run": func(session *Session) *ExperimentBuilder {
+		return &ExperimentBuilder{
+			build: func(config interface{}) *Experiment {
+				return NewExperiment(session, run.NewExperimentMeasurer(
+					*config.(*run.Config),
+				))
+			},
+			config:      &run.Config{},
+			inputPolicy: InputStrictlyRequired,
+		}
+	},
+
 	"sni_blocking": func(session *Session) *ExperimentBuilder {
 		return &ExperimentBuilder{
 			build: func(config interface{}) *Experiment {
@@ -198,8 +223,8 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 					*config.(*sniblocking.Config),
 				))
 			},
-			config: &sniblocking.Config{},
-			inputPolicy: InputRequired,
+			config:      &sniblocking.Config{},
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -212,18 +237,6 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 			},
 			config:      &stunreachability.Config{},
 			inputPolicy: InputOptional,
-		}
-	},
-
-	"riseupvpn": func(session *Session) *ExperimentBuilder {
-		return &ExperimentBuilder{
-			build: func(config interface{}) *Experiment {
-				return NewExperiment(session, riseupvpn.NewExperimentMeasurer(
-					*config.(*riseupvpn.Config),
-				))
-			},
-			config:      &riseupvpn.Config{},
-			inputPolicy: InputNone,
 		}
 	},
 
@@ -247,7 +260,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &tlstool.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 
@@ -271,7 +284,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &urlgetter.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputStrictlyRequired,
 		}
 	},
 
@@ -283,7 +296,7 @@ var experimentsByName = map[string]func(*Session) *ExperimentBuilder{
 				))
 			},
 			config:      &webconnectivity.Config{},
-			inputPolicy: InputRequired,
+			inputPolicy: InputOrQueryTestLists,
 		}
 	},
 

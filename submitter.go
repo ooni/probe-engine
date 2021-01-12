@@ -30,10 +30,6 @@ type SubmitterConfig struct {
 }
 
 // SubmitterExperiment is the Submitter's view of the Experiment.
-//
-// Implementation note: we don't bother to define a function for closing
-// the report here, since closing reports is no longer necessary since
-// changes implemented in ooni/api in Oct-Nov 2020.
 type SubmitterExperiment interface {
 	// ReportID returns the ID of the currently opened report.
 	ReportID() string

@@ -142,7 +142,7 @@ func TestNeedsInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if builder.InputPolicy() != InputRequired {
+	if builder.InputPolicy() != InputOrQueryTestLists {
 		t.Fatal("web_connectivity certainly needs input")
 	}
 }
@@ -343,10 +343,6 @@ func runexperimentflow(t *testing.T, experiment *Experiment, input string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = experiment.CloseReport()
-	if err != nil {
-		t.Fatal(err)
-	}
 	if experiment.KibiBytesSent() <= 0 {
 		t.Fatal("no data sent?!")
 	}
@@ -428,7 +424,6 @@ func TestOpenReportIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer exp.CloseReport()
 	rid := exp.ReportID()
 	if rid == "" {
 		t.Fatal("invalid report ID")

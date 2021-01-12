@@ -67,11 +67,11 @@ func (m Measurer) Run(
 	}
 	testkeys := &TestKeys{Success: err == nil}
 	measurement.TestKeys = testkeys
+	sess.Logger().Warnf("%s", "Follow the white rabbit.")
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.config.SleepTime))
 	defer cancel()
 	<-ctx.Done()
-	sess.Logger().Warnf("example: %s", "remember to drink")
-	sess.Logger().Infof("example: %s", "water is key to survival")
+	sess.Logger().Infof("%s", "Knock, knock, Neo.")
 	callbacks.OnProgress(1.0, m.config.Message)
 	return err
 }

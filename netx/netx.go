@@ -36,6 +36,7 @@ import (
 	"github.com/ooni/probe-engine/netx/dialer"
 	"github.com/ooni/probe-engine/netx/gocertifi"
 	"github.com/ooni/probe-engine/netx/httptransport"
+	"github.com/ooni/probe-engine/netx/quicdialer"
 	"github.com/ooni/probe-engine/netx/resolver"
 	"github.com/ooni/probe-engine/netx/selfcensor"
 	"github.com/ooni/probe-engine/netx/trace"
@@ -52,8 +53,8 @@ type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)
 }
 
-// HTTP3Dialer is the definition of a dialer for HTTP3 transport assumed by this package.
-type HTTP3Dialer interface {
+// QUICDialer is the definition of a dialer for QUIC assumed by this package.
+type QUICDialer interface {
 	Dial(network, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlySession, error)
 }
 
@@ -91,7 +92,7 @@ type Config struct {
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
 	FullResolver        Resolver             // default: base resolver + goodies
-	HTTP3Dialer         HTTP3Dialer          // default: dialer.HTTP3DNSDialer
+	QUICDialer          QUICDialer           // default: quicdialer.DNSDialer
 	HTTP3Enabled        bool                 // default: disabled
 	HTTPSaver           *trace.Saver         // default: not saving HTTP
 	Logger              Logger               // default: no logging
@@ -175,13 +176,18 @@ func NewDialer(config Config) Dialer {
 	return d
 }
 
-// NewHTTP3Dialer creates a new DNS Dialer for HTTP3 transport, with the resolver from the specified config
-func NewHTTP3Dialer(config Config) HTTP3Dialer {
+// NewQUICDialer creates a new DNS Dialer for QUIC, with the resolver from the specified config
+func NewQUICDialer(config Config) QUICDialer {
 	if config.FullResolver == nil {
 		config.FullResolver = NewResolver(config)
 	}
-	d := &dialer.HTTP3DNSDialer{Resolver: config.FullResolver}
-	var dialer HTTP3Dialer = &httptransport.HTTP3WrapperDialer{Dialer: d}
+	var d quicdialer.ContextDialer = &quicdialer.SystemDialer{Saver: config.ReadWriteSaver}
+	d = quicdialer.ErrorWrapperDialer{Dialer: d}
+	if config.TLSSaver != nil {
+		d = quicdialer.HandshakeSaver{Saver: config.TLSSaver, Dialer: d}
+	}
+	d = &quicdialer.DNSDialer{Resolver: config.FullResolver, Dialer: d}
+	var dialer QUICDialer = &httptransport.QUICWrapperDialer{Dialer: d}
 	return dialer
 }
 
@@ -223,13 +229,13 @@ func NewHTTPTransport(config Config) HTTPRoundTripper {
 	if config.TLSDialer == nil {
 		config.TLSDialer = NewTLSDialer(config)
 	}
-	if config.HTTP3Dialer == nil {
-		config.HTTP3Dialer = NewHTTP3Dialer(config)
+	if config.QUICDialer == nil {
+		config.QUICDialer = NewQUICDialer(config)
 	}
 
 	tInfo := allTransportsInfo[config.HTTP3Enabled]
 	txp := tInfo.Factory(httptransport.Config{
-		Dialer: config.Dialer, HTTP3Dialer: config.HTTP3Dialer, TLSDialer: config.TLSDialer,
+		Dialer: config.Dialer, QUICDialer: config.QUICDialer, TLSDialer: config.TLSDialer,
 		TLSConfig: config.TLSConfig})
 	transport := tInfo.TransportName
 
@@ -262,13 +268,12 @@ type httpTransportInfo struct {
 
 var allTransportsInfo = map[bool]httpTransportInfo{
 	false: {
-		Factory: httptransport.NewSystemTransport,
-		// TODO(kelmenhorst): distinguish between h2 / http/1.1
-		TransportName: "h2 / http/1.1",
+		Factory:       httptransport.NewSystemTransport,
+		TransportName: "tcp",
 	},
 	true: {
 		Factory:       httptransport.NewHTTP3Transport,
-		TransportName: "h3",
+		TransportName: "quic",
 	},
 }
 
@@ -305,12 +310,41 @@ func (c DNSClient) CloseIdleConnections() {
 // If config.ResolveSaver is not nil and we're creating an underlying
 // resolver where this is possible, we will also save events.
 func NewDNSClient(config Config, URL string) (DNSClient, error) {
-	return NewDNSClientWithOverrides(config, URL, "", "")
+	return NewDNSClientWithOverrides(config, URL, "", "", "")
+}
+
+// ErrInvalidTLSVersion indicates that you passed us a string
+// that does not represent a valid TLS version.
+var ErrInvalidTLSVersion = errors.New("invalid TLS version")
+
+// ConfigureTLSVersion configures the correct TLS version into
+// the specified *tls.Config or returns an error.
+func ConfigureTLSVersion(config *tls.Config, version string) error {
+	switch version {
+	case "TLSv1.3":
+		config.MinVersion = tls.VersionTLS13
+		config.MaxVersion = tls.VersionTLS13
+	case "TLSv1.2":
+		config.MinVersion = tls.VersionTLS12
+		config.MaxVersion = tls.VersionTLS12
+	case "TLSv1.1":
+		config.MinVersion = tls.VersionTLS11
+		config.MaxVersion = tls.VersionTLS11
+	case "TLSv1.0", "TLSv1":
+		config.MinVersion = tls.VersionTLS10
+		config.MaxVersion = tls.VersionTLS10
+	case "":
+		// nothing
+	default:
+		return ErrInvalidTLSVersion
+	}
+	return nil
 }
 
 // NewDNSClientWithOverrides creates a new DNS client, similar to NewDNSClient,
 // with the option to override the default Hostname and SNI.
-func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride string) (DNSClient, error) {
+func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride,
+	TLSVersion string) (DNSClient, error) {
 	var c DNSClient
 	switch URL {
 	case "doh://powerdns":
@@ -327,6 +361,9 @@ func NewDNSClientWithOverrides(config Config, URL, hostOverride, SNIOverride str
 		return c, err
 	}
 	config.TLSConfig = &tls.Config{ServerName: SNIOverride}
+	if err := ConfigureTLSVersion(config.TLSConfig, TLSVersion); err != nil {
+		return c, err
+	}
 	switch resolverURL.Scheme {
 	case "system":
 		c.Resolver = resolver.SystemResolver{}

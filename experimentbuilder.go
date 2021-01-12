@@ -16,10 +16,18 @@ import (
 type InputPolicy string
 
 const (
-	// InputRequired indicates that the experiment requires
-	// external input to run. If this input is not provided to
-	// the experiment, it will not know what to do.
-	InputRequired = InputPolicy("required")
+	// InputOrQueryTestLists indicates that the experiment requires
+	// external input to run and that this kind of input is URLs
+	// from the citizenlab/test-lists repository. If this input
+	// not provided to the experiment, then the code that runs the
+	// experiment is supposed to fetch from URLs from OONI's backends.
+	InputOrQueryTestLists = InputPolicy("or_query_test_lists")
+
+	// InputStrictlyRequired indicates that the experiment
+	// requires input and we currently don't have an API for
+	// fetching such input. Therefore, either the user specifies
+	// input or the experiment will fail for the lack of input.
+	InputStrictlyRequired = InputPolicy("strictly_required")
 
 	// InputOptional indicates that the experiment handles input,
 	// if any; otherwise it fetchs input/uses a default.

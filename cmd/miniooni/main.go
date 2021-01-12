@@ -5,7 +5,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/ooni/probe-engine/libminiooni"
 )
@@ -13,7 +14,7 @@ import (
 func main() {
 	defer func() {
 		if s := recover(); s != nil {
-			log.Fatal(s)
+			fmt.Fprintf(os.Stderr, "%s", s)
 		}
 	}()
 	libminiooni.Main()

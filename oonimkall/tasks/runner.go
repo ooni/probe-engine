@@ -175,7 +175,8 @@ func (r *Runner) Run(ctx context.Context) {
 
 	builder.SetCallbacks(&runnerCallbacks{emitter: r.emitter})
 	if len(r.settings.Inputs) <= 0 {
-		if builder.InputPolicy() == engine.InputRequired {
+		switch builder.InputPolicy() {
+		case engine.InputOrQueryTestLists, engine.InputStrictlyRequired:
 			r.emitter.EmitFailureStartup("no input provided")
 			return
 		}
@@ -192,10 +193,6 @@ func (r *Runner) Run(ctx context.Context) {
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
 			return
 		}
-		defer func() {
-			logger.Info("Closing report... please, be patient")
-			experiment.CloseReport()
-		}()
 		r.emitter.EmitStatusProgress(0.4, "open report")
 		r.emitter.Emit(statusReportCreate, eventStatusReportGeneric{
 			ReportID: experiment.ReportID(),
@@ -206,12 +203,19 @@ func (r *Runner) Run(ctx context.Context) {
 	// sense, here we're changing the behaviour.
 	//
 	// See https://github.com/measurement-kit/measurement-kit/issues/1922
-	if r.settings.Options.MaxRuntime > 0 && builder.InputPolicy() == engine.InputRequired {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(
-			ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
-		)
-		defer cancel()
+	if r.settings.Options.MaxRuntime > 0 {
+		// We want to honour max_runtime only when we're running an
+		// experiment that clearly wants specific input. We could refine
+		// this policy in the future, but for now this covers in a
+		// reasonable way web connectivity, so we should be ok.
+		switch builder.InputPolicy() {
+		case engine.InputOrQueryTestLists, engine.InputStrictlyRequired:
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(
+				ctx, time.Duration(r.settings.Options.MaxRuntime)*time.Second,
+			)
+			defer cancel()
+		}
 	}
 	inputCount := len(r.settings.Inputs)
 	start := time.Now()
