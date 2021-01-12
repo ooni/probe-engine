@@ -11,6 +11,27 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
+func TestSystemDialerInvalidIPFailure(t *testing.T) {
+	tlsConf := &tls.Config{
+		NextProtos: []string{"h3-29"},
+		ServerName: "www.google.com",
+	}
+	saver := &trace.Saver{}
+	systemdialer := quicdialer.SystemDialer{
+		Saver: saver,
+	}
+	sess, err := systemdialer.DialContext(context.Background(), "udp", "a.b.c.d:0", tlsConf, &quic.Config{})
+	if err == nil {
+		t.Fatal("expected an error here")
+	}
+	if sess != nil {
+		t.Fatal("expected nil sess here")
+	}
+	if err.Error() != "quicdialer: invalid IP representation" {
+		t.Fatal("expected another error here")
+	}
+}
+
 func TestSystemDialerSuccessWithReadWrite(t *testing.T) {
 	// This is the most common use case for collecting reads, writes
 	tlsConf := &tls.Config{
@@ -43,7 +64,7 @@ func TestSystemDialerSuccessWithReadWrite(t *testing.T) {
 			t.Fatal("unexpected NumBytes")
 		}
 		switch ev[idx].Name {
-		case errorx.ReadOperation, errorx.WriteOperation:
+		case errorx.ReadFromOperation, errorx.WriteToOperation:
 		default:
 			t.Fatal("unexpected Name")
 		}
