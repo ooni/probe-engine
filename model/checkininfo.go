@@ -7,5 +7,6 @@ type CheckInInfoWebConnectivity struct {
 
 // CheckInInfo contains the return test objects from the checkin API
 type CheckInInfo struct {
+	ReportID        string                      `json:"report_id"`
 	WebConnectivity *CheckInInfoWebConnectivity `json:"web_connectivity"`
 }
