@@ -28,7 +28,9 @@ func TestCheckInSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// TODO(lorenzoPrimi): what do we want to check?
+	if result.WebConnectivity == nil {
+		t.Fatal("got nil structure")
+	}
 	if len(result.WebConnectivity.URLs) < 1 {
 		t.Fatal("unexpected number of results")
 	}
@@ -59,8 +61,7 @@ func TestCheckInFailure(t *testing.T) {
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("not the error we expected")
 	}
-	//TODO how to do a proper check here?
-	if len(result.WebConnectivity.URLs) != 0 {
+	if result.WebConnectivity == nil {
 		t.Fatal("results?!")
 	}
 }
