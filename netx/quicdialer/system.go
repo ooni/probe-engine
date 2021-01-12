@@ -51,25 +51,22 @@ type saverUDPConn struct {
 }
 
 func (c saverUDPConn) WriteTo(p []byte, addr net.Addr) (int, error) {
-	// TODO(bassosimone,kelmenhorst): should this be a different operation? Because we're
-	// writing to a specific addr, this seems different from write?
 	start := time.Now()
 	count, err := c.UDPConn.WriteTo(p, addr)
 	stop := time.Now()
 	c.saver.Write(trace.Event{
+		Address:  addr.String(),
 		Data:     p[:count],
 		Duration: stop.Sub(start),
 		Err:      err,
 		NumBytes: count,
-		Name:     errorx.WriteOperation,
+		Name:     errorx.WriteToOperation,
 		Time:     stop,
 	})
 	return count, err
 }
 
 func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (int, int, int, *net.UDPAddr, error) {
-	// TODO(bassosimone,kelmenhorst): should this be a different operation? Because we're
-	// reading with address, maybe this isn't a read?
 	start := time.Now()
 	n, oobn, flags, addr, err := c.UDPConn.ReadMsgUDP(b, oob)
 	stop := time.Now()
@@ -78,11 +75,12 @@ func (c saverUDPConn) ReadMsgUDP(b, oob []byte) (int, int, int, *net.UDPAddr, er
 		data = b[:n]
 	}
 	c.saver.Write(trace.Event{
+		Address:  addr.String(),
 		Data:     data,
 		Duration: stop.Sub(start),
 		Err:      err,
 		NumBytes: n,
-		Name:     errorx.ReadOperation,
+		Name:     errorx.ReadFromOperation,
 		Time:     stop,
 	})
 	return n, oobn, flags, addr, err

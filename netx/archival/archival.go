@@ -492,6 +492,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 		}
 		if ev.Name == errorx.ReadOperation {
 			out = append(out, NetworkEvent{
+				Address:   ev.Address,
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				NumBytes:  int64(ev.NumBytes),
@@ -501,6 +502,7 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 		}
 		if ev.Name == errorx.WriteOperation {
 			out = append(out, NetworkEvent{
+				Address:   ev.Address,
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				NumBytes:  int64(ev.NumBytes),
