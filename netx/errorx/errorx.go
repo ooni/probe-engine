@@ -75,10 +75,10 @@ const (
 	WriteOperation = "write"
 
 	// ReadFromOperation is when we read from an UDP socket
-	ReadFromOperation = "readfrom"
+	ReadFromOperation = "read_from"
 
 	// WriteToOperation is when we write to an UDP socket
-	WriteToOperation = "writeto"
+	WriteToOperation = "write_to"
 
 	// UnknownOperation is when we cannot determine the operation
 	UnknownOperation = "unknown"

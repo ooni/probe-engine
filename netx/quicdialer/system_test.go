@@ -11,22 +11,6 @@ import (
 	"github.com/ooni/probe-engine/netx/trace"
 )
 
-func TestSystemDialerSuccess(t *testing.T) {
-	tlsConf := &tls.Config{
-		NextProtos: []string{"h3-29"},
-		ServerName: "www.google.com",
-	}
-	var systemdialer quicdialer.SystemDialer
-
-	sess, err := systemdialer.DialContext(context.Background(), "udp", "216.58.212.164:443", tlsConf, &quic.Config{})
-	if err != nil {
-		t.Fatal("unexpected error", err)
-	}
-	if sess == nil {
-		t.Fatal("unexpected nil session")
-	}
-}
-
 func TestSystemDialerInvalidIPFailure(t *testing.T) {
 	tlsConf := &tls.Config{
 		NextProtos: []string{"h3-29"},
@@ -46,7 +30,6 @@ func TestSystemDialerInvalidIPFailure(t *testing.T) {
 	if err.Error() != "quicdialer: invalid IP representation" {
 		t.Fatal("expected another error here")
 	}
-
 }
 
 func TestSystemDialerSuccessWithReadWrite(t *testing.T) {
