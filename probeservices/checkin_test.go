@@ -14,11 +14,11 @@ func TestCheckInSuccess(t *testing.T) {
 	config := model.CheckInConfig{
 		Charging:        true,
 		OnWiFi:          true,
-		Platform:        "string",
-		ProbeASN:        "string",
-		ProbeCC:         "string",
-		RunType:         "string",
-		SoftwareVersion: "string",
+		Platform:        "Android",
+		ProbeASN:        "AS12353",
+		ProbeCC:         "PT",
+		RunType:         "?",
+		SoftwareVersion: "2.7.1",
 		WebConnectivity: model.CategoryCodes{
 			CategoryCodes: []string{"NEWS", "CULTR"},
 		},
@@ -47,11 +47,11 @@ func TestCheckInFailure(t *testing.T) {
 	config := model.CheckInConfig{
 		Charging:        true,
 		OnWiFi:          true,
-		Platform:        "string",
-		ProbeASN:        "string",
-		ProbeCC:         "string",
-		RunType:         "string",
-		SoftwareVersion: "string",
+		Platform:        "Android",
+		ProbeASN:        "AS12353",
+		ProbeCC:         "PT",
+		RunType:         "?",
+		SoftwareVersion: "2.7.1",
 		WebConnectivity: model.CategoryCodes{
 			CategoryCodes: []string{"NEWS", "CULTR"},
 		},
