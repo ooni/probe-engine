@@ -28,7 +28,7 @@ func TestCheckInSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//TODO what do we want to check?
+	// TODO(lorenzoPrimi): what do we want to check?
 	if len(result.WebConnectivity.URLs) < 1 {
 		t.Fatal("unexpected number of results")
 	}
