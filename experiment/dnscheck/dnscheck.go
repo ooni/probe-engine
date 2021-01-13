@@ -10,6 +10,8 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
@@ -22,9 +24,49 @@ import (
 
 const (
 	testName      = "dnscheck"
-	testVersion   = "0.6.0"
+	testVersion   = "0.9.0"
 	defaultDomain = "example.org"
 )
+
+// Endpoints keeps track of repeatedly measured endpoints.
+type Endpoints struct {
+	WaitTime  time.Duration
+	count     uint32
+	nextVisit map[string]time.Time
+	mu        sync.Mutex
+}
+
+func (e *Endpoints) maybeSleep(resolverURL string, logger model.Logger) {
+	if e == nil {
+		return
+	}
+	defer e.mu.Unlock()
+	e.mu.Lock()
+	nextTime, found := e.nextVisit[resolverURL]
+	now := time.Now()
+	if !found || now.After(nextTime) {
+		return
+	}
+	sleepTime := nextTime.Sub(now)
+	atomic.AddUint32(&e.count, 1)
+	logger.Infof("waiting %v before testing %s again", sleepTime, resolverURL)
+	time.Sleep(sleepTime)
+}
+
+func (e *Endpoints) maybeRegister(resolverURL string) {
+	if e != nil && !strings.HasPrefix(resolverURL, "udp://") {
+		defer e.mu.Unlock()
+		e.mu.Lock()
+		if e.nextVisit == nil {
+			e.nextVisit = make(map[string]time.Time)
+		}
+		waitTime := 180 * time.Second
+		if e.WaitTime > 0 {
+			waitTime = e.WaitTime
+		}
+		e.nextVisit[resolverURL] = time.Now().Add(waitTime)
+	}
+}
 
 // Config contains the experiment's configuration.
 type Config struct {
@@ -33,6 +75,7 @@ type Config struct {
 	HTTP3Enabled  bool   `json:"http3_enabled" ooni:"use http3 instead of http/1.1 or http2"`
 	HTTPHost      string `json:"http_host" ooni:"force using specific HTTP Host header"`
 	TLSServerName string `json:"tls_server_name" ooni:"force TLS to using a specific SNI in Client Hello"`
+	TLSVersion    string `json:"tls_version" ooni:"Force specific TLS version (e.g. 'TLSv1.3')"`
 }
 
 // TestKeys contains the results of the dnscheck experiment.
@@ -42,6 +85,7 @@ type TestKeys struct {
 	HTTP3Enabled     bool                          `json:"x_http3_enabled,omitempty"`
 	HTTPHost         string                        `json:"x_http_host,omitempty"`
 	TLSServerName    string                        `json:"x_tls_server_name,omitempty"`
+	TLSVersion       string                        `json:"x_tls_version,omitempty"`
 	Bootstrap        *urlgetter.TestKeys           `json:"bootstrap"`
 	BootstrapFailure *string                       `json:"bootstrap_failure"`
 	Lookups          map[string]urlgetter.TestKeys `json:"lookups"`
@@ -50,15 +94,16 @@ type TestKeys struct {
 // Measurer performs the measurement.
 type Measurer struct {
 	Config
+	Endpoints *Endpoints
 }
 
 // ExperimentName implements model.ExperimentSession.ExperimentName
-func (m Measurer) ExperimentName() string {
+func (m *Measurer) ExperimentName() string {
 	return testName
 }
 
 // ExperimentVersion implements model.ExperimentSession.ExperimentVersion
-func (m Measurer) ExperimentVersion() string {
+func (m *Measurer) ExperimentVersion() string {
 	return testVersion
 }
 
@@ -72,7 +117,7 @@ var (
 )
 
 // Run implements model.ExperimentSession.Run
-func (m Measurer) Run(
+func (m *Measurer) Run(
 	ctx context.Context, sess model.ExperimentSession,
 	measurement *model.Measurement, callbacks model.ExperimentCallbacks,
 ) error {
@@ -82,11 +127,7 @@ func (m Measurer) Run(
 	measurement.TestKeys = tk
 	urlgetter.RegisterExtensions(measurement)
 
-	// 2. make sure the runtime is bounded
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
-
-	// 3. select the domain to resolve or use default and, while there, also
+	// 2. select the domain to resolve or use default and, while there, also
 	// ensure that we register all the other options we're using.
 	domain := m.Config.Domain
 	if domain == "" {
@@ -97,8 +138,9 @@ func (m Measurer) Run(
 	tk.HTTP3Enabled = m.Config.HTTP3Enabled
 	tk.HTTPHost = m.Config.HTTPHost
 	tk.TLSServerName = m.Config.TLSServerName
+	tk.TLSVersion = m.Config.TLSVersion
 
-	// 4. parse the input URL describing the resolver to use
+	// 3. parse the input URL describing the resolver to use
 	input := string(measurement.Input)
 	if input == "" {
 		return ErrInputRequired
@@ -114,7 +156,7 @@ func (m Measurer) Run(
 		return ErrUnsupportedURLScheme
 	}
 
-	// 5. possibly expand a domain to a list of IP addresses.
+	// 4. possibly expand a domain to a list of IP addresses.
 	//
 	// Implementation note: because the resolver we constructed also deals
 	// with IP addresses successfully, we just get back the IPs when we are
@@ -126,7 +168,7 @@ func (m Measurer) Run(
 		Logger:       sess.Logger(),
 		ResolveSaver: evsaver,
 	})
-	addrs, err := resolver.LookupHost(ctx, URL.Hostname())
+	addrs, err := m.lookupHost(ctx, URL.Hostname(), resolver)
 	queries := archival.NewDNSQueriesList(begin, evsaver.Read(), sess.ASNDatabasePath())
 	tk.BootstrapFailure = archival.NewFailure(err)
 	if len(queries) > 0 {
@@ -135,7 +177,7 @@ func (m Measurer) Run(
 		tk.Bootstrap = &urlgetter.TestKeys{Queries: queries}
 	}
 
-	// 6. merge default addresses for the domain with the ones that
+	// 5. merge default addresses for the domain with the ones that
 	// we did discover here and measure them all.
 	allAddrs := make(map[string]bool)
 	for _, addr := range addrs {
@@ -147,32 +189,54 @@ func (m Measurer) Run(
 		}
 	}
 
-	// 7. determine all the domain lookups we need to perform
+	// 6. determine all the domain lookups we need to perform
+	const maxParallelism = 10
+	parallelism := maxParallelism
+	if parallelism > len(allAddrs) {
+		parallelism = len(allAddrs)
+	}
 	var inputs []urlgetter.MultiInput
-	multi := urlgetter.Multi{Begin: begin, Session: sess}
+	multi := urlgetter.Multi{Begin: begin, Parallelism: parallelism, Session: sess}
 	for addr := range allAddrs {
 		inputs = append(inputs, urlgetter.MultiInput{
 			Config: urlgetter.Config{
 				DNSHTTPHost:      m.httpHost(URL.Host),
 				DNSTLSServerName: m.tlsServerName(URL.Hostname()),
+				DNSTLSVersion:    m.Config.TLSVersion,
 				HTTP3Enabled:     m.Config.HTTP3Enabled,
 				RejectDNSBogons:  true, // bogons are errors in this context
 				ResolverURL:      makeResolverURL(URL, addr),
+				Timeout:          45 * time.Second,
 			},
 			Target: fmt.Sprintf("dnslookup://%s", domain), // urlgetter wants a URL
 		})
 	}
 
+	// 7. make sure we don't test the same endpoint too frequently
+	// because this may cause residual censorship.
+	for _, input := range inputs {
+		resolverURL := input.Config.ResolverURL
+		m.Endpoints.maybeSleep(resolverURL, sess.Logger())
+	}
+
 	// 8. perform all the required resolutions
 	for output := range Collect(ctx, multi, inputs, callbacks) {
-		tk.Lookups[output.Input.Config.ResolverURL] = output.TestKeys
+		resolverURL := output.Input.Config.ResolverURL
+		tk.Lookups[resolverURL] = output.TestKeys
+		m.Endpoints.maybeRegister(resolverURL)
 	}
 	return nil
 }
 
+func (m *Measurer) lookupHost(ctx context.Context, hostname string, r netx.Resolver) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	return r.LookupHost(ctx, hostname)
+}
+
 // httpHost returns the configured HTTP host, if set, otherwise
 // it will return the host provide as argument.
-func (m Measurer) httpHost(httpHost string) string {
+func (m *Measurer) httpHost(httpHost string) string {
 	if m.Config.HTTPHost != "" {
 		return m.Config.HTTPHost
 	}
@@ -180,7 +244,7 @@ func (m Measurer) httpHost(httpHost string) string {
 }
 
 // tlsServerName is like httpHost for the TLS server name.
-func (m Measurer) tlsServerName(tlsServerName string) string {
+func (m *Measurer) tlsServerName(tlsServerName string) string {
 	if m.Config.TLSServerName != "" {
 		return m.Config.TLSServerName
 	}
@@ -242,7 +306,7 @@ func makeResolverURL(URL *url.URL, addr string) string {
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
 func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return Measurer{Config: config}
+	return &Measurer{Config: config}
 }
 
 // SummaryKeys contains summary keys for this experiment.
@@ -254,6 +318,6 @@ type SummaryKeys struct {
 }
 
 // GetSummaryKeys implements model.ExperimentMeasurer.GetSummaryKeys.
-func (m Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
+func (m *Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, error) {
 	return SummaryKeys{IsAnomaly: false}, nil
 }

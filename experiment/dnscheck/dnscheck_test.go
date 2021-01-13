@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/mockable"
@@ -48,7 +50,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.6.0" {
+	if measurer.ExperimentVersion() != "0.9.0" {
 		t.Error("unexpected experiment version")
 	}
 }
@@ -142,20 +144,19 @@ func TestMakeResolverURL(t *testing.T) {
 }
 
 func TestDNSCheckValid(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
+	measurer := NewExperimentMeasurer(Config{
+		DefaultAddrs: "1.1.1.1 1.0.0.1",
+	})
 	measurement := model.Measurement{Input: "dot://one.one.one.one:853"}
-	// test with valid DNS endpoint
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err.Error())
 	}
-
 	tk := measurement.TestKeys.(*TestKeys)
 	if tk.Domain != defaultDomain {
 		t.Fatal("unexpected default value for domain")
@@ -185,5 +186,42 @@ func TestSummaryKeysGeneric(t *testing.T) {
 	sk := osk.(SummaryKeys)
 	if sk.IsAnomaly {
 		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestDNSCheckWait(t *testing.T) {
+	endpoints := &Endpoints{
+		WaitTime: 1 * time.Second,
+	}
+	measurer := &Measurer{Endpoints: endpoints}
+	run := func(input string) {
+		measurement := model.Measurement{Input: model.MeasurementTarget(input)}
+		err := measurer.Run(
+			context.Background(),
+			newsession(),
+			&measurement,
+			model.NewPrinterCallbacks(log.Log),
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err.Error())
+		}
+		tk := measurement.TestKeys.(*TestKeys)
+		if tk.Domain != defaultDomain {
+			t.Fatal("unexpected default value for domain")
+		}
+		if tk.Bootstrap == nil {
+			t.Fatalf("unexpected value for bootstrap: %+v", tk.Bootstrap)
+		}
+		if tk.BootstrapFailure != nil {
+			t.Fatal("unexpected value for bootstrap_failure")
+		}
+		if len(tk.Lookups) <= 0 {
+			t.Fatal("unexpected value for lookups")
+		}
+	}
+	run("dot://one.one.one.one")
+	run("dot://1dot1dot1dot1.cloudflare-dns.com")
+	if atomic.LoadUint32(&endpoints.count) < 1 {
+		t.Fatal("did not sleep")
 	}
 }

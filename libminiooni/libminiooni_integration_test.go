@@ -10,5 +10,7 @@ func TestSimple(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
-	libminiooni.MainWithConfiguration("example", libminiooni.Options{})
+	libminiooni.MainWithConfiguration("example", libminiooni.Options{
+		Yes: true,
+	})
 }

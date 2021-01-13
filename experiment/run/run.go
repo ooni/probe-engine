@@ -53,12 +53,12 @@ func (Measurer) Run(
 	if err := json.Unmarshal([]byte(measurement.Input), &input); err != nil {
 		return err
 	}
-	mainfunc, found := table[input.Name]
+	exprun, found := table[input.Name]
 	if !found {
 		return fmt.Errorf("no such experiment: %s", input.Name)
 	}
 	measurement.AddAnnotations(input.Annotations)
-	return mainfunc(ctx, input, sess, measurement, callbacks)
+	return exprun.do(ctx, input, sess, measurement, callbacks)
 }
 
 // GetSummaryKeys implements ExperimentMeasurer.GetSummaryKeys

@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - mobile-staging
+      - 'release/**'
 jobs:
   test:
     runs-on: macos-latest
@@ -12,7 +13,8 @@ jobs:
           go-version: "1.14"
       - uses: actions/checkout@v2
       - run: brew cask install android-sdk
-      - run: echo y | sdkmanager --install "platforms;android-29" ndk-bundle
+      - run: echo y | sdkmanager --install "platforms;android-29"
+      - run: echo y | sdkmanager --install "ndk;21.3.6528147"
       - run: ./build-android.bash
         env:
           ANDROID_HOME: /usr/local/Caskroom/android-sdk/4333796
