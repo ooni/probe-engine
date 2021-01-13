@@ -2,15 +2,12 @@ package run
 
 import (
 	"context"
-	"sync"
 
 	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 )
 
-type urlGetterMain struct {
-	mu sync.Mutex
-}
+type urlGetterMain struct {}
 
 func (m *urlGetterMain) do(ctx context.Context, input StructuredInput,
 	sess model.ExperimentSession, measurement *model.Measurement,
