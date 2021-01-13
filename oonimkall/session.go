@@ -286,7 +286,7 @@ type CheckInConfig struct {
 
 // CheckInInfoWebConnectivity contains the array of URLs returned by the checkin API
 type CheckInInfoWebConnectivity struct {
-	URLs []URLInfo
+	URLs []model.URLInfo
 }
 
 // URLInfo contains info on a test lists URL
