@@ -22,4 +22,5 @@ var table = map[string]experimentMain{
 	"dnscheck": &dnsCheckMain{
 		Endpoints: &dnscheck.Endpoints{},
 	},
+	"urlgetter": &urlGetterMain{},
 }
