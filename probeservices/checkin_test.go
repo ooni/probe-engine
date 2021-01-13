@@ -18,8 +18,9 @@ func TestCheckInSuccess(t *testing.T) {
 		ProbeASN:        "AS12353",
 		ProbeCC:         "PT",
 		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
 		SoftwareVersion: "2.7.1",
-		WebConnectivity: model.CategoryCodes{
+		WebConnectivity: model.CheckInConfigWebConnectivity{
 			CategoryCodes: []string{"NEWS", "CULTR"},
 		},
 	}
@@ -51,8 +52,9 @@ func TestCheckInFailure(t *testing.T) {
 		ProbeASN:        "AS12353",
 		ProbeCC:         "PT",
 		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
 		SoftwareVersion: "2.7.1",
-		WebConnectivity: model.CategoryCodes{
+		WebConnectivity: model.CheckInConfigWebConnectivity{
 			CategoryCodes: []string{"NEWS", "CULTR"},
 		},
 	}
