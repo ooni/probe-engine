@@ -8,30 +8,27 @@ import (
 	"github.com/pion/stun"
 )
 
-// STUNClient is the STUN client expected by this package
-type STUNClient interface {
+type stunClient interface {
 	Close() error
 	Start(m *stun.Message, h stun.Handler) error
 }
 
-// STUNConfig contains configuration for STUNIPLookup
-type STUNConfig struct {
-	Dial     func(network string, address string) (STUNClient, error)
+type stunConfig struct {
+	Dial     func(network string, address string) (stunClient, error)
 	Endpoint string
 	Logger   model.Logger
 }
 
-func stundialer(network string, address string) (STUNClient, error) {
+func stunDialer(network string, address string) (stunClient, error) {
 	return stun.Dial(network, address)
 }
 
-// STUNIPLookup performs the IP lookup using STUN.
-func STUNIPLookup(ctx context.Context, config STUNConfig) (string, error) {
+func stunIPLookup(ctx context.Context, config stunConfig) (string, error) {
 	config.Logger.Debugf("STUNIPLookup: start using %s", config.Endpoint)
 	ip, err := func() (string, error) {
 		dial := config.Dial
 		if dial == nil {
-			dial = stundialer
+			dial = stunDialer
 		}
 		clnt, err := dial("udp", config.Endpoint)
 		if err != nil {
@@ -71,27 +68,25 @@ func STUNIPLookup(ctx context.Context, config STUNConfig) (string, error) {
 	return ip, nil
 }
 
-// STUNEkigaIPLookup performs the IP lookup using ekiga.net.
-func STUNEkigaIPLookup(
+func stunEkigaIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,
 	userAgent string,
 ) (string, error) {
-	return STUNIPLookup(ctx, STUNConfig{
+	return stunIPLookup(ctx, stunConfig{
 		Endpoint: "stun.ekiga.net:3478",
 		Logger:   logger,
 	})
 }
 
-// STUNGoogleIPLookup performs the IP lookup using google.com.
-func STUNGoogleIPLookup(
+func stunGoogleIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,
 	userAgent string,
 ) (string, error) {
-	return STUNIPLookup(ctx, STUNConfig{
+	return stunIPLookup(ctx, stunConfig{
 		Endpoint: "stun.l.google.com:19302",
 		Logger:   logger,
 	})

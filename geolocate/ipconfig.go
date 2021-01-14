@@ -10,8 +10,7 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// IPConfigIPLookup performs the IP lookup using ipconfig.io.
-func IPConfigIPLookup(
+func ipConfigIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,
