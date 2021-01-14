@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -328,12 +329,13 @@ func TestMain(m *testing.M) {
 		os.Exit(exitcode)
 	}
 	for {
+		runtime.GC()
 		m, n := oonimkall.ActiveContexts.Load(), oonimkall.ActiveSessions.Load()
 		fmt.Printf("./oonimkall: ActiveContexts: %d; ActiveSessions: %d\n", m, n)
 		if m == 0 && n == 0 {
 			break
 		}
-		time.Sleep(1)
+		time.Sleep(1*time.Second)
 	}
 	os.Exit(0)
 }
