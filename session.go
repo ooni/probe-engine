@@ -13,7 +13,6 @@ import (
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
-	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
@@ -455,28 +454,6 @@ func (s *Session) LookupASN(dbPath, ip string) (uint, string, error) {
 	return geolocate.LookupASN(dbPath, ip)
 }
 
-// LookupProbeIP performs the probe IP lookup. This method implements
-// LocationLookupProbeIPLookupper.LookupProbeIP.
-func (s *Session) LookupProbeIP(ctx context.Context) (string, error) {
-	return (&geolocate.IPLookupClient{
-		HTTPClient: s.DefaultHTTPClient(),
-		Logger:     s.logger,
-		UserAgent:  httpheader.UserAgent(), // no need to identify as OONI
-	}).Do(ctx)
-}
-
-// LookupCC maps an IP address to a country code. This method implements
-// LocationLookupCountryLookupper.LookupCC.
-func (s *Session) LookupCC(dbPath, probeIP string) (string, error) {
-	return geolocate.LookupCC(dbPath, probeIP)
-}
-
-// LookupResolverIP performs the lookup of the resolver IP. This method implements
-// LocationLookupResolverIPLookupper.LookupResolverIP.
-func (s *Session) LookupResolverIP(ctx context.Context) (string, error) {
-	return geolocate.LookupResolverIP(ctx)
-}
-
 // ErrAllProbeServicesFailed indicates all probe services failed.
 var ErrAllProbeServicesFailed = errors.New("all available probe services failed")
 
@@ -502,16 +479,14 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 func (s *Session) LookupLocationContext(ctx context.Context) (*model.LocationInfo, error) {
 	// Implementation note: we don't perform the lookup of the resolver IP
 	// when we are using a proxy because that might leak information.
-	return LocationLookup{
-		CountryLookupper:     s,
+	task := geolocate.Must(geolocate.NewTask(geolocate.Config{
 		EnableResolverLookup: s.proxyURL == nil,
-		PathsProvider:        s,
-		ProbeIPLookupper:     s,
-		ProbeASNLookupper:    s,
-		ResolverASNLookupper: s,
-		ResolverIPLookupper:  s,
-		ResourceUpdater:      s,
-	}.Do(ctx)
+		HTTPClient:           s.DefaultHTTPClient(),
+		Logger:               s.Logger(),
+		ResourcesManager:     s,
+		UserAgent:            s.UserAgent(),
+	}))
+	return task.Run(ctx)
 }
 
 // MaybeLookupLocationContext is like MaybeLookupLocation but with a context

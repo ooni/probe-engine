@@ -1,4 +1,3 @@
-// Package geolocate implements IP lookup, resolver lookup, and geolocation.
 package geolocate
 
 import (

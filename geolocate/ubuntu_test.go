@@ -34,9 +34,6 @@ func TestUbuntuParseError(t *testing.T) {
 }
 
 func TestIPLookupWorksUsingUbuntu(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	ip, err := ubuntuIPLookup(
 		context.Background(),
 		http.DefaultClient,

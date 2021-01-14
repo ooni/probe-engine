@@ -125,9 +125,6 @@ func TestSTUNIPLookupCannotDecodeMessage(t *testing.T) {
 }
 
 func TestIPLookupWorksUsingSTUNEkiga(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	ip, err := stunEkigaIPLookup(
 		context.Background(),
 		http.DefaultClient,
@@ -143,9 +140,6 @@ func TestIPLookupWorksUsingSTUNEkiga(t *testing.T) {
 }
 
 func TestIPLookupWorksUsingSTUNGoogle(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	ip, err := stunGoogleIPLookup(
 		context.Background(),
 		http.DefaultClient,

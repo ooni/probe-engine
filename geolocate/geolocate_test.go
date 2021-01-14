@@ -1,4 +1,4 @@
-package engine
+package geolocate
 
 import (
 	"context"
@@ -8,21 +8,31 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-type locationLookupResourceUpdater struct {
-	err error
+type taskResourcesManager struct {
+	asnDatabasePath     string
+	countryDatabasePath string
+	err                 error
 }
 
-func (c locationLookupResourceUpdater) MaybeUpdateResources(ctx context.Context) error {
+func (c taskResourcesManager) ASNDatabasePath() string {
+	return c.asnDatabasePath
+}
+
+func (c taskResourcesManager) CountryDatabasePath() string {
+	return c.countryDatabasePath
+}
+
+func (c taskResourcesManager) MaybeUpdateResources(ctx context.Context) error {
 	return c.err
 }
 
 func TestLocationLookupCannotUpdateResources(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater: locationLookupResourceUpdater{err: expected},
+	op := Task{
+		resourcesManager: taskResourcesManager{err: expected},
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -49,23 +59,23 @@ func TestLocationLookupCannotUpdateResources(t *testing.T) {
 	}
 }
 
-type locationLookupProbeIPLookupper struct {
+type taskProbeIPLookupper struct {
 	ip  string
 	err error
 }
 
-func (c locationLookupProbeIPLookupper) LookupProbeIP(ctx context.Context) (string, error) {
+func (c taskProbeIPLookupper) LookupProbeIP(ctx context.Context) (string, error) {
 	return c.ip, c.err
 }
 
 func TestLocationLookupCannotLookupProbeIP(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater:  locationLookupResourceUpdater{},
-		ProbeIPLookupper: locationLookupProbeIPLookupper{err: expected},
+	op := Task{
+		resourcesManager: taskResourcesManager{},
+		probeIPLookupper: taskProbeIPLookupper{err: expected},
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -92,39 +102,25 @@ func TestLocationLookupCannotLookupProbeIP(t *testing.T) {
 	}
 }
 
-type locationLookupASNLookupper struct {
+type taskASNLookupper struct {
 	err  error
 	asn  uint
 	name string
 }
 
-func (c locationLookupASNLookupper) LookupASN(path string, ip string) (uint, string, error) {
+func (c taskASNLookupper) LookupASN(path string, ip string) (uint, string, error) {
 	return c.asn, c.name, c.err
-}
-
-type locationLookupPathsProvider struct {
-	asnDatabasePath     string
-	countryDatabasePath string
-}
-
-func (c locationLookupPathsProvider) ASNDatabasePath() string {
-	return c.asnDatabasePath
-}
-
-func (c locationLookupPathsProvider) CountryDatabasePath() string {
-	return c.countryDatabasePath
 }
 
 func TestLocationLookupCannotLookupProbeASN(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater:   locationLookupResourceUpdater{},
-		ProbeIPLookupper:  locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper: locationLookupASNLookupper{err: expected},
-		PathsProvider:     locationLookupPathsProvider{},
+	op := Task{
+		resourcesManager:  taskResourcesManager{},
+		probeIPLookupper:  taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper: taskASNLookupper{err: expected},
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -151,26 +147,25 @@ func TestLocationLookupCannotLookupProbeASN(t *testing.T) {
 	}
 }
 
-type locationLookupCCLookupper struct {
+type taskCCLookupper struct {
 	err error
 	cc  string
 }
 
-func (c locationLookupCCLookupper) LookupCC(path string, ip string) (string, error) {
+func (c taskCCLookupper) LookupCC(path string, ip string) (string, error) {
 	return c.cc, c.err
 }
 
 func TestLocationLookupCannotLookupProbeCC(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater:   locationLookupResourceUpdater{},
-		ProbeIPLookupper:  locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper: locationLookupASNLookupper{asn: 1234, name: "1234.com"},
-		CountryLookupper:  locationLookupCCLookupper{cc: "US", err: expected},
-		PathsProvider:     locationLookupPathsProvider{},
+	op := Task{
+		resourcesManager:  taskResourcesManager{},
+		probeIPLookupper:  taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper: taskASNLookupper{asn: 1234, name: "1234.com"},
+		countryLookupper:  taskCCLookupper{cc: "US", err: expected},
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -197,28 +192,27 @@ func TestLocationLookupCannotLookupProbeCC(t *testing.T) {
 	}
 }
 
-type locationLookupResolverIPLookupper struct {
+type taskResolverIPLookupper struct {
 	ip  string
 	err error
 }
 
-func (c locationLookupResolverIPLookupper) LookupResolverIP(ctx context.Context) (string, error) {
+func (c taskResolverIPLookupper) LookupResolverIP(ctx context.Context) (string, error) {
 	return c.ip, c.err
 }
 
 func TestLocationLookupCannotLookupResolverIP(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater:      locationLookupResourceUpdater{},
-		ProbeIPLookupper:     locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper:    locationLookupASNLookupper{asn: 1234, name: "1234.com"},
-		CountryLookupper:     locationLookupCCLookupper{cc: "IT"},
-		PathsProvider:        locationLookupPathsProvider{},
-		ResolverIPLookupper:  locationLookupResolverIPLookupper{err: expected},
-		EnableResolverLookup: true,
+	op := Task{
+		resourcesManager:     taskResourcesManager{},
+		probeIPLookupper:     taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper:    taskASNLookupper{asn: 1234, name: "1234.com"},
+		countryLookupper:     taskCCLookupper{cc: "IT"},
+		resolverIPLookupper:  taskResolverIPLookupper{err: expected},
+		enableResolverLookup: true,
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if err != nil {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -250,18 +244,17 @@ func TestLocationLookupCannotLookupResolverIP(t *testing.T) {
 
 func TestLocationLookupCannotLookupResolverNetworkName(t *testing.T) {
 	expected := errors.New("mocked error")
-	op := LocationLookup{
-		ResourceUpdater:      locationLookupResourceUpdater{},
-		ProbeIPLookupper:     locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper:    locationLookupASNLookupper{asn: 1234, name: "1234.com"},
-		CountryLookupper:     locationLookupCCLookupper{cc: "IT"},
-		PathsProvider:        locationLookupPathsProvider{},
-		ResolverIPLookupper:  locationLookupResolverIPLookupper{ip: "4.3.2.1"},
-		ResolverASNLookupper: locationLookupASNLookupper{err: expected},
-		EnableResolverLookup: true,
+	op := Task{
+		resourcesManager:     taskResourcesManager{},
+		probeIPLookupper:     taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper:    taskASNLookupper{asn: 1234, name: "1234.com"},
+		countryLookupper:     taskCCLookupper{cc: "IT"},
+		resolverIPLookupper:  taskResolverIPLookupper{ip: "4.3.2.1"},
+		resolverASNLookupper: taskASNLookupper{err: expected},
+		enableResolverLookup: true,
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if err != nil {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -292,18 +285,17 @@ func TestLocationLookupCannotLookupResolverNetworkName(t *testing.T) {
 }
 
 func TestLocationLookupSuccessWithResolverLookup(t *testing.T) {
-	op := LocationLookup{
-		ResourceUpdater:      locationLookupResourceUpdater{},
-		ProbeIPLookupper:     locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper:    locationLookupASNLookupper{asn: 1234, name: "1234.com"},
-		CountryLookupper:     locationLookupCCLookupper{cc: "IT"},
-		PathsProvider:        locationLookupPathsProvider{},
-		ResolverIPLookupper:  locationLookupResolverIPLookupper{ip: "4.3.2.1"},
-		ResolverASNLookupper: locationLookupASNLookupper{asn: 4321, name: "4321.com"},
-		EnableResolverLookup: true,
+	op := Task{
+		resourcesManager:     taskResourcesManager{},
+		probeIPLookupper:     taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper:    taskASNLookupper{asn: 1234, name: "1234.com"},
+		countryLookupper:     taskCCLookupper{cc: "IT"},
+		resolverIPLookupper:  taskResolverIPLookupper{ip: "4.3.2.1"},
+		resolverASNLookupper: taskASNLookupper{asn: 4321, name: "4321.com"},
+		enableResolverLookup: true,
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if err != nil {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -334,17 +326,16 @@ func TestLocationLookupSuccessWithResolverLookup(t *testing.T) {
 }
 
 func TestLocationLookupSuccessWithoutResolverLookup(t *testing.T) {
-	op := LocationLookup{
-		ResourceUpdater:      locationLookupResourceUpdater{},
-		ProbeIPLookupper:     locationLookupProbeIPLookupper{ip: "1.2.3.4"},
-		ProbeASNLookupper:    locationLookupASNLookupper{asn: 1234, name: "1234.com"},
-		CountryLookupper:     locationLookupCCLookupper{cc: "IT"},
-		PathsProvider:        locationLookupPathsProvider{},
-		ResolverIPLookupper:  locationLookupResolverIPLookupper{ip: "4.3.2.1"},
-		ResolverASNLookupper: locationLookupASNLookupper{asn: 4321, name: "4321.com"},
+	op := Task{
+		resourcesManager:     taskResourcesManager{},
+		probeIPLookupper:     taskProbeIPLookupper{ip: "1.2.3.4"},
+		probeASNLookupper:    taskASNLookupper{asn: 1234, name: "1234.com"},
+		countryLookupper:     taskCCLookupper{cc: "IT"},
+		resolverIPLookupper:  taskResolverIPLookupper{ip: "4.3.2.1"},
+		resolverASNLookupper: taskASNLookupper{asn: 4321, name: "4321.com"},
 	}
 	ctx := context.Background()
-	out, err := op.Do(ctx)
+	out, err := op.Run(ctx)
 	if err != nil {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -371,5 +362,36 @@ func TestLocationLookupSuccessWithoutResolverLookup(t *testing.T) {
 	}
 	if out.ResolverNetworkName != model.DefaultResolverNetworkName {
 		t.Fatal("invalid ResolverNetworkName value")
+	}
+}
+
+func TestSmoke(t *testing.T) {
+	maybeFetchResources(t)
+	config := Config{
+		EnableResolverLookup: true,
+		ResourcesManager: taskResourcesManager{
+			asnDatabasePath:     asnDBPath,
+			countryDatabasePath: countryDBPath,
+		},
+	}
+	task := Must(NewTask(config))
+	result, err := task.Run(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result == nil {
+		t.Fatal("expected non nil result")
+	}
+	// we already checked above that the returned
+	// value is okay for all codepaths.
+}
+
+func TestNewTaskWithNoResourcesManager(t *testing.T) {
+	task, err := NewTask(Config{})
+	if !errors.Is(err, ErrMissingResourcesManager) {
+		t.Fatal("not the error we expected")
+	}
+	if task != nil {
+		t.Fatal("expected nil task here")
 	}
 }

@@ -11,9 +11,6 @@ import (
 )
 
 func TestIPLookupWorksUsingIPInfo(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	ip, err := ipInfoIPLookup(
 		context.Background(),
 		http.DefaultClient,

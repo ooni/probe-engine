@@ -16,13 +16,11 @@ type dnsResolver interface {
 	LookupHost(ctx context.Context, host string) (addrs []string, err error)
 }
 
-type resolverLookupClient struct {
-	Resolver dnsResolver
-}
+type resolverLookupClient struct{}
 
-func (rlc resolverLookupClient) Do(ctx context.Context) (string, error) {
+func (rlc resolverLookupClient) do(ctx context.Context, r dnsResolver) (string, error) {
 	var ips []string
-	ips, err := rlc.Resolver.LookupHost(ctx, "whoami.akamai.net")
+	ips, err := r.LookupHost(ctx, "whoami.akamai.net")
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +30,6 @@ func (rlc resolverLookupClient) Do(ctx context.Context) (string, error) {
 	return ips[0], nil
 }
 
-// LookupResolverIP returns the resolver IP.
-func LookupResolverIP(ctx context.Context) (ip string, err error) {
-	return resolverLookupClient{Resolver: &net.Resolver{}}.Do(ctx)
+func (rlc resolverLookupClient) LookupResolverIP(ctx context.Context) (ip string, err error) {
+	return rlc.do(ctx, &net.Resolver{})
 }

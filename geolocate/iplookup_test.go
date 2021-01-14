@@ -12,11 +12,11 @@ import (
 )
 
 func TestIPLookupGood(t *testing.T) {
-	ip, err := (IPLookupClient{
+	ip, err := (ipLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).Do(context.Background())
+	}).LookupProbeIP(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,11 +28,11 @@ func TestIPLookupGood(t *testing.T) {
 func TestIPLookupAllFailed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel to cause Do() to fail
-	ip, err := (IPLookupClient{
+	ip, err := (ipLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-	}).Do(ctx)
+	}).LookupProbeIP(ctx)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected an error here")
 	}
@@ -43,7 +43,7 @@ func TestIPLookupAllFailed(t *testing.T) {
 
 func TestIPLookupInvalidIP(t *testing.T) {
 	ctx := context.Background()
-	ip, err := (IPLookupClient{
+	ip, err := (ipLookupClient{
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
