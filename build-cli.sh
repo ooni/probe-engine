@@ -8,18 +8,18 @@ case $1 in
   linux)
     export GOOS=linux GOARCH=amd64
     go build -o ./CLI/linux/amd64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
-    echo "Binary ready at ./CLI/linux/amd64/miniooni";;
+    echo "Binary ready at ./CLI/linux/amd64/miniooni"
+    export GOOS=linux GOARCH=arm GOARM=7
+    go build -o ./CLI/linux/armv7 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
+    echo "Binary ready at ./CLI/linux/armv7/miniooni"
+    export GOOS=linux GOARCH=arm64
+    go build -o ./CLI/linux/arm64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
+    echo "Binary ready at ./CLI/linux/arm64/miniooni";;
   windows)
     export GOOS=windows GOARCH=amd64
     go build -o ./CLI/windows/amd64 -ldflags="-s -w" ./cmd/miniooni
     echo "Binary ready at ./CLI/windows/amd64/miniooni.exe";;
-  rpi3)
-    export GOOS=linux GOARCH=arm GOARM=7
-    go build -o ./CLI/linux/armv7 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
-  rpi4)
-    export GOOS=linux GOARCH=arm64
-    go build -o ./CLI/linux/arm64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni;;
   *)
-    echo "usage: $0 darwin|linux|windows|rpi3|rpi4" 1>&2
+    echo "usage: $0 darwin|linux|windows" 1>&2
     exit 1
 esac
