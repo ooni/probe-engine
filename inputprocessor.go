@@ -85,8 +85,7 @@ func (ipsw inputProcessorSaverWrapper) SaveMeasurement(
 // InputProcessorSubmitterWrapper is InputProcessor's
 // wrapper for a Submitter implementation.
 type InputProcessorSubmitterWrapper interface {
-	SubmitAndUpdateMeasurementContext(
-		ctx context.Context, idx int, m *model.Measurement) error
+	Submit(ctx context.Context, idx int, m *model.Measurement) error
 }
 
 type inputProcessorSubmitterWrapper struct {
@@ -99,7 +98,7 @@ func NewInputProcessorSubmitterWrapper(submitter Submitter) InputProcessorSubmit
 	return inputProcessorSubmitterWrapper{submitter: submitter}
 }
 
-func (ipsw inputProcessorSubmitterWrapper) SubmitAndUpdateMeasurementContext(
+func (ipsw inputProcessorSubmitterWrapper) Submit(
 	ctx context.Context, idx int, m *model.Measurement) error {
 	return ipsw.submitter.Submit(ctx, m)
 }
@@ -125,7 +124,7 @@ func (ip InputProcessor) Run(ctx context.Context) error {
 		}
 		meas.AddAnnotations(ip.Annotations)
 		meas.Options = ip.Options
-		err = ip.Submitter.SubmitAndUpdateMeasurementContext(ctx, idx, meas)
+		err = ip.Submitter.Submit(ctx, idx, meas)
 		if err != nil {
 			return err
 		}

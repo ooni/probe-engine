@@ -434,9 +434,8 @@ type submitterWrapper struct {
 	child engine.InputProcessorSubmitterWrapper
 }
 
-func (sw submitterWrapper) SubmitAndUpdateMeasurementContext(
-	ctx context.Context, idx int, m *model.Measurement) error {
-	err := sw.child.SubmitAndUpdateMeasurementContext(ctx, idx, m)
+func (sw submitterWrapper) Submit(ctx context.Context, idx int, m *model.Measurement) error {
+	err := sw.child.Submit(ctx, idx, m)
 	warnOnError(err, "submitting measurement failed")
 	// policy: we do not stop the loop if measurement submission fails
 	return nil

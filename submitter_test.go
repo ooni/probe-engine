@@ -77,8 +77,8 @@ func TestNewSubmitterWithFailedSubmission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	measurement := new(model.Measurement)
-	err = submitter.Submit(context.Background(), measurement)
+	m := new(model.Measurement)
+	err = submitter.Submit(context.Background(), m)
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
