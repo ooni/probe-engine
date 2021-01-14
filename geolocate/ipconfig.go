@@ -7,13 +7,12 @@ import (
 
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
 func ipConfigIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	data, err := (httpx.Client{
@@ -23,7 +22,7 @@ func ipConfigIPLookup(
 		UserAgent:  httpheader.CLIUserAgent(),
 	}).FetchResource(ctx, "/")
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	ip := strings.Trim(string(data), "\r\n\t ")
 	logger.Debugf("ipconfig: body: %s", ip)

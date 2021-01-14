@@ -3,14 +3,13 @@ package geolocate
 import (
 	"net"
 
-	"github.com/ooni/probe-engine/model"
 	"github.com/oschwald/geoip2-golang"
 )
 
 type mmdbLookupper struct{}
 
 func (mmdbLookupper) LookupASN(path, ip string) (asn uint, org string, err error) {
-	asn, org = model.DefaultProbeASN, model.DefaultProbeNetworkName
+	asn, org = DefaultProbeASN, DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return
@@ -34,7 +33,7 @@ func LookupASN(path, ip string) (asn uint, org string, err error) {
 }
 
 func (mmdbLookupper) LookupCC(path, ip string) (cc string, err error) {
-	cc = model.DefaultProbeCC
+	cc = DefaultProbeCC
 	db, err := geoip2.Open(path)
 	if err != nil {
 		return

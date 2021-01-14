@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/resources"
 )
 
@@ -48,10 +47,10 @@ func TestLookupASNInvalidFile(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if asn != model.DefaultProbeASN {
+	if asn != DefaultProbeASN {
 		t.Fatal("expected a zero ASN")
 	}
-	if org != model.DefaultProbeNetworkName {
+	if org != DefaultProbeNetworkName {
 		t.Fatal("expected an empty org")
 	}
 }
@@ -62,10 +61,10 @@ func TestLookupASNInvalidIP(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if asn != model.DefaultProbeASN {
+	if asn != DefaultProbeASN {
 		t.Fatal("expected a zero ASN")
 	}
-	if org != model.DefaultProbeNetworkName {
+	if org != DefaultProbeNetworkName {
 		t.Fatal("expected an empty org")
 	}
 }
@@ -87,7 +86,7 @@ func TestLookupCCInvalidFile(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if cc != model.DefaultProbeCC {
+	if cc != DefaultProbeCC {
 		t.Fatal("expected an empty cc")
 	}
 }
@@ -98,7 +97,7 @@ func TestLookupCCInvalidIP(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if cc != model.DefaultProbeCC {
+	if cc != DefaultProbeCC {
 		t.Fatal("expected an empty cc")
 	}
 }

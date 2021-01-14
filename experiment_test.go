@@ -3,11 +3,12 @@ package engine
 import (
 	"testing"
 
+	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 )
 
 func TestExperimentHonoursSharingDefaults(t *testing.T) {
-	measure := func(info *model.LocationInfo) *model.Measurement {
+	measure := func(info *geolocate.Results) *model.Measurement {
 		sess := &Session{location: info}
 		builder, err := sess.NewExperimentBuilder("example")
 		if err != nil {
@@ -18,48 +19,48 @@ func TestExperimentHonoursSharingDefaults(t *testing.T) {
 	}
 	type spec struct {
 		name         string
-		locationInfo *model.LocationInfo
+		locationInfo *geolocate.Results
 		expect       func(*model.Measurement) bool
 	}
 	allspecs := []spec{{
 		name:         "probeIP",
-		locationInfo: &model.LocationInfo{ProbeIP: "8.8.8.8"},
+		locationInfo: &geolocate.Results{ProbeIP: "8.8.8.8"},
 		expect: func(m *model.Measurement) bool {
-			return m.ProbeIP == model.DefaultProbeIP
+			return m.ProbeIP == geolocate.DefaultProbeIP
 		},
 	}, {
 		name:         "probeASN",
-		locationInfo: &model.LocationInfo{ASN: 30722},
+		locationInfo: &geolocate.Results{ASN: 30722},
 		expect: func(m *model.Measurement) bool {
 			return m.ProbeASN == "AS30722"
 		},
 	}, {
 		name:         "probeCC",
-		locationInfo: &model.LocationInfo{CountryCode: "IT"},
+		locationInfo: &geolocate.Results{CountryCode: "IT"},
 		expect: func(m *model.Measurement) bool {
 			return m.ProbeCC == "IT"
 		},
 	}, {
 		name:         "probeNetworkName",
-		locationInfo: &model.LocationInfo{NetworkName: "Vodafone Italia"},
+		locationInfo: &geolocate.Results{NetworkName: "Vodafone Italia"},
 		expect: func(m *model.Measurement) bool {
 			return m.ProbeNetworkName == "Vodafone Italia"
 		},
 	}, {
 		name:         "resolverIP",
-		locationInfo: &model.LocationInfo{ResolverIP: "9.9.9.9"},
+		locationInfo: &geolocate.Results{ResolverIP: "9.9.9.9"},
 		expect: func(m *model.Measurement) bool {
 			return m.ResolverIP == "9.9.9.9"
 		},
 	}, {
 		name:         "resolverASN",
-		locationInfo: &model.LocationInfo{ResolverASN: 44},
+		locationInfo: &geolocate.Results{ResolverASN: 44},
 		expect: func(m *model.Measurement) bool {
 			return m.ResolverASN == "AS44"
 		},
 	}, {
 		name:         "resolverNetworkName",
-		locationInfo: &model.LocationInfo{ResolverNetworkName: "Google LLC"},
+		locationInfo: &geolocate.Results{ResolverNetworkName: "Google LLC"},
 		expect: func(m *model.Measurement) bool {
 			return m.ResolverNetworkName == "Google LLC"
 		},

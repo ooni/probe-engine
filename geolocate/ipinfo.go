@@ -6,7 +6,6 @@ import (
 
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
 type ipInfoResponse struct {
@@ -16,7 +15,7 @@ type ipInfoResponse struct {
 func ipInfoIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	var v ipInfoResponse
@@ -28,7 +27,7 @@ func ipInfoIPLookup(
 		UserAgent:  httpheader.CLIUserAgent(), // we must be a CLI client
 	}).GetJSON(ctx, "/", &v)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/model"
 )
 
 func TestIPLookupGood(t *testing.T) {
@@ -36,7 +35,7 @@ func TestIPLookupAllFailed(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatal("expected an error here")
 	}
-	if ip != model.DefaultProbeIP {
+	if ip != DefaultProbeIP {
 		t.Fatal("expected the default IP here")
 	}
 }
@@ -51,7 +50,7 @@ func TestIPLookupInvalidIP(t *testing.T) {
 	if !errors.Is(err, ErrInvalidIPAddress) {
 		t.Fatal("expected an error here")
 	}
-	if ip != model.DefaultProbeIP {
+	if ip != DefaultProbeIP {
 		t.Fatal("expected the default IP here")
 	}
 }
