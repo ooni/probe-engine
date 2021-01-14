@@ -90,12 +90,12 @@ type InputProcessorSubmitterWrapper interface {
 }
 
 type inputProcessorSubmitterWrapper struct {
-	submitter model.Submitter
+	submitter Submitter
 }
 
 // NewInputProcessorSubmitterWrapper wraps a Submitter
 // for the InputProcessor.
-func NewInputProcessorSubmitterWrapper(submitter model.Submitter) InputProcessorSubmitterWrapper {
+func NewInputProcessorSubmitterWrapper(submitter Submitter) InputProcessorSubmitterWrapper {
 	return inputProcessorSubmitterWrapper{submitter: submitter}
 }
 

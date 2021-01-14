@@ -37,14 +37,14 @@ func (fs *FakeSubmitter) Submit(ctx context.Context, m *model.Measurement) error
 	return fs.Error
 }
 
-var _ model.Submitter = &FakeSubmitter{}
+var _ Submitter = &FakeSubmitter{}
 
 type FakeSubmitterSession struct {
 	Error     error
-	Submitter model.Submitter
+	Submitter Submitter
 }
 
-func (fse FakeSubmitterSession) NewSubmitter(ctx context.Context) (model.Submitter, error) {
+func (fse FakeSubmitterSession) NewSubmitter(ctx context.Context) (Submitter, error) {
 	return fse.Submitter, fse.Error
 }
 
