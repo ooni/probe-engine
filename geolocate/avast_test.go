@@ -11,9 +11,6 @@ import (
 )
 
 func TestIPLookupWorksUsingAvast(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip test in short mode")
-	}
 	ip, err := avastIPLookup(
 		context.Background(),
 		http.DefaultClient,
