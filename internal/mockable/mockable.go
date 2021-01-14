@@ -33,7 +33,6 @@ type Session struct {
 	MockableResolverIP           string
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
-	MockableSubmitter            model.Submitter
 	MockableTempDir              string
 	MockableTorArgs              []string
 	MockableTorBinary            string
