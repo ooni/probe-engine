@@ -14,57 +14,59 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// ErrAllIPLookuppersFailed indicates that we failed with looking
-// up the probe IP for with all the lookuppers that we tried.
-var ErrAllIPLookuppersFailed = errors.New("all IP lookuppers failed")
+var (
+	// ErrAllIPLookuppersFailed indicates that we failed with looking
+	// up the probe IP for with all the lookuppers that we tried.
+	ErrAllIPLookuppersFailed = errors.New("all IP lookuppers failed")
 
-// ErrInvalidIPAddress indicates that the code returned to us a
-// string that actually isn't a valid IP address.
-var ErrInvalidIPAddress = errors.New("lookupper did not return a valid IP")
+	// ErrInvalidIPAddress indicates that the code returned to us a
+	// string that actually isn't a valid IP address.
+	ErrInvalidIPAddress = errors.New("lookupper did not return a valid IP")
+)
 
-// LookupFunc is a function for performing the IP lookup.
-type LookupFunc func(
+type lookupFunc func(
 	ctx context.Context, client *http.Client,
 	logger model.Logger, userAgent string,
 ) (string, error)
 
 type method struct {
 	name string
-	fn   LookupFunc
+	fn   lookupFunc
 }
 
 var (
 	methods = []method{
 		{
 			name: "avast",
-			fn:   AvastIPLookup,
+			fn:   avastIPLookup,
 		},
 		{
 			name: "ipconfig",
-			fn:   IPConfigIPLookup,
+			fn:   ipConfigIPLookup,
 		},
 		{
 			name: "ipinfo",
-			fn:   IPInfoIPLookup,
+			fn:   ipInfoIPLookup,
 		},
 		{
 			name: "stun_ekiga",
-			fn:   STUNEkigaIPLookup,
+			fn:   stunEkigaIPLookup,
 		},
 		{
 			name: "stun_google",
-			fn:   STUNGoogleIPLookup,
+			fn:   stunGoogleIPLookup,
 		},
 		{
 			name: "ubuntu",
-			fn:   UbuntuIPLookup,
+			fn:   ubuntuIPLookup,
 		},
 	}
 
 	once sync.Once
 )
 
-// IPLookupClient is an iplookup client
+// IPLookupClient is an iplookup client. All the fields belonging
+// to this structure must be initialized before usage.
 type IPLookupClient struct {
 	// HTTPClient is the HTTP client to use
 	HTTPClient *http.Client
@@ -86,9 +88,8 @@ func makeSlice() []method {
 	return ret
 }
 
-// DoWithCustomFunc performs the IP lookup with a custom function.
-func (c IPLookupClient) DoWithCustomFunc(
-	ctx context.Context, fn LookupFunc,
+func (c IPLookupClient) doWithCustomFunc(
+	ctx context.Context, fn lookupFunc,
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
 	if err != nil {
@@ -106,7 +107,7 @@ func (c IPLookupClient) Do(ctx context.Context) (string, error) {
 	union := multierror.New(ErrAllIPLookuppersFailed)
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)
-		ip, err := c.DoWithCustomFunc(ctx, method.fn)
+		ip, err := c.doWithCustomFunc(ctx, method.fn)
 		if err == nil {
 			return ip, nil
 		}

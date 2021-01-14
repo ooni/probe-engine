@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	asnDBPath     = "../../testdata/asn.mmdb"
-	countryDBPath = "../../testdata/country.mmdb"
+	asnDBPath     = "../testdata/asn.mmdb"
+	countryDBPath = "../testdata/country.mmdb"
 	ipAddr        = "35.204.49.125"
 )
 
@@ -22,7 +22,7 @@ func maybeFetchResources(t *testing.T) {
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-		WorkDir:    "../../testdata/",
+		WorkDir:    "../testdata/",
 	}
 	if err := c.Ensure(context.Background()); err != nil {
 		t.Fatal(err)

@@ -1,5 +1,4 @@
-// Package geolocate implements IP lookup, resolver lookup, and GeoIP
-// location an OONI Probe instance.
+// Package geolocate implements IP lookup, resolver lookup, and geolocation.
 package geolocate
 
 import (
@@ -10,19 +9,17 @@ import (
 	"github.com/ooni/probe-engine/model"
 )
 
-// AvastResponse is the response returned by Avast IP lookup services.
-type AvastResponse struct {
+type avastResponse struct {
 	IP string `json:"ip"`
 }
 
-// AvastIPLookup performs the IP lookup using Avast services.
-func AvastIPLookup(
+func avastIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
 	logger model.Logger,
 	userAgent string,
 ) (string, error) {
-	var v AvastResponse
+	var v avastResponse
 	err := (httpx.Client{
 		BaseURL:    "https://ip-info.ff.avast.com",
 		HTTPClient: httpClient,

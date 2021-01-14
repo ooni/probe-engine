@@ -474,7 +474,7 @@ func (s *Session) LookupCC(dbPath, probeIP string) (string, error) {
 // LookupResolverIP performs the lookup of the resolver IP. This method implements
 // LocationLookupResolverIPLookupper.LookupResolverIP.
 func (s *Session) LookupResolverIP(ctx context.Context) (string, error) {
-	return geolocate.LookupFirstResolverIP(ctx, nil)
+	return geolocate.LookupResolverIP(ctx)
 }
 
 // ErrAllProbeServicesFailed indicates all probe services failed.

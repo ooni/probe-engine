@@ -1,13 +1,15 @@
-package geolocate_test
+package geolocate
 
 import (
 	"context"
 	"errors"
+	"net"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/geolocate"
+	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/model"
 	"github.com/pion/stun"
 )
@@ -15,7 +17,7 @@ import (
 func TestSTUNIPLookupCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // stop immediately
-	ip, err := geolocate.STUNIPLookup(ctx, geolocate.STUNConfig{
+	ip, err := stunIPLookup(ctx, stunConfig{
 		Endpoint: "stun.ekiga.net:3478",
 		Logger:   log.Log,
 	})
@@ -30,8 +32,8 @@ func TestSTUNIPLookupCanceledContext(t *testing.T) {
 func TestSTUNIPLookupDialFailure(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
-	ip, err := geolocate.STUNIPLookup(ctx, geolocate.STUNConfig{
-		Dial: func(network, address string) (geolocate.STUNClient, error) {
+	ip, err := stunIPLookup(ctx, stunConfig{
+		Dial: func(network, address string) (stunClient, error) {
 			return nil, expected
 		},
 		Endpoint: "stun.ekiga.net:3478",
@@ -68,8 +70,8 @@ func (c MockableSTUNClient) Start(m *stun.Message, h stun.Handler) error {
 func TestSTUNIPLookupStartReturnsError(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
-	ip, err := geolocate.STUNIPLookup(ctx, geolocate.STUNConfig{
-		Dial: func(network, address string) (geolocate.STUNClient, error) {
+	ip, err := stunIPLookup(ctx, stunConfig{
+		Dial: func(network, address string) (stunClient, error) {
 			return MockableSTUNClient{StartErr: expected}, nil
 		},
 		Endpoint: "stun.ekiga.net:3478",
@@ -86,8 +88,8 @@ func TestSTUNIPLookupStartReturnsError(t *testing.T) {
 func TestSTUNIPLookupStunEventContainsError(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
-	ip, err := geolocate.STUNIPLookup(ctx, geolocate.STUNConfig{
-		Dial: func(network, address string) (geolocate.STUNClient, error) {
+	ip, err := stunIPLookup(ctx, stunConfig{
+		Dial: func(network, address string) (stunClient, error) {
 			return MockableSTUNClient{Event: stun.Event{
 				Error: expected,
 			}}, nil
@@ -105,8 +107,8 @@ func TestSTUNIPLookupStunEventContainsError(t *testing.T) {
 
 func TestSTUNIPLookupCannotDecodeMessage(t *testing.T) {
 	ctx := context.Background()
-	ip, err := geolocate.STUNIPLookup(ctx, geolocate.STUNConfig{
-		Dial: func(network, address string) (geolocate.STUNClient, error) {
+	ip, err := stunIPLookup(ctx, stunConfig{
+		Dial: func(network, address string) (stunClient, error) {
 			return MockableSTUNClient{Event: stun.Event{
 				Message: &stun.Message{},
 			}}, nil
@@ -119,5 +121,41 @@ func TestSTUNIPLookupCannotDecodeMessage(t *testing.T) {
 	}
 	if ip != model.DefaultProbeIP {
 		t.Fatalf("not the IP address we expected: %+v", ip)
+	}
+}
+
+func TestIPLookupWorksUsingSTUNEkiga(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
+	ip, err := stunEkigaIPLookup(
+		context.Background(),
+		http.DefaultClient,
+		log.Log,
+		httpheader.UserAgent(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if net.ParseIP(ip) == nil {
+		t.Fatalf("not an IP address: '%s'", ip)
+	}
+}
+
+func TestIPLookupWorksUsingSTUNGoogle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skip test in short mode")
+	}
+	ip, err := stunGoogleIPLookup(
+		context.Background(),
+		http.DefaultClient,
+		log.Log,
+		httpheader.UserAgent(),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if net.ParseIP(ip) == nil {
+		t.Fatalf("not an IP address: '%s'", ip)
 	}
 }
