@@ -8,7 +8,13 @@ case $1 in
   linux)
     export GOOS=linux GOARCH=amd64
     go build -o ./CLI/linux/amd64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
-    echo "Binary ready at ./CLI/linux/amd64/miniooni";;
+    echo "Binary ready at ./CLI/linux/amd64/miniooni"
+    export GOOS=linux GOARCH=arm GOARM=7
+    go build -o ./CLI/linux/armv7 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
+    echo "Binary ready at ./CLI/linux/armv7/miniooni"
+    export GOOS=linux GOARCH=arm64
+    go build -o ./CLI/linux/arm64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
+    echo "Binary ready at ./CLI/linux/arm64/miniooni";;
   windows)
     export GOOS=windows GOARCH=amd64
     go build -o ./CLI/windows/amd64 -ldflags="-s -w" ./cmd/miniooni

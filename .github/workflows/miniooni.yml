@@ -17,6 +17,14 @@ jobs:
         with:
           name: miniooni-linux-amd64
           path: ./CLI/linux/amd64/miniooni
+      - uses: actions/upload-artifact@v1
+        with:
+          name: miniooni-linux-armv7
+          path: ./CLI/linux/armv7/miniooni
+      - uses: actions/upload-artifact@v1
+        with:
+          name: miniooni-linux-arm64
+          path: ./CLI/linux/arm64/miniooni
 
       - run: ./build-cli.sh darwin
       - uses: actions/upload-artifact@v1
