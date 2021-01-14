@@ -7,11 +7,9 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
-// LookupASN maps the ip to the probe ASN and org using the
-// MMDB database located at path, or returns an error. In case
-// the IP is not valid, this function will fail with an error
-// complaining that geoip2 was passed a nil IP.
-func LookupASN(path, ip string) (asn uint, org string, err error) {
+type mmdbLookupper struct{}
+
+func (mmdbLookupper) LookupASN(path, ip string) (asn uint, org string, err error) {
 	asn, org = model.DefaultProbeASN, model.DefaultProbeNetworkName
 	db, err := geoip2.Open(path)
 	if err != nil {
@@ -29,8 +27,13 @@ func LookupASN(path, ip string) (asn uint, org string, err error) {
 	return
 }
 
-// LookupCC is like LookupASN but for the country code.
-func LookupCC(path, ip string) (cc string, err error) {
+// LookupASN returns the ASN and the organization associated with the
+// given ip using the ASN database at path.
+func LookupASN(path, ip string) (asn uint, org string, err error) {
+	return (mmdbLookupper{}).LookupASN(path, ip)
+}
+
+func (mmdbLookupper) LookupCC(path, ip string) (cc string, err error) {
 	cc = model.DefaultProbeCC
 	db, err := geoip2.Open(path)
 	if err != nil {

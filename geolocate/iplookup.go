@@ -65,9 +65,7 @@ var (
 	once sync.Once
 )
 
-// IPLookupClient is an iplookup client. All the fields belonging
-// to this structure must be initialized before usage.
-type IPLookupClient struct {
+type ipLookupClient struct {
 	// HTTPClient is the HTTP client to use
 	HTTPClient *http.Client
 
@@ -88,7 +86,7 @@ func makeSlice() []method {
 	return ret
 }
 
-func (c IPLookupClient) doWithCustomFunc(
+func (c ipLookupClient) doWithCustomFunc(
 	ctx context.Context, fn lookupFunc,
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
@@ -102,8 +100,7 @@ func (c IPLookupClient) doWithCustomFunc(
 	return ip, nil
 }
 
-// Do performs the IP lookup.
-func (c IPLookupClient) Do(ctx context.Context) (string, error) {
+func (c ipLookupClient) LookupProbeIP(ctx context.Context) (string, error) {
 	union := multierror.New(ErrAllIPLookuppersFailed)
 	for _, method := range makeSlice() {
 		c.Logger.Debugf("iplookup: using %s", method.name)

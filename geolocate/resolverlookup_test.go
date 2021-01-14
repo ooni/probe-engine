@@ -7,7 +7,7 @@ import (
 )
 
 func TestLookupResolverIP(t *testing.T) {
-	addr, err := LookupResolverIP(context.Background())
+	addr, err := (resolverLookupClient{}).LookupResolverIP(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,10 +26,10 @@ func (bhl brokenHostLookupper) LookupHost(ctx context.Context, host string) ([]s
 
 func TestLookupResolverIPFailure(t *testing.T) {
 	expected := errors.New("mocked error")
-	rlc := resolverLookupClient{Resolver: brokenHostLookupper{
+	rlc := resolverLookupClient{}
+	addr, err := rlc.do(context.Background(), brokenHostLookupper{
 		err: expected,
-	}}
-	addr, err := rlc.Do(context.Background())
+	})
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -39,8 +39,8 @@ func TestLookupResolverIPFailure(t *testing.T) {
 }
 
 func TestLookupResolverIPNoAddressReturned(t *testing.T) {
-	rlc := resolverLookupClient{Resolver: brokenHostLookupper{}}
-	addr, err := rlc.Do(context.Background())
+	rlc := resolverLookupClient{}
+	addr, err := rlc.do(context.Background(), brokenHostLookupper{})
 	if !errors.Is(err, ErrNoIPAddressReturned) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
