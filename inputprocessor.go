@@ -90,18 +90,18 @@ type InputProcessorSubmitterWrapper interface {
 }
 
 type inputProcessorSubmitterWrapper struct {
-	submitter Submitter
+	submitter model.Submitter
 }
 
 // NewInputProcessorSubmitterWrapper wraps a Submitter
 // for the InputProcessor.
-func NewInputProcessorSubmitterWrapper(submitter Submitter) InputProcessorSubmitterWrapper {
+func NewInputProcessorSubmitterWrapper(submitter model.Submitter) InputProcessorSubmitterWrapper {
 	return inputProcessorSubmitterWrapper{submitter: submitter}
 }
 
 func (ipsw inputProcessorSubmitterWrapper) SubmitAndUpdateMeasurementContext(
 	ctx context.Context, idx int, m *model.Measurement) error {
-	return ipsw.submitter.SubmitAndUpdateMeasurementContext(ctx, m)
+	return ipsw.submitter.Submit(ctx, m)
 }
 
 // Run processes all the input subject to the duration of the

@@ -383,9 +383,9 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	}()
 
 	submitter, err := engine.NewSubmitter(ctx, engine.SubmitterConfig{
-		Enabled:    currentOptions.NoCollector == false,
-		Experiment: experiment,
-		Logger:     log.Log,
+		Enabled: currentOptions.NoCollector == false,
+		Session: sess,
+		Logger:  log.Log,
 	})
 	fatalOnError(err, "cannot create submitter")
 

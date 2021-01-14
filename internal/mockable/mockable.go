@@ -9,8 +9,8 @@ import (
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/psiphonx"
 	"github.com/ooni/probe-engine/internal/runtimex"
-	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/internal/torx"
+	"github.com/ooni/probe-engine/internal/tunnel"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
 	"github.com/ooni/probe-engine/probeservices/testorchestra"
@@ -33,6 +33,7 @@ type Session struct {
 	MockableResolverIP           string
 	MockableSoftwareName         string
 	MockableSoftwareVersion      string
+	MockableSubmitter            model.Submitter
 	MockableTempDir              string
 	MockableTorArgs              []string
 	MockableTorBinary            string
