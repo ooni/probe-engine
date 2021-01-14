@@ -12,11 +12,74 @@ import (
 	"github.com/ooni/probe-engine/version"
 )
 
+const (
+	// DefaultProbeASN is the default probe ASN as number.
+	DefaultProbeASN uint = 0
+
+	// DefaultProbeCC is the default probe CC.
+	DefaultProbeCC = "ZZ"
+
+	// DefaultProbeIP is the default probe IP.
+	DefaultProbeIP = model.DefaultProbeIP
+
+	// DefaultProbeNetworkName is the default probe network name.
+	DefaultProbeNetworkName = ""
+
+	// DefaultResolverASN is the default resolver ASN.
+	DefaultResolverASN uint = 0
+
+	// DefaultResolverIP is the default resolver IP.
+	DefaultResolverIP = "127.0.0.2"
+
+	// DefaultResolverNetworkName is the default resolver network name.
+	DefaultResolverNetworkName = ""
+)
+
+var (
+	// DefaultProbeASNString is the default probe ASN as a string.
+	DefaultProbeASNString = fmt.Sprintf("AS%d", DefaultProbeASN)
+
+	// DefaultResolverASNString is the default resolver ASN as a string.
+	DefaultResolverASNString = fmt.Sprintf("AS%d", DefaultResolverASN)
+)
+
 var (
 	// ErrMissingResourcesManager indicates that no resources
 	// manager has been configured inside of Config.
 	ErrMissingResourcesManager = errors.New("geolocate: ResourcesManager is nil")
 )
+
+// Logger is the definition of Logger used by this package.
+type Logger interface {
+	Debugf(format string, v ...interface{})
+}
+
+// Results contains geolocate results
+type Results struct {
+	// ASN is the autonomous system number
+	ASN uint
+
+	// CountryCode is the country code
+	CountryCode string
+
+	// DidResolverLookup indicates whether we did a resolver lookup.
+	DidResolverLookup bool
+
+	// NetworkName is the network name
+	NetworkName string
+
+	// IP is the probe IP
+	ProbeIP string
+
+	// ResolverASN is the resolver ASN
+	ResolverASN uint
+
+	// ResolverIP is the resolver IP
+	ResolverIP string
+
+	// ResolverNetworkName is the resolver network name
+	ResolverNetworkName string
+}
 
 type probeIPLookupper interface {
 	LookupProbeIP(ctx context.Context) (addr string, err error)
@@ -59,7 +122,7 @@ type Config struct {
 
 	// Logger is the logger to use. If not set, then we will
 	// use a logger that discards all messages.
-	Logger model.Logger
+	Logger Logger
 
 	// ResourcesManager is the mandatory resources manager. If not
 	// set, we will not be able to perform any lookup.
@@ -118,16 +181,16 @@ type Task struct {
 }
 
 // Run runs the task.
-func (op Task) Run(ctx context.Context) (*model.LocationInfo, error) {
+func (op Task) Run(ctx context.Context) (*Results, error) {
 	var err error
-	out := &model.LocationInfo{
-		ASN:                 model.DefaultProbeASN,
-		CountryCode:         model.DefaultProbeCC,
-		NetworkName:         model.DefaultProbeNetworkName,
-		ProbeIP:             model.DefaultProbeIP,
-		ResolverASN:         model.DefaultResolverASN,
-		ResolverIP:          model.DefaultResolverIP,
-		ResolverNetworkName: model.DefaultResolverNetworkName,
+	out := &Results{
+		ASN:                 DefaultProbeASN,
+		CountryCode:         DefaultProbeCC,
+		NetworkName:         DefaultProbeNetworkName,
+		ProbeIP:             DefaultProbeIP,
+		ResolverASN:         DefaultResolverASN,
+		ResolverIP:          DefaultResolverIP,
+		ResolverNetworkName: DefaultResolverNetworkName,
 	}
 	if err := op.resourcesManager.MaybeUpdateResources(ctx); err != nil {
 		return out, fmt.Errorf("MaybeUpdateResource failed: %w", err)

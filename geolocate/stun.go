@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ooni/probe-engine/model"
 	"github.com/pion/stun"
 )
 
@@ -16,7 +15,7 @@ type stunClient interface {
 type stunConfig struct {
 	Dial     func(network string, address string) (stunClient, error)
 	Endpoint string
-	Logger   model.Logger
+	Logger   Logger
 }
 
 func stunDialer(network string, address string) (stunClient, error) {
@@ -32,7 +31,7 @@ func stunIPLookup(ctx context.Context, config stunConfig) (string, error) {
 		}
 		clnt, err := dial("udp", config.Endpoint)
 		if err != nil {
-			return model.DefaultProbeIP, err
+			return DefaultProbeIP, err
 		}
 		defer clnt.Close()
 		message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
@@ -50,20 +49,20 @@ func stunIPLookup(ctx context.Context, config stunConfig) (string, error) {
 			ipch <- xorAddr.IP.String()
 		})
 		if err != nil {
-			return model.DefaultProbeIP, err
+			return DefaultProbeIP, err
 		}
 		select {
 		case err := <-errch:
-			return model.DefaultProbeIP, err
+			return DefaultProbeIP, err
 		case ip := <-ipch:
 			return ip, nil
 		case <-ctx.Done():
-			return model.DefaultProbeIP, ctx.Err()
+			return DefaultProbeIP, ctx.Err()
 		}
 	}()
 	if err != nil {
 		config.Logger.Debugf("STUNIPLookup: failure using %s: %+v", config.Endpoint, err)
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return ip, nil
 }
@@ -71,7 +70,7 @@ func stunIPLookup(ctx context.Context, config stunConfig) (string, error) {
 func stunEkigaIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	return stunIPLookup(ctx, stunConfig{
@@ -83,7 +82,7 @@ func stunEkigaIPLookup(
 func stunGoogleIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	return stunIPLookup(ctx, stunConfig{

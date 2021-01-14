@@ -10,7 +10,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/httpheader"
-	"github.com/ooni/probe-engine/model"
 )
 
 func TestUbuntuParseError(t *testing.T) {
@@ -28,7 +27,7 @@ func TestUbuntuParseError(t *testing.T) {
 	if err == nil || !strings.HasPrefix(err.Error(), "XML syntax error") {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
-	if ip != model.DefaultProbeIP {
+	if ip != DefaultProbeIP {
 		t.Fatalf("not the expected IP address: %s", ip)
 	}
 }

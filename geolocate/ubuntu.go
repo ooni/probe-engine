@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
 type ubuntuResponse struct {
@@ -17,7 +16,7 @@ type ubuntuResponse struct {
 func ubuntuIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	data, err := (httpx.Client{
@@ -27,13 +26,13 @@ func ubuntuIPLookup(
 		UserAgent:  userAgent,
 	}).FetchResource(ctx, "/lookup")
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	logger.Debugf("ubuntu: body: %s", string(data))
 	var v ubuntuResponse
 	err = xml.Unmarshal(data, &v)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

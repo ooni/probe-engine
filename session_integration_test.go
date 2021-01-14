@@ -278,31 +278,31 @@ func TestSessionLocationLookup(t *testing.T) {
 	if err := sess.MaybeLookupLocation(); err != nil {
 		t.Fatal(err)
 	}
-	if sess.ProbeASNString() == model.DefaultProbeASNString {
+	if sess.ProbeASNString() == geolocate.DefaultProbeASNString {
 		t.Fatal("unexpected ProbeASNString")
 	}
-	if sess.ProbeASN() == model.DefaultProbeASN {
+	if sess.ProbeASN() == geolocate.DefaultProbeASN {
 		t.Fatal("unexpected ProbeASN")
 	}
-	if sess.ProbeCC() == model.DefaultProbeCC {
+	if sess.ProbeCC() == geolocate.DefaultProbeCC {
 		t.Fatal("unexpected ProbeCC")
 	}
-	if sess.ProbeIP() == model.DefaultProbeIP {
+	if sess.ProbeIP() == geolocate.DefaultProbeIP {
 		t.Fatal("unexpected ProbeIP")
 	}
-	if sess.ProbeNetworkName() == model.DefaultProbeNetworkName {
+	if sess.ProbeNetworkName() == geolocate.DefaultProbeNetworkName {
 		t.Fatal("unexpected ProbeNetworkName")
 	}
-	if sess.ResolverASN() == model.DefaultResolverASN {
+	if sess.ResolverASN() == geolocate.DefaultResolverASN {
 		t.Fatal("unexpected ResolverASN")
 	}
-	if sess.ResolverASNString() == model.DefaultResolverASNString {
+	if sess.ResolverASNString() == geolocate.DefaultResolverASNString {
 		t.Fatal("unexpected ResolverASNString")
 	}
-	if sess.ResolverIP() == model.DefaultResolverIP {
+	if sess.ResolverIP() == geolocate.DefaultResolverIP {
 		t.Fatal("unexpected ResolverIP")
 	}
-	if sess.ResolverNetworkName() == model.DefaultResolverNetworkName {
+	if sess.ResolverNetworkName() == geolocate.DefaultResolverNetworkName {
 		t.Fatal("unexpected ResolverNetworkName")
 	}
 	if sess.KibiBytesSent() <= 0 {

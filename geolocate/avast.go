@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
 type avastResponse struct {
@@ -15,7 +14,7 @@ type avastResponse struct {
 func avastIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	var v avastResponse
@@ -26,7 +25,7 @@ func avastIPLookup(
 		UserAgent:  userAgent,
 	}).GetJSON(ctx, "/v1/info", &v)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

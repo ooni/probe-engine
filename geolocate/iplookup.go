@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/internal/multierror"
-	"github.com/ooni/probe-engine/model"
 )
 
 var (
@@ -26,7 +25,7 @@ var (
 
 type lookupFunc func(
 	ctx context.Context, client *http.Client,
-	logger model.Logger, userAgent string,
+	logger Logger, userAgent string,
 ) (string, error)
 
 type method struct {
@@ -70,7 +69,7 @@ type ipLookupClient struct {
 	HTTPClient *http.Client
 
 	// Logger is the logger to use
-	Logger model.Logger
+	Logger Logger
 
 	// UserAgent is the user agent to use
 	UserAgent string
@@ -91,10 +90,10 @@ func (c ipLookupClient) doWithCustomFunc(
 ) (string, error) {
 	ip, err := fn(ctx, c.HTTPClient, c.Logger, c.UserAgent)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	if net.ParseIP(ip) == nil {
-		return model.DefaultProbeIP, fmt.Errorf("%w: %s", ErrInvalidIPAddress, ip)
+		return DefaultProbeIP, fmt.Errorf("%w: %s", ErrInvalidIPAddress, ip)
 	}
 	c.Logger.Debugf("iplookup: IP: %s", ip)
 	return ip, nil
@@ -110,5 +109,5 @@ func (c ipLookupClient) LookupProbeIP(ctx context.Context) (string, error) {
 		}
 		union.Add(err)
 	}
-	return model.DefaultProbeIP, union
+	return DefaultProbeIP, union
 }
