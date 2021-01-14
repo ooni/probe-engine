@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/internal/mockable"
@@ -48,49 +50,45 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "dnscheck" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.4.0" {
+	if measurer.ExperimentVersion() != "0.9.0" {
 		t.Error("unexpected experiment version")
 	}
 }
 
 func TestDNSCheckFailsWithoutInput(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{Domain: "example.com"})
-
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		new(model.Measurement),
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrInputRequired) {
 		t.Fatal("expected no input error")
 	}
 }
 
-func TestDNSCheckFailsInvalidInput(t *testing.T) {
+func TestDNSCheckFailsWithInvalidURL(t *testing.T) {
 	measurer := NewExperimentMeasurer(Config{})
-
-	// test with invalid URL
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&model.Measurement{Input: "Not a valid URL \x7f"},
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrInvalidURL) {
 		t.Fatal("expected invalid input error")
 	}
+}
 
-	// test with unsupported protocol
-	err = measurer.Run(
+func TestDNSCheckFailsWithUnsupportedProtocol(t *testing.T) {
+	measurer := NewExperimentMeasurer(Config{})
+	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&model.Measurement{Input: "file://1.1.1.1"},
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if !errors.Is(err, ErrUnsupportedURLScheme) {
 		t.Fatal("expected unsupported scheme error")
 	}
@@ -99,11 +97,10 @@ func TestDNSCheckFailsInvalidInput(t *testing.T) {
 func TestWithCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // immediately cancel the context
-	measurer := NewExperimentMeasurer(Config{})
-
-	measurement := &model.Measurement{Input: "dot://1.1.1.1"}
-
-	// test with valid DNS endpoint
+	measurer := NewExperimentMeasurer(Config{
+		DefaultAddrs: "1.1.1.1 1.0.0.1",
+	})
+	measurement := &model.Measurement{Input: "dot://one.one.one.one"}
 	err := measurer.Run(
 		ctx,
 		newsession(),
@@ -113,7 +110,6 @@ func TestWithCancelledContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	sk, err := measurer.GetSummaryKeys(measurement)
 	if err != nil {
 		t.Fatal(err)
@@ -148,20 +144,19 @@ func TestMakeResolverURL(t *testing.T) {
 }
 
 func TestDNSCheckValid(t *testing.T) {
-	measurer := NewExperimentMeasurer(Config{})
+	measurer := NewExperimentMeasurer(Config{
+		DefaultAddrs: "1.1.1.1 1.0.0.1",
+	})
 	measurement := model.Measurement{Input: "dot://one.one.one.one:853"}
-	// test with valid DNS endpoint
 	err := measurer.Run(
 		context.Background(),
 		newsession(),
 		&measurement,
 		model.NewPrinterCallbacks(log.Log),
 	)
-
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err.Error())
 	}
-
 	tk := measurement.TestKeys.(*TestKeys)
 	if tk.Domain != defaultDomain {
 		t.Fatal("unexpected default value for domain")
@@ -191,5 +186,42 @@ func TestSummaryKeysGeneric(t *testing.T) {
 	sk := osk.(SummaryKeys)
 	if sk.IsAnomaly {
 		t.Fatal("invalid isAnomaly")
+	}
+}
+
+func TestDNSCheckWait(t *testing.T) {
+	endpoints := &Endpoints{
+		WaitTime: 1 * time.Second,
+	}
+	measurer := &Measurer{Endpoints: endpoints}
+	run := func(input string) {
+		measurement := model.Measurement{Input: model.MeasurementTarget(input)}
+		err := measurer.Run(
+			context.Background(),
+			newsession(),
+			&measurement,
+			model.NewPrinterCallbacks(log.Log),
+		)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err.Error())
+		}
+		tk := measurement.TestKeys.(*TestKeys)
+		if tk.Domain != defaultDomain {
+			t.Fatal("unexpected default value for domain")
+		}
+		if tk.Bootstrap == nil {
+			t.Fatalf("unexpected value for bootstrap: %+v", tk.Bootstrap)
+		}
+		if tk.BootstrapFailure != nil {
+			t.Fatal("unexpected value for bootstrap_failure")
+		}
+		if len(tk.Lookups) <= 0 {
+			t.Fatal("unexpected value for lookups")
+		}
+	}
+	run("dot://one.one.one.one")
+	run("dot://1dot1dot1dot1.cloudflare-dns.com")
+	if atomic.LoadUint32(&endpoints.count) < 1 {
+		t.Fatal("did not sleep")
 	}
 }

@@ -45,6 +45,8 @@ def main():
 
     args = []
     args.append(command)
+    if "miniooni" in command:
+        args.extend(["--yes"])  # make sure we have informed consent
     if "measurement_kit" in command:
         args.extend(
             [

@@ -8,6 +8,9 @@ type LocationInfo struct {
 	// CountryCode is the country code
 	CountryCode string
 
+	// DidResolverLookup indicates whether we did a resolver lookup.
+	DidResolverLookup bool
+
 	// NetworkName is the network name
 	NetworkName string
 

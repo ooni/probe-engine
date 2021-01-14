@@ -7,6 +7,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/experiment/dnscheck"
 	"github.com/ooni/probe-engine/experiment/run"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/internal/mockable"
 	"github.com/ooni/probe-engine/model"
 )
@@ -16,7 +17,7 @@ func TestExperimentNameAndVersion(t *testing.T) {
 	if measurer.ExperimentName() != "run" {
 		t.Error("unexpected experiment name")
 	}
-	if measurer.ExperimentVersion() != "0.1.0" {
+	if measurer.ExperimentVersion() != "0.2.0" {
 		t.Error("unexpected experiment version")
 	}
 }
@@ -49,6 +50,31 @@ func TestRunDNSCheckWithCancelledContext(t *testing.T) {
 	}
 	if rsk.IsAnomaly != false {
 		t.Fatal("unexpected IsAnomaly value")
+	}
+}
+
+func TestRunURLGetterWithCancelledContext(t *testing.T) {
+	measurer := run.NewExperimentMeasurer(run.Config{})
+	input := `{"name": "urlgetter", "input": "https://google.com"}`
+	measurement := new(model.Measurement)
+	measurement.Input = model.MeasurementTarget(input)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // fail immediately
+	sess := &mockable.Session{MockableLogger: log.Log}
+	callbacks := model.NewPrinterCallbacks(log.Log)
+	err := measurer.Run(ctx, sess, measurement, callbacks)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if len(measurement.Extensions) != 6 {
+		t.Fatal("not the expected number of extensions")
+	}
+	tk, ok := measurement.TestKeys.(*urlgetter.TestKeys)
+	if !ok {
+		t.Fatal("invalid type for test keys")
+	}
+	if len(tk.DNSCache) != 0 {
+		t.Fatal("not the DNSCache value we expected")
 	}
 }
 

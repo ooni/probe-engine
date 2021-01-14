@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/ooni/probe-engine/experiment/dnscheck"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -25,13 +26,20 @@ func (Measurer) ExperimentName() string {
 
 // ExperimentVersion implements ExperimentMeasurer.ExperimentVersion.
 func (Measurer) ExperimentVersion() string {
-	return "0.1.0"
+	return "0.2.0"
 }
 
 // StructuredInput contains structured input for this experiment.
 type StructuredInput struct {
+	// Annotations contains extra annotations to add to the
+	// final measurement.
+	Annotations map[string]string `json:"annotations"`
+
 	// DNSCheck contains settings for the dnscheck experiment.
 	DNSCheck dnscheck.Config `json:"dnscheck"`
+
+	// URLGetter contains settings for the urlgetter experiment.
+	URLGetter urlgetter.Config `json:"urlgetter"`
 
 	// Name is the name of the experiment to run.
 	Name string `json:"name"`
@@ -49,11 +57,12 @@ func (Measurer) Run(
 	if err := json.Unmarshal([]byte(measurement.Input), &input); err != nil {
 		return err
 	}
-	mainfunc, found := table[input.Name]
+	exprun, found := table[input.Name]
 	if !found {
 		return fmt.Errorf("no such experiment: %s", input.Name)
 	}
-	return mainfunc(ctx, input, sess, measurement, callbacks)
+	measurement.AddAnnotations(input.Annotations)
+	return exprun.do(ctx, input, sess, measurement, callbacks)
 }
 
 // GetSummaryKeys implements ExperimentMeasurer.GetSummaryKeys

@@ -31,7 +31,7 @@ type Experiment struct {
 	byteCounter   *bytecounter.Counter
 	callbacks     model.ExperimentCallbacks
 	measurer      model.ExperimentMeasurer
-	report        *probeservices.Report
+	report        probeservices.ReportChannel
 	session       *Session
 	testName      string
 	testStartTime string
@@ -88,7 +88,7 @@ func (e *Experiment) ReportID() string {
 	if e.report == nil {
 		return ""
 	}
-	return e.report.ID
+	return e.report.ReportID()
 }
 
 // Measure performs a measurement with input. We assume that you have
@@ -144,16 +144,6 @@ func (e *Experiment) SubmitAndUpdateMeasurementContext(
 		return errors.New("Report is not open")
 	}
 	return e.report.SubmitMeasurement(ctx, measurement)
-}
-
-// CloseReport is an idempotent method that closes an open report
-// if one has previously been opened, otherwise it does nothing.
-func (e *Experiment) CloseReport() (err error) {
-	if e.report != nil {
-		err = e.report.Close(context.Background())
-		e.report = nil
-	}
-	return
 }
 
 func (e *Experiment) newMeasurement(input string) *model.Measurement {

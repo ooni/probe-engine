@@ -1130,7 +1130,7 @@ func TestNewDNSClientDoTDNSSaver(t *testing.T) {
 
 func TestNewDNSCLientDoTWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "dot://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "dot://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1141,7 +1141,7 @@ func TestNewDNSCLientDoTWithoutPort(t *testing.T) {
 
 func TestNewDNSCLientTCPWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "tcp://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "tcp://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1152,7 +1152,7 @@ func TestNewDNSCLientTCPWithoutPort(t *testing.T) {
 
 func TestNewDNSCLientUDPWithoutPort(t *testing.T) {
 	c, err := netx.NewDNSClientWithOverrides(
-		netx.Config{}, "udp://8.8.8.8", "", "8.8.8.8")
+		netx.Config{}, "udp://8.8.8.8", "", "8.8.8.8", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1182,5 +1182,80 @@ func TestNewDNSClientBadUDPEndpoint(t *testing.T) {
 		netx.Config{}, "udp://bad:endpoint:853")
 	if err == nil || !strings.Contains(err.Error(), "too many colons in address") {
 		t.Fatal("expected error with bad endpoint")
+	}
+}
+
+func TestNewDNSCLientWithInvalidTLSVersion(t *testing.T) {
+	_, err := netx.NewDNSClientWithOverrides(
+		netx.Config{}, "dot://8.8.8.8", "", "", "TLSv999")
+	if !errors.Is(err, netx.ErrInvalidTLSVersion) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+}
+
+func TestConfigureTLSVersion(t *testing.T) {
+	tests := []struct {
+		name       string
+		version    string
+		wantErr    error
+		versionMin int
+		versionMax int
+	}{{
+		name:       "with TLSv1.3",
+		version:    "TLSv1.3",
+		wantErr:    nil,
+		versionMin: tls.VersionTLS13,
+		versionMax: tls.VersionTLS13,
+	}, {
+		name:       "with TLSv1.2",
+		version:    "TLSv1.2",
+		wantErr:    nil,
+		versionMin: tls.VersionTLS12,
+		versionMax: tls.VersionTLS12,
+	}, {
+		name:       "with TLSv1.1",
+		version:    "TLSv1.1",
+		wantErr:    nil,
+		versionMin: tls.VersionTLS11,
+		versionMax: tls.VersionTLS11,
+	}, {
+		name:       "with TLSv1.0",
+		version:    "TLSv1.0",
+		wantErr:    nil,
+		versionMin: tls.VersionTLS10,
+		versionMax: tls.VersionTLS10,
+	}, {
+		name:       "with TLSv1",
+		version:    "TLSv1",
+		wantErr:    nil,
+		versionMin: tls.VersionTLS10,
+		versionMax: tls.VersionTLS10,
+	}, {
+		name:       "with default",
+		version:    "",
+		wantErr:    nil,
+		versionMin: 0,
+		versionMax: 0,
+	}, {
+		name:       "with invalid version",
+		version:    "TLSv999",
+		wantErr:    netx.ErrInvalidTLSVersion,
+		versionMin: 0,
+		versionMax: 0,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := new(tls.Config)
+			err := netx.ConfigureTLSVersion(conf, tt.version)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("not the error we expected: %+v", err)
+			}
+			if conf.MinVersion != uint16(tt.versionMin) {
+				t.Fatalf("not the min version we expected: %+v", conf.MinVersion)
+			}
+			if conf.MaxVersion != uint16(tt.versionMax) {
+				t.Fatalf("not the max version we expected: %+v", conf.MaxVersion)
+			}
+		})
 	}
 }

@@ -86,6 +86,9 @@ func NewTCPConnectList(begin time.Time, events []trace.Event) []TCPConnectEntry 
 		if event.Name != errorx.ConnectOperation {
 			continue
 		}
+		if event.Proto != "tcp" {
+			continue
+		}
 		// We assume Go is passing us legit data structures
 		ip, sport, _ := net.SplitHostPort(event.Address)
 		iport, _ := strconv.Atoi(sport)
@@ -498,6 +501,26 @@ func NewNetworkEventsList(begin time.Time, events []trace.Event) []NetworkEvent 
 		}
 		if ev.Name == errorx.WriteOperation {
 			out = append(out, NetworkEvent{
+				Failure:   NewFailure(ev.Err),
+				Operation: ev.Name,
+				NumBytes:  int64(ev.NumBytes),
+				T:         ev.Time.Sub(begin).Seconds(),
+			})
+			continue
+		}
+		if ev.Name == errorx.ReadFromOperation {
+			out = append(out, NetworkEvent{
+				Address:   ev.Address,
+				Failure:   NewFailure(ev.Err),
+				Operation: ev.Name,
+				NumBytes:  int64(ev.NumBytes),
+				T:         ev.Time.Sub(begin).Seconds(),
+			})
+			continue
+		}
+		if ev.Name == errorx.WriteToOperation {
+			out = append(out, NetworkEvent{
+				Address:   ev.Address,
 				Failure:   NewFailure(ev.Err),
 				Operation: ev.Name,
 				NumBytes:  int64(ev.NumBytes),

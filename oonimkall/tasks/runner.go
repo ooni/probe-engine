@@ -193,10 +193,6 @@ func (r *Runner) Run(ctx context.Context) {
 			r.emitter.EmitFailureGeneric(failureReportCreate, err.Error())
 			return
 		}
-		defer func() {
-			logger.Info("Closing report... please, be patient")
-			experiment.CloseReport()
-		}()
 		r.emitter.EmitStatusProgress(0.4, "open report")
 		r.emitter.Emit(statusReportCreate, eventStatusReportGeneric{
 			ReportID: experiment.ReportID(),
