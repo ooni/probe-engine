@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 
 	"github.com/apex/log"
@@ -21,42 +22,40 @@ func TestSubmitterNotEnabled(t *testing.T) {
 		t.Fatal("we did not get a stubSubmitter instance")
 	}
 	m := new(model.Measurement)
-	if err := submitter.SubmitAndUpdateMeasurementContext(ctx, m); err != nil {
+	if err := submitter.Submit(ctx, m); err != nil {
 		t.Fatal(err)
 	}
 }
 
-type FakeSubmitterExperiment struct {
-	FakeReportID  string
-	OpenReportErr error
-	SubmitErr     error
+type FakeSubmitter struct {
+	Calls uint32
+	Error error
 }
 
-func (fse FakeSubmitterExperiment) OpenReportContext(ctx context.Context) error {
-	return fse.OpenReportErr
+func (fs *FakeSubmitter) Submit(ctx context.Context, m *model.Measurement) error {
+	atomic.AddUint32(&fs.Calls, 1)
+	return fs.Error
 }
 
-func (fse FakeSubmitterExperiment) ReportID() string {
-	return fse.FakeReportID
+var _ Submitter = &FakeSubmitter{}
+
+type FakeSubmitterSession struct {
+	Error     error
+	Submitter Submitter
 }
 
-func (fse FakeSubmitterExperiment) SubmitAndUpdateMeasurementContext(
-	ctx context.Context, m *model.Measurement) error {
-	if fse.SubmitErr != nil {
-		return fse.SubmitErr
-	}
-	m.ReportID = fse.FakeReportID
-	return nil
+func (fse FakeSubmitterSession) NewSubmitter(ctx context.Context) (Submitter, error) {
+	return fse.Submitter, fse.Error
 }
 
-var _ SubmitterExperiment = FakeSubmitterExperiment{}
+var _ SubmitterSession = FakeSubmitterSession{}
 
-func TestNewSubmitterOpenReportFailure(t *testing.T) {
+func TestNewSubmitterFails(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
 	submitter, err := NewSubmitter(ctx, SubmitterConfig{
-		Enabled:    true,
-		Experiment: FakeSubmitterExperiment{OpenReportErr: expected},
+		Enabled: true,
+		Session: FakeSubmitterSession{Error: expected},
 	})
 	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
@@ -66,23 +65,24 @@ func TestNewSubmitterOpenReportFailure(t *testing.T) {
 	}
 }
 
-func TestNewSubmitterOpenReportSuccess(t *testing.T) {
-	reportID := "a_fake_report_id"
+func TestNewSubmitterWithFailedSubmission(t *testing.T) {
 	expected := errors.New("mocked error")
 	ctx := context.Background()
+	fakeSubmitter := &FakeSubmitter{Error: expected}
 	submitter, err := NewSubmitter(ctx, SubmitterConfig{
 		Enabled: true,
-		Experiment: FakeSubmitterExperiment{
-			FakeReportID: reportID,
-			SubmitErr:    expected,
-		},
-		Logger: log.Log,
+		Logger:  log.Log,
+		Session: FakeSubmitterSession{Submitter: fakeSubmitter},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	m := new(model.Measurement)
-	if err := submitter.SubmitAndUpdateMeasurementContext(ctx, m); !errors.Is(err, expected) {
+	err = submitter.Submit(context.Background(), m)
+	if !errors.Is(err, expected) {
 		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if fakeSubmitter.Calls != 1 {
+		t.Fatal("unexpected number of calls")
 	}
 }

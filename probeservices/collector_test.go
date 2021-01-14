@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/probeservices"
@@ -410,7 +411,7 @@ func makeMeasurementWithoutTemplate(failure, testName string) *model.Measurement
 
 func TestSubmitterLifecyle(t *testing.T) {
 	rro := &RecordingReportOpener{}
-	submitter := probeservices.NewSubmitter(rro)
+	submitter := probeservices.NewSubmitter(rro, log.Log)
 	ctx := context.Background()
 	m1 := makeMeasurementWithoutTemplate("antani", "example")
 	if err := submitter.Submit(ctx, m1); err != nil {
@@ -437,7 +438,7 @@ func TestSubmitterLifecyle(t *testing.T) {
 
 func TestSubmitterCannotOpenNewChannel(t *testing.T) {
 	rro := &RecordingReportOpener{}
-	submitter := probeservices.NewSubmitter(rro)
+	submitter := probeservices.NewSubmitter(rro, log.Log)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	m1 := makeMeasurementWithoutTemplate("antani", "example")

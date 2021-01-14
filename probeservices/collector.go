@@ -187,13 +187,14 @@ var _ ReportOpener = Client{}
 // likely an open report that has not been closed yet.
 type Submitter struct {
 	channel ReportChannel
+	logger  model.Logger
 	mu      sync.Mutex
 	opener  ReportOpener
 }
 
 // NewSubmitter creates a new Submitter instance.
-func NewSubmitter(opener ReportOpener) *Submitter {
-	return &Submitter{opener: opener}
+func NewSubmitter(opener ReportOpener, logger model.Logger) *Submitter {
+	return &Submitter{opener: opener, logger: logger}
 }
 
 // Submit submits the current measurement to the OONI backend created using
@@ -207,6 +208,7 @@ func (sub *Submitter) Submit(ctx context.Context, m *model.Measurement) error {
 		if err != nil {
 			return err
 		}
+		sub.logger.Infof("New reportID: %s", sub.channel.ReportID())
 	}
 	return sub.channel.SubmitMeasurement(ctx, m)
 }

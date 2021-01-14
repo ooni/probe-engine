@@ -265,6 +265,15 @@ func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Cl
 	return probeservices.NewClient(s, *s.selectedProbeService)
 }
 
+// NewSubmitter creates a new submitter instance.
+func (s *Session) NewSubmitter(ctx context.Context) (Submitter, error) {
+	psc, err := s.NewProbeServicesClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return probeservices.NewSubmitter(psc, s.Logger()), nil
+}
+
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
