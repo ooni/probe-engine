@@ -16,27 +16,13 @@ import (
 	"os"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/atomicx"
-	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/internal/kvstore"
-	"github.com/ooni/probe-engine/netx"
-	"github.com/ooni/probe-engine/probeservices"
-	"github.com/ooni/probe-engine/version"
+	"github.com/ooni/probe-engine/ooniapi"
 )
 
-func newclient() probeservices.Client {
-	txp := netx.NewHTTPTransport(netx.Config{Logger: log.Log})
-	ua := fmt.Sprintf("apitool/%s ooniprobe-engine/%s", version.Version, version.Version)
-	return probeservices.Client{
-		Client: httpx.Client{
-			BaseURL:    "https://ams-pg.ooni.org/",
-			HTTPClient: &http.Client{Transport: txp},
-			Logger:     log.Log,
-			UserAgent:  ua,
-		},
-		LoginCalls:    atomicx.NewInt64(),
-		RegisterCalls: atomicx.NewInt64(),
-		StateFile:     probeservices.NewStateFile(kvstore.NewMemoryKeyValueStore()),
+func newclient() *ooniapi.Client {
+	return &ooniapi.Client{
+		BaseURL:    "https://api.ooni.io",
+		HTTPClient: http.DefaultClient,
 	}
 }
 
@@ -77,17 +63,19 @@ func main() {
 	}
 }
 
-func check(c probeservices.Client) {
-	found, err := c.CheckReportID(context.Background(), *reportid)
+func check(c *ooniapi.Client) {
+	resp, err := c.CheckReportID(context.Background(), &ooniapi.CheckReportIDRequest{
+		ReportID: *reportid,
+	})
 	fatalOnError(err, "c.CheckReportID failed")
-	fmt.Printf("%+v\n", found)
+	fmt.Printf("%+v\n", resp.Found)
 }
 
-func meta(c probeservices.Client) {
+func meta(c *ooniapi.Client) {
 	pprint(mmeta(c, false))
 }
 
-func raw(c probeservices.Client) {
+func raw(c *ooniapi.Client) {
 	m := mmeta(c, true)
 	rm := []byte(m.RawMeasurement)
 	var opaque interface{}
@@ -102,14 +90,14 @@ func pprint(opaque interface{}) {
 	fmt.Printf("%s\n", data)
 }
 
-func mmeta(c probeservices.Client, full bool) *probeservices.MeasurementMeta {
-	config := probeservices.MeasurementMetaConfig{
+func mmeta(c *ooniapi.Client, full bool) *ooniapi.MeasurementMetaResponse {
+	req := &ooniapi.MeasurementMetaRequest{
 		ReportID: *reportid,
 		Full:     full,
 		Input:    *input,
 	}
 	ctx := context.Background()
-	m, err := c.GetMeasurementMeta(ctx, config)
+	m, err := c.MeasurementMeta(ctx, req)
 	fatalOnError(err, "client.GetMeasurementMeta failed")
 	return m
 }
