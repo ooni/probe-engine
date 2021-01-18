@@ -1,5 +1,8 @@
 name: miniooni
 on:
+  push:
+    branches:
+      - 'release/**'
   schedule:
     - cron: "0 0 * * */1"
 jobs:
@@ -13,6 +16,10 @@ jobs:
 
       - run: ./build-cli.sh linux
       - run: ./CLI/linux/amd64/miniooni --yes -nNi https://example.com web_connectivity
+      - uses: actions/upload-artifact@v1
+        with:
+          name: miniooni-linux-386
+          path: ./CLI/linux/386/miniooni
       - uses: actions/upload-artifact@v1
         with:
           name: miniooni-linux-amd64

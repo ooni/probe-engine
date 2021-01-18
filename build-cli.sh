@@ -6,6 +6,9 @@ case $1 in
     go build -o ./CLI/darwin/amd64 -ldflags="-s -w" ./cmd/miniooni
     echo "Binary ready at ./CLI/darwin/amd64/miniooni";;
   linux)
+    export GOOS=linux GOARCH=386
+    go build -o ./CLI/linux/386 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
+    echo "Binary ready at ./CLI/linux/386/miniooni"
     export GOOS=linux GOARCH=amd64
     go build -o ./CLI/linux/amd64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
     echo "Binary ready at ./CLI/linux/amd64/miniooni"
