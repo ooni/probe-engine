@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 case $1 in
-  darwin)
+  macos|darwin)
     export GOOS=darwin GOARCH=amd64
     go build -o ./CLI/darwin/amd64 -ldflags="-s -w" ./cmd/miniooni
     echo "Binary ready at ./CLI/darwin/amd64/miniooni";;
