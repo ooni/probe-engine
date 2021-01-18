@@ -19,6 +19,9 @@ case $1 in
     go build -o ./CLI/linux/arm64 -tags netgo -ldflags='-s -w -extldflags "-static"' ./cmd/miniooni
     echo "Binary ready at ./CLI/linux/arm64/miniooni";;
   windows)
+    export GOOS=windows GOARCH=386
+    go build -o ./CLI/windows/386 -ldflags="-s -w" ./cmd/miniooni
+    echo "Binary ready at ./CLI/windows/386/miniooni.exe"
     export GOOS=windows GOARCH=amd64
     go build -o ./CLI/windows/amd64 -ldflags="-s -w" ./cmd/miniooni
     echo "Binary ready at ./CLI/windows/amd64/miniooni.exe";;
