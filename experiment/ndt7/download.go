@@ -51,9 +51,11 @@ func (mgr downloadManager) run(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			total += int64(len(data))
 			if err := mgr.onJSON(data); err != nil {
 				return err
 			}
+			continue
 		}
 		n, err := io.Copy(ioutil.Discard, reader)
 		if err != nil {
