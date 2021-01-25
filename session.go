@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sync"
 
@@ -34,6 +35,7 @@ type SessionConfig struct {
 	ProxyURL               *url.URL
 	SoftwareName           string
 	SoftwareVersion        string
+	StateDir               string
 	TempDir                string
 	TorArgs                []string
 	TorBinary              string
@@ -56,6 +58,7 @@ type Session struct {
 	selectedProbeService     *model.Service
 	softwareName             string
 	softwareVersion          string
+	stateDir                 string
 	tempDir                  string
 	torArgs                  []string
 	torBinary                string
@@ -78,6 +81,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.SoftwareVersion == "" {
 		return nil, errors.New("SoftwareVersion is empty")
 	}
+	if config.StateDir == "" {
+		return nil, errors.New("StateDir is empty")
+	}
 	if config.KVStore == nil {
 		config.KVStore = kvstore.NewMemoryKeyValueStore()
 	}
@@ -99,6 +105,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		queryProbeServicesCount: atomicx.NewInt64(),
 		softwareName:            config.SoftwareName,
 		softwareVersion:         config.SoftwareVersion,
+		stateDir:                config.StateDir,
 		tempDir:                 tempDir,
 		torArgs:                 config.TorArgs,
 		torBinary:               config.TorBinary,
@@ -226,6 +233,7 @@ func (s *Session) MaybeStartTunnel(ctx context.Context, name string) error {
 	tunnel, err := tunnel.Start(ctx, tunnel.Config{
 		Name:    name,
 		Session: s,
+		WorkDir: path.Join(s.stateDir, name),
 	})
 	if err != nil {
 		s.logger.Warnf("cannot start tunnel: %+v", err)

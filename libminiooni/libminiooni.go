@@ -290,7 +290,10 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 	assetsDir := path.Join(miniooniDir, "assets")
 	err = os.MkdirAll(assetsDir, 0700)
 	fatalOnError(err, "cannot create assets directory")
-	log.Debugf("miniooni state directory: %s", miniooniDir)
+	stateDir := path.Join(miniooniDir, "state")
+	err = os.MkdirAll(stateDir, 0700)
+	fatalOnError(err, "cannot create state directory")
+	log.Debugf("miniooni directory: %s", miniooniDir)
 
 	consentFile := path.Join(miniooniDir, "informed")
 	fatalOnError(maybeWriteConsentFile(currentOptions.Yes, consentFile),
@@ -314,6 +317,7 @@ func MainWithConfiguration(experimentName string, currentOptions Options) {
 		ProxyURL:        proxyURL,
 		SoftwareName:    softwareName,
 		SoftwareVersion: softwareVersion,
+		StateDir:        stateDir,
 		TorArgs:         currentOptions.TorArgs,
 		TorBinary:       currentOptions.TorBinary,
 	}
