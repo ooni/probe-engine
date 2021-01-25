@@ -2,8 +2,12 @@
 package psiphonx
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	_ "embed"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -87,11 +91,7 @@ func Start(
 	if config.WorkDir == "" {
 		config.WorkDir = sess.TempDir()
 	}
-	clnt, err := sess.NewOrchestraClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-	configJSON, err := clnt.FetchPsiphonConfig(ctx)
+	configJSON, err := getconfig()
 	if err != nil {
 		return nil, err
 	}
@@ -133,4 +133,16 @@ func (t *Tunnel) BootstrapTime() (duration time.Duration) {
 		duration = t.duration
 	}
 	return
+}
+
+//go:embed private/psiphon.gz
+var config []byte
+
+func getconfig() ([]byte, error) {
+	zr, err := gzip.NewReader(bytes.NewReader(config))
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+	return ioutil.ReadAll(zr)
 }

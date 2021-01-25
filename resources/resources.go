@@ -6,30 +6,25 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
+	_ "embed"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/ooni/probe-engine/internal/httpx"
 	"github.com/ooni/probe-engine/model"
 )
 
 // Client is a client for fetching resources.
 type Client struct {
-	// HTTPClient is the HTTP client to use.
-	HTTPClient *http.Client
-
 	// Logger is the logger to use.
 	Logger model.Logger
 
 	// OSMkdirAll allows testing os.MkdirAll failures.
 	OSMkdirAll func(path string, perm os.FileMode) error
-
-	// UserAgent is the user agent to use.
-	UserAgent string
 
 	// WorkDir is the directory where to save resources.
 	WorkDir string
@@ -76,12 +71,7 @@ func (c *Client) EnsureForSingleResource(
 	} else {
 		c.Logger.Debugf("resources: can't read %s: %s", fullpath, err.Error())
 	}
-	data, err = (httpx.Client{
-		BaseURL:    BaseURL,
-		HTTPClient: c.HTTPClient,
-		Logger:     c.Logger,
-		UserAgent:  c.UserAgent,
-	}).FetchResourceAndVerify(ctx, resource.URLPath, resource.GzSHA256)
+	data, err = c.fetch(ctx, resource)
 	if err != nil {
 		return err
 	}
@@ -101,4 +91,20 @@ func (c *Client) EnsureForSingleResource(
 	}
 	c.Logger.Debugf("resources: overwrite %s", fullpath)
 	return ioutil.WriteFile(fullpath, data, 0600)
+}
+
+//go:embed private/asn.mmdb.gz
+var asnDatabase []byte
+
+//go:embed private/country.mmdb.gz
+var countryDatabase []byte
+
+func (c *Client) fetch(ctx context.Context, resource ResourceInfo) ([]byte, error) {
+	if strings.HasSuffix(resource.URLPath, "asn.mmdb.gz") {
+		return asnDatabase, nil
+	}
+	if strings.HasSuffix(resource.URLPath, "country.mmdb.gz") {
+		return countryDatabase, nil
+	}
+	return nil, errors.New("resources: resource not found")
 }

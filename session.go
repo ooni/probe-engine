@@ -415,10 +415,8 @@ func (s *Session) UserAgent() (useragent string) {
 // MaybeUpdateResources updates the resources if needed.
 func (s *Session) MaybeUpdateResources(ctx context.Context) error {
 	return (&resources.Client{
-		HTTPClient: s.DefaultHTTPClient(),
-		Logger:     s.logger,
-		UserAgent:  s.UserAgent(),
-		WorkDir:    s.assetsDir,
+		Logger:  s.logger,
+		WorkDir: s.assetsDir,
 	}).Ensure(ctx)
 }
 
