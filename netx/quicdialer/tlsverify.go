@@ -3,6 +3,7 @@ package quicdialer
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 
 	"github.com/lucas-clemente/quic-go"
@@ -25,14 +26,14 @@ func (h TLSVerifier) DialContext(ctx context.Context, network string,
 		return nil, err
 	}
 	state := ConnectionState(sess)
-	if len(state.PeerCertificates) > 0 {
-		// The first element is the leaf certificate that the connection is verified against.
-		err = state.PeerCertificates[0].VerifyHostname(onlyhost)
-		// fmt.Println(err)
-		if err == nil {
-			// only succeeds if the verification was successful
-			return sess, nil
-		}
+	if len(state.PeerCertificates) == 0 {
+		return nil, errors.New("certificate could not be verified (Go1.14)")
+	}
+	// The first element is the leaf certificate that the connection is verified against.
+	err = state.PeerCertificates[0].VerifyHostname(onlyhost)
+	if err == nil {
+		// only succeeds if the verification was successful
+		return sess, nil
 	}
 	return nil, err
 
