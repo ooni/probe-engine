@@ -335,7 +335,7 @@ func TestMain(m *testing.M) {
 		if m == 0 && n == 0 {
 			break
 		}
-		time.Sleep(1*time.Second)
+		time.Sleep(1 * time.Second)
 	}
 	os.Exit(0)
 }
