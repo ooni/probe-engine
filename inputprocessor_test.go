@@ -49,7 +49,7 @@ type FakeInputProcessorSubmitter struct {
 	M   []*model.Measurement
 }
 
-func (fips *FakeInputProcessorSubmitter) SubmitAndUpdateMeasurementContext(
+func (fips *FakeInputProcessorSubmitter) Submit(
 	ctx context.Context, m *model.Measurement) error {
 	fips.M = append(fips.M, m)
 	return fips.Err

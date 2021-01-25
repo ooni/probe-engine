@@ -1,4 +1,4 @@
-package geolocate_test
+package geolocate
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/geolocate"
-	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/resources"
 )
 
 const (
-	asnDBPath     = "../../testdata/asn.mmdb"
-	countryDBPath = "../../testdata/country.mmdb"
+	asnDBPath     = "../testdata/asn.mmdb"
+	countryDBPath = "../testdata/country.mmdb"
 	ipAddr        = "35.204.49.125"
 )
 
@@ -22,7 +20,7 @@ func maybeFetchResources(t *testing.T) {
 		HTTPClient: http.DefaultClient,
 		Logger:     log.Log,
 		UserAgent:  "ooniprobe-engine/0.1.0",
-		WorkDir:    "../../testdata/",
+		WorkDir:    "../testdata/",
 	}
 	if err := c.Ensure(context.Background()); err != nil {
 		t.Fatal(err)
@@ -31,7 +29,7 @@ func maybeFetchResources(t *testing.T) {
 
 func TestLookupASN(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := geolocate.LookupASN(asnDBPath, ipAddr)
+	asn, org, err := LookupASN(asnDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,35 +43,35 @@ func TestLookupASN(t *testing.T) {
 
 func TestLookupASNInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := geolocate.LookupASN("/nonexistent", ipAddr)
+	asn, org, err := LookupASN("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if asn != model.DefaultProbeASN {
+	if asn != DefaultProbeASN {
 		t.Fatal("expected a zero ASN")
 	}
-	if org != model.DefaultProbeNetworkName {
+	if org != DefaultProbeNetworkName {
 		t.Fatal("expected an empty org")
 	}
 }
 
 func TestLookupASNInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	asn, org, err := geolocate.LookupASN(asnDBPath, "xxx")
+	asn, org, err := LookupASN(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if asn != model.DefaultProbeASN {
+	if asn != DefaultProbeASN {
 		t.Fatal("expected a zero ASN")
 	}
-	if org != model.DefaultProbeNetworkName {
+	if org != DefaultProbeNetworkName {
 		t.Fatal("expected an empty org")
 	}
 }
 
 func TestLookupCC(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := geolocate.LookupCC(countryDBPath, ipAddr)
+	cc, err := (mmdbLookupper{}).LookupCC(countryDBPath, ipAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,22 +82,22 @@ func TestLookupCC(t *testing.T) {
 
 func TestLookupCCInvalidFile(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := geolocate.LookupCC("/nonexistent", ipAddr)
+	cc, err := (mmdbLookupper{}).LookupCC("/nonexistent", ipAddr)
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if cc != model.DefaultProbeCC {
+	if cc != DefaultProbeCC {
 		t.Fatal("expected an empty cc")
 	}
 }
 
 func TestLookupCCInvalidIP(t *testing.T) {
 	maybeFetchResources(t)
-	cc, err := geolocate.LookupCC(asnDBPath, "xxx")
+	cc, err := (mmdbLookupper{}).LookupCC(asnDBPath, "xxx")
 	if err == nil {
 		t.Fatal("expected an error here")
 	}
-	if cc != model.DefaultProbeCC {
+	if cc != DefaultProbeCC {
 		t.Fatal("expected an empty cc")
 	}
 }

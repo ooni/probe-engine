@@ -6,22 +6,19 @@ import (
 
 	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
-// IPInfoResponse is the response returned by ipinfo.io
-type IPInfoResponse struct {
+type ipInfoResponse struct {
 	IP string `json:"ip"`
 }
 
-// IPInfoIPLookup performs the IP lookup using ipinfo.io
-func IPInfoIPLookup(
+func ipInfoIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
-	var v IPInfoResponse
+	var v ipInfoResponse
 	err := (httpx.Client{
 		Accept:     "application/json",
 		BaseURL:    "https://ipinfo.io",
@@ -30,7 +27,7 @@ func IPInfoIPLookup(
 		UserAgent:  httpheader.CLIUserAgent(), // we must be a CLI client
 	}).GetJSON(ctx, "/", &v)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return v.IP, nil
 }

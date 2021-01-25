@@ -240,7 +240,7 @@ func (sess *Session) Submit(ctx *Context, measurement string) (*SubmitMeasuremen
 		if err != nil {
 			return nil, err
 		}
-		sess.submitter = probeservices.NewSubmitter(psc)
+		sess.submitter = probeservices.NewSubmitter(psc, sess.sessp.Logger())
 	}
 	var mm model.Measurement
 	if err := json.Unmarshal([]byte(measurement), &mm); err != nil {

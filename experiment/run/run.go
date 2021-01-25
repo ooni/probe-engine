@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/ooni/probe-engine/experiment/dnscheck"
+	"github.com/ooni/probe-engine/experiment/urlgetter"
 	"github.com/ooni/probe-engine/model"
 )
 
@@ -36,6 +37,9 @@ type StructuredInput struct {
 
 	// DNSCheck contains settings for the dnscheck experiment.
 	DNSCheck dnscheck.Config `json:"dnscheck"`
+
+	// URLGetter contains settings for the urlgetter experiment.
+	URLGetter urlgetter.Config `json:"urlgetter"`
 
 	// Name is the name of the experiment to run.
 	Name string `json:"name"`

@@ -13,7 +13,6 @@ import (
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
-	"github.com/ooni/probe-engine/internal/httpheader"
 	"github.com/ooni/probe-engine/internal/kvstore"
 	"github.com/ooni/probe-engine/internal/platform"
 	"github.com/ooni/probe-engine/internal/sessionresolver"
@@ -48,7 +47,7 @@ type Session struct {
 	byteCounter              *bytecounter.Counter
 	httpDefaultTransport     netx.HTTPRoundTripper
 	kvStore                  model.KeyValueStore
-	location                 *model.LocationInfo
+	location                 *geolocate.Results
 	logger                   model.Logger
 	proxyURL                 *url.URL
 	queryProbeServicesCount  *atomicx.Int64
@@ -266,6 +265,15 @@ func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Cl
 	return probeservices.NewClient(s, *s.selectedProbeService)
 }
 
+// NewSubmitter creates a new submitter instance.
+func (s *Session) NewSubmitter(ctx context.Context) (Submitter, error) {
+	psc, err := s.NewProbeServicesClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return probeservices.NewSubmitter(psc, s.Logger()), nil
+}
+
 // NewOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
 func (s *Session) NewOrchestraClient(ctx context.Context) (model.ExperimentOrchestraClient, error) {
@@ -299,7 +307,7 @@ func (s *Session) ProbeASNString() string {
 
 // ProbeASN returns the probe ASN as an integer.
 func (s *Session) ProbeASN() uint {
-	asn := model.DefaultProbeASN
+	asn := geolocate.DefaultProbeASN
 	if s.location != nil {
 		asn = s.location.ASN
 	}
@@ -308,7 +316,7 @@ func (s *Session) ProbeASN() uint {
 
 // ProbeCC returns the probe CC.
 func (s *Session) ProbeCC() string {
-	cc := model.DefaultProbeCC
+	cc := geolocate.DefaultProbeCC
 	if s.location != nil {
 		cc = s.location.CountryCode
 	}
@@ -317,7 +325,7 @@ func (s *Session) ProbeCC() string {
 
 // ProbeNetworkName returns the probe network name.
 func (s *Session) ProbeNetworkName() string {
-	nn := model.DefaultProbeNetworkName
+	nn := geolocate.DefaultProbeNetworkName
 	if s.location != nil {
 		nn = s.location.NetworkName
 	}
@@ -326,7 +334,7 @@ func (s *Session) ProbeNetworkName() string {
 
 // ProbeIP returns the probe IP.
 func (s *Session) ProbeIP() string {
-	ip := model.DefaultProbeIP
+	ip := geolocate.DefaultProbeIP
 	if s.location != nil {
 		ip = s.location.ProbeIP
 	}
@@ -345,7 +353,7 @@ func (s *Session) ResolverASNString() string {
 
 // ResolverASN returns the resolver ASN
 func (s *Session) ResolverASN() uint {
-	asn := model.DefaultResolverASN
+	asn := geolocate.DefaultResolverASN
 	if s.location != nil {
 		asn = s.location.ResolverASN
 	}
@@ -354,7 +362,7 @@ func (s *Session) ResolverASN() uint {
 
 // ResolverIP returns the resolver IP
 func (s *Session) ResolverIP() string {
-	ip := model.DefaultResolverIP
+	ip := geolocate.DefaultResolverIP
 	if s.location != nil {
 		ip = s.location.ResolverIP
 	}
@@ -363,7 +371,7 @@ func (s *Session) ResolverIP() string {
 
 // ResolverNetworkName returns the resolver network name.
 func (s *Session) ResolverNetworkName() string {
-	nn := model.DefaultResolverNetworkName
+	nn := geolocate.DefaultResolverNetworkName
 	if s.location != nil {
 		nn = s.location.ResolverNetworkName
 	}
@@ -455,28 +463,6 @@ func (s *Session) LookupASN(dbPath, ip string) (uint, string, error) {
 	return geolocate.LookupASN(dbPath, ip)
 }
 
-// LookupProbeIP performs the probe IP lookup. This method implements
-// LocationLookupProbeIPLookupper.LookupProbeIP.
-func (s *Session) LookupProbeIP(ctx context.Context) (string, error) {
-	return (&geolocate.IPLookupClient{
-		HTTPClient: s.DefaultHTTPClient(),
-		Logger:     s.logger,
-		UserAgent:  httpheader.UserAgent(), // no need to identify as OONI
-	}).Do(ctx)
-}
-
-// LookupCC maps an IP address to a country code. This method implements
-// LocationLookupCountryLookupper.LookupCC.
-func (s *Session) LookupCC(dbPath, probeIP string) (string, error) {
-	return geolocate.LookupCC(dbPath, probeIP)
-}
-
-// LookupResolverIP performs the lookup of the resolver IP. This method implements
-// LocationLookupResolverIPLookupper.LookupResolverIP.
-func (s *Session) LookupResolverIP(ctx context.Context) (string, error) {
-	return geolocate.LookupFirstResolverIP(ctx, nil)
-}
-
 // ErrAllProbeServicesFailed indicates all probe services failed.
 var ErrAllProbeServicesFailed = errors.New("all available probe services failed")
 
@@ -499,19 +485,17 @@ func (s *Session) maybeLookupBackends(ctx context.Context) error {
 
 // LookupLocationContext performs a location lookup. If you want memoisation
 // of the results, you should use MaybeLookupLocationContext.
-func (s *Session) LookupLocationContext(ctx context.Context) (*model.LocationInfo, error) {
+func (s *Session) LookupLocationContext(ctx context.Context) (*geolocate.Results, error) {
 	// Implementation note: we don't perform the lookup of the resolver IP
 	// when we are using a proxy because that might leak information.
-	return LocationLookup{
-		CountryLookupper:     s,
+	task := geolocate.Must(geolocate.NewTask(geolocate.Config{
 		EnableResolverLookup: s.proxyURL == nil,
-		PathsProvider:        s,
-		ProbeIPLookupper:     s,
-		ProbeASNLookupper:    s,
-		ResolverASNLookupper: s,
-		ResolverIPLookupper:  s,
-		ResourceUpdater:      s,
-	}.Do(ctx)
+		HTTPClient:           s.DefaultHTTPClient(),
+		Logger:               s.Logger(),
+		ResourcesManager:     s,
+		UserAgent:            s.UserAgent(),
+	}))
+	return task.Run(ctx)
 }
 
 // MaybeLookupLocationContext is like MaybeLookupLocation but with a context

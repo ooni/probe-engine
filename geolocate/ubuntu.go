@@ -6,20 +6,17 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/internal/httpx"
-	"github.com/ooni/probe-engine/model"
 )
 
-// UbuntuResponse is the response by Ubuntu IP lookup services.
-type UbuntuResponse struct {
+type ubuntuResponse struct {
 	XMLName xml.Name `xml:"Response"`
 	IP      string   `xml:"Ip"`
 }
 
-// UbuntuIPLookup performs the IP lookup using Ubuntu services.
-func UbuntuIPLookup(
+func ubuntuIPLookup(
 	ctx context.Context,
 	httpClient *http.Client,
-	logger model.Logger,
+	logger Logger,
 	userAgent string,
 ) (string, error) {
 	data, err := (httpx.Client{
@@ -29,13 +26,13 @@ func UbuntuIPLookup(
 		UserAgent:  userAgent,
 	}).FetchResource(ctx, "/lookup")
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	logger.Debugf("ubuntu: body: %s", string(data))
-	var v UbuntuResponse
+	var v ubuntuResponse
 	err = xml.Unmarshal(data, &v)
 	if err != nil {
-		return model.DefaultProbeIP, err
+		return DefaultProbeIP, err
 	}
 	return v.IP, nil
 }
