@@ -1,13 +1,11 @@
-package ooniapi
-
-import "context"
+package ooniapimodel
 
 // MeasurementMetaRequest is the MeasurementMeta Request.
 type MeasurementMetaRequest struct {
 	ReportID string `query:"report_id"`
 	Full     bool   `query:"full"`
 	Input    string `query:"input"`
-	requestType
+	RequestType
 }
 
 // MeasurementMetaResponse is the MeasurementMeta Response.
@@ -25,17 +23,14 @@ type MeasurementMetaResponse struct {
 	Scores               string `json:"scores"`
 	TestName             string `json:"test_name"`
 	TestStartTime        string `json:"test_start_time"`
-	responseType
+	ResponseType
 }
 
-// MeasurementMeta implements the MeasurementMeta API.
-func (c Client) MeasurementMeta(ctx context.Context, in *MeasurementMetaRequest) (*MeasurementMetaResponse, error) {
-	var out MeasurementMetaResponse
-	err := c.api(ctx, apispec{
-		Method:  "GET",
-		URLPath: "/api/v1/measurement_meta",
-		In:      in,
-		Out:     &out,
-	})
-	return &out, err
+// GETMeasurementMeta is the GET /api/v1/measurement_meta API call.
+type GETMeasurementMeta struct {
+	Method   MethodType  `method:"GET"`
+	URLPath  URLPathType `path:"/api/v1/measurement_meta"`
+	Request  MeasurementMetaRequest
+	Response MeasurementMetaResponse
+	APIType
 }

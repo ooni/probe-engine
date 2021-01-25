@@ -1,21 +1,17 @@
-package ooniapi
-
-import (
-	"context"
-)
+package ooniapimodel
 
 // URLSRequest is the URLS request.
 type URLSRequest struct {
 	Categories  string `query:"categories"`
 	CountryCode string `query:"country_code"`
 	Limit       int64  `query:"limit"`
-	requestType
+	RequestType
 }
 
 // URLSResponse is the URLS response.
 type URLSResponse struct {
 	Results []URLSResponseURL `json:"results"`
-	responseType
+	ResponseType
 }
 
 // URLSResponseURL is a single URL in the URLS response.
@@ -25,14 +21,11 @@ type URLSResponseURL struct {
 	URL          string `json:"url"`
 }
 
-// URLS implements the URLS API.
-func (c Client) URLS(ctx context.Context, in *URLSRequest) (*URLSResponse, error) {
-	var out URLSResponse
-	err := c.api(ctx, apispec{
-		Method:  "GET",
-		URLPath: "/api/v1/test-list/urls",
-		In:      in,
-		Out:     &out,
-	})
-	return &out, err
+// GETURLS is the GET /api/v1/test-list/urls API call.
+type GETURLS struct {
+	Method   MethodType  `method:"GET"`
+	URLPath  URLPathType `path:"/api/v1/test-list/urls"`
+	Request  URLSRequest
+	Response URLSResponse
+	APIType
 }

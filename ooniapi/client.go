@@ -12,24 +12,19 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/ooni/probe-engine/ooniapi/ooniapimodel"
 )
 
 // This package returns the following errors.
 var (
-	ErrFailed    = errors.New("ooniapi: API failed")
-	ErrIsZero    = errors.New("ooniapi: reflection: nil pointer")
-	ErrNoSupport = errors.New("ooniapi: reflection: cast not supported")
-	ErrNotStruct = errors.New("ooniapi: reflection: not a struct")
-	ErrNotString = errors.New("ooniapi: reflection: not a string")
+	ErrFailed               = errors.New("ooniapi: API failed")
+	ErrIsZero               = errors.New("ooniapi: reflection: nil pointer")
+	ErrMethodNotImplemented = errors.New("ooniapi: method not implemented")
+	ErrNoSupport            = errors.New("ooniapi: reflection: cast not supported")
+	ErrNotStruct            = errors.New("ooniapi: reflection: not a struct")
+	ErrNotString            = errors.New("ooniapi: reflection: not a string")
 )
-
-type requestType interface {
-	isRequest()
-}
-
-type responseType interface {
-	isResponse()
-}
 
 // Client is a client for the OONI API.
 type Client struct {
@@ -39,7 +34,7 @@ type Client struct {
 	UserAgent     string
 }
 
-func (c Client) urlpath(urlpath string, in requestType) (string, error) {
+func (c Client) urlpath(urlpath string, in ooniapimodel.RequestType) (string, error) {
 	valueinfo := reflect.ValueOf(in)
 	if valueinfo.Kind() == reflect.Ptr {
 		valueinfo = valueinfo.Elem()
@@ -66,7 +61,7 @@ func (c Client) urlpath(urlpath string, in requestType) (string, error) {
 	return urlpath, nil
 }
 
-func (c Client) query(in requestType) (string, error) {
+func (c Client) query(in ooniapimodel.RequestType) (string, error) {
 	valueinfo := reflect.ValueOf(in)
 	if valueinfo.Kind() == reflect.Ptr {
 		valueinfo = valueinfo.Elem()
@@ -104,7 +99,7 @@ func (c Client) setCommonHeaders(req *http.Request) {
 	req.Header.Set("User-Agent", c.UserAgent)
 }
 
-func (c Client) newRequestGET(ctx context.Context, urlpath string, in requestType) (*http.Request, error) {
+func (c Client) newRequestGET(ctx context.Context, urlpath string, in ooniapimodel.RequestType) (*http.Request, error) {
 	URL, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, err
@@ -127,7 +122,7 @@ func (c Client) newRequestGET(ctx context.Context, urlpath string, in requestTyp
 	return req, nil
 }
 
-func (c Client) newRequestPOST(ctx context.Context, urlpath string, in requestType) (*http.Request, error) {
+func (c Client) newRequestPOST(ctx context.Context, urlpath string, in ooniapimodel.RequestType) (*http.Request, error) {
 	URL, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, err
@@ -165,16 +160,19 @@ func (c Client) unmarshal(resp *http.Response, out interface{}) error {
 type apispec struct {
 	Method  string
 	URLPath string
-	In      requestType
-	Out     responseType
+	In      ooniapimodel.RequestType
+	Out     ooniapimodel.ResponseType
 }
 
 func (c Client) api(ctx context.Context, desc apispec) error {
-	methodfunc := map[string]func(context.Context, string, requestType) (*http.Request, error){
+	methodfunc := map[string]func(context.Context, string, ooniapimodel.RequestType) (*http.Request, error){
 		"GET":  c.newRequestGET,
 		"POST": c.newRequestPOST,
 	}
 	fn := methodfunc[desc.Method]
+	if fn == nil {
+		return ErrMethodNotImplemented
+	}
 	req, err := fn(ctx, desc.URLPath, desc.In)
 	if err != nil {
 		return err
