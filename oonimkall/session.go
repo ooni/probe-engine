@@ -97,6 +97,10 @@ type Session struct {
 	mtx       sync.Mutex
 	submitter *probeservices.Submitter
 	sessp     *engine.Session
+
+	// Hooks for testing (should not appear in Java/ObjC)
+	TestingCheckInBeforeNewProbeServicesClient func(ctx *Context)
+	TestingCheckInBeforeCheckIn                func(ctx *Context)
 }
 
 // NewSession creates a new session. You should use a session for running
@@ -286,7 +290,8 @@ type CheckInConfig struct {
 
 // CheckInInfoWebConnectivity contains the array of URLs returned by the checkin API
 type CheckInInfoWebConnectivity struct {
-	URLs []model.URLInfo
+	ReportID string
+	URLs     []model.URLInfo
 }
 
 // URLInfo contains info on a test lists URL
@@ -296,8 +301,13 @@ type URLInfo struct {
 	URL          string
 }
 
-// Get the URLInfo at position idx from CheckInInfoWebConnectivity.URLs
-func (ckw *CheckInInfoWebConnectivity) Get(idx int64) *URLInfo {
+// Size returns the number of URLs.
+func (ckw *CheckInInfoWebConnectivity) Size() int64 {
+	return int64(len(ckw.URLs))
+}
+
+// At gets the URLInfo at position idx from CheckInInfoWebConnectivity.URLs
+func (ckw *CheckInInfoWebConnectivity) At(idx int64) *URLInfo {
 	if idx < 0 || int(idx) >= len(ckw.URLs) {
 		return nil
 	}
@@ -309,15 +319,17 @@ func (ckw *CheckInInfoWebConnectivity) Get(idx int64) *URLInfo {
 	}
 }
 
-func newCheckInInfoWebConnectivity(ckw model.CheckInInfoWebConnectivity) *CheckInInfoWebConnectivity {
-	return &CheckInInfoWebConnectivity{
-		URLs: ckw.URLs,
+func newCheckInInfoWebConnectivity(ckw *model.CheckInInfoWebConnectivity) *CheckInInfoWebConnectivity {
+	out := new(CheckInInfoWebConnectivity)
+	if ckw != nil {
+		out.ReportID = ckw.ReportID
+		out.URLs = ckw.URLs
 	}
+	return out
 }
 
 // CheckInInfo contains the return test objects from the checkin API
 type CheckInInfo struct {
-	ReportID        string
 	WebConnectivity *CheckInInfoWebConnectivity
 }
 
@@ -334,9 +346,15 @@ func (sess *Session) CheckIn(ctx *Context, config *CheckInConfig) (*CheckInInfo,
 	if err != nil {
 		return nil, err
 	}
+	if sess.TestingCheckInBeforeNewProbeServicesClient != nil {
+		sess.TestingCheckInBeforeNewProbeServicesClient(ctx)
+	}
 	psc, err := sess.sessp.NewProbeServicesClient(ctx.ctx)
 	if err != nil {
 		return nil, err
+	}
+	if sess.TestingCheckInBeforeCheckIn != nil {
+		sess.TestingCheckInBeforeCheckIn(ctx)
 	}
 	cfg := model.CheckInConfig{
 		Charging:        config.Charging,
@@ -353,7 +371,6 @@ func (sess *Session) CheckIn(ctx *Context, config *CheckInConfig) (*CheckInInfo,
 		return nil, err
 	}
 	return &CheckInInfo{
-		ReportID:        result.ReportID,
-		WebConnectivity: newCheckInInfoWebConnectivity(*result.WebConnectivity),
+		WebConnectivity: newCheckInInfoWebConnectivity(result.WebConnectivity),
 	}, nil
 }

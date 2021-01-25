@@ -32,8 +32,11 @@ func TestCheckInSuccess(t *testing.T) {
 	if result == nil || result.WebConnectivity == nil {
 		t.Fatal("got nil result or WebConnectivity")
 	}
+	if result.WebConnectivity.ReportID == "" {
+		t.Fatal("ReportID is empty")
+	}
 	if len(result.WebConnectivity.URLs) < 1 {
-		t.Fatal("unexpected number of results")
+		t.Fatal("unexpected number of URLs")
 	}
 	for _, entry := range result.WebConnectivity.URLs {
 		if entry.CategoryCode != "NEWS" && entry.CategoryCode != "CULTR" {
