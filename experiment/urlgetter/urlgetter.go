@@ -24,6 +24,7 @@ type Config struct {
 	Timeout  time.Duration
 
 	// settable from command line
+	CustomTLSVerify   bool   `ooni:"Custom verification of peer TLS certificate"`
 	DNSCache          string `ooni:"Add 'DOMAIN IP...' to cache"`
 	DNSHTTPHost       string `ooni:"Force using specific HTTP Host header for DNS requests"`
 	DNSTLSServerName  string `ooni:"Force TLS to using a specific SNI for encrypted DNS requests"`

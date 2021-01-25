@@ -88,6 +88,7 @@ type Config struct {
 	CacheResolutions    bool                 // default: no caching
 	CertPool            *x509.CertPool       // default: use vendored gocertifi
 	ContextByteCounting bool                 // default: no implicit byte counting
+	CustomTLSVerify     bool                 // default: no custom TLS certificate verification
 	DNSCache            map[string][]string  // default: cache is empty
 	DialSaver           *trace.Saver         // default: not saving dials
 	Dialer              Dialer               // default: dialer.DNSDialer
@@ -186,7 +187,10 @@ func NewQUICDialer(config Config) QUICDialer {
 	if config.TLSSaver != nil {
 		d = quicdialer.HandshakeSaver{Saver: config.TLSSaver, Dialer: d}
 	}
-	d = &quicdialer.DNSDialer{Resolver: config.FullResolver, Dialer: d}
+	d = quicdialer.DNSDialer{Resolver: config.FullResolver, Dialer: d}
+	if config.CustomTLSVerify {
+		d = quicdialer.TLSVerifier{Dialer: d}
+	}
 	var dialer QUICDialer = &httptransport.QUICWrapperDialer{Dialer: d}
 	return dialer
 }
