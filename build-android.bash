@@ -7,7 +7,7 @@ if [ -z "$ANDROID_HOME" -o "$1" = "--help" ]; then
     echo "Please set ANDROID_HOME. We assume you have installed"
     echo "the Android SDK. You can do that on macOS using:"
     echo ""
-    echo "    brew cask install android-sdk"
+    echo "    brew install --cask android-sdk"
     echo ""
     echo "Then make sure you install the required packages:"
     echo ""
