@@ -11,9 +11,13 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/netx/dialer"
 )
+
+// Logger is the definition of Logger used by this package.
+type Logger interface {
+	Debugf(format string, v ...interface{})
+}
 
 // Client is an extended client.
 type Client struct {
@@ -34,7 +38,7 @@ type Client struct {
 	Host string
 
 	// Logger is the logger to use.
-	Logger model.Logger
+	Logger Logger
 
 	// ProxyURL allows to force a proxy URL to fallback to a
 	// tunnel, e.g., Psiphon.

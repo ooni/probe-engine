@@ -555,7 +555,7 @@ type TLSHandshake struct {
 func NewTLSHandshakesList(begin time.Time, events []trace.Event) []TLSHandshake {
 	var out []TLSHandshake
 	for _, ev := range events {
-		if ev.Name != "tls_handshake_done" {
+		if !strings.Contains(ev.Name, "_handshake_done") {
 			continue
 		}
 		out = append(out, TLSHandshake{

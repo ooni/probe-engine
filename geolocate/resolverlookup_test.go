@@ -1,24 +1,13 @@
-package geolocate_test
+package geolocate
 
 import (
 	"context"
+	"errors"
 	"testing"
-
-	"github.com/ooni/probe-engine/geolocate"
 )
 
-func TestResolverLookupAll(t *testing.T) {
-	addrs, err := geolocate.LookupAllResolverIPs(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(addrs) < 1 {
-		t.Fatal("expected a non-empty slice")
-	}
-}
-
-func TestResolverLookupFirstSuccess(t *testing.T) {
-	addr, err := geolocate.LookupFirstResolverIP(context.Background(), nil)
+func TestLookupResolverIP(t *testing.T) {
+	addr, err := (resolverLookupClient{}).LookupResolverIP(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,21 +16,35 @@ func TestResolverLookupFirstSuccess(t *testing.T) {
 	}
 }
 
-type brokenHostLookupper struct{}
-
-func (*brokenHostLookupper) LookupHost(
-	ctx context.Context, host string,
-) (addrs []string, err error) {
-	return
+type brokenHostLookupper struct {
+	err error
 }
 
-func TestResolverLookupFirstFailure(t *testing.T) {
-	resolver := &brokenHostLookupper{}
-	addr, err := geolocate.LookupFirstResolverIP(context.Background(), resolver)
-	if err == nil {
-		t.Fatal("expected an error here")
+func (bhl brokenHostLookupper) LookupHost(ctx context.Context, host string) ([]string, error) {
+	return nil, bhl.err
+}
+
+func TestLookupResolverIPFailure(t *testing.T) {
+	expected := errors.New("mocked error")
+	rlc := resolverLookupClient{}
+	addr, err := rlc.do(context.Background(), brokenHostLookupper{
+		err: expected,
+	})
+	if !errors.Is(err, expected) {
+		t.Fatalf("not the error we expected: %+v", err)
 	}
-	if addr != "" {
+	if len(addr) != 0 {
+		t.Fatal("expected an empty address")
+	}
+}
+
+func TestLookupResolverIPNoAddressReturned(t *testing.T) {
+	rlc := resolverLookupClient{}
+	addr, err := rlc.do(context.Background(), brokenHostLookupper{})
+	if !errors.Is(err, ErrNoIPAddressReturned) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if len(addr) != 0 {
 		t.Fatal("expected an empty address")
 	}
 }

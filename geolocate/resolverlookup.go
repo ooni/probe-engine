@@ -6,28 +6,30 @@ import (
 	"net"
 )
 
-// HostLookupper is an interface that looks up the name of a host.
-type HostLookupper interface {
+var (
+	// ErrNoIPAddressReturned indicates that no IP address was
+	// returned by a specific DNS resolver.
+	ErrNoIPAddressReturned = errors.New("geolocate: no IP address returned")
+)
+
+type dnsResolver interface {
 	LookupHost(ctx context.Context, host string) (addrs []string, err error)
 }
 
-// LookupAllResolverIPs returns all resolver IPs
-func LookupAllResolverIPs(ctx context.Context, resolver HostLookupper) (ips []string, err error) {
-	if resolver == nil {
-		resolver = &net.Resolver{}
+type resolverLookupClient struct{}
+
+func (rlc resolverLookupClient) do(ctx context.Context, r dnsResolver) (string, error) {
+	var ips []string
+	ips, err := r.LookupHost(ctx, "whoami.akamai.net")
+	if err != nil {
+		return "", err
 	}
-	ips, err = resolver.LookupHost(ctx, "whoami.akamai.net")
-	return
+	if len(ips) < 1 {
+		return "", ErrNoIPAddressReturned
+	}
+	return ips[0], nil
 }
 
-// LookupFirstResolverIP returns the first resolver IP
-func LookupFirstResolverIP(ctx context.Context, resolver HostLookupper) (ip string, err error) {
-	var ips []string
-	ips, err = LookupAllResolverIPs(ctx, resolver)
-	if err == nil && len(ips) < 1 {
-		err = errors.New("No IP address returned")
-		return
-	}
-	ip = ips[0]
-	return
+func (rlc resolverLookupClient) LookupResolverIP(ctx context.Context) (ip string, err error) {
+	return rlc.do(ctx, &net.Resolver{})
 }
