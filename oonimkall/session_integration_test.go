@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	engine "github.com/ooni/probe-engine"
 	"github.com/ooni/probe-engine/geolocate"
 	"github.com/ooni/probe-engine/model"
 	"github.com/ooni/probe-engine/oonimkall"
@@ -261,6 +263,162 @@ func TestSubmitCancelContextAfterFirstSubmission(t *testing.T) {
 	}
 }
 
+func TestCheckInSuccess(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := sess.NewContext()
+	config := oonimkall.CheckInConfig{
+		Charging:        true,
+		OnWiFi:          true,
+		Platform:        "android",
+		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
+		SoftwareVersion: "2.7.1",
+		WebConnectivity: &oonimkall.CheckInConfigWebConnectivity{},
+	}
+	config.WebConnectivity.Add("NEWS")
+	config.WebConnectivity.Add("CULTR")
+	result, err := sess.CheckIn(ctx, &config)
+	if err != nil {
+		t.Fatalf("unexpected error: %+v", err)
+	}
+	if result == nil || result.WebConnectivity == nil {
+		t.Fatal("got nil result or WebConnectivity")
+	}
+	if len(result.WebConnectivity.URLs) < 1 {
+		t.Fatal("unexpected number of URLs")
+	}
+	if result.WebConnectivity.ReportID == "" {
+		t.Fatal("got empty report ID")
+	}
+	siz := result.WebConnectivity.Size()
+	if siz <= 0 {
+		t.Fatal("unexpected number of URLs")
+	}
+	for idx := int64(0); idx < siz; idx++ {
+		entry := result.WebConnectivity.At(idx)
+		if entry.CategoryCode != "NEWS" && entry.CategoryCode != "CULTR" {
+			t.Fatalf("unexpected category code: %+v", entry)
+		}
+	}
+	if result.WebConnectivity.At(-1) != nil {
+		t.Fatal("expected nil here")
+	}
+	if result.WebConnectivity.At(siz) != nil {
+		t.Fatal("expected nil here")
+	}
+}
+
+func TestCheckInLookupLocationFailure(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := sess.NewContext()
+	config := oonimkall.CheckInConfig{
+		Charging:        true,
+		OnWiFi:          true,
+		Platform:        "android",
+		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
+		SoftwareVersion: "2.7.1",
+		WebConnectivity: &oonimkall.CheckInConfigWebConnectivity{},
+	}
+	config.WebConnectivity.Add("NEWS")
+	config.WebConnectivity.Add("CULTR")
+	ctx.Cancel() // immediate failure
+	result, err := sess.CheckIn(ctx, &config)
+	if !errors.Is(err, geolocate.ErrAllIPLookuppersFailed) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestCheckInNewProbeServicesFailure(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess.TestingCheckInBeforeNewProbeServicesClient = func(ctx *oonimkall.Context) {
+		ctx.Cancel() // cancel execution
+	}
+	ctx := sess.NewContext()
+	config := oonimkall.CheckInConfig{
+		Charging:        true,
+		OnWiFi:          true,
+		Platform:        "android",
+		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
+		SoftwareVersion: "2.7.1",
+		WebConnectivity: &oonimkall.CheckInConfigWebConnectivity{},
+	}
+	config.WebConnectivity.Add("NEWS")
+	config.WebConnectivity.Add("CULTR")
+	result, err := sess.CheckIn(ctx, &config)
+	if !errors.Is(err, engine.ErrAllProbeServicesFailed) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestCheckInCheckInFailure(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sess.TestingCheckInBeforeCheckIn = func(ctx *oonimkall.Context) {
+		ctx.Cancel() // cancel execution
+	}
+	ctx := sess.NewContext()
+	config := oonimkall.CheckInConfig{
+		Charging:        true,
+		OnWiFi:          true,
+		Platform:        "android",
+		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
+		SoftwareVersion: "2.7.1",
+		WebConnectivity: &oonimkall.CheckInConfigWebConnectivity{},
+	}
+	config.WebConnectivity.Add("NEWS")
+	config.WebConnectivity.Add("CULTR")
+	result, err := sess.CheckIn(ctx, &config)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if result != nil {
+		t.Fatal("expected nil result here")
+	}
+}
+
+func TestCheckInNoParams(t *testing.T) {
+	sess, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := sess.NewContext()
+	config := oonimkall.CheckInConfig{
+		Charging:        true,
+		OnWiFi:          true,
+		Platform:        "android",
+		RunType:         "timed",
+		SoftwareName:    "ooniprobe-android",
+		SoftwareVersion: "2.7.1",
+	}
+	result, err := sess.CheckIn(ctx, &config)
+	if err == nil || err.Error() != "oonimkall: missing webconnectivity config" {
+		t.Fatalf("not the error we expected: %+v", err)
+	}
+	if result != nil {
+		t.Fatal("unexpected not nil result here")
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Here we're basically testing whether eventually the finalizers
 	// will run and the number of active sessions and cancels will become
@@ -270,12 +428,13 @@ func TestMain(m *testing.M) {
 		os.Exit(exitcode)
 	}
 	for {
+		runtime.GC()
 		m, n := oonimkall.ActiveContexts.Load(), oonimkall.ActiveSessions.Load()
 		fmt.Printf("./oonimkall: ActiveContexts: %d; ActiveSessions: %d\n", m, n)
 		if m == 0 && n == 0 {
 			break
 		}
-		time.Sleep(1)
+		time.Sleep(1 * time.Second)
 	}
 	os.Exit(0)
 }
