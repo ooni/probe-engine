@@ -320,11 +320,12 @@ func (ckw *CheckInInfoWebConnectivity) At(idx int64) *URLInfo {
 }
 
 func newCheckInInfoWebConnectivity(ckw *model.CheckInInfoWebConnectivity) *CheckInInfoWebConnectivity {
-	out := new(CheckInInfoWebConnectivity)
-	if ckw != nil {
-		out.ReportID = ckw.ReportID
-		out.URLs = ckw.URLs
+	if ckw == nil {
+		return nil
 	}
+	out := new(CheckInInfoWebConnectivity)
+	out.ReportID = ckw.ReportID
+	out.URLs = ckw.URLs
 	return out
 }
 
