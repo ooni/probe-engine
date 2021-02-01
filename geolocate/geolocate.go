@@ -81,6 +81,11 @@ type Results struct {
 	ResolverNetworkName string
 }
 
+// ASNString returns the ASN as a string
+func (r *Results) ASNString() string {
+	return fmt.Sprintf("AS%d", r.ASN)
+}
+
 type probeIPLookupper interface {
 	LookupProbeIP(ctx context.Context) (addr string, err error)
 }

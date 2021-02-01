@@ -3,6 +3,7 @@ package oonimkall
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"sync"
@@ -96,6 +97,10 @@ type Session struct {
 	mtx       sync.Mutex
 	submitter *probeservices.Submitter
 	sessp     *engine.Session
+
+	// Hooks for testing (should not appear in Java/ObjC)
+	TestingCheckInBeforeNewProbeServicesClient func(ctx *Context)
+	TestingCheckInBeforeCheckIn                func(ctx *Context)
 }
 
 // NewSession creates a new session. You should use a session for running
@@ -253,5 +258,120 @@ func (sess *Session) Submit(ctx *Context, measurement string) (*SubmitMeasuremen
 	return &SubmitMeasurementResults{
 		UpdatedMeasurement: string(data),
 		UpdatedReportID:    mm.ReportID,
+	}, nil
+}
+
+// CheckInConfigWebConnectivity is the configuration for the WebConnectivity test
+type CheckInConfigWebConnectivity struct {
+	CategoryCodes []string // CategoryCodes is an array of category codes
+}
+
+// Add a category code to the array in CheckInConfigWebConnectivity
+func (ckw *CheckInConfigWebConnectivity) Add(cat string) {
+	ckw.CategoryCodes = append(ckw.CategoryCodes, cat)
+}
+
+func (ckw *CheckInConfigWebConnectivity) toModel() model.CheckInConfigWebConnectivity {
+	return model.CheckInConfigWebConnectivity{
+		CategoryCodes: ckw.CategoryCodes,
+	}
+}
+
+// CheckInConfig contains configuration for calling the checkin API.
+type CheckInConfig struct {
+	Charging        bool                          // Charging indicate if the phone is actually charging
+	OnWiFi          bool                          // OnWiFi indicate if the phone is actually connected to a WiFi network
+	Platform        string                        // Platform of the probe
+	RunType         string                        // RunType
+	SoftwareName    string                        // SoftwareName of the probe
+	SoftwareVersion string                        // SoftwareVersion of the probe
+	WebConnectivity *CheckInConfigWebConnectivity // WebConnectivity class contain an array of categories
+}
+
+// CheckInInfoWebConnectivity contains the array of URLs returned by the checkin API
+type CheckInInfoWebConnectivity struct {
+	ReportID string
+	URLs     []model.URLInfo
+}
+
+// URLInfo contains info on a test lists URL
+type URLInfo struct {
+	CategoryCode string
+	CountryCode  string
+	URL          string
+}
+
+// Size returns the number of URLs.
+func (ckw *CheckInInfoWebConnectivity) Size() int64 {
+	return int64(len(ckw.URLs))
+}
+
+// At gets the URLInfo at position idx from CheckInInfoWebConnectivity.URLs
+func (ckw *CheckInInfoWebConnectivity) At(idx int64) *URLInfo {
+	if idx < 0 || int(idx) >= len(ckw.URLs) {
+		return nil
+	}
+	w := ckw.URLs[idx]
+	return &URLInfo{
+		CategoryCode: w.CategoryCode,
+		CountryCode:  w.CountryCode,
+		URL:          w.URL,
+	}
+}
+
+func newCheckInInfoWebConnectivity(ckw *model.CheckInInfoWebConnectivity) *CheckInInfoWebConnectivity {
+	if ckw == nil {
+		return nil
+	}
+	out := new(CheckInInfoWebConnectivity)
+	out.ReportID = ckw.ReportID
+	out.URLs = ckw.URLs
+	return out
+}
+
+// CheckInInfo contains the return test objects from the checkin API
+type CheckInInfo struct {
+	WebConnectivity *CheckInInfoWebConnectivity
+}
+
+// CheckIn function is called by probes asking if there are tests to be run
+// The config argument contains the mandatory settings.
+// Returns the list of tests to run and the URLs, on success, or an explanatory error, in case of failure.
+func (sess *Session) CheckIn(ctx *Context, config *CheckInConfig) (*CheckInInfo, error) {
+	sess.mtx.Lock()
+	defer sess.mtx.Unlock()
+	if config.WebConnectivity == nil {
+		return nil, errors.New("oonimkall: missing webconnectivity config")
+	}
+	info, err := sess.sessp.LookupLocationContext(ctx.ctx)
+	if err != nil {
+		return nil, err
+	}
+	if sess.TestingCheckInBeforeNewProbeServicesClient != nil {
+		sess.TestingCheckInBeforeNewProbeServicesClient(ctx)
+	}
+	psc, err := sess.sessp.NewProbeServicesClient(ctx.ctx)
+	if err != nil {
+		return nil, err
+	}
+	if sess.TestingCheckInBeforeCheckIn != nil {
+		sess.TestingCheckInBeforeCheckIn(ctx)
+	}
+	cfg := model.CheckInConfig{
+		Charging:        config.Charging,
+		OnWiFi:          config.OnWiFi,
+		Platform:        config.Platform,
+		ProbeASN:        info.ASNString(),
+		ProbeCC:         info.CountryCode,
+		RunType:         config.RunType,
+		SoftwareVersion: config.SoftwareVersion,
+		WebConnectivity: config.WebConnectivity.toModel(),
+	}
+	result, err := psc.CheckIn(ctx.ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &CheckInInfo{
+		WebConnectivity: newCheckInInfoWebConnectivity(result.WebConnectivity),
 	}, nil
 }

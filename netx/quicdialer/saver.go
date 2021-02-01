@@ -58,5 +58,5 @@ func (h HandshakeSaver) DialContext(ctx context.Context, network string,
 		TLSVersion:         tlsx.VersionString(state.Version),
 		Time:               stop,
 	})
-	return sess, err
+	return sess, nil
 }
