@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/ooni/probe-engine/atomicx"
 	"github.com/ooni/probe-engine/geolocate"
@@ -24,6 +25,12 @@ import (
 	"github.com/ooni/probe-engine/resources"
 	"github.com/ooni/probe-engine/version"
 )
+
+func init() {
+	fmt.Fprintf(os.Stderr, "WARNING: ooni/probe-engine has been merged into ooni/probe-cli\n")
+	fmt.Fprintf(os.Stderr, "WARNING: please, refer to github.com/ooni/probe-cli\n")
+	time.Sleep(5 * time.Second)
+}
 
 // SessionConfig contains the Session config
 type SessionConfig struct {
