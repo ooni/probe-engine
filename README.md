@@ -9,6 +9,9 @@ required functionality to run such nettests.
 
 We expect you to use the Go version indicated in [go.mod](go.mod).
 
+**WARNING**: since 2021-02-03, probe-engine has been merged into
+[ooni/probe-cli](https://github.com/ooni/probe-cli).
+
 ## Integrating ooni/probe-engine
 
 We recommend pinning to a specific version of probe-engine:
