@@ -1,0 +1,22 @@
+package registry
+
+//
+// Registers the `signal' experiment.
+//
+
+import (
+	"github.com/ooni/probe-engine/pkg/experiment/signal"
+	"github.com/ooni/probe-engine/pkg/model"
+)
+
+func init() {
+	AllExperiments["signal"] = &Factory{
+		build: func(config interface{}) model.ExperimentMeasurer {
+			return signal.NewExperimentMeasurer(
+				*config.(*signal.Config),
+			)
+		},
+		config:      &signal.Config{},
+		inputPolicy: model.InputNone,
+	}
+}

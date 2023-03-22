@@ -1,0 +1,17 @@
+/*.jsonl
+/.vscode
+/apitool
+/asn.mmdb
+/ca-bundle.pem
+/country.mmdb
+/example.org
+/jafar
+/jafar.exe
+/miniooni
+/miniooni.exe
+/oohelper
+/oohelperd
+/oonipsiphon/
+/psiphon-config.json.age
+/psiphon-config.key
+.DS_Store
