@@ -51,6 +51,8 @@ echo "Automatically exported from github.com/ooni/probe-cli@$tag." >> README.md
 echo '' >> README.md
 echo 'This is a best effort attempt to export probe-cli internals to community members.' >> README.md
 echo '' >> README.md
+echo 'We will ignore opened issues and PRs on this repository. You should' >> README.md
+echo 'use github.com/ooni/probe and github.com/ooni/probe-cli respectively.' >> README.md
 
 rm -rf .github/workflows
 mkdir -p .github/workflows
