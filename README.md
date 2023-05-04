@@ -1,6 +1,6 @@
 # OONI Probe Engine
 
-Automatically exported from github.com/ooni/probe-cli.
+Semi-automatically exported from github.com/ooni/probe-cli.
 
 Check [UPSTREAM](UPSTREAM) to see the tag/commit from which we exported.
 

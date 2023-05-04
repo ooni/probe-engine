@@ -49,7 +49,7 @@ go mod tidy
 
 echo '# OONI Probe Engine' > README.md
 echo '' >> README.md
-echo "Automatically exported from github.com/ooni/probe-cli." >> README.md
+echo "Semi-automatically exported from github.com/ooni/probe-cli." >> README.md
 echo '' >> README.md
 echo "Check [UPSTREAM](UPSTREAM) to see the tag/commit from which we exported." >> README.md
 echo '' >> README.md
