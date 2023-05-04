@@ -3,18 +3,19 @@ package echcheck
 import (
 	"context"
 	"errors"
+	"net"
+	"net/url"
+	"time"
+
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/runtimex"
-	"net"
-	"net/url"
-	"time"
 )
 
 const (
 	testName      = "echcheck"
-	testVersion   = "0.1.0"
+	testVersion   = "0.1.1"
 	defaultDomain = "https://example.org"
 )
 

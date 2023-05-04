@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/measurex"
-	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 
@@ -56,7 +55,7 @@ func main() {
 	m := mx.QUICHandshake(ctx, *address, &tls.Config{
 		ServerName: *sni,
 		NextProtos: []string{"h3"},
-		RootCAs:    netxlite.NewDefaultCertPool(),
+		RootCAs:    nil, // use netxlite's default
 	})
 	// ```
 	//
