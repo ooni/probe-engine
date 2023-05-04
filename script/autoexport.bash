@@ -12,6 +12,8 @@ repodir=__repodir__
 rm -rf $repodir
 git clone -b $tag https://github.com/ooni/probe-cli $repodir
 
+(cd $repodir && git describe --tags > ../UPSTREAM)
+
 rm -rf CODE_OF_CONDUCT.md
 cp $repodir/CODE_OF_CONDUCT.md .
 
@@ -47,7 +49,9 @@ go mod tidy
 
 echo '# OONI Probe Engine' > README.md
 echo '' >> README.md
-echo "Automatically exported from github.com/ooni/probe-cli@$tag." >> README.md
+echo "Automatically exported from github.com/ooni/probe-cli." >> README.md
+echo '' >> README.md
+echo "Check [UPSTREAM](UPSTREAM) to see the tag/commit from which we exported." >> README.md
 echo '' >> README.md
 echo 'This is a best effort attempt to export probe-cli internals to community members.' >> README.md
 echo '' >> README.md
