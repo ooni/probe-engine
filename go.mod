@@ -9,7 +9,7 @@ require (
 	github.com/Psiphon-Labs/psiphon-tunnel-core v1.0.11-0.20230109152509-df9b786ba0f4
 	github.com/apex/log v1.9.0
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
-	github.com/cloudflare/circl v1.3.1
+	github.com/cloudflare/circl v1.3.3
 	github.com/cretz/bine v0.2.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/martian/v3 v3.3.2
