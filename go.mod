@@ -9,7 +9,7 @@ require (
 	github.com/Psiphon-Labs/psiphon-tunnel-core v1.0.11-0.20230109152509-df9b786ba0f4
 	github.com/apex/log v1.9.0
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
-	github.com/cloudflare/circl v1.3.1
+	github.com/cloudflare/circl v1.3.3
 	github.com/cretz/bine v0.2.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/martian/v3 v3.3.2
@@ -25,7 +25,7 @@ require (
 	github.com/ooni/oocrypto v0.4.2
 	github.com/ooni/oohttp v0.5.2
 	github.com/ooni/probe-assets v0.15.0
-	github.com/ooni/probe-cli/v3 v3.17.1
+	github.com/ooni/probe-cli/v3 v3.17.2
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pion/stun v0.3.5
 	github.com/pkg/errors v0.9.1
