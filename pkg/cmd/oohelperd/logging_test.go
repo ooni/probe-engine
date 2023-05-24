@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestPrefixLogger(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 // simpleRequestForHandler is a simple request for the [handler].

@@ -11,8 +11,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {

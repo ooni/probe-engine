@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestReadAllContext(t *testing.T) {

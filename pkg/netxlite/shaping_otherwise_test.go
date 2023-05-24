@@ -5,7 +5,7 @@ package netxlite
 import (
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestNewShapingDialer(t *testing.T) {

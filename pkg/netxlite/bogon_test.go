@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestMaybeWrapWithBogonResolver(t *testing.T) {

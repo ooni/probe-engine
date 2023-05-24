@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 /*

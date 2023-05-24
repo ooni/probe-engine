@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 func TestMeasurerExperimentNameVersion(t *testing.T) {

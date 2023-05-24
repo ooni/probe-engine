@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/kvstore"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 

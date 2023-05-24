@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	engine "github.com/ooni/probe-cli/v3/internal/engine"
+	"github.com/ooni/probe-engine/pkg/engine"
 	"github.com/ooni/probe-engine/pkg/experiment/fbmessenger"
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"

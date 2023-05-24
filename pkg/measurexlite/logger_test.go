@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestNewOperationLogger(t *testing.T) {

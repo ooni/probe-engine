@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestSessionByteCounter(t *testing.T) {

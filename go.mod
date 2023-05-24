@@ -25,7 +25,6 @@ require (
 	github.com/ooni/oocrypto v0.4.2
 	github.com/ooni/oohttp v0.5.2
 	github.com/ooni/probe-assets v0.15.0
-	github.com/ooni/probe-cli/v3 v3.17.2
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pion/stun v0.3.5
 	github.com/pkg/errors v0.9.1

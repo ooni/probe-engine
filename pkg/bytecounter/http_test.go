@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 )
 

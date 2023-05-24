@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/measurexlite"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 /*

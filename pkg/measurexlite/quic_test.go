@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/lucas-clemente/quic-go"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/testingx"
 )

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 )
 
 func TestWrappedConnWorksOnSuccess(t *testing.T) {

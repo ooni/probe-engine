@@ -8,8 +8,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/montanaflynn/stats"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 func TestTestKeysAnalyzeWithNoData(t *testing.T) {

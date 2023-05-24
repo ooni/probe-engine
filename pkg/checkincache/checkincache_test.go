@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/pkg/kvstore"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
 )
 
 func TestStore(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/ooni/probe-engine/pkg/model/mocks"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	utls "gitlab.com/yawning/utls.git"
 )
 
