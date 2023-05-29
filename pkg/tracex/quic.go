@@ -10,9 +10,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	"github.com/quic-go/quic-go"
 )
 
 // QUICDialerSaver saves events occurring during the QUIC handshake.

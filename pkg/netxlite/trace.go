@@ -10,9 +10,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/quic-go/quic-go"
 )
 
 // traceKey is the private type used to set/retrieve the context's trace.

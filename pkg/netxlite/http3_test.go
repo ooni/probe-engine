@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/quic-go/quic-go/http3"
 )
 
 func TestHTTP3Transport(t *testing.T) {

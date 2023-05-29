@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	"github.com/quic-go/quic-go"
 )
 
 // Measurer performs measurements. If you don't use a factory

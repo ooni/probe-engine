@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/quic-go/quic-go"
 )
 
 /*

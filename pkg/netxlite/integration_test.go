@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/netxlite/filtering"
 	"github.com/ooni/probe-engine/pkg/netxlite/quictesting"
 	"github.com/ooni/probe-engine/pkg/randx"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/quic-go/quic-go"
 	utls "gitlab.com/yawning/utls.git"
 )
 

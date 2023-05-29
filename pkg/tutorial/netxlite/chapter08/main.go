@@ -33,8 +33,8 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	"github.com/quic-go/quic-go"
 )
 
 func main() {

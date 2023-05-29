@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/lucas-clemente/quic-go"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/testingx"
+	"github.com/quic-go/quic-go"
 	utls "gitlab.com/yawning/utls.git"
 )
 
