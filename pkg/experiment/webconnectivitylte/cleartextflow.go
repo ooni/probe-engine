@@ -19,6 +19,7 @@ import (
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	"github.com/ooni/probe-engine/pkg/throttling"
 )
 
 // Measures HTTP endpoints.
@@ -97,6 +98,13 @@ func (t *CleartextFlow) Run(parentCtx context.Context, index int64) error {
 
 	// create trace
 	trace := measurexlite.NewTrace(index, t.ZeroTime)
+
+	// start measuring throttling
+	sampler := throttling.NewSampler(trace)
+	defer func() {
+		t.TestKeys.AppendNetworkEvents(sampler.ExtractSamples()...)
+		sampler.Close()
+	}()
 
 	// start the operation logger
 	ol := measurexlite.NewOperationLogger(

@@ -1,5 +1,9 @@
 package measurexlite
 
+//
+// Support for using utls
+//
+
 import (
 	"github.com/ooni/probe-engine/pkg/model"
 	utls "gitlab.com/yawning/utls.git"
