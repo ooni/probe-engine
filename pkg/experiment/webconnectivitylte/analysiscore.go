@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/ooni/probe-engine/pkg/geoipx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 )
@@ -98,7 +99,7 @@ func (tk *TestKeys) analysisToplevel(logger model.Logger) {
 	// not going to use any form of locking here.
 
 	// these functions compute the value of XBlockingFlags
-	tk.analysisDNSToplevel(logger)
+	tk.analysisDNSToplevel(logger, model.GeoIPASNLookupperFunc(geoipx.LookupASN))
 	tk.analysisTCPIPToplevel(logger)
 	tk.analysisTLSToplevel(logger)
 	tk.analysisHTTPToplevel(logger)
@@ -121,6 +122,8 @@ func (tk *TestKeys) analysisToplevel(logger model.Logger) {
 			tk.BlockingFlags, tk.Accessible, tk.Blocking,
 		)
 
+	// Assigning "http-failure" for both TLS and HTTP blocking is a legacy behavior
+	// because the spec does not consider the case of TLS based blocking
 	case (tk.BlockingFlags & (analysisFlagTLSBlocking | analysisFlagHTTPBlocking)) != 0:
 		tk.Blocking = "http-failure"
 		tk.Accessible = false

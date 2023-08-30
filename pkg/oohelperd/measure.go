@@ -1,4 +1,4 @@
-package main
+package oohelperd
 
 //
 // Top-level measurement algorithm
@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/model"
 )
 
@@ -24,11 +25,11 @@ type (
 
 // measure performs the measurement described by the request and
 // returns the corresponding response or an error.
-func measure(ctx context.Context, config *handler, creq *ctrlRequest) (*ctrlResponse, error) {
+func measure(ctx context.Context, config *Handler, creq *ctrlRequest) (*ctrlResponse, error) {
 	// create indexed logger
-	logger := &prefixLogger{
-		indexstr: fmt.Sprintf("<#%d> ", config.Indexer.Add(1)),
-		logger:   config.BaseLogger,
+	logger := &logx.PrefixLogger{
+		Prefix: fmt.Sprintf("<#%d> ", config.Indexer.Add(1)),
+		Logger: config.BaseLogger,
 	}
 
 	// parse input for correctness
