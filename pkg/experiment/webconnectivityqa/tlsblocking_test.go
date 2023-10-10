@@ -14,6 +14,8 @@ import (
 
 func TestBlockingTLSConnectionResetWithConsistentDNS(t *testing.T) {
 	env := netemx.MustNewScenario(netemx.InternetScenario)
+	defer env.Close()
+
 	tc := tlsBlockingConnectionResetWithConsistentDNS()
 	tc.Configure(env)
 
@@ -21,6 +23,7 @@ func TestBlockingTLSConnectionResetWithConsistentDNS(t *testing.T) {
 		urls := []string{"https://www.example.com/", "https://www.example.com/"}
 		for _, URL := range urls {
 			t.Run(fmt.Sprintf("for %s", URL), func(t *testing.T) {
+				// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPClientStdlib has QUIRKS but they're not needed here
 				client := netxlite.NewHTTPClientStdlib(log.Log)
 				req, err := http.NewRequest("GET", URL, nil)
 				if err != nil {
@@ -40,6 +43,8 @@ func TestBlockingTLSConnectionResetWithConsistentDNS(t *testing.T) {
 
 func TestBlockingTLSConnectionResetWithInconsistentDNS(t *testing.T) {
 	env := netemx.MustNewScenario(netemx.InternetScenario)
+	defer env.Close()
+
 	tc := tlsBlockingConnectionResetWithInconsistentDNS()
 	tc.Configure(env)
 
@@ -47,6 +52,7 @@ func TestBlockingTLSConnectionResetWithInconsistentDNS(t *testing.T) {
 		urls := []string{"https://www.example.com/", "https://www.example.com/"}
 		for _, URL := range urls {
 			t.Run(fmt.Sprintf("for %s", URL), func(t *testing.T) {
+				// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPClientStdlib has QUIRKS but they're not needed here
 				client := netxlite.NewHTTPClientStdlib(log.Log)
 				req, err := http.NewRequest("GET", URL, nil)
 				if err != nil {

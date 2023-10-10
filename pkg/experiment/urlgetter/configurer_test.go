@@ -9,8 +9,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestConfigurerNewConfigurationVanilla(t *testing.T) {

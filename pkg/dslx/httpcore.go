@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
@@ -160,7 +161,7 @@ func (f *httpRequestFunc) Apply(
 	if err == nil {
 
 		// start the operation logger
-		ol := measurexlite.NewOperationLogger(
+		ol := logx.NewOperationLogger(
 			input.Logger,
 			"[#%d] HTTPRequest %s with %s/%s host=%s",
 			input.Trace.Index,

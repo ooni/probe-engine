@@ -13,11 +13,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/pkg/legacy/measurex"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"
-	"github.com/ooni/probe-engine/pkg/measurex"
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/scrubber"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -717,7 +717,7 @@ func TestMaybeScrubbingLogger(t *testing.T) {
 		if out != input {
 			t.Fatal("not the output we expected")
 		}
-		if _, ok := out.(*scrubber.Logger); ok {
+		if _, ok := out.(*logx.ScrubberLogger); ok {
 			t.Fatal("not the output type we expected")
 		}
 	})
@@ -730,7 +730,7 @@ func TestMaybeScrubbingLogger(t *testing.T) {
 		if out == input {
 			t.Fatal("not the output value we expected")
 		}
-		if _, ok := out.(*scrubber.Logger); !ok {
+		if _, ok := out.(*logx.ScrubberLogger); !ok {
 			t.Fatal("not the output type we expected")
 		}
 	})

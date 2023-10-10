@@ -45,10 +45,10 @@ import (
 	"strings"
 	"sync"
 
-	pt "git.torproject.org/pluggable-transports/goptlib.git"
 	"github.com/ooni/probe-engine/pkg/bytecounter"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	pt "gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/goptlib"
 )
 
 // PTDialer is a generic pluggable transports dialer.

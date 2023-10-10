@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 const (
@@ -304,7 +304,7 @@ func parseGateways(testKeys *TestKeys) []GatewayV3 {
 			// TODO(bassosimone,cyberta): is it reasonable that we discard
 			// the error when the JSON we fetched cannot be parsed?
 			// See https://github.com/ooni/probe/issues/1432
-			eipService, err := DecodeEIP3(requestEntry.Response.Body.Value)
+			eipService, err := DecodeEIP3(string(requestEntry.Response.Body))
 			if err == nil {
 				return eipService.Gateways
 			}

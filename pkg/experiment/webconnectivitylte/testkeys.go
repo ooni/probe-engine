@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // TestKeys contains the results produced by web_connectivity.

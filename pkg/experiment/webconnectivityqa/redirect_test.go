@@ -23,6 +23,8 @@ func TestRedirectWithConsistentDNSAndThenConnectionRefused(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			env := netemx.MustNewScenario(netemx.InternetScenario)
+			defer env.Close()
+
 			tc.Configure(env)
 
 			env.Do(func() {
@@ -55,6 +57,8 @@ func TestRedirectWithConsistentDNSAndThenConnectionReset(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			env := netemx.MustNewScenario(netemx.InternetScenario)
+			defer env.Close()
+
 			tc.Configure(env)
 
 			env.Do(func() {
@@ -62,6 +66,7 @@ func TestRedirectWithConsistentDNSAndThenConnectionReset(t *testing.T) {
 
 				for _, URL := range urls {
 					t.Run(fmt.Sprintf("for URL %s", URL), func(t *testing.T) {
+						// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPClientStdlib has QUIRKS but they're not needed here
 						client := netxlite.NewHTTPClientStdlib(log.Log)
 						req := runtimex.Try1(http.NewRequest("GET", URL, nil))
 						resp, err := client.Do(req)
@@ -86,6 +91,8 @@ func TestRedirectWithConsistentDNSAndThenNXDOMAIN(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			env := netemx.MustNewScenario(netemx.InternetScenario)
+			defer env.Close()
+
 			tc.Configure(env)
 
 			env.Do(func() {
@@ -125,6 +132,8 @@ func TestRedirectWithConsistentDNSAndThenEOF(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			env := netemx.MustNewScenario(netemx.InternetScenario)
+			defer env.Close()
+
 			tc.Configure(env)
 
 			env.Do(func() {
@@ -132,6 +141,7 @@ func TestRedirectWithConsistentDNSAndThenEOF(t *testing.T) {
 
 				for _, URL := range urls {
 					t.Run(fmt.Sprintf("for URL %s", URL), func(t *testing.T) {
+						// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPClientStdlib has QUIRKS but they're not needed here
 						client := netxlite.NewHTTPClientStdlib(log.Log)
 						req := runtimex.Try1(http.NewRequest("GET", URL, nil))
 						resp, err := client.Do(req)
@@ -157,6 +167,8 @@ func TestRedirectWithConsistentDNSAndThenTimeout(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			env := netemx.MustNewScenario(netemx.InternetScenario)
+			defer env.Close()
+
 			tc.Configure(env)
 
 			env.Do(func() {
@@ -166,6 +178,7 @@ func TestRedirectWithConsistentDNSAndThenTimeout(t *testing.T) {
 					t.Run(fmt.Sprintf("for URL %s", URL), func(t *testing.T) {
 						ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 						defer cancel()
+						// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPClientStdlib has QUIRKS but they're not needed here
 						client := netxlite.NewHTTPClientStdlib(log.Log)
 						req := runtimex.Try1(http.NewRequestWithContext(ctx, "GET", URL, nil))
 						resp, err := client.Do(req)

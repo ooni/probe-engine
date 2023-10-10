@@ -15,9 +15,9 @@ import (
 	"github.com/ooni/probe-engine/pkg/experiment/riseupvpn"
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 const (
@@ -773,13 +773,13 @@ func generateMockGetter(requestResponse map[string]string, responseStatus map[st
 				Failure: failure,
 				Request: tracex.HTTPRequest{
 					URL:             url,
-					Body:            tracex.MaybeBinaryValue{},
+					Body:            model.ArchivalScrubbedMaybeBinaryString(""),
 					BodyIsTruncated: false,
 				},
 				Response: tracex.HTTPResponse{
-					Body: tracex.HTTPBody{
-						Value: responseBody,
-					},
+					Body: model.ArchivalScrubbedMaybeBinaryString(
+						responseBody,
+					),
 					BodyIsTruncated: false,
 				}},
 			},

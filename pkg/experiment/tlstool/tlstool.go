@@ -17,9 +17,9 @@ import (
 
 	"github.com/ooni/probe-engine/pkg/experiment/tlstool/internal"
 	"github.com/ooni/probe-engine/pkg/legacy/netx"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 const (

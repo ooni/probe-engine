@@ -41,7 +41,7 @@ import (
 	// measurements representations to the OONI data format.
 	//
 	// ```Go
-	"github.com/ooni/probe-engine/pkg/tracex"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 
 	// ```
 	//

@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 	"github.com/ooni/probe-engine/pkg/tunnel"
 )
 
@@ -69,7 +69,7 @@ func (g Getter) Get(ctx context.Context) (TestKeys, error) {
 	if len(tk.Requests) > 0 {
 		// OONI's convention is that the last request appears first
 		tk.HTTPResponseStatus = tk.Requests[0].Response.Code
-		tk.HTTPResponseBody = tk.Requests[0].Response.Body.Value
+		tk.HTTPResponseBody = string(tk.Requests[0].Response.Body)
 		tk.HTTPResponseLocations = tk.Requests[0].Response.Locations
 	}
 	tk.TCPConnect = append(

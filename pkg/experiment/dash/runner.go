@@ -14,9 +14,9 @@ import (
 
 	"github.com/montanaflynn/stats"
 	"github.com/ooni/probe-engine/pkg/humanize"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // runnerConfig contains settings for running the dash experiment. This struct

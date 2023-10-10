@@ -10,10 +10,10 @@ import (
 	"path"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 	"github.com/ooni/probe-engine/pkg/torlogs"
-	"github.com/ooni/probe-engine/pkg/tracex"
 	"github.com/ooni/probe-engine/pkg/tunnel"
 )
 

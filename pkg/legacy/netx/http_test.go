@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/mocks"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestNewHTTPTransportWithDialer(t *testing.T) {

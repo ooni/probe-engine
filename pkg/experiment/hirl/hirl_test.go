@@ -8,11 +8,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/experiment/hirl"
+	"github.com/ooni/probe-engine/pkg/legacy/legacymodel"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"
 	"github.com/ooni/probe-engine/pkg/legacy/netx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -159,7 +159,7 @@ func (FakeMethodSuccessful) Name() string {
 func (meth FakeMethodSuccessful) Run(ctx context.Context, config hirl.MethodConfig) {
 	config.Out <- hirl.MethodResult{
 		Name:      meth.Name(),
-		Received:  tracex.MaybeBinaryValue{Value: "antani"},
+		Received:  legacymodel.ArchivalMaybeBinaryData{Value: "antani"},
 		Sent:      "antani",
 		Tampering: false,
 	}
@@ -174,7 +174,7 @@ func (FakeMethodFailure) Name() string {
 func (meth FakeMethodFailure) Run(ctx context.Context, config hirl.MethodConfig) {
 	config.Out <- hirl.MethodResult{
 		Name:      meth.Name(),
-		Received:  tracex.MaybeBinaryValue{Value: "antani"},
+		Received:  legacymodel.ArchivalMaybeBinaryData{Value: "antani"},
 		Sent:      "melandri",
 		Tampering: true,
 	}

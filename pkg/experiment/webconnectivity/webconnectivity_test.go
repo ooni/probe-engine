@@ -11,9 +11,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/pkg/engine"
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestNewExperimentMeasurer(t *testing.T) {
@@ -21,7 +21,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "web_connectivity" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.4.2" {
+	if measurer.ExperimentVersion() != "0.4.3" {
 		t.Fatal("unexpected version")
 	}
 }

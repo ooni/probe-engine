@@ -10,6 +10,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 )
@@ -39,7 +40,7 @@ func (m *Measurer) tcpConnectAsync(ctx context.Context, index int64,
 func (m *Measurer) tcpConnect(ctx context.Context, index int64,
 	zeroTime time.Time, logger model.Logger, address string) *model.ArchivalTCPConnectResult {
 	trace := measurexlite.NewTrace(index, zeroTime)
-	ol := measurexlite.NewOperationLogger(logger, "TCPConnect #%d %s", index, address)
+	ol := logx.NewOperationLogger(logger, "TCPConnect #%d %s", index, address)
 	dialer := trace.NewDialerWithoutResolver(logger)
 	conn, err := dialer.DialContext(ctx, "tcp", address)
 	ol.Stop(err)

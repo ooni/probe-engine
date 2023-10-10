@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/quic-go/quic-go"
@@ -68,7 +69,7 @@ func quicDo(ctx context.Context, config *quicConfig) {
 	defer func() {
 		config.Out <- out
 	}()
-	ol := measurexlite.NewOperationLogger(
+	ol := logx.NewOperationLogger(
 		config.Logger,
 		"QUICConnect %s SNI=%s",
 		config.Endpoint,

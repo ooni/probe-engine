@@ -3,8 +3,8 @@ package tlsmiddlebox
 import (
 	"sync"
 
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // CompleteTrace records the result of the network trace

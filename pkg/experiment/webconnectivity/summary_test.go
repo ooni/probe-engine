@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestSummarize(t *testing.T) {

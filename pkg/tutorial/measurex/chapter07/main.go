@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ooni/probe-engine/pkg/measurex"
+	"github.com/ooni/probe-engine/pkg/legacy/measurex"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 

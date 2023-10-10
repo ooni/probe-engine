@@ -9,8 +9,8 @@ import (
 	"net/url"
 
 	"github.com/ooni/probe-engine/pkg/bytecounter"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // Config contains configuration for creating new transports, dialers, etc. When

@@ -13,8 +13,8 @@ import (
 	"crypto/x509"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 const (

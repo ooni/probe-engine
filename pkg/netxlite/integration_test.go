@@ -9,15 +9,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/netxlite/quictesting"
 	"github.com/ooni/probe-engine/pkg/randx"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/ooni/probe-engine/pkg/testingquic"
 	"github.com/ooni/probe-engine/pkg/testingx"
 	"github.com/quic-go/quic-go"
 	utls "gitlab.com/yawning/utls.git"
@@ -78,6 +79,9 @@ func TestMeasureWithSystemResolver(t *testing.T) {
 		// e.g. a domain containing a few random letters
 		addrs, err := r.LookupHost(ctx, randx.Letters(7)+".ooni.nonexistent")
 		if err == nil || err.Error() != netxlite.FailureGenericTimeoutError {
+			if runtime.GOOS == "windows" {
+				t.Skip("https://github.com/ooni/probe/issues/2535")
+			}
 			t.Fatal("not the error we expected", err)
 		}
 		if addrs != nil {
@@ -291,7 +295,7 @@ func TestMeasureWithTLSHandshaker(t *testing.T) {
 			NextProtos: []string{"h2", "http/1.1"},
 			RootCAs:    nil,
 		}
-		tconn, _, err := th.Handshake(ctx, conn, config)
+		tconn, err := th.Handshake(ctx, conn, config)
 		if err != nil {
 			return fmt.Errorf("tls handshake failed: %w", err)
 		}
@@ -316,7 +320,7 @@ func TestMeasureWithTLSHandshaker(t *testing.T) {
 			NextProtos: []string{"h2", "http/1.1"},
 			RootCAs:    nil,
 		}
-		tconn, _, err := th.Handshake(ctx, conn, config)
+		tconn, err := th.Handshake(ctx, conn, config)
 		if err == nil {
 			return fmt.Errorf("tls handshake succeded unexpectedly")
 		}
@@ -346,7 +350,7 @@ func TestMeasureWithTLSHandshaker(t *testing.T) {
 			NextProtos: []string{"h2", "http/1.1"},
 			RootCAs:    nil,
 		}
-		tconn, _, err := th.Handshake(ctx, conn, config)
+		tconn, err := th.Handshake(ctx, conn, config)
 		if err == nil {
 			return fmt.Errorf("tls handshake succeded unexpectedly")
 		}
@@ -376,7 +380,7 @@ func TestMeasureWithTLSHandshaker(t *testing.T) {
 			NextProtos: []string{"h2", "http/1.1"},
 			RootCAs:    nil,
 		}
-		tconn, _, err := th.Handshake(ctx, conn, config)
+		tconn, err := th.Handshake(ctx, conn, config)
 		if err == nil {
 			return fmt.Errorf("tls handshake succeded unexpectedly")
 		}
@@ -475,7 +479,7 @@ func TestMeasureWithQUICDialer(t *testing.T) {
 	//
 
 	t.Run("on success", func(t *testing.T) {
-		ql := netxlite.NewQUICListener()
+		ql := netxlite.NewUDPListener()
 		d := netxlite.NewQUICDialerWithoutResolver(ql, log.Log)
 		defer d.CloseIdleConnections()
 		ctx := context.Background()
@@ -483,11 +487,11 @@ func TestMeasureWithQUICDialer(t *testing.T) {
 		// why we're using nil to force netxlite to use the cached
 		// default Mozilla cert pool.
 		config := &tls.Config{
-			ServerName: quictesting.Domain,
+			ServerName: testingquic.MustDomain(),
 			NextProtos: []string{"h3"},
 			RootCAs:    nil,
 		}
-		sess, err := d.DialContext(ctx, quictesting.Endpoint("443"), config, &quic.Config{})
+		sess, err := d.DialContext(ctx, testingquic.MustEndpoint("443"), config, &quic.Config{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -498,7 +502,7 @@ func TestMeasureWithQUICDialer(t *testing.T) {
 	})
 
 	t.Run("on timeout", func(t *testing.T) {
-		ql := netxlite.NewQUICListener()
+		ql := netxlite.NewUDPListener()
 		d := netxlite.NewQUICDialerWithoutResolver(ql, log.Log)
 		defer d.CloseIdleConnections()
 		ctx := context.Background()
@@ -506,12 +510,12 @@ func TestMeasureWithQUICDialer(t *testing.T) {
 		// why we're using nil to force netxlite to use the cached
 		// default Mozilla cert pool.
 		config := &tls.Config{
-			ServerName: quictesting.Domain,
+			ServerName: testingquic.MustDomain(),
 			NextProtos: []string{"h3"},
 			RootCAs:    nil,
 		}
 		// Here we assume <target-address>:1 is filtered
-		sess, err := d.DialContext(ctx, quictesting.Endpoint("1"), config, &quic.Config{})
+		sess, err := d.DialContext(ctx, testingquic.MustEndpoint("1"), config, &quic.Config{})
 		if err == nil || err.Error() != netxlite.FailureGenericTimeoutError {
 			t.Fatal("not the error we expected", err)
 		}
@@ -551,6 +555,8 @@ func TestHTTPTransport(t *testing.T) {
 			conn.Close()
 		}))
 		defer srvr.Close()
+		// TODO(https://github.com/ooni/probe/issues/2534): NewHTTPTransportStdlib has QUIRKS but we
+		// don't actually care about those QUIRKS in this context
 		txp := netxlite.NewHTTPTransportStdlib(model.DiscardLogger)
 		req, err := http.NewRequest("GET", srvr.URL, nil)
 		if err != nil {
@@ -576,13 +582,13 @@ func TestHTTP3Transport(t *testing.T) {
 
 	t.Run("works as intended", func(t *testing.T) {
 		d := netxlite.NewQUICDialerWithResolver(
-			netxlite.NewQUICListener(),
+			netxlite.NewUDPListener(),
 			log.Log,
 			netxlite.NewStdlibResolver(log.Log),
 		)
 		txp := netxlite.NewHTTP3Transport(log.Log, d, &tls.Config{})
 		client := &http.Client{Transport: txp}
-		URL := (&url.URL{Scheme: "https", Host: quictesting.Domain, Path: "/"}).String()
+		URL := (&url.URL{Scheme: "https", Host: testingquic.MustDomain(), Path: "/"}).String()
 		resp, err := client.Get(URL)
 		if err != nil {
 			t.Fatal(err)

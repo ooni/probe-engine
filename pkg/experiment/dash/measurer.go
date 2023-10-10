@@ -10,9 +10,9 @@ import (
 	"net/http"
 
 	"github.com/ooni/probe-engine/pkg/legacy/netx"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // Config contains the experiment config.

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
@@ -146,7 +147,7 @@ func (f *dnsLookupGetaddrinfoFunc) Apply(
 	trace := measurexlite.NewTrace(input.IDGenerator.Add(1), input.ZeroTime, input.Tags...)
 
 	// start the operation logger
-	ol := measurexlite.NewOperationLogger(
+	ol := logx.NewOperationLogger(
 		input.Logger,
 		"[#%d] DNSLookup[getaddrinfo] %s",
 		trace.Index,
@@ -209,7 +210,7 @@ func (f *dnsLookupUDPFunc) Apply(
 	trace := measurexlite.NewTrace(input.IDGenerator.Add(1), input.ZeroTime, input.Tags...)
 
 	// start the operation logger
-	ol := measurexlite.NewOperationLogger(
+	ol := logx.NewOperationLogger(
 		input.Logger,
 		"[#%d] DNSLookup[%s/udp] %s",
 		trace.Index,

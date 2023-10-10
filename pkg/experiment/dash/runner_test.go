@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 func TestRunnerRunAllPhasesLocateFailure(t *testing.T) {

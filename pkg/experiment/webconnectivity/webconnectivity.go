@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity/internal"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 const (
 	testName    = "web_connectivity"
-	testVersion = "0.4.2"
+	testVersion = "0.4.3"
 )
 
 // Config contains the experiment config.

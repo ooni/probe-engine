@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/ooni/probe-engine/pkg/legacy/netx"
+	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/tracex"
 )
 
 // The Configurer job is to construct a Configuration that can
