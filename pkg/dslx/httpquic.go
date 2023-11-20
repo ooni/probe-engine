@@ -11,44 +11,29 @@ import (
 )
 
 // HTTPRequestOverQUIC returns a Func that issues HTTP requests over QUIC.
-func HTTPRequestOverQUIC(options ...HTTPRequestOption) Func[*QUICConnection, *Maybe[*HTTPResponse]] {
-	return Compose2(HTTPTransportQUIC(), HTTPRequest(options...))
+func HTTPRequestOverQUIC(rt Runtime, options ...HTTPRequestOption) Func[*QUICConnection, *HTTPResponse] {
+	return Compose2(HTTPConnectionQUIC(rt), HTTPRequest(rt, options...))
 }
 
-// HTTPTransportQUIC converts a QUIC connection into an HTTP transport.
-func HTTPTransportQUIC() Func[*QUICConnection, *Maybe[*HTTPTransport]] {
-	return &httpTransportQUICFunc{}
-}
+// HTTPConnectionQUIC converts a QUIC connection into an HTTP connection.
+func HTTPConnectionQUIC(rt Runtime) Func[*QUICConnection, *HTTPConnection] {
+	return Operation[*QUICConnection, *HTTPConnection](func(ctx context.Context, input *QUICConnection) (*HTTPConnection, error) {
+		httpTransport := netxlite.NewHTTP3Transport(
+			rt.Logger(),
+			netxlite.NewSingleUseQUICDialer(input.QUICConn),
+			input.TLSConfig,
+		)
 
-// httpTransportQUICFunc is the function returned by HTTPTransportQUIC.
-type httpTransportQUICFunc struct{}
+		state := &HTTPConnection{
+			Address:               input.Address,
+			Domain:                input.Domain,
+			Network:               input.Network,
+			Scheme:                "https",
+			TLSNegotiatedProtocol: input.TLSState.NegotiatedProtocol,
+			Trace:                 input.Trace,
+			Transport:             httpTransport,
+		}
 
-// Apply implements Func.
-func (f *httpTransportQUICFunc) Apply(
-	ctx context.Context, input *QUICConnection) *Maybe[*HTTPTransport] {
-	// create transport
-	httpTransport := netxlite.NewHTTP3Transport(
-		input.Logger,
-		netxlite.NewSingleUseQUICDialer(input.QUICConn),
-		input.TLSConfig,
-	)
-
-	state := &HTTPTransport{
-		Address:               input.Address,
-		Domain:                input.Domain,
-		IDGenerator:           input.IDGenerator,
-		Logger:                input.Logger,
-		Network:               input.Network,
-		Scheme:                "https",
-		TLSNegotiatedProtocol: input.TLSState.NegotiatedProtocol,
-		Trace:                 input.Trace,
-		Transport:             httpTransport,
-		ZeroTime:              input.ZeroTime,
-	}
-	return &Maybe[*HTTPTransport]{
-		Error:        nil,
-		Observations: nil,
-		Operation:    "", // we cannot fail, so no need to store operation name
-		State:        state,
-	}
+		return state, nil
+	})
 }

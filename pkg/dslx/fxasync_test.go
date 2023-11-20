@@ -4,9 +4,11 @@ import (
 	"context"
 	"sync"
 	"testing"
+
+	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 
-func getFnWait(wg *sync.WaitGroup) Func[int, *Maybe[int]] {
+func getFnWait(wg *sync.WaitGroup) Func[int, int] {
 	return &fnWait{wg}
 }
 
@@ -14,10 +16,11 @@ type fnWait struct {
 	wg *sync.WaitGroup // set to n corresponding to the number of used goroutines
 }
 
-func (f *fnWait) Apply(ctx context.Context, i int) *Maybe[int] {
+func (f *fnWait) Apply(ctx context.Context, i *Maybe[int]) *Maybe[int] {
+	runtimex.Assert(i.Error == nil, "did not expect to see an error here")
 	f.wg.Done()
 	f.wg.Wait() // continue when n goroutines have reached this point
-	return &Maybe[int]{State: i + 1}
+	return &Maybe[int]{State: i.State + 1}
 }
 
 /*
@@ -86,7 +89,7 @@ func TestParallel(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				wg := sync.WaitGroup{}
 				wg.Add(tt.funcs)
-				funcs := []Func[int, *Maybe[int]]{}
+				funcs := []Func[int, int]{}
 				for i := 0; i < tt.funcs; i++ {
 					funcs = append(funcs, getFnWait(&wg))
 				}
@@ -97,4 +100,16 @@ func TestParallel(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestMatrixMin(t *testing.T) {
+	if v := matrixMin(1, 7); v != 1 {
+		t.Fatal("expected to see 1, got", v)
+	}
+	if v := matrixMin(7, 4); v != 4 {
+		t.Fatal("expected to see 4, got", v)
+	}
+	if v := matrixMin(11, 11); v != 11 {
+		t.Fatal("expected to see 11, got", v)
+	}
 }

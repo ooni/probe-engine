@@ -11,45 +11,32 @@ import (
 )
 
 // HTTPRequestOverTLS returns a Func that issues HTTP requests over TLS.
-func HTTPRequestOverTLS(options ...HTTPRequestOption) Func[*TLSConnection, *Maybe[*HTTPResponse]] {
-	return Compose2(HTTPTransportTLS(), HTTPRequest(options...))
+func HTTPRequestOverTLS(rt Runtime, options ...HTTPRequestOption) Func[*TLSConnection, *HTTPResponse] {
+	return Compose2(HTTPConnectionTLS(rt), HTTPRequest(rt, options...))
 }
 
-// HTTPTransportTLS converts a TLS connection into an HTTP transport.
-func HTTPTransportTLS() Func[*TLSConnection, *Maybe[*HTTPTransport]] {
-	return &httpTransportTLSFunc{}
-}
+// HTTPConnectionTLS converts a TLS connection into an HTTP connection.
+func HTTPConnectionTLS(rt Runtime) Func[*TLSConnection, *HTTPConnection] {
+	return Operation[*TLSConnection, *HTTPConnection](func(ctx context.Context, input *TLSConnection) (*HTTPConnection, error) {
+		// TODO(https://github.com/ooni/probe/issues/2534): here we're using the QUIRKY netxlite.NewHTTPTransport
+		// function, but we can probably avoid using it, given that this code is
+		// not using tracing and does not care about those quirks.
+		httpTransport := netxlite.NewHTTPTransport(
+			rt.Logger(),
+			netxlite.NewNullDialer(),
+			netxlite.NewSingleUseTLSDialer(input.Conn),
+		)
 
-// httpTransportTLSFunc is the function returned by HTTPTransportTLS.
-type httpTransportTLSFunc struct{}
+		state := &HTTPConnection{
+			Address:               input.Address,
+			Domain:                input.Domain,
+			Network:               input.Network,
+			Scheme:                "https",
+			TLSNegotiatedProtocol: input.TLSState.NegotiatedProtocol,
+			Trace:                 input.Trace,
+			Transport:             httpTransport,
+		}
 
-// Apply implements Func.
-func (f *httpTransportTLSFunc) Apply(
-	ctx context.Context, input *TLSConnection) *Maybe[*HTTPTransport] {
-	// TODO(https://github.com/ooni/probe/issues/2534): here we're using the QUIRKY netxlite.NewHTTPTransport
-	// function, but we can probably avoid using it, given that this code is
-	// not using tracing and does not care about those quirks.
-	httpTransport := netxlite.NewHTTPTransport(
-		input.Logger,
-		netxlite.NewNullDialer(),
-		netxlite.NewSingleUseTLSDialer(input.Conn),
-	)
-	state := &HTTPTransport{
-		Address:               input.Address,
-		Domain:                input.Domain,
-		IDGenerator:           input.IDGenerator,
-		Logger:                input.Logger,
-		Network:               input.Network,
-		Scheme:                "https",
-		TLSNegotiatedProtocol: input.TLSState.NegotiatedProtocol,
-		Trace:                 input.Trace,
-		Transport:             httpTransport,
-		ZeroTime:              input.ZeroTime,
-	}
-	return &Maybe[*HTTPTransport]{
-		Error:        nil,
-		Observations: nil,
-		Operation:    "", // we cannot fail, so no need to store operation name
-		State:        state,
-	}
+		return state, nil
+	})
 }

@@ -5,10 +5,9 @@ package dslx
 //
 
 import (
-	"sync/atomic"
-	"time"
-
-	"github.com/ooni/probe-engine/pkg/model"
+	"context"
+	"net"
+	"strconv"
 )
 
 type (
@@ -29,20 +28,11 @@ type Endpoint struct {
 	// Domain is the OPTIONAL domain used to resolve the endpoints' IP address.
 	Domain string
 
-	// IDGenerator is MANDATORY the ID generator to use.
-	IDGenerator *atomic.Int64
-
-	// Logger is the MANDATORY logger to use.
-	Logger model.Logger
-
 	// Network is the MANDATORY endpoint network.
 	Network string
 
 	// Tags contains OPTIONAL tags for tagging observations.
 	Tags []string
-
-	// ZeroTime is the MANDATORY zero time of the measurement.
-	ZeroTime time.Time
 }
 
 // EndpointOption is an option you can use to construct EndpointState.
@@ -55,31 +45,10 @@ func EndpointOptionDomain(value string) EndpointOption {
 	}
 }
 
-// EndpointOptionIDGenerator allows to set the ID generator.
-func EndpointOptionIDGenerator(value *atomic.Int64) EndpointOption {
-	return func(es *Endpoint) {
-		es.IDGenerator = value
-	}
-}
-
-// EndpointOptionLogger allows to set the logger.
-func EndpointOptionLogger(value model.Logger) EndpointOption {
-	return func(es *Endpoint) {
-		es.Logger = value
-	}
-}
-
 // EndpointOptionTags allows to set tags to tag observations.
 func EndpointOptionTags(value ...string) EndpointOption {
 	return func(es *Endpoint) {
 		es.Tags = append(es.Tags, value...)
-	}
-}
-
-// EndpointOptionZeroTime allows to set the zero time.
-func EndpointOptionZeroTime(value time.Time) EndpointOption {
-	return func(es *Endpoint) {
-		es.ZeroTime = value
 	}
 }
 
@@ -97,16 +66,48 @@ func EndpointOptionZeroTime(value time.Time) EndpointOption {
 func NewEndpoint(
 	network EndpointNetwork, address EndpointAddress, options ...EndpointOption) *Endpoint {
 	epnt := &Endpoint{
-		Address:     string(address),
-		Domain:      "",
-		IDGenerator: &atomic.Int64{},
-		Logger:      model.DiscardLogger,
-		Network:     string(network),
-		Tags:        []string{},
-		ZeroTime:    time.Now(),
+		Address: string(address),
+		Domain:  "",
+		Network: string(network),
+		Tags:    []string{},
 	}
 	for _, option := range options {
 		option(epnt)
 	}
 	return epnt
+}
+
+// MakeEndpoint returns a [Func] that creates an [*Endpoint] given [*ResolvedAddress].
+func MakeEndpoint(network EndpointNetwork, port EndpointPort, options ...EndpointOption) Func[*ResolvedAddress, *Endpoint] {
+	return Operation[*ResolvedAddress, *Endpoint](func(ctx context.Context, addr *ResolvedAddress) (*Endpoint, error) {
+		// create the destination endpoint address
+		addrport := EndpointAddress(net.JoinHostPort(addr.Address, strconv.Itoa(int(port))))
+
+		// make sure we include the proper domain name first but allow the caller
+		// to potentially override the domain name using options
+		allOptions := []EndpointOption{
+			EndpointOptionDomain(addr.Domain),
+		}
+		allOptions = append(allOptions, options...)
+
+		// build and return the endpoint
+		endpoint := NewEndpoint(network, addrport, allOptions...)
+		return endpoint, nil
+	})
+}
+
+// MeasureResolvedAddresses returns a [Func] that measures the resolved addresses provided
+// as the input argument using each of the provided functions.
+func MeasureResolvedAddresses(fxs ...Func[*ResolvedAddress, Void]) Func[*ResolvedAddresses, Void] {
+	return Operation[*ResolvedAddresses, Void](func(ctx context.Context, addrs *ResolvedAddresses) (Void, error) {
+		// TODO(https://github.com/ooni/probe/issues/2619): we may want to configure this
+		const parallelism = Parallelism(3)
+
+		// run the matrix until the output is drained
+		for range Matrix(ctx, parallelism, addrs.Flatten(), fxs) {
+			// nothing
+		}
+
+		return Void{}, nil
+	})
 }

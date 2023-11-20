@@ -3,6 +3,7 @@ package dslx
 import (
 	"context"
 	"errors"
+	"net"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -30,25 +31,12 @@ func TestNewDomainToResolve(t *testing.T) {
 		t.Run("with options", func(t *testing.T) {
 			idGen := &atomic.Int64{}
 			idGen.Add(42)
-			zt := time.Now()
 			domainToResolve := NewDomainToResolve(
 				DomainName("www.example.com"),
-				DNSLookupOptionIDGenerator(idGen),
-				DNSLookupOptionLogger(model.DiscardLogger),
-				DNSLookupOptionZeroTime(zt),
 				DNSLookupOptionTags("antani"),
 			)
 			if domainToResolve.Domain != "www.example.com" {
 				t.Fatalf("unexpected domain")
-			}
-			if domainToResolve.IDGenerator != idGen {
-				t.Fatalf("unexpected id generator")
-			}
-			if domainToResolve.Logger != model.DiscardLogger {
-				t.Fatalf("unexpected logger")
-			}
-			if domainToResolve.ZeroTime != zt {
-				t.Fatalf("unexpected zerotime")
 			}
 			if diff := cmp.Diff([]string{"antani"}, domainToResolve.Tags); diff != "" {
 				t.Fatal(diff)
@@ -66,28 +54,19 @@ Test cases:
   - with success
 */
 func TestGetaddrinfo(t *testing.T) {
-	t.Run("Get dnsLookupGetaddrinfoFunc", func(t *testing.T) {
-		f := DNSLookupGetaddrinfo()
-		if _, ok := f.(*dnsLookupGetaddrinfoFunc); !ok {
-			t.Fatal("unexpected type, want dnsLookupGetaddrinfoFunc")
-		}
-	})
-
 	t.Run("Apply dnsLookupGetaddrinfoFunc", func(t *testing.T) {
 		domain := &DomainToResolve{
-			Domain:      "example.com",
-			Logger:      model.DiscardLogger,
-			IDGenerator: &atomic.Int64{},
-			Tags:        []string{"antani"},
-			ZeroTime:    time.Time{},
+			Domain: "example.com",
+			Tags:   []string{"antani"},
 		}
 
 		t.Run("with nil resolver", func(t *testing.T) {
-			f := dnsLookupGetaddrinfoFunc{}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now())
+			f := DNSLookupGetaddrinfo(rt)
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel() // immediately cancel the lookup
-			res := f.Apply(ctx, domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
+			res := f.Apply(ctx, NewMaybeWithValue(domain))
+			if obs := rt.Observations(); obs == nil || len(obs.Queries) <= 0 {
 				t.Fatal("unexpected empty observations")
 			}
 			if res.Error == nil {
@@ -97,36 +76,37 @@ func TestGetaddrinfo(t *testing.T) {
 
 		t.Run("with lookup error", func(t *testing.T) {
 			mockedErr := errors.New("mocked")
-			f := dnsLookupGetaddrinfoFunc{
-				resolver: &mocks.Resolver{MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
-					return nil, mockedErr
-				}},
-			}
-			res := f.Apply(context.Background(), domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
-				t.Fatal("unexpected empty observations")
-			}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now(), RuntimeMeasurexLiteOptionMeasuringNetwork(&mocks.MeasuringNetwork{
+				MockNewStdlibResolver: func(logger model.DebugLogger) model.Resolver {
+					return &mocks.Resolver{
+						MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
+							return nil, mockedErr
+						},
+					}
+				},
+			}))
+			f := DNSLookupGetaddrinfo(rt)
+			res := f.Apply(context.Background(), NewMaybeWithValue(domain))
 			if res.Error != mockedErr {
 				t.Fatalf("unexpected error type: %s", res.Error)
 			}
-			if res.State == nil {
-				t.Fatal("unexpected nil state")
-			}
-			if res.State.Addresses != nil {
-				t.Fatal("expected empty addresses here")
+			if res.State != nil {
+				t.Fatal("expected nil state")
 			}
 		})
 
 		t.Run("with success", func(t *testing.T) {
-			f := dnsLookupGetaddrinfoFunc{
-				resolver: &mocks.Resolver{MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
-					return []string{"93.184.216.34"}, nil
-				}},
-			}
-			res := f.Apply(context.Background(), domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
-				t.Fatal("unexpected empty observations")
-			}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now(), RuntimeMeasurexLiteOptionMeasuringNetwork(&mocks.MeasuringNetwork{
+				MockNewStdlibResolver: func(logger model.DebugLogger) model.Resolver {
+					return &mocks.Resolver{
+						MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
+							return []string{"93.184.216.34"}, nil
+						},
+					}
+				},
+			}))
+			f := DNSLookupGetaddrinfo(rt)
+			res := f.Apply(context.Background(), NewMaybeWithValue(domain))
 			if res.Error != nil {
 				t.Fatalf("unexpected error: %s", res.Error)
 			}
@@ -135,9 +115,6 @@ func TestGetaddrinfo(t *testing.T) {
 			}
 			if len(res.State.Addresses) != 1 || res.State.Addresses[0] != "93.184.216.34" {
 				t.Fatal("unexpected addresses")
-			}
-			if diff := cmp.Diff([]string{"antani"}, res.State.Trace.Tags()); diff != "" {
-				t.Fatal(diff)
 			}
 		})
 	})
@@ -152,28 +129,19 @@ Test cases:
   - with success
 */
 func TestLookupUDP(t *testing.T) {
-	t.Run("Get dnsLookupUDPFunc", func(t *testing.T) {
-		f := DNSLookupUDP("1.1.1.1:53")
-		if _, ok := f.(*dnsLookupUDPFunc); !ok {
-			t.Fatal("unexpected type, want dnsLookupUDPFunc")
-		}
-	})
-
-	t.Run("Apply dnsLookupGetaddrinfoFunc", func(t *testing.T) {
+	t.Run("Apply dnsLookupUDPFunc", func(t *testing.T) {
 		domain := &DomainToResolve{
-			Domain:      "example.com",
-			Logger:      model.DiscardLogger,
-			IDGenerator: &atomic.Int64{},
-			Tags:        []string{"antani"},
-			ZeroTime:    time.Time{},
+			Domain: "example.com",
+			Tags:   []string{"antani"},
 		}
 
 		t.Run("with nil resolver", func(t *testing.T) {
-			f := dnsLookupUDPFunc{Resolver: "1.1.1.1:53"}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now())
+			f := DNSLookupUDP(rt, "1.1.1.1:53")
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
-			res := f.Apply(ctx, domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
+			res := f.Apply(ctx, NewMaybeWithValue(domain))
+			if obs := rt.Observations(); obs == nil || len(obs.Queries) <= 0 {
 				t.Fatal("unexpected empty observations")
 			}
 			if res.Error == nil {
@@ -183,38 +151,51 @@ func TestLookupUDP(t *testing.T) {
 
 		t.Run("with lookup error", func(t *testing.T) {
 			mockedErr := errors.New("mocked")
-			f := dnsLookupUDPFunc{
-				Resolver: "1.1.1.1:53",
-				mockResolver: &mocks.Resolver{MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
-					return nil, mockedErr
-				}},
-			}
-			res := f.Apply(context.Background(), domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
-				t.Fatal("unexpected empty observations")
-			}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now(), RuntimeMeasurexLiteOptionMeasuringNetwork(&mocks.MeasuringNetwork{
+				MockNewParallelUDPResolver: func(logger model.DebugLogger, dialer model.Dialer, endpoint string) model.Resolver {
+					return &mocks.Resolver{
+						MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
+							return nil, mockedErr
+						},
+					}
+				},
+				MockNewDialerWithoutResolver: func(dl model.DebugLogger, w ...model.DialerWrapper) model.Dialer {
+					return &mocks.Dialer{
+						MockDialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+							panic("should not be called")
+						},
+					}
+				},
+			}))
+			f := DNSLookupUDP(rt, "1.1.1.1:53")
+			res := f.Apply(context.Background(), NewMaybeWithValue(domain))
 			if res.Error != mockedErr {
 				t.Fatalf("unexpected error type: %s", res.Error)
 			}
-			if res.State == nil {
-				t.Fatal("unexpected nil state")
-			}
-			if res.State.Addresses != nil {
-				t.Fatal("expected empty addresses here")
+			if res.State != nil {
+				t.Fatal("expected nil state")
 			}
 		})
 
 		t.Run("with success", func(t *testing.T) {
-			f := dnsLookupUDPFunc{
-				Resolver: "1.1.1.1:53",
-				mockResolver: &mocks.Resolver{MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
-					return []string{"93.184.216.34"}, nil
-				}},
-			}
-			res := f.Apply(context.Background(), domain)
-			if res.Observations == nil || len(res.Observations) <= 0 {
-				t.Fatal("unexpected empty observations")
-			}
+			rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now(), RuntimeMeasurexLiteOptionMeasuringNetwork(&mocks.MeasuringNetwork{
+				MockNewParallelUDPResolver: func(logger model.DebugLogger, dialer model.Dialer, address string) model.Resolver {
+					return &mocks.Resolver{
+						MockLookupHost: func(ctx context.Context, domain string) ([]string, error) {
+							return []string{"93.184.216.34"}, nil
+						},
+					}
+				},
+				MockNewDialerWithoutResolver: func(dl model.DebugLogger, w ...model.DialerWrapper) model.Dialer {
+					return &mocks.Dialer{
+						MockDialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+							panic("should not be called")
+						},
+					}
+				},
+			}))
+			f := DNSLookupUDP(rt, "1.1.1.1:53")
+			res := f.Apply(context.Background(), NewMaybeWithValue(domain))
 			if res.Error != nil {
 				t.Fatalf("unexpected error: %s", res.Error)
 			}
@@ -223,9 +204,6 @@ func TestLookupUDP(t *testing.T) {
 			}
 			if len(res.State.Addresses) != 1 || res.State.Addresses[0] != "93.184.216.34" {
 				t.Fatal("unexpected addresses")
-			}
-			if diff := cmp.Diff([]string{"antani"}, res.State.Trace.Tags()); diff != "" {
-				t.Fatal(diff)
 			}
 		})
 	})

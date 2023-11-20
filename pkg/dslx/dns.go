@@ -6,13 +6,10 @@ package dslx
 
 import (
 	"context"
-	"sync/atomic"
+	"errors"
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/logx"
-	"github.com/ooni/probe-engine/pkg/measurexlite"
-	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/netxlite"
 )
 
 // DomainName is a domain name to resolve.
@@ -21,34 +18,10 @@ type DomainName string
 // DNSLookupOption is an option you can pass to NewDomainToResolve.
 type DNSLookupOption func(*DomainToResolve)
 
-// DNSLookupOptionIDGenerator configures a specific ID generator.
-// See DomainToResolve docs for more information.
-func DNSLookupOptionIDGenerator(value *atomic.Int64) DNSLookupOption {
-	return func(dis *DomainToResolve) {
-		dis.IDGenerator = value
-	}
-}
-
-// DNSLookupOptionLogger configures a specific logger.
-// See DomainToResolve docs for more information.
-func DNSLookupOptionLogger(value model.Logger) DNSLookupOption {
-	return func(dis *DomainToResolve) {
-		dis.Logger = value
-	}
-}
-
 // DNSLookupOptionTags allows to set tags to tag observations.
 func DNSLookupOptionTags(value ...string) DNSLookupOption {
 	return func(dis *DomainToResolve) {
 		dis.Tags = append(dis.Tags, value...)
-	}
-}
-
-// DNSLookupOptionZeroTime configures the measurement's zero time.
-// See DomainToResolve docs for more information.
-func DNSLookupOptionZeroTime(value time.Time) DNSLookupOption {
-	return func(dis *DomainToResolve) {
-		dis.ZeroTime = value
 	}
 }
 
@@ -57,11 +30,8 @@ func DNSLookupOptionZeroTime(value time.Time) DNSLookupOption {
 // values by passing options to this function.
 func NewDomainToResolve(domain DomainName, options ...DNSLookupOption) *DomainToResolve {
 	state := &DomainToResolve{
-		Domain:      string(domain),
-		IDGenerator: &atomic.Int64{},
-		Logger:      model.DiscardLogger,
-		Tags:        []string{},
-		ZeroTime:    time.Now(),
+		Domain: string(domain),
+		Tags:   []string{},
 	}
 	for _, option := range options {
 		option(state)
@@ -79,25 +49,8 @@ type DomainToResolve struct {
 	// Domain is the MANDATORY domain name to lookup.
 	Domain string
 
-	// IDGenerator is the MANDATORY ID generator. We will use this field
-	// to assign unique IDs to distinct sub-measurements. The default
-	// construction implemented by NewDomainToResolve creates a new generator
-	// that starts counting from zero, leading to the first trace having
-	// one as its index.
-	IDGenerator *atomic.Int64
-
-	// Logger is the MANDATORY logger to use. The default construction
-	// implemented by NewDomainToResolve uses model.DiscardLogger.
-	Logger model.Logger
-
 	// Tags contains OPTIONAL tags to tag observations.
 	Tags []string
-
-	// ZeroTime is the MANDATORY zero time of the measurement. We will
-	// use this field as the zero value to compute relative elapsed times
-	// when generating measurements. The default construction by
-	// NewDomainToResolve initializes this field with the current time.
-	ZeroTime time.Time
 }
 
 // ResolvedAddresses contains the results of DNS lookups. To initialize
@@ -109,148 +62,158 @@ type ResolvedAddresses struct {
 	// Domain is the domain we resolved. We inherit this field
 	// from the value inside the DomainToResolve.
 	Domain string
+}
 
-	// IDGenerator is the ID generator. We inherit this field
-	// from the value inside the DomainToResolve.
-	IDGenerator *atomic.Int64
+// Flatten transforms a [ResolvedAddresses] into a slice of zero or more [ResolvedAddress].
+func (ra *ResolvedAddresses) Flatten() (out []*ResolvedAddress) {
+	for _, ipAddr := range ra.Addresses {
+		out = append(out, &ResolvedAddress{
+			Address: ipAddr,
+			Domain:  ra.Domain,
+		})
+	}
+	return
+}
 
-	// Logger is the logger to use. We inherit this field
-	// from the value inside the DomainToResolve.
-	Logger model.Logger
+// ResolvedAddress is a single address resolved using a DNS lookup function.
+type ResolvedAddress struct {
+	// Address is the address that was resolved.
+	Address string
 
-	// Trace is the trace we're currently using. This struct is
-	// created by the various Apply functions using values inside
-	// the DomainToResolve to initialize the Trace.
-	Trace *measurexlite.Trace
-
-	// ZeroTime is the zero time of the measurement. We inherit this field
-	// from the value inside the DomainToResolve.
-	ZeroTime time.Time
+	// Domain is the domain from which we resolved the address.
+	Domain string
 }
 
 // DNSLookupGetaddrinfo returns a function that resolves a domain name to
 // IP addresses using libc's getaddrinfo function.
-func DNSLookupGetaddrinfo() Func[*DomainToResolve, *Maybe[*ResolvedAddresses]] {
-	return &dnsLookupGetaddrinfoFunc{}
-}
+func DNSLookupGetaddrinfo(rt Runtime) Func[*DomainToResolve, *ResolvedAddresses] {
+	return Operation[*DomainToResolve, *ResolvedAddresses](func(ctx context.Context, input *DomainToResolve) (*ResolvedAddresses, error) {
+		// create trace
+		trace := rt.NewTrace(rt.IDGenerator().Add(1), rt.ZeroTime(), input.Tags...)
 
-// dnsLookupGetaddrinfoFunc is the function returned by DNSLookupGetaddrinfo.
-type dnsLookupGetaddrinfoFunc struct {
-	resolver model.Resolver // for testing
-}
+		// start the operation logger
+		ol := logx.NewOperationLogger(
+			rt.Logger(),
+			"[#%d] DNSLookup[getaddrinfo] %s",
+			trace.Index(),
+			input.Domain,
+		)
 
-// Apply implements Func.
-func (f *dnsLookupGetaddrinfoFunc) Apply(
-	ctx context.Context, input *DomainToResolve) *Maybe[*ResolvedAddresses] {
+		// setup
+		const timeout = 4 * time.Second
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
-	// create trace
-	trace := measurexlite.NewTrace(input.IDGenerator.Add(1), input.ZeroTime, input.Tags...)
+		// create the resolver
+		resolver := trace.NewStdlibResolver(rt.Logger())
 
-	// start the operation logger
-	ol := logx.NewOperationLogger(
-		input.Logger,
-		"[#%d] DNSLookup[getaddrinfo] %s",
-		trace.Index,
-		input.Domain,
-	)
+		// lookup
+		addrs, err := resolver.LookupHost(ctx, input.Domain)
 
-	// setup
-	const timeout = 4 * time.Second
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+		// save the observations
+		rt.SaveObservations(maybeTraceToObservations(trace)...)
 
-	resolver := f.resolver
-	if resolver == nil {
-		resolver = trace.NewStdlibResolver(input.Logger)
-	}
+		// handle error case
+		if err != nil {
+			ol.Stop(err)
+			return nil, err
+		}
 
-	// lookup
-	addrs, err := resolver.LookupHost(ctx, input.Domain)
-
-	// stop the operation logger
-	ol.Stop(err)
-
-	state := &ResolvedAddresses{
-		Addresses:   addrs, // maybe empty
-		Domain:      input.Domain,
-		IDGenerator: input.IDGenerator,
-		Logger:      input.Logger,
-		Trace:       trace,
-		ZeroTime:    input.ZeroTime,
-	}
-
-	return &Maybe[*ResolvedAddresses]{
-		Error:        err,
-		Observations: maybeTraceToObservations(trace),
-		Operation:    netxlite.ResolveOperation,
-		State:        state,
-	}
+		// handle success
+		ol.Stop(addrs)
+		state := &ResolvedAddresses{
+			Addresses: addrs,
+			Domain:    input.Domain,
+		}
+		return state, nil
+	})
 }
 
 // DNSLookupUDP returns a function that resolves a domain name to
 // IP addresses using the given DNS-over-UDP resolver.
-func DNSLookupUDP(resolver string) Func[*DomainToResolve, *Maybe[*ResolvedAddresses]] {
-	return &dnsLookupUDPFunc{
-		Resolver: resolver,
-	}
-}
+func DNSLookupUDP(rt Runtime, endpoint string) Func[*DomainToResolve, *ResolvedAddresses] {
+	return Operation[*DomainToResolve, *ResolvedAddresses](func(ctx context.Context, input *DomainToResolve) (*ResolvedAddresses, error) {
+		// create trace
+		trace := rt.NewTrace(rt.IDGenerator().Add(1), rt.ZeroTime(), input.Tags...)
 
-// dnsLookupUDPFunc is the function returned by DNSLookupUDP.
-type dnsLookupUDPFunc struct {
-	// Resolver is the MANDATORY endpointed of the resolver to use.
-	Resolver     string
-	mockResolver model.Resolver // for testing
-}
-
-// Apply implements Func.
-func (f *dnsLookupUDPFunc) Apply(
-	ctx context.Context, input *DomainToResolve) *Maybe[*ResolvedAddresses] {
-
-	// create trace
-	trace := measurexlite.NewTrace(input.IDGenerator.Add(1), input.ZeroTime, input.Tags...)
-
-	// start the operation logger
-	ol := logx.NewOperationLogger(
-		input.Logger,
-		"[#%d] DNSLookup[%s/udp] %s",
-		trace.Index,
-		f.Resolver,
-		input.Domain,
-	)
-
-	// setup
-	const timeout = 4 * time.Second
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	resolver := f.mockResolver
-	if resolver == nil {
-		resolver = trace.NewParallelUDPResolver(
-			input.Logger,
-			netxlite.NewDialerWithoutResolver(input.Logger),
-			f.Resolver,
+		// start the operation logger
+		ol := logx.NewOperationLogger(
+			rt.Logger(),
+			"[#%d] DNSLookup[%s/udp] %s",
+			trace.Index(),
+			endpoint,
+			input.Domain,
 		)
-	}
 
-	// lookup
-	addrs, err := resolver.LookupHost(ctx, input.Domain)
+		// setup
+		const timeout = 4 * time.Second
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
-	// stop the operation logger
-	ol.Stop(err)
+		// create the resolver
+		resolver := trace.NewParallelUDPResolver(
+			rt.Logger(),
+			trace.NewDialerWithoutResolver(rt.Logger()),
+			endpoint,
+		)
 
-	state := &ResolvedAddresses{
-		Addresses:   addrs, // maybe empty
-		Domain:      input.Domain,
-		IDGenerator: input.IDGenerator,
-		Logger:      input.Logger,
-		Trace:       trace,
-		ZeroTime:    input.ZeroTime,
-	}
+		// lookup
+		addrs, err := resolver.LookupHost(ctx, input.Domain)
 
-	return &Maybe[*ResolvedAddresses]{
-		Error:        err,
-		Observations: maybeTraceToObservations(trace),
-		Operation:    netxlite.ResolveOperation,
-		State:        state,
-	}
+		// save the observations
+		rt.SaveObservations(maybeTraceToObservations(trace)...)
+
+		// handle error case
+		if err != nil {
+			ol.Stop(err)
+			return nil, err
+		}
+
+		// handle success
+		ol.Stop(addrs)
+		state := &ResolvedAddresses{
+			Addresses: addrs,
+			Domain:    input.Domain,
+		}
+		return state, nil
+	})
+}
+
+// ErrDNSLookupParallel indicates that DNSLookupParallel failed.
+var ErrDNSLookupParallel = errors.New("dslx: DNSLookupParallel failed")
+
+// DNSLookupParallel runs DNS lookups in parallel. On success, this function returns
+// a unique list of IP addresses aggregated from all resolvers. On failure, this function
+// returns [ErrDNSLookupParallel]. You can always obtain the individual errors by
+// processing observations or by creating a per-DNS-resolver pipeline.
+func DNSLookupParallel(fxs ...Func[*DomainToResolve, *ResolvedAddresses]) Func[*DomainToResolve, *ResolvedAddresses] {
+	return Operation[*DomainToResolve, *ResolvedAddresses](func(ctx context.Context, domain *DomainToResolve) (*ResolvedAddresses, error) {
+		// TODO(https://github.com/ooni/probe/issues/2619): we may want to configure this
+		const parallelism = Parallelism(3)
+
+		// run all the DNS resolvers in parallel
+		results := Parallel(ctx, parallelism, domain, fxs...)
+
+		// reduce addresses
+		addressSet := NewAddressSet()
+		for _, result := range results {
+			if err := result.Error; err != nil {
+				continue
+			}
+			addressSet.Add(result.State.Addresses...)
+		}
+		uniq := addressSet.Uniq()
+
+		// handle the case where all the DNS resolvers failed
+		if len(uniq) < 1 {
+			return nil, ErrDNSLookupParallel
+		}
+
+		// handle success
+		state := &ResolvedAddresses{
+			Addresses: uniq,
+			Domain:    domain.Domain,
+		}
+		return state, nil
+	})
 }

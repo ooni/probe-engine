@@ -44,7 +44,6 @@ import (
 	"context"
 	"errors"
 	"net"
-	"sync/atomic"
 
 	"github.com/ooni/probe-engine/pkg/dslx"
 	"github.com/ooni/probe-engine/pkg/model"
@@ -109,21 +108,6 @@ type Subresult struct {
 
 // ```
 //
-// Subresult.mergeObservations merges the observations collected during
-// a measurement with the Subresult output data format.
-//
-// ```Go
-
-func (tk *Subresult) mergeObservations(obs []*dslx.Observations) {
-	for _, o := range obs {
-		tk.NetworkEvents = append(tk.NetworkEvents, o.NetworkEvents...)
-		tk.TCPConnect = append(tk.TCPConnect, o.TCPConnect...)
-		tk.TLSHandshakes = append(tk.TLSHandshakes, o.TLSHandshakes...)
-	}
-}
-
-// ```
-//
 // ## The Measurer
 //
 // The `Measurer` performs the measurement and implements `ExperimentMeasurer`; i.e., the
@@ -134,7 +118,6 @@ func (tk *Subresult) mergeObservations(obs []*dslx.Observations) {
 // ```Go
 type Measurer struct {
 	config Config
-	idGen  atomic.Int64
 }
 
 var _ model.ExperimentMeasurer = &Measurer{}
@@ -177,15 +160,6 @@ func (m *Measurer) GetSummaryKeys(measurement *model.Measurement) (interface{}, 
 //
 // ```Go
 func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
-	// ```
-	//
-	// ### Define measurement parameters
-	//
-	// `sess` is the session of this measurement run.
-	//
-	// ```Go
-	sess := args.Session
-
 	// ```
 	//
 	// `measurement` contains metadata, the (required) input in form of
@@ -250,10 +224,16 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	// ```Go
 	dnsInput := dslx.NewDomainToResolve(
 		dslx.DomainName(thaddrHost),
-		dslx.DNSLookupOptionIDGenerator(&m.idGen),
-		dslx.DNSLookupOptionLogger(sess.Logger()),
-		dslx.DNSLookupOptionZeroTime(measurement.MeasurementStartTimeSaved),
 	)
+
+	// ```
+	//
+	// Next, we create a minimal runtime. This data structure helps us to manage
+	// open connections and close them when `rt.Close` is invoked.
+	//
+	// ```Go
+	rt := dslx.NewMinimalRuntime(args.Session.Logger(), args.Measurement.MeasurementStartTimeSaved)
+	defer rt.Close()
 
 	// ```
 	//
@@ -261,14 +241,14 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	// system resolver, or a custom UDP resolver.
 	//
 	// ```Go
-	lookupFn := dslx.DNSLookupGetaddrinfo()
+	lookupFn := dslx.DNSLookupGetaddrinfo(rt)
 
 	// ```
 	//
 	// Then we apply the `dnsInput` argument to `lookupFn` to get a `dnsResult`.
 	//
 	// ```Go
-	dnsResult := lookupFn.Apply(ctx, dnsInput)
+	dnsResult := lookupFn.Apply(ctx, dslx.NewMaybeWithValue(dnsInput))
 
 	// ```
 	//
@@ -323,21 +303,9 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 		dslx.EndpointNetwork("tcp"),
 		dslx.EndpointPort(443),
 		dslx.EndpointOptionDomain(m.config.TestHelperAddress),
-		dslx.EndpointOptionIDGenerator(&m.idGen),
-		dslx.EndpointOptionLogger(sess.Logger()),
-		dslx.EndpointOptionZeroTime(measurement.MeasurementStartTimeSaved),
 	)
 	runtimex.Assert(len(endpoints) >= 1, "expected at least one endpoint here")
 	endpoint := endpoints[0]
-
-	// ```
-	//
-	// Next, we create a connection pool. This data structure helps us to manage
-	// open connections and close them when `connpool.Close` is invoked.
-	//
-	// ```Go
-	connpool := &dslx.ConnPool{}
-	defer connpool.Close()
 
 	// ```
 	//
@@ -351,9 +319,9 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	//
 	// ```Go
 	pipelineTarget := dslx.Compose2(
-		dslx.TCPConnect(connpool),
+		dslx.TCPConnect(rt),
 		dslx.TLSHandshake(
-			connpool,
+			rt,
 			dslx.TLSHandshakeOptionServerName(targetSNI),
 		),
 	)
@@ -365,9 +333,9 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	//
 	// ```Go
 	pipelineControl := dslx.Compose2(
-		dslx.TCPConnect(connpool),
+		dslx.TCPConnect(rt),
 		dslx.TLSHandshake(
-			connpool,
+			rt,
 			dslx.TLSHandshakeOptionServerName(m.config.ControlSNI),
 		),
 	)
@@ -380,8 +348,8 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	// (on success) or an error (in case of failure).
 	//
 	// ```Go
-	var targetResult *dslx.Maybe[*dslx.TLSConnection] = pipelineTarget.Apply(ctx, endpoint)
-	var controlResult *dslx.Maybe[*dslx.TLSConnection] = pipelineControl.Apply(ctx, endpoint)
+	var targetResult *dslx.Maybe[*dslx.TLSConnection] = pipelineTarget.Apply(ctx, dslx.NewMaybeWithValue(endpoint))
+	var controlResult *dslx.Maybe[*dslx.TLSConnection] = pipelineControl.Apply(ctx, dslx.NewMaybeWithValue(endpoint))
 
 	// ```
 	//
@@ -444,20 +412,6 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 		failure := controlResult.Error.Error()
 		tk.Control.Failure = &failure
 	}
-
-	// ```
-	//
-	// The measurement result not only contains the potential error, but also
-	// observations that have been collected during each step of the measurement pipeline.
-	// Observations are for example network events like read and write operations,
-	// TLS handshakes, or DNS queries. We as experiment programmers are responsible for
-	// extracting these observations from the dslx measurement result and storing
-	// them in the `TestKeys`, which is precisely what `Subresult.mergeObservations`
-	// (implemented above) does.
-	//
-	// ```Go
-	tk.Target.mergeObservations(targetResult.Observations)
-	tk.Control.mergeObservations(controlResult.Observations)
 
 	// ```
 	//

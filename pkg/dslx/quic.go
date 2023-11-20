@@ -7,165 +7,75 @@ package dslx
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"io"
-	"net"
-	"sync/atomic"
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/logx"
-	"github.com/ooni/probe-engine/pkg/measurexlite"
-	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/quic-go/quic-go"
 )
 
-// QUICHandshakeOption is an option you can pass to QUICHandshake.
-type QUICHandshakeOption func(*quicHandshakeFunc)
-
-// QUICHandshakeOptionInsecureSkipVerify controls whether QUIC verification is enabled.
-func QUICHandshakeOptionInsecureSkipVerify(value bool) QUICHandshakeOption {
-	return func(thf *quicHandshakeFunc) {
-		thf.InsecureSkipVerify = value
-	}
-}
-
-// QUICHandshakeOptionRootCAs allows to configure custom root CAs.
-func QUICHandshakeOptionRootCAs(value *x509.CertPool) QUICHandshakeOption {
-	return func(thf *quicHandshakeFunc) {
-		thf.RootCAs = value
-	}
-}
-
-// QUICHandshakeOptionServerName allows to configure the SNI to use.
-func QUICHandshakeOptionServerName(value string) QUICHandshakeOption {
-	return func(thf *quicHandshakeFunc) {
-		thf.ServerName = value
-	}
-}
-
 // QUICHandshake returns a function performing QUIC handshakes.
-func QUICHandshake(pool *ConnPool, options ...QUICHandshakeOption) Func[
-	*Endpoint, *Maybe[*QUICConnection]] {
-	// See https://github.com/ooni/probe/issues/2413 to understand
-	// why we're using nil to force netxlite to use the cached
-	// default Mozilla cert pool.
-	f := &quicHandshakeFunc{
-		InsecureSkipVerify: false,
-		Pool:               pool,
-		RootCAs:            nil,
-		ServerName:         "",
-	}
-	for _, option := range options {
-		option(f)
-	}
-	return f
-}
+func QUICHandshake(rt Runtime, options ...TLSHandshakeOption) Func[*Endpoint, *QUICConnection] {
+	return Operation[*Endpoint, *QUICConnection](func(ctx context.Context, input *Endpoint) (*QUICConnection, error) {
+		// create trace
+		trace := rt.NewTrace(rt.IDGenerator().Add(1), rt.ZeroTime(), input.Tags...)
 
-// quicHandshakeFunc performs QUIC handshakes.
-type quicHandshakeFunc struct {
-	// InsecureSkipVerify allows to skip TLS verification.
-	InsecureSkipVerify bool
+		// create a suitable TLS configuration
+		config := tlsNewConfig(input.Address, []string{"h3"}, input.Domain, rt.Logger(), options...)
 
-	// Pool is the ConnPool that owns us.
-	Pool *ConnPool
+		// start the operation logger
+		ol := logx.NewOperationLogger(
+			rt.Logger(),
+			"[#%d] QUICHandshake with %s SNI=%s ALPN=%v",
+			trace.Index(),
+			input.Address,
+			config.ServerName,
+			config.NextProtos,
+		)
 
-	// RootCAs contains the Root CAs to use.
-	RootCAs *x509.CertPool
+		// setup
+		udpListener := trace.NewUDPListener()
+		quicDialer := trace.NewQUICDialerWithoutResolver(udpListener, rt.Logger())
+		const timeout = 10 * time.Second
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
-	// ServerName is the ServerName to handshake for.
-	ServerName string
+		// handshake
+		quicConn, err := quicDialer.DialContext(ctx, input.Address, config, &quic.Config{})
 
-	dialer model.QUICDialer // for testing
-}
+		var closerConn io.Closer
+		var tlsState tls.ConnectionState
+		if quicConn != nil {
+			closerConn = &quicCloserConn{quicConn}
+			tlsState = quicConn.ConnectionState().TLS // only quicConn can be nil
+		}
 
-// Apply implements Func.
-func (f *quicHandshakeFunc) Apply(
-	ctx context.Context, input *Endpoint) *Maybe[*QUICConnection] {
-	// create trace
-	trace := measurexlite.NewTrace(input.IDGenerator.Add(1), input.ZeroTime, input.Tags...)
+		// possibly track established conn for late close
+		rt.MaybeTrackConn(closerConn)
 
-	// use defaults or user-configured overrides
-	serverName := f.serverName(input)
+		// stop the operation logger
+		ol.Stop(err)
 
-	// start the operation logger
-	ol := logx.NewOperationLogger(
-		input.Logger,
-		"[#%d] QUICHandshake with %s SNI=%s",
-		trace.Index,
-		input.Address,
-		serverName,
-	)
+		// save the observations
+		rt.SaveObservations(maybeTraceToObservations(trace)...)
 
-	// setup
-	udpListener := netxlite.NewUDPListener()
-	quicDialer := f.dialer
-	if quicDialer == nil {
-		quicDialer = trace.NewQUICDialerWithoutResolver(udpListener, input.Logger)
-	}
-	config := &tls.Config{
-		NextProtos:         []string{"h3"},
-		InsecureSkipVerify: f.InsecureSkipVerify,
-		RootCAs:            f.RootCAs,
-		ServerName:         serverName,
-	}
-	const timeout = 10 * time.Second
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+		// handle error case
+		if err != nil {
+			return nil, err
+		}
 
-	// handshake
-	quicConn, err := quicDialer.DialContext(ctx, input.Address, config, &quic.Config{})
-
-	var closerConn io.Closer
-	var tlsState tls.ConnectionState
-	if quicConn != nil {
-		closerConn = &quicCloserConn{quicConn}
-		tlsState = quicConn.ConnectionState().TLS // only quicConn can be nil
-	}
-
-	// possibly track established conn for late close
-	f.Pool.MaybeTrack(closerConn)
-
-	// stop the operation logger
-	ol.Stop(err)
-
-	state := &QUICConnection{
-		Address:     input.Address,
-		QUICConn:    quicConn, // possibly nil
-		Domain:      input.Domain,
-		IDGenerator: input.IDGenerator,
-		Logger:      input.Logger,
-		Network:     input.Network,
-		TLSConfig:   config,
-		TLSState:    tlsState,
-		Trace:       trace,
-		ZeroTime:    input.ZeroTime,
-	}
-
-	return &Maybe[*QUICConnection]{
-		Error:        err,
-		Observations: maybeTraceToObservations(trace),
-		Operation:    netxlite.QUICHandshakeOperation,
-		State:        state,
-	}
-}
-
-func (f *quicHandshakeFunc) serverName(input *Endpoint) string {
-	if f.ServerName != "" {
-		return f.ServerName
-	}
-	if input.Domain != "" {
-		return input.Domain
-	}
-	addr, _, err := net.SplitHostPort(input.Address)
-	if err == nil {
-		return addr
-	}
-	// Note: golang requires a ServerName and fails if it's empty. If the provided
-	// ServerName is an IP address, however, golang WILL NOT emit any SNI extension
-	// in the ClientHello, consistently with RFC 6066 Section 3 requirements.
-	input.Logger.Warn("TLSHandshake: cannot determine which SNI to use")
-	return ""
+		// handle success
+		state := &QUICConnection{
+			Address:   input.Address,
+			QUICConn:  quicConn,
+			Domain:    input.Domain,
+			Network:   input.Network,
+			TLSConfig: config,
+			TLSState:  tlsState,
+			Trace:     trace,
+		}
+		return state, nil
+	})
 }
 
 // QUICConnection is an established QUIC connection. If you initialize
@@ -180,12 +90,6 @@ type QUICConnection struct {
 	// Domain is the OPTIONAL domain we resolved.
 	Domain string
 
-	// IDGenerator is the MANDATORY ID generator to use.
-	IDGenerator *atomic.Int64
-
-	// Logger is the MANDATORY logger to use.
-	Logger model.Logger
-
 	// Network is the MANDATORY network we tried to use when connecting.
 	Network string
 
@@ -197,10 +101,7 @@ type QUICConnection struct {
 	TLSState tls.ConnectionState
 
 	// Trace is the MANDATORY trace we're using.
-	Trace *measurexlite.Trace
-
-	// ZeroTime is the MANDATORY zero time of the measurement.
-	ZeroTime time.Time
+	Trace Trace
 }
 
 type quicCloserConn struct {

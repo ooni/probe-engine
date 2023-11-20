@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -31,42 +30,37 @@ func TestMakeSureWeCollectSpeedSamples(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// instantiate a connection pool
-	pool := &ConnPool{}
-	defer pool.Close()
+	// instantiate a runtime
+	rt := NewRuntimeMeasurexLite(model.DiscardLogger, time.Now())
+	defer rt.Close()
 
 	// create a measuring function
 	f0 := Compose3(
-		TCPConnect(pool),
-		HTTPTransportTCP(),
-		HTTPRequest(),
+		TCPConnect(rt),
+		HTTPConnectionTCP(rt),
+		HTTPRequest(rt),
 	)
 
 	// create the endpoint to measure
 	epnt := &Endpoint{
-		Address:     server.Listener.Addr().String(),
-		Domain:      "",
-		IDGenerator: &atomic.Int64{},
-		Logger:      model.DiscardLogger,
-		Network:     "tcp",
-		Tags:        []string{},
-		ZeroTime:    time.Now(),
+		Address: server.Listener.Addr().String(),
+		Domain:  "",
+		Network: "tcp",
+		Tags:    []string{},
 	}
 
 	// measure the endpoint
-	result := f0.Apply(context.Background(), epnt)
+	_ = f0.Apply(context.Background(), NewMaybeWithValue(epnt))
 
 	// get observations
-	observations := ExtractObservations(result)
+	observations := rt.Observations()
 
 	// process the network events and check for summary
 	var foundSummary bool
-	for _, entry := range observations {
-		for _, ev := range entry.NetworkEvents {
-			if ev.Operation == throttling.BytesReceivedCumulativeOperation {
-				t.Log(ev)
-				foundSummary = true
-			}
+	for _, ev := range observations.NetworkEvents {
+		if ev.Operation == throttling.BytesReceivedCumulativeOperation {
+			t.Log(ev)
+			foundSummary = true
 		}
 	}
 	if !foundSummary {

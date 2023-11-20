@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/logx"
@@ -20,23 +19,17 @@ import (
 	"github.com/ooni/probe-engine/pkg/throttling"
 )
 
-// HTTPTransport is an HTTP transport bound to a TCP, TLS or QUIC connection
+// HTTPConnection is an HTTP connection bound to a TCP, TLS or QUIC connection
 // that would use such a connection only and for any input URL. You generally
 // use [HTTPTransportTCP], [HTTPTransportTLS] or [HTTPTransportQUIC] to
 // create a new instance; if you want to initialize manually, make sure you
 // init the fields marked as MANDATORY.
-type HTTPTransport struct {
+type HTTPConnection struct {
 	// Address is the MANDATORY address we're connected to.
 	Address string
 
 	// Domain is the OPTIONAL domain from which the address was resolved.
 	Domain string
-
-	// IDGenerator is the MANDATORY ID generator.
-	IDGenerator *atomic.Int64
-
-	// Logger is the MANDATORY logger to use.
-	Logger model.Logger
 
 	// Network is the MANDATORY network used by the underlying conn.
 	Network string
@@ -48,221 +41,168 @@ type HTTPTransport struct {
 	TLSNegotiatedProtocol string
 
 	// Trace is the MANDATORY trace we're using.
-	Trace *measurexlite.Trace
+	Trace Trace
 
 	// Transport is the MANDATORY HTTP transport we're using.
 	Transport model.HTTPTransport
-
-	// ZeroTime is the MANDATORY zero time of the measurement.
-	ZeroTime time.Time
 }
 
 // HTTPRequestOption is an option you can pass to HTTPRequest.
-type HTTPRequestOption func(*httpRequestFunc)
+type HTTPRequestOption func(req *http.Request)
 
 // HTTPRequestOptionAccept sets the Accept header.
 func HTTPRequestOptionAccept(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.Accept = value
+	return func(req *http.Request) {
+		req.Header.Set("Accept", value)
 	}
 }
 
 // HTTPRequestOptionAcceptLanguage sets the Accept header.
 func HTTPRequestOptionAcceptLanguage(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.AcceptLanguage = value
+	return func(req *http.Request) {
+		req.Header.Set("Accept-Language", value)
 	}
 }
 
 // HTTPRequestOptionHost sets the Host header.
 func HTTPRequestOptionHost(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.Host = value
+	return func(req *http.Request) {
+		req.URL.Host = value
+		req.Host = value
 	}
 }
 
 // HTTPRequestOptionHost sets the request method.
 func HTTPRequestOptionMethod(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.Method = value
+	return func(req *http.Request) {
+		req.Method = value
 	}
 }
 
 // HTTPRequestOptionReferer sets the Referer header.
 func HTTPRequestOptionReferer(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.Referer = value
+	return func(req *http.Request) {
+		req.Header.Set("Referer", value)
 	}
 }
 
 // HTTPRequestOptionURLPath sets the URL path.
 func HTTPRequestOptionURLPath(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.URLPath = value
+	return func(req *http.Request) {
+		req.URL.Path = value
 	}
 }
 
 // HTTPRequestOptionUserAgent sets the UserAgent header.
 func HTTPRequestOptionUserAgent(value string) HTTPRequestOption {
-	return func(hrf *httpRequestFunc) {
-		hrf.UserAgent = value
+	return func(req *http.Request) {
+		req.Header.Set("User-Agent", value)
 	}
 }
 
 // HTTPRequest issues an HTTP request using a transport and returns a response.
-func HTTPRequest(options ...HTTPRequestOption) Func[*HTTPTransport, *Maybe[*HTTPResponse]] {
-	f := &httpRequestFunc{}
-	for _, option := range options {
-		option(f)
-	}
-	return f
-}
+func HTTPRequest(rt Runtime, options ...HTTPRequestOption) Func[*HTTPConnection, *HTTPResponse] {
+	return Operation[*HTTPConnection, *HTTPResponse](func(ctx context.Context, input *HTTPConnection) (*HTTPResponse, error) {
+		// setup
+		const timeout = 10 * time.Second
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
-// httpRequestFunc is the Func returned by HTTPRequest.
-type httpRequestFunc struct {
-	// Accept is the OPTIONAL accept header.
-	Accept string
-
-	// AcceptLanguage is the OPTIONAL accept-language header.
-	AcceptLanguage string
-
-	// Host is the OPTIONAL host header.
-	Host string
-
-	// Method is the OPTIONAL method.
-	Method string
-
-	// Referer is the OPTIONAL referer header.
-	Referer string
-
-	// URLPath is the OPTIONAL URL path.
-	URLPath string
-
-	// UserAgent is the OPTIONAL user-agent header.
-	UserAgent string
-}
-
-// Apply implements Func.
-func (f *httpRequestFunc) Apply(
-	ctx context.Context, input *HTTPTransport) *Maybe[*HTTPResponse] {
-	// setup
-	const timeout = 10 * time.Second
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	var (
-		body         []byte
-		observations []*Observations
-		resp         *http.Response
-	)
-
-	// create HTTP request
-	req, err := f.newHTTPRequest(ctx, input)
-	if err == nil {
-
-		// start the operation logger
-		ol := logx.NewOperationLogger(
-			input.Logger,
-			"[#%d] HTTPRequest %s with %s/%s host=%s",
-			input.Trace.Index,
-			req.URL.String(),
-			input.Address,
-			input.Network,
-			req.Host,
+		var (
+			body         []byte
+			observations []*Observations
+			resp         *http.Response
 		)
 
-		// perform HTTP transaction and collect the related observations
-		resp, body, observations, err = f.do(ctx, input, req)
+		// create HTTP request
+		req, err := httpNewRequest(ctx, input, rt.Logger(), options...)
+		if err == nil {
 
-		// stop the operation logger
-		ol.Stop(err)
-	}
+			// start the operation logger
+			ol := logx.NewOperationLogger(
+				rt.Logger(),
+				"[#%d] HTTPRequest %s with %s/%s host=%s",
+				input.Trace.Index(),
+				req.URL.String(),
+				input.Address,
+				input.Network,
+				req.Host,
+			)
 
-	observations = append(observations, maybeTraceToObservations(input.Trace)...)
+			// perform HTTP transaction and collect the related observations
+			resp, body, observations, err = httpRoundTrip(ctx, input, req)
 
-	state := &HTTPResponse{
-		Address:                  input.Address,
-		Domain:                   input.Domain,
-		HTTPRequest:              req,  // possibly nil
-		HTTPResponse:             resp, // possibly nil
-		HTTPResponseBodySnapshot: body, // possibly nil
-		IDGenerator:              input.IDGenerator,
-		Logger:                   input.Logger,
-		Network:                  input.Network,
-		Trace:                    input.Trace,
-		ZeroTime:                 input.ZeroTime,
-	}
+			// stop the operation logger
+			ol.Stop(err)
+		}
 
-	return &Maybe[*HTTPResponse]{
-		Error:        err,
-		Observations: observations,
-		Operation:    netxlite.HTTPRoundTripOperation,
-		State:        state,
-	}
+		// merge and save observations
+		observations = append(observations, maybeTraceToObservations(input.Trace)...)
+		rt.SaveObservations(observations...)
+
+		// handle error case
+		if err != nil {
+			return nil, err
+		}
+
+		// handle success
+		state := &HTTPResponse{
+			Address:                  input.Address,
+			Domain:                   input.Domain,
+			HTTPRequest:              req,
+			HTTPResponse:             resp,
+			HTTPResponseBodySnapshot: body,
+			Network:                  input.Network,
+			Trace:                    input.Trace,
+		}
+		return state, nil
+	})
 }
 
-func (f *httpRequestFunc) newHTTPRequest(
-	ctx context.Context, input *HTTPTransport) (*http.Request, error) {
+// httpNewRequest is a convenience function for creating a new request.
+func httpNewRequest(
+	ctx context.Context, input *HTTPConnection, logger model.Logger, options ...HTTPRequestOption) (*http.Request, error) {
+	// create the default HTTP request
 	URL := &url.URL{
 		Scheme:      input.Scheme,
 		Opaque:      "",
 		User:        nil,
-		Host:        f.urlHost(input),
-		Path:        f.urlPath(),
+		Host:        httpNewURLHost(input, logger),
+		Path:        "/",
 		RawPath:     "",
 		ForceQuery:  false,
 		RawQuery:    "",
 		Fragment:    "",
 		RawFragment: "",
 	}
-
-	method := "GET"
-	if f.Method != "" {
-		method = f.Method
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, URL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", URL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if v := f.Host; v != "" {
-		req.Host = v
-	} else {
-		// Go would use URL.Host as "Host" header anyways in case we leave req.Host empty.
-		// We already set it here so that we can use req.Host for logging.
-		req.Host = URL.Host
+	// Go would use URL.Host as "Host" header anyways in case we leave req.Host empty.
+	// We already set it here so that we can use req.Host for logging.
+	req.Host = URL.Host
+
+	// apply the user-specified options
+	for _, option := range options {
+		option(req)
 	}
+
 	// req.Header["Host"] is ignored by Go but we want to have it in the measurement
 	// to reflect what we think has been sent as HTTP headers.
 	req.Header.Set("Host", req.Host)
-
-	if v := f.Accept; v != "" {
-		req.Header.Set("Accept", v)
-	}
-
-	if v := f.AcceptLanguage; v != "" {
-		req.Header.Set("Accept-Language", v)
-	}
-
-	if v := f.Referer; v != "" {
-		req.Header.Set("Referer", v)
-	}
-
-	if v := f.UserAgent; v != "" { // not setting means using Go's default
-		req.Header.Set("User-Agent", v)
-	}
-
 	return req, nil
 }
 
-func (f *httpRequestFunc) urlHost(input *HTTPTransport) string {
+// httpNewURLHost computes the URL host to use.
+func httpNewURLHost(input *HTTPConnection, logger model.Logger) string {
 	if input.Domain != "" {
 		return input.Domain
 	}
 	addr, port, err := net.SplitHostPort(input.Address)
 	if err != nil {
-		input.Logger.Warnf("httpRequestFunc: cannot SplitHostPort for input.Address")
+		logger.Warnf("httpRequestFunc: cannot SplitHostPort for input.Address")
 		return input.Address
 	}
 	switch {
@@ -275,20 +215,14 @@ func (f *httpRequestFunc) urlHost(input *HTTPTransport) string {
 	}
 }
 
-func (f *httpRequestFunc) urlPath() string {
-	if f.URLPath != "" {
-		return f.URLPath
-	}
-	return "/"
-}
-
-func (f *httpRequestFunc) do(
+// httpRoundTrip performs the actual HTTP round trip
+func httpRoundTrip(
 	ctx context.Context,
-	input *HTTPTransport,
+	input *HTTPConnection,
 	req *http.Request,
 ) (*http.Response, []byte, []*Observations, error) {
-	const maxbody = 1 << 19 // TODO(bassosimone): allow to configure this value?
-	started := input.Trace.TimeSince(input.Trace.ZeroTime)
+	const maxbody = 1 << 19 // TODO(https://github.com/ooni/probe/issues/2621): allow to configure this value
+	started := input.Trace.TimeSince(input.Trace.ZeroTime())
 
 	// manually create a single 1-length observations structure because
 	// the trace cannot automatically capture HTTP events
@@ -298,7 +232,7 @@ func (f *httpRequestFunc) do(
 
 	observations[0].NetworkEvents = append(observations[0].NetworkEvents,
 		measurexlite.NewAnnotationArchivalNetworkEvent(
-			input.Trace.Index,
+			input.Trace.Index(),
 			started,
 			"http_transaction_start",
 			input.Trace.Tags()...,
@@ -315,17 +249,17 @@ func (f *httpRequestFunc) do(
 
 		// read a snapshot of the response body
 		reader := io.LimitReader(resp.Body, maxbody)
-		body, err = netxlite.ReadAllContext(ctx, reader) // TODO: enable streaming and measure speed
+		body, err = netxlite.ReadAllContext(ctx, reader) // TODO(https://github.com/ooni/probe/issues/2622)
 
 		// collect and save download speed samples
 		samples := sampler.ExtractSamples()
 		observations[0].NetworkEvents = append(observations[0].NetworkEvents, samples...)
 	}
-	finished := input.Trace.TimeSince(input.Trace.ZeroTime)
+	finished := input.Trace.TimeSince(input.Trace.ZeroTime())
 
 	observations[0].NetworkEvents = append(observations[0].NetworkEvents,
 		measurexlite.NewAnnotationArchivalNetworkEvent(
-			input.Trace.Index,
+			input.Trace.Index(),
 			finished,
 			"http_transaction_done",
 			input.Trace.Tags()...,
@@ -333,7 +267,7 @@ func (f *httpRequestFunc) do(
 
 	observations[0].Requests = append(observations[0].Requests,
 		measurexlite.NewArchivalHTTPRequestResult(
-			input.Trace.Index,
+			input.Trace.Index(),
 			started,
 			input.Network,
 			input.Address,
@@ -369,19 +303,10 @@ type HTTPResponse struct {
 	// HTTPResponseBodySnapshot is the response body or nil if Err != nil.
 	HTTPResponseBodySnapshot []byte
 
-	// IDGenerator is the MANDATORY ID generator.
-	IDGenerator *atomic.Int64
-
-	// Logger is the MANDATORY logger to use.
-	Logger model.Logger
-
 	// Network is the MANDATORY network we're connected to.
 	Network string
 
 	// Trace is the MANDATORY trace we're using. The trace is drained
 	// when you call the Observations method.
-	Trace *measurexlite.Trace
-
-	// ZeroTime is the MANDATORY zero time of the measurement.
-	ZeroTime time.Time
+	Trace Trace
 }

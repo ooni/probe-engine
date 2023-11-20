@@ -5,7 +5,6 @@ package dslx
 //
 
 import (
-	"github.com/ooni/probe-engine/pkg/measurexlite"
 	"github.com/ooni/probe-engine/pkg/model"
 )
 
@@ -44,17 +43,9 @@ func NewObservations() *Observations {
 	}
 }
 
-// ExtractObservations extracts observations from a list of [Maybe].
-func ExtractObservations[T any](rs ...*Maybe[T]) (out []*Observations) {
-	for _, r := range rs {
-		out = append(out, r.Observations...)
-	}
-	return
-}
-
 // maybeTraceToObservations returns the observations inside the
 // trace taking into account the case where trace is nil.
-func maybeTraceToObservations(trace *measurexlite.Trace) (out []*Observations) {
+func maybeTraceToObservations(trace Trace) (out []*Observations) {
 	if trace != nil {
 		out = append(out, &Observations{
 			NetworkEvents:  trace.NetworkEvents(),
