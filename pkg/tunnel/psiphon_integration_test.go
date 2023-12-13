@@ -7,12 +7,16 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/engine"
+	"github.com/ooni/probe-engine/pkg/feature/psiphonfeat"
 	"github.com/ooni/probe-engine/pkg/tunnel"
 )
 
 func TestPsiphonStartStop(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
+	}
+	if !psiphonfeat.Enabled {
+		t.Skip("psiphon feature not enabled")
 	}
 	tunnelDir, err := ioutil.TempDir("testdata", "psiphon")
 	if err != nil {

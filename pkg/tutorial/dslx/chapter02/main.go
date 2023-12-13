@@ -45,9 +45,9 @@ import (
 	"errors"
 	"net"
 
-	"github.com/ooni/probe-engine/pkg/dslx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/ooni/probe-engine/pkg/x/dslx"
 )
 
 // ```

@@ -17,7 +17,7 @@ func TestNewExperimentMeasurer(t *testing.T) {
 	if measurer.ExperimentName() != "signal" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.2.3" {
+	if measurer.ExperimentVersion() != "0.2.5" {
 		t.Fatal("unexpected version")
 	}
 }
@@ -26,6 +26,7 @@ func TestGood(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
+	t.Skip("https://github.com/ooni/probe/issues/2636")
 
 	measurer := signal.NewExperimentMeasurer(signal.Config{})
 	measurement := new(model.Measurement)

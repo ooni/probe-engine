@@ -14,6 +14,7 @@ import (
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/optional"
 )
 
 // TestKeys contains the results produced by web_connectivity.
@@ -81,11 +82,11 @@ type TestKeys struct {
 
 	// DNSConsistency indicates whether there is consistency between
 	// the TH's DNS results and the probe's DNS results.
-	DNSConsistency string `json:"dns_consistency"`
+	DNSConsistency optional.Value[string] `json:"dns_consistency"`
 
 	// HTTPExperimentFailure indicates whether there was a failure in
 	// the final HTTP request that we recorded.
-	HTTPExperimentFailure *string `json:"http_experiment_failure"`
+	HTTPExperimentFailure optional.Value[string] `json:"http_experiment_failure"`
 
 	// BlockingFlags explains why we think that the website is blocked.
 	BlockingFlags int64 `json:"x_blocking_flags"`
@@ -93,6 +94,9 @@ type TestKeys struct {
 	// NullNullFlags describes what the algorithm to avoid emitting
 	// blocking = null, accessible = null measurements did
 	NullNullFlags int64 `json:"x_null_null_flags"`
+
+	// BodyProportion is the value used to compute BodyLength.
+	BodyProportion float64 `json:"body_proportion"`
 
 	// BodyLength match tells us whether the body length matches.
 	BodyLengthMatch *bool `json:"body_length_match"`
@@ -217,8 +221,8 @@ func (tk *TestKeys) AppendQueries(v ...*model.ArchivalDNSLookupResult) {
 	tk.mu.Unlock()
 }
 
-// AppendRequests appends to Requests.
-func (tk *TestKeys) AppendRequests(v ...*model.ArchivalHTTPRequestResult) {
+// PrependRequests prepends to Requests.
+func (tk *TestKeys) PrependRequests(v ...*model.ArchivalHTTPRequestResult) {
 	tk.mu.Lock()
 	// Implementation note: append at the front since the most recent
 	// request must be at the beginning of the list.
@@ -354,10 +358,11 @@ func NewTestKeys() *TestKeys {
 		ControlFailure:        nil,
 		DNSFlags:              0,
 		DNSExperimentFailure:  nil,
-		DNSConsistency:        "",
-		HTTPExperimentFailure: nil,
+		DNSConsistency:        optional.None[string](),
+		HTTPExperimentFailure: optional.None[string](),
 		BlockingFlags:         0,
 		NullNullFlags:         0,
+		BodyProportion:        0,
 		BodyLengthMatch:       nil,
 		HeadersMatch:          nil,
 		StatusCodeMatch:       nil,

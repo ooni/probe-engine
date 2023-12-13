@@ -47,8 +47,7 @@ func dnsBlockingNXDOMAIN() *TestCase {
 		Flags: 0,
 		Input: "https://www.example.com/",
 		Configure: func(env *netemx.QAEnv) {
-			// remove the record so that the DNS query returns NXDOMAIN, which is then
-			// converted into android_dns_cache_no_data by the emulation layer
+			// remove the record so that the DNS query returns NXDOMAIN
 			env.ISPResolverConfig().RemoveRecord("www.example.com")
 		},
 		ExpectErr: false,
@@ -60,6 +59,30 @@ func dnsBlockingNXDOMAIN() *TestCase {
 			XBlockingFlags:       33,   // analysisFlagDNSBlocking | analysisFlagSuccess
 			Accessible:           false,
 			Blocking:             "dns",
+		},
+	}
+}
+
+// dnsBlockingBOGON is the case where there's DNS blocking by returning a bogon.
+func dnsBlockingBOGON() *TestCase {
+	return &TestCase{
+		Name:  "dnsBlockingBOGON",
+		Flags: 0,
+		Input: "https://www.example.com/",
+		Configure: func(env *netemx.QAEnv) {
+			env.ISPResolverConfig().RemoveRecord("www.example.com")
+			env.ISPResolverConfig().AddRecord("www.example.com", "", "10.10.34.35")
+		},
+		ExpectErr: false,
+		ExpectTestKeys: &testKeys{
+			HTTPExperimentFailure: "generic_timeout_error",
+			DNSExperimentFailure:  nil,
+			DNSConsistency:        "inconsistent",
+			XStatus:               4256, // StatusExperimentConnect | StatusAnomalyConnect | StatusAnomalyDNS
+			XDNSFlags:             1,    // AnalysisDNSBogon
+			XBlockingFlags:        33,   // analysisFlagDNSBlocking | analysisFlagSuccess
+			Accessible:            false,
+			Blocking:              "dns",
 		},
 	}
 }

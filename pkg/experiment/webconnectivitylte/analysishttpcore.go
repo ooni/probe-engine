@@ -7,6 +7,7 @@ package webconnectivitylte
 import (
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
+	"github.com/ooni/probe-engine/pkg/optional"
 )
 
 // analysisHTTPToplevel is the toplevel analysis function for HTTP results.
@@ -30,8 +31,14 @@ func (tk *TestKeys) analysisHTTPToplevel(logger model.Logger) {
 	if len(tk.Requests) <= 0 {
 		return
 	}
+	// TODO(https://github.com/ooni/probe/issues/2641): this code is wrong
+	// with redirects because LTE only creates an HTTP request when it reaches
+	// the HTTP stage, so a previous redirect that is successful would cause
+	// this code to say we're good on the HTTP front, while we're not.
 	finalRequest := tk.Requests[0]
-	tk.HTTPExperimentFailure = finalRequest.Failure
+	if finalRequest.Failure != nil {
+		tk.HTTPExperimentFailure = optional.Some(*finalRequest.Failure)
+	}
 
 	// don't perform any futher analysis without TH data
 	if tk.Control == nil || tk.ControlRequest == nil {

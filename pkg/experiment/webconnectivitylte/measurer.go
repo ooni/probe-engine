@@ -37,7 +37,7 @@ func (m *Measurer) ExperimentName() string {
 
 // ExperimentVersion implements model.ExperimentMeasurer.
 func (m *Measurer) ExperimentVersion() string {
-	return "0.5.26"
+	return "0.5.27"
 }
 
 // Run implements model.ExperimentMeasurer.
@@ -102,6 +102,7 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	// start background tasks
 	resos := &DNSResolvers{
 		DNSCache:     NewDNSCache(),
+		Depth:        0,
 		Domain:       URL.Hostname(),
 		IDGenerator:  idGenerator,
 		Logger:       sess.Logger(),

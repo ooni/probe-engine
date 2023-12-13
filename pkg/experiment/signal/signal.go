@@ -15,7 +15,7 @@ import (
 
 const (
 	testName    = "signal"
-	testVersion = "0.2.3"
+	testVersion = "0.2.5"
 
 	signalCA = `-----BEGIN CERTIFICATE-----
 MIID7zCCAtegAwIBAgIJAIm6LatK5PNiMA0GCSqGSIb3DQEBBQUAMIGNMQswCQYD
@@ -117,7 +117,6 @@ func (tk *TestKeys) Update(v urlgetter.MultiOutput) {
 		tk.SignalBackendFailure = v.TestKeys.Failure
 		return
 	}
-	return
 }
 
 // Measurer performs the measurement
@@ -163,30 +162,27 @@ func (m Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 		}
 	}
 
+	// See https://github.com/ooni/probe/issues/2636 for information
+	// about which of the many available targets we should test
 	inputs := []urlgetter.MultiInput{
 		// Here we need to provide the method explicitly. See
 		// https://github.com/ooni/probe-engine/issues/827.
-		{Target: "https://textsecure-service.whispersystems.org/", Config: urlgetter.Config{
+		{Target: "https://cdsi.signal.org/", Config: urlgetter.Config{
 			Method:          "GET",
 			FailOnHTTPError: false,
 			CertPool:        certPool,
 		}},
-		{Target: "https://storage.signal.org/", Config: urlgetter.Config{
-			Method:          "GET",
-			FailOnHTTPError: false,
-			CertPool:        certPool,
-		}},
-		{Target: "https://cdn.signal.org/", Config: urlgetter.Config{
-			Method:          "GET",
-			FailOnHTTPError: false,
-			CertPool:        certPool,
-		}},
-		{Target: "https://cdn2.signal.org/", Config: urlgetter.Config{
+		{Target: "https://chat.signal.org/", Config: urlgetter.Config{
 			Method:          "GET",
 			FailOnHTTPError: false,
 			CertPool:        certPool,
 		}},
 		{Target: "https://sfu.voip.signal.org/", Config: urlgetter.Config{
+			Method:          "GET",
+			FailOnHTTPError: false,
+			CertPool:        certPool,
+		}},
+		{Target: "https://storage.signal.org/", Config: urlgetter.Config{
 			Method:          "GET",
 			FailOnHTTPError: false,
 			CertPool:        certPool,

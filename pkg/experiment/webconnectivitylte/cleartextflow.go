@@ -8,6 +8,7 @@ package webconnectivitylte
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -33,6 +34,9 @@ type CleartextFlow struct {
 
 	// DNSCache is the MANDATORY DNS cache.
 	DNSCache *DNSCache
+
+	// Depth is the OPTIONAL current redirect depth.
+	Depth int64
 
 	// IDGenerator is the MANDATORY atomic int64 to generate task IDs.
 	IDGenerator *atomic.Int64
@@ -98,7 +102,12 @@ func (t *CleartextFlow) Run(parentCtx context.Context, index int64) error {
 	}
 
 	// create trace
-	trace := measurexlite.NewTrace(index, t.ZeroTime)
+	trace := measurexlite.NewTrace(index, t.ZeroTime, fmt.Sprintf("depth=%d", t.Depth),
+		fmt.Sprintf("fetch_body=%v", t.PrioSelector != nil))
+
+	// TODO(bassosimone): the DSL starts measuring for throttling when we start
+	// fetching the body while here we start immediately. We should come up with
+	// a consistent policy otherwise data won't be comparable.
 
 	// start measuring throttling
 	sampler := throttling.NewSampler(trace)
@@ -119,14 +128,12 @@ func (t *CleartextFlow) Run(parentCtx context.Context, index int64) error {
 	tcpDialer := trace.NewDialerWithoutResolver(t.Logger)
 	tcpConn, err := tcpDialer.DialContext(tcpCtx, "tcp", t.Address)
 	t.TestKeys.AppendTCPConnectResults(trace.TCPConnects()...)
+	defer t.TestKeys.AppendNetworkEvents(trace.NetworkEvents()...) // here to include "connect" events
 	if err != nil {
 		ol.Stop(err)
 		return err
 	}
-	defer func() {
-		t.TestKeys.AppendNetworkEvents(trace.NetworkEvents()...)
-		tcpConn.Close()
-	}()
+	defer tcpConn.Close()
 
 	alpn := "" // no ALPN because we're not using TLS
 
@@ -243,8 +250,14 @@ func (t *CleartextFlow) httpTransaction(ctx context.Context, network, address, a
 	txp model.HTTPTransport, req *http.Request, trace *measurexlite.Trace) (*http.Response, []byte, error) {
 	const maxbody = 1 << 19
 	started := trace.TimeSince(trace.ZeroTime())
+	// TODO(bassosimone): I am wondering whether we should have the HTTP transaction
+	// start at the beginning of the flow rather than here. If we start it at the
+	// beginning this is nicer, but, at the same time, starting it at the beginning
+	// of the flow means we're not collecting information about DNS. So, I am a
+	// bit torn about what is the best approach to follow here. Maybe it does not
+	// even matter to emit transaction_start/end events given that we have transaction ID.
 	t.TestKeys.AppendNetworkEvents(measurexlite.NewAnnotationArchivalNetworkEvent(
-		trace.Index(), started, "http_transaction_start",
+		trace.Index(), started, "http_transaction_start", trace.Tags()...,
 	))
 	resp, err := txp.RoundTrip(req)
 	var body []byte
@@ -258,7 +271,7 @@ func (t *CleartextFlow) httpTransaction(ctx context.Context, network, address, a
 	}
 	finished := trace.TimeSince(trace.ZeroTime())
 	t.TestKeys.AppendNetworkEvents(measurexlite.NewAnnotationArchivalNetworkEvent(
-		trace.Index(), finished, "http_transaction_done",
+		trace.Index(), finished, "http_transaction_done", trace.Tags()...,
 	))
 	ev := measurexlite.NewArchivalHTTPRequestResult(
 		trace.Index(),
@@ -273,8 +286,9 @@ func (t *CleartextFlow) httpTransaction(ctx context.Context, network, address, a
 		body,
 		err,
 		finished,
+		trace.Tags()...,
 	)
-	t.TestKeys.AppendRequests(ev)
+	t.TestKeys.PrependRequests(ev)
 	return resp, body, err
 }
 
@@ -289,9 +303,12 @@ func (t *CleartextFlow) maybeFollowRedirects(ctx context.Context, resp *http.Res
 		if err != nil {
 			return // broken response from server
 		}
+		// TODO(https://github.com/ooni/probe/issues/2628): we need to handle
+		// the case where the redirect URL is incomplete
 		t.Logger.Infof("redirect to: %s", location.String())
 		resolvers := &DNSResolvers{
 			CookieJar:    t.CookieJar,
+			Depth:        t.Depth + 1,
 			DNSCache:     t.DNSCache,
 			Domain:       location.Hostname(),
 			IDGenerator:  t.IDGenerator,
