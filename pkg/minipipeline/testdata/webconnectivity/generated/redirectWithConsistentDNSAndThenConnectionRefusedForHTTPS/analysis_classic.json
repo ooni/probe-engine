@@ -1,27 +1,40 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "67.199.248.11"
+    ],
+    "FinalResponseFailure": ""
+  },
+  "DNSLookupSuccess": [
+    10001
+  ],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [
-    1,
-    2
+    10001,
+    30001
   ],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [],
   "DNSLookupSuccessWithValidAddressClassic": [
-    2
+    10001
   ],
   "DNSLookupUnexpectedFailure": [],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": null,
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [
-    6
+    50002
   ],
   "TCPConnectUnexplainedFailureDuringWebFetch": [
-    6
+    50002
   ],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -29,6 +42,7 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
   "HTTPFinalResponseSuccessTLSWithControl": null,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
@@ -42,9 +56,9 @@
       "TagDepth": 1,
       "Type": 1,
       "Failure": "connection_refused",
-      "TransactionID": 6,
+      "TransactionID": 50002,
       "TagFetchBody": true,
-      "DNSTransactionID": 5,
+      "DNSTransactionID": 10002,
       "DNSDomain": "www.example.com",
       "DNSLookupFailure": "",
       "DNSQueryType": null,
@@ -52,10 +66,11 @@
       "DNSResolvedAddrs": [
         "93.184.216.34"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "93.184.216.34",
       "IPAddressASN": 15133,
       "IPAddressBogon": false,
-      "EndpointTransactionID": 6,
+      "EndpointTransactionID": 50002,
       "EndpointProto": "tcp",
       "EndpointPort": "443",
       "EndpointAddress": "93.184.216.34:443",
@@ -91,9 +106,9 @@
       "TagDepth": 1,
       "Type": 0,
       "Failure": "",
-      "TransactionID": 5,
+      "TransactionID": 10002,
       "TagFetchBody": null,
-      "DNSTransactionID": 5,
+      "DNSTransactionID": 10002,
       "DNSDomain": "www.example.com",
       "DNSLookupFailure": "",
       "DNSQueryType": "ANY",
@@ -101,6 +116,7 @@
       "DNSResolvedAddrs": [
         "93.184.216.34"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "93.184.216.34",
       "IPAddressASN": 15133,
       "IPAddressBogon": false,
@@ -140,9 +156,9 @@
       "TagDepth": 0,
       "Type": 3,
       "Failure": "",
-      "TransactionID": 3,
+      "TransactionID": 50001,
       "TagFetchBody": true,
-      "DNSTransactionID": 1,
+      "DNSTransactionID": 30001,
       "DNSDomain": "bit.ly",
       "DNSLookupFailure": "",
       "DNSQueryType": null,
@@ -150,10 +166,11 @@
       "DNSResolvedAddrs": [
         "67.199.248.11"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "67.199.248.11",
       "IPAddressASN": 396982,
       "IPAddressBogon": false,
-      "EndpointTransactionID": 3,
+      "EndpointTransactionID": 50001,
       "EndpointProto": "tcp",
       "EndpointPort": "443",
       "EndpointAddress": "67.199.248.11:443",
@@ -195,9 +212,9 @@
       "TagDepth": 0,
       "Type": 0,
       "Failure": "",
-      "TransactionID": 2,
+      "TransactionID": 10001,
       "TagFetchBody": null,
-      "DNSTransactionID": 2,
+      "DNSTransactionID": 10001,
       "DNSDomain": "bit.ly",
       "DNSLookupFailure": "",
       "DNSQueryType": "ANY",
@@ -205,6 +222,7 @@
       "DNSResolvedAddrs": [
         "67.199.248.11"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "67.199.248.11",
       "IPAddressASN": 396982,
       "IPAddressBogon": false,

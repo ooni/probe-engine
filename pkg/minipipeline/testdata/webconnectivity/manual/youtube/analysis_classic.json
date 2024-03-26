@@ -1,22 +1,44 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "142.251.32.78",
+      "142.251.33.174",
+      "142.251.41.46",
+      "142.251.41.78",
+      "172.217.1.14",
+      "172.217.165.14",
+      "2607:f8b0:400b:802::200e",
+      "2607:f8b0:400b:803::200e",
+      "2607:f8b0:400b:807::200e",
+      "2607:f8b0:400b:80c::200e"
+    ],
+    "FinalResponseFailure": ""
+  },
+  "DNSLookupSuccess": [
+    2
+  ],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [
     2
   ],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [],
   "DNSLookupSuccessWithValidAddressClassic": [
     2
   ],
   "DNSLookupUnexpectedFailure": [],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": null,
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [],
   "TCPConnectUnexplainedFailureDuringWebFetch": [],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -24,11 +46,12 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
   "HTTPFinalResponseSuccessTLSWithControl": 16,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
   "HTTPFinalResponseSuccessTCPWithControl": null,
-  "HTTPFinalResponseDiffBodyProportionFactor": 0.5632578337691695,
+  "HTTPFinalResponseDiffBodyProportionFactor": null,
   "HTTPFinalResponseDiffStatusCodeMatch": true,
   "HTTPFinalResponseDiffTitleDifferentLongWords": {},
   "HTTPFinalResponseDiffUncommonHeadersIntersection": {
@@ -64,6 +87,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.251.209.46",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -78,7 +102,7 @@
       "HTTPFailure": "",
       "HTTPResponseStatusCode": 200,
       "HTTPResponseBodyLength": 524268,
-      "HTTPResponseBodyIsTruncated": false,
+      "HTTPResponseBodyIsTruncated": true,
       "HTTPResponseHeadersKeys": {
         "Accept-Ch": true,
         "Accept-Ranges": true,
@@ -171,6 +195,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.250.180.174",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -257,6 +282,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.250.180.142",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -343,6 +369,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:402::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -429,6 +456,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.205.46",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -515,6 +543,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.204.142",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -601,6 +630,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.204.238",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -687,6 +717,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.251.209.14",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -773,6 +804,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:416::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -859,6 +891,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:410::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -945,6 +978,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:403::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1031,6 +1065,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.250.180.142",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1117,6 +1152,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.250.180.174",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1203,6 +1239,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.251.209.14",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1289,6 +1326,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "142.251.209.46",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1375,6 +1413,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.204.142",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1461,6 +1500,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.204.238",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1547,6 +1587,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "216.58.205.46",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1633,6 +1674,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:402::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1719,6 +1761,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:403::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1805,6 +1848,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:410::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -1891,6 +1935,7 @@
         "2a00:1450:4002:410::200e",
         "2a00:1450:4002:416::200e"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2a00:1450:4002:416::200e",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,

@@ -5,14 +5,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ooni/probe-engine/pkg/geoipx"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/optional"
 )
 
 func TestLoadWebObservations(t *testing.T) {
 	t.Run("we handle the case where the test keys are nil", func(t *testing.T) {
 		meas := &WebMeasurement{ /* empty */ }
-		container, err := IngestWebMeasurement(meas)
+		container, err := IngestWebMeasurement(
+			model.GeoIPASNLookupperFunc(geoipx.LookupASN),
+			meas,
+		)
 		if !errors.Is(err, ErrNoTestKeys) {
 			t.Fatal("expected", ErrNoTestKeys, "got", err)
 		}
@@ -40,7 +45,10 @@ func TestLoadWebObservations(t *testing.T) {
 				}),
 			}),
 		}
-		container, err := IngestWebMeasurement(meas)
+		container, err := IngestWebMeasurement(
+			model.GeoIPASNLookupperFunc(geoipx.LookupASN),
+			meas,
+		)
 		if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 			t.Fatal("unexpected err", err)
 		}
@@ -152,6 +160,54 @@ func TestWebObservationsContainerIngestControlMessages(t *testing.T) {
 
 		if !entry.ControlTLSHandshakeFailure.IsNone() {
 			t.Fatal("ControlTLSHandshakeFailure should be none")
+		}
+	})
+
+	t.Run("we correctly handle an inconsistent control DNS lookup result", func(t *testing.T) {
+		container := &WebObservationsContainer{
+			DNSLookupFailures: []*WebObservation{},
+			KnownTCPEndpoints: map[int64]*WebObservation{
+				1: {
+					DNSDomain:             optional.Some("dns.google.com"),
+					IPAddress:             optional.Some("8.8.8.8"),
+					EndpointTransactionID: optional.Some(int64(1)),
+					EndpointPort:          optional.Some("443"),
+					EndpointAddress:       optional.Some("8.8.8.8:443"),
+					TLSServerName:         optional.Some("dns.google.com"),
+				},
+			},
+			knownIPAddresses: map[string]*WebObservation{},
+		}
+
+		thRequest := &model.THRequest{
+			HTTPRequest: "https://dns.google.com/",
+		}
+
+		// Note: the following entry is completely unrealistic but it
+		// is here to show that, even with a malformed entry, we are still
+		// able to avoid producing a wrong result for an address.
+		//
+		// Specifically, here the DNS failure should take precedence over
+		// the resolved addresses and ControlDNSResolvedAddr should be empty.
+		thResponse := &model.THResponse{
+			DNS: model.THDNSResult{
+				Failure: (func() *string {
+					v := netxlite.FailureGenericTimeoutError
+					return &v
+				})(),
+				Addrs: []string{"8.8.8.8"},
+				ASNs:  []int64{},
+			},
+		}
+
+		if err := container.IngestControlMessages(thRequest, thResponse); err != nil {
+			t.Fatal(err)
+		}
+
+		entry := container.KnownTCPEndpoints[1]
+
+		if !entry.ControlDNSResolvedAddrs.IsNone() {
+			t.Fatal("ControlDNSResolvedAddrs should be none")
 		}
 	})
 }

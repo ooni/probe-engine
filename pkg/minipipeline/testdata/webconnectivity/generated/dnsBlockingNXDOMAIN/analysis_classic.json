@@ -1,20 +1,31 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "93.184.216.34"
+    ],
+    "FinalResponseFailure": ""
+  },
+  "DNSLookupSuccess": [],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [],
   "DNSLookupSuccessWithValidAddressClassic": [],
   "DNSLookupUnexpectedFailure": [
-    2
+    10001
   ],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": "dns_nxdomain_error",
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [],
   "TCPConnectUnexplainedFailureDuringWebFetch": [],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -22,6 +33,7 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
   "HTTPFinalResponseSuccessTLSWithControl": null,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
@@ -35,14 +47,15 @@
       "TagDepth": 0,
       "Type": 0,
       "Failure": "dns_nxdomain_error",
-      "TransactionID": 2,
+      "TransactionID": 10001,
       "TagFetchBody": null,
-      "DNSTransactionID": 2,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.com",
       "DNSLookupFailure": "dns_nxdomain_error",
       "DNSQueryType": "ANY",
       "DNSEngine": "getaddrinfo",
       "DNSResolvedAddrs": null,
+      "IPAddressOrigin": null,
       "IPAddress": null,
       "IPAddressASN": null,
       "IPAddressBogon": null,

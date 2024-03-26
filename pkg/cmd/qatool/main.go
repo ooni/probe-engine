@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
+	"time"
 
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivitylte"
-	"github.com/ooni/probe-engine/pkg/experiment/webconnectivityqa"
+	"github.com/ooni/probe-engine/pkg/geoipx"
 	"github.com/ooni/probe-engine/pkg/minipipeline"
+	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/must"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/ooni/probe-engine/pkg/webconnectivityqa"
 )
 
 var (
@@ -63,6 +67,39 @@ func runWebConnectivityLTE(tc *webconnectivityqa.TestCase) {
 		// run the test case
 		measurement := runtimex.Try1(webconnectivityqa.MeasureTestCase(measurer, tc))
 
+		// obtain the test keys
+		tk := measurement.TestKeys.(*webconnectivitylte.TestKeys)
+
+		// Normalize the test keys
+		//
+		// The general idea here is to remove everything that we do not use in the
+		// minipipeline to reduce the sizes of the diffs we commit.
+		//
+		// See https://github.com/ooni/probe/issues/2677
+		tk.Queries = minipipeline.SortDNSLookupResults(tk.Queries)
+		minipipeline.NormalizeDNSLookupResults(tk.Queries)
+
+		tk.Do53 = nil
+		tk.DoH = nil
+		tk.DNSDuplicateResponses = nil
+		tk.DNSWoami = nil
+		tk.ConnPriorityLog = nil
+
+		tk.NetworkEvents = nil
+
+		tk.TCPConnect = minipipeline.SortTCPConnectResults(tk.TCPConnect)
+		minipipeline.NormalizeTCPConnectResults(tk.TCPConnect)
+
+		tk.TLSHandshakes = minipipeline.SortTLSHandshakeResults(tk.TLSHandshakes)
+		minipipeline.NormalizeTLSHandshakeResults(tk.TLSHandshakes)
+
+		minipipeline.NormalizeHTTPRequestResults(tk.Requests)
+
+		// normalize measurement fields
+		measurement.MeasurementStartTime = "2024-02-12 20:33:47"
+		measurement.MeasurementRuntime = 0
+		measurement.TestStartTime = "2024-02-12 20:33:47"
+
 		// serialize the original measurement
 		mustSerializeMkdirAllAndWriteFile(actualDestdir, "measurement.json", measurement)
 	}
@@ -73,8 +110,11 @@ func runWebConnectivityLTE(tc *webconnectivityqa.TestCase) {
 		var webMeasurement minipipeline.WebMeasurement
 		must.UnmarshalJSON(rawData, &webMeasurement)
 
+		// create the GeoIP ASN lookupper we're going to use
+		lookupper := model.GeoIPASNLookupperFunc(geoipx.LookupASN)
+
 		// ingest web measurement
-		observationsContainer := runtimex.Try1(minipipeline.IngestWebMeasurement(&webMeasurement))
+		observationsContainer := runtimex.Try1(minipipeline.IngestWebMeasurement(lookupper, &webMeasurement))
 
 		// serialize the observations
 		mustSerializeMkdirAllAndWriteFile(actualDestdir, "observations.json", observationsContainer)
@@ -86,16 +126,33 @@ func runWebConnectivityLTE(tc *webconnectivityqa.TestCase) {
 		mustSerializeMkdirAllAndWriteFile(actualDestdir, "observations_classic.json", observationsContainerClassic)
 
 		// analyze the observations
-		analysis := minipipeline.AnalyzeWebObservations(observationsContainer)
+		analysis := minipipeline.AnalyzeWebObservationsWithLinearAnalysis(lookupper, observationsContainer)
 
 		// serialize the observations analysis
 		mustSerializeMkdirAllAndWriteFile(actualDestdir, "analysis.json", analysis)
 
 		// perform the classic analysis
-		analysisClassic := minipipeline.AnalyzeWebObservations(observationsContainerClassic)
+		analysisClassic := minipipeline.AnalyzeWebObservationsWithLinearAnalysis(lookupper, observationsContainerClassic)
 
 		// serialize the classic analysis results
 		mustSerializeMkdirAllAndWriteFile(actualDestdir, "analysis_classic.json", analysisClassic)
+	}
+}
+
+// override webconnectivitylte algorithm to make it less entropic
+func init() {
+	webconnectivitylte.MaybeSortAddresses = func(entries []webconnectivitylte.DNSEntry) {
+		sort.SliceStable(entries, func(i, j int) bool {
+			return entries[i].Addr < entries[j].Addr
+		})
+	}
+
+	webconnectivitylte.MaybeDelayCleartextFlows = func(index int) {
+		time.Sleep(10 * time.Millisecond * time.Duration(index))
+	}
+
+	webconnectivitylte.MaybeDelaySecureFlows = func(index int) {
+		time.Sleep(10 * time.Millisecond * time.Duration(index))
 	}
 }
 

@@ -14,6 +14,8 @@ package minipipeline
 //
 // The result should approximate what v0.4 would have measured.
 func ClassicFilter(input *WebObservationsContainer) (output *WebObservationsContainer) {
+	// TODO(bassosimone): now that there's a "classic" tag it would probably
+	// be simpler to just always use the "classic" tag to extract.
 	output = &WebObservationsContainer{
 		DNSLookupFailures:  []*WebObservation{},
 		DNSLookupSuccesses: []*WebObservation{},
@@ -43,14 +45,38 @@ func ClassicFilter(input *WebObservationsContainer) (output *WebObservationsCont
 	for _, entry := range input.KnownTCPEndpoints {
 		ipAddr := entry.IPAddress.Unwrap() // it MUST be there
 		txid := entry.EndpointTransactionID.Unwrap()
-		if output.knownIPAddresses[ipAddr] == nil {
+
+		// Determine whether to keep entry depending on the IP addr origin
+		switch entry.IPAddressOrigin.UnwrapOr("") {
+
+		// If the address origin is the TH, then it does not belong to classic analysis
+		case IPAddressOriginTH:
 			continue
+
+		// If the address origin is the DNS, then it depends on whether it was
+		// resolved via getaddrinfo or via another resolver
+		case IPAddressOriginDNS:
+			if output.knownIPAddresses[ipAddr] == nil {
+				continue
+			}
+
+		// If the address origin is unknown, then we assume the probe
+		// already knows it, e.g., via the URL or via a subsequent redirect
+		// and thus we keep this specific entry
+		default:
+			// nothing
 		}
+
+		// Discard all the entries where we're not fetching body
 		if !entry.TagFetchBody.UnwrapOr(false) {
 			continue
 		}
+
 		output.KnownTCPEndpoints[txid] = entry
 	}
+
+	// ControlFinalResponseExpectations
+	output.ControlExpectations = input.ControlExpectations
 
 	return
 }

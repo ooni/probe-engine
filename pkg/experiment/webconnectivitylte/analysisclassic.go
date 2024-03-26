@@ -1,26 +1,38 @@
 package webconnectivitylte
 
+//
+// The "classic" analysis engine.
+//
+// We try to emulate results produced by v0.4 of Web Connectivity and
+// also attempt to provide a more fine-grained view of the results.
+//
+
 import (
+	"net"
+
+	"github.com/ooni/probe-engine/pkg/geoipx"
 	"github.com/ooni/probe-engine/pkg/minipipeline"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/optional"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 
-// AnalysisEngineClassic is an alternative analysis engine that aims to produce
-// results that are backward compatible with Web Connectivity v0.4.
-func AnalysisEngineClassic(tk *TestKeys, logger model.Logger) {
-	tk.analysisClassic(logger)
+// analysisEngineClassic is an alternative analysis engine that aims to produce
+// results that are backward compatible with Web Connectivity v0.4 while also
+// procuding more fine-grained blocking flags.
+func analysisEngineClassic(tk *TestKeys, logger model.Logger) {
+	tk.analysisClassic(model.GeoIPASNLookupperFunc(geoipx.LookupASN), logger)
 }
 
-func (tk *TestKeys) analysisClassic(logger model.Logger) {
+func (tk *TestKeys) analysisClassic(lookupper model.GeoIPASNLookupper, logger model.Logger) {
 	// Since we run after all tasks have completed (or so we assume) we're
 	// not going to use any form of locking here.
 
 	// 1. produce web observations
 	container := minipipeline.NewWebObservationsContainer()
-	container.IngestDNSLookupEvents(tk.Queries...)
-	container.IngestTCPConnectEvents(tk.TCPConnect...)
+	container.IngestDNSLookupEvents(lookupper, tk.Queries...)
+	container.IngestTCPConnectEvents(lookupper, tk.TCPConnect...)
 	container.IngestTLSHandshakeEvents(tk.TLSHandshakes...)
 	container.IngestHTTPRoundTripEvents(tk.Requests...)
 
@@ -31,26 +43,29 @@ func (tk *TestKeys) analysisClassic(logger model.Logger) {
 		runtimex.Try0(container.IngestControlMessages(tk.ControlRequest, tk.Control))
 	}
 
-	// 2. filter observations to only include results collected by the
+	// 2. compute extended analysis flags
+	analysisExtMain(lookupper, tk, container)
+
+	// 3. filter observations to only include results collected by the
 	// system resolver, which approximates v0.4's results
 	classic := minipipeline.ClassicFilter(container)
 
 	// 3. produce a web observations analysis based on the web observations
-	woa := minipipeline.AnalyzeWebObservations(classic)
+	woa := minipipeline.AnalyzeWebObservationsWithLinearAnalysis(lookupper, classic)
 
-	// 4. determine the DNS consistency
+	// 5. determine the DNS consistency
 	tk.DNSConsistency = analysisClassicDNSConsistency(woa)
 
-	// 5. set DNSExperimentFailure
+	// 6. set DNSExperimentFailure
 	if !woa.DNSExperimentFailure.IsNone() && woa.DNSExperimentFailure.Unwrap() != "" {
 		value := woa.DNSExperimentFailure.Unwrap()
 		tk.DNSExperimentFailure = &value
 	}
 
-	// 6. compute the HTTPDiff values
+	// 7. compute the HTTPDiff values
 	tk.setHTTPDiffValues(woa)
 
-	// 7. compute blocking & accessible
+	// 8. compute blocking & accessible
 	analysisClassicComputeBlockingAccessible(woa, tk)
 }
 
@@ -63,7 +78,10 @@ func analysisClassicDNSConsistency(woa *minipipeline.WebAnalysis) optional.Value
 		return optional.Some("consistent")
 
 	case woa.DNSLookupSuccessWithInvalidAddressesClassic.Len() > 0 || // unexpected addrs; or
-		woa.DNSLookupUnexpectedFailure.Len() > 0: // unexpected failures
+		woa.DNSLookupUnexpectedFailure.Len() > 0 || // unexpected failures; or
+		(woa.DNSLookupSuccess.Len() > 0 && // successful lookups; and
+			!woa.ControlExpectations.IsNone() && // we have control info; and
+			woa.ControlExpectations.Unwrap().DNSAddresses.Len() <= 0): // control resolved nothing
 		return optional.Some("inconsistent")
 
 	default:
@@ -72,27 +90,12 @@ func analysisClassicDNSConsistency(woa *minipipeline.WebAnalysis) optional.Value
 }
 
 func (tk *TestKeys) setHTTPDiffValues(woa *minipipeline.WebAnalysis) {
-	const bodyProportionFactor = 0.7
-	if !woa.HTTPFinalResponseDiffBodyProportionFactor.IsNone() {
-		tk.BodyProportion = woa.HTTPFinalResponseDiffBodyProportionFactor.Unwrap()
-		value := tk.BodyProportion > bodyProportionFactor
-		tk.BodyLengthMatch = &value
-	}
-
-	if !woa.HTTPFinalResponseDiffUncommonHeadersIntersection.IsNone() {
-		value := len(woa.HTTPFinalResponseDiffUncommonHeadersIntersection.Unwrap()) > 0
-		tk.HeadersMatch = &value
-	}
-
-	if !woa.HTTPFinalResponseDiffStatusCodeMatch.IsNone() {
-		value := woa.HTTPFinalResponseDiffStatusCodeMatch.Unwrap()
-		tk.StatusCodeMatch = &value
-	}
-
-	if !woa.HTTPFinalResponseDiffTitleDifferentLongWords.IsNone() {
-		value := len(woa.HTTPFinalResponseDiffTitleDifferentLongWords.Unwrap()) <= 0
-		tk.TitleMatch = &value
-	}
+	hds := newAnalysisHTTPDiffStatus(woa)
+	tk.BodyProportion = hds.BodyProportion.UnwrapOr(0)
+	tk.BodyLengthMatch = hds.BodyLengthMatch
+	tk.HeadersMatch = hds.HeadersMatch
+	tk.StatusCodeMatch = hds.StatusCodeMatch
+	tk.TitleMatch = hds.TitleMatch
 }
 
 type analysisClassicTestKeysProxy interface {
@@ -110,41 +113,52 @@ type analysisClassicTestKeysProxy interface {
 
 	// setHTTPExperimentFailure sets the HTTPExperimentFailure field.
 	setHTTPExperimentFailure(value optional.Value[string])
+
+	// setWebsiteDown sets the test keys for a down website.
+	setWebsiteDown()
 }
 
 var _ analysisClassicTestKeysProxy = &TestKeys{}
 
 // httpDiff implements analysisClassicTestKeysProxy.
 func (tk *TestKeys) httpDiff() bool {
-	if tk.StatusCodeMatch != nil && *tk.StatusCodeMatch {
-		if tk.BodyLengthMatch != nil && *tk.BodyLengthMatch {
-			return false
-		}
-		if tk.HeadersMatch != nil && *tk.HeadersMatch {
-			return false
-		}
-		if tk.TitleMatch != nil && *tk.TitleMatch {
-			return false
-		}
-		// fallthrough
-	}
-	return true
+	return analysisHTTPDiffAlgorithm(tk)
+}
+
+// bodyLengthMatch implements analysisHTTPDiffValuesProvider.
+func (tk *TestKeys) bodyLengthMatch() optional.Value[bool] {
+	return tk.BodyLengthMatch
+}
+
+// headersMatch implements analysisHTTPDiffValuesProvider.
+func (tk *TestKeys) headersMatch() optional.Value[bool] {
+	return tk.HeadersMatch
+}
+
+// statusCodeMatch implements analysisHTTPDiffValuesProvider.
+func (tk *TestKeys) statusCodeMatch() optional.Value[bool] {
+	return tk.StatusCodeMatch
+}
+
+// titleMatch implements analysisHTTPDiffValuesProvider.
+func (tk *TestKeys) titleMatch() optional.Value[bool] {
+	return tk.TitleMatch
 }
 
 // setBlockingFalse implements analysisClassicTestKeysProxy.
 func (tk *TestKeys) setBlockingFalse() {
 	tk.Blocking = false
-	tk.Accessible = true
+	tk.Accessible = optional.Some(true)
 }
 
 // setBlockingNil implements analysisClassicTestKeysProxy.
 func (tk *TestKeys) setBlockingNil() {
 	if !tk.DNSConsistency.IsNone() && tk.DNSConsistency.Unwrap() == "inconsistent" {
 		tk.Blocking = "dns"
-		tk.Accessible = false
+		tk.Accessible = optional.Some(false)
 	} else {
 		tk.Blocking = nil
-		tk.Accessible = nil
+		tk.Accessible = optional.None[bool]()
 	}
 }
 
@@ -155,12 +169,23 @@ func (tk *TestKeys) setBlockingString(value string) {
 	} else {
 		tk.Blocking = value
 	}
-	tk.Accessible = false
+	tk.Accessible = optional.Some(false)
 }
 
 // setHTTPExperimentFailure implements analysisClassicTestKeysProxy.
 func (tk *TestKeys) setHTTPExperimentFailure(value optional.Value[string]) {
 	tk.HTTPExperimentFailure = value
+}
+
+// setWebsiteDown implements analysisClassicTestKeysProxy.
+func (tk *TestKeys) setWebsiteDown() {
+	if !tk.DNSConsistency.IsNone() && tk.DNSConsistency.Unwrap() == "inconsistent" {
+		tk.Blocking = "dns"
+		tk.Accessible = optional.Some(false)
+	} else {
+		tk.Blocking = false
+		tk.Accessible = optional.Some(false)
+	}
 }
 
 func analysisClassicComputeBlockingAccessible(woa *minipipeline.WebAnalysis, tk analysisClassicTestKeysProxy) {
@@ -238,10 +263,7 @@ func analysisClassicComputeBlockingAccessible(woa *minipipeline.WebAnalysis, tk 
 
 			// 2.2. Handle the case where both the probe and the control failed.
 			if entry.ControlHTTPFailure.Unwrap() != "" {
-				// TODO(bassosimone): returning this result is wrong and we
-				// should also set Accessible to false. However, v0.4
-				// does this and we should play along for the A/B testing.
-				tk.setBlockingFalse()
+				tk.setWebsiteDown()
 				tk.setHTTPExperimentFailure(entry.Failure)
 				return
 			}
@@ -278,10 +300,7 @@ func analysisClassicComputeBlockingAccessible(woa *minipipeline.WebAnalysis, tk 
 
 			// 3.2. Handle the case where both probe and control failed.
 			if entry.ControlTLSHandshakeFailure.Unwrap() != "" {
-				// TODO(bassosimone): returning this result is wrong and we
-				// should set Accessible and Blocking to false. However, v0.4
-				// does this and we should play along for the A/B testing.
-				tk.setBlockingNil()
+				tk.setWebsiteDown()
 				tk.setHTTPExperimentFailure(entry.Failure)
 				return
 			}
@@ -315,10 +334,7 @@ func analysisClassicComputeBlockingAccessible(woa *minipipeline.WebAnalysis, tk 
 
 			// 4.2. Handle the case where both probe and control failed.
 			if entry.ControlTCPConnectFailure.Unwrap() != "" {
-				// TODO(bassosimone): returning this result is wrong and we
-				// should set Accessible and Blocking to false. However, v0.4
-				// does this and we should play along for the A/B testing.
-				tk.setBlockingFalse()
+				tk.setWebsiteDown()
 				tk.setHTTPExperimentFailure(entry.Failure)
 				return
 			}
@@ -340,40 +356,81 @@ func analysisClassicComputeBlockingAccessible(woa *minipipeline.WebAnalysis, tk 
 				// accessing the website should lead to.
 				if entry.ControlHTTPFailure.IsNone() {
 					tk.setBlockingFalse()
-					analysisClassicSetHTTPExperimentFailureDNS(tk, entry)
+					tk.setHTTPExperimentFailure(entry.Failure)
 					return
 				}
 
 				// 5.1.2. Otherwise, if the control worked, that's blocking.
 				tk.setBlockingString("dns")
-				analysisClassicSetHTTPExperimentFailureDNS(tk, entry)
+				tk.setHTTPExperimentFailure(entry.Failure)
 				return
 			}
 
 			// 5.2. Handle the case where both probe and control failed.
 			if entry.ControlDNSLookupFailure.Unwrap() != "" {
-				// TODO(bassosimone): returning this result is wrong and we
-				// should set Accessible and Blocking to false. However, v0.4
-				// does this and we should play along for the A/B testing.
-				tk.setBlockingFalse()
-				analysisClassicSetHTTPExperimentFailureDNS(tk, entry)
+				tk.setWebsiteDown()
+				tk.setHTTPExperimentFailure(entry.Failure)
 				return
 			}
 
-			// 5.3. Handle the case where just the probe failed.
+			// 5.3. When the probe says dns_no_answer the control would otherwise say that
+			// we have resolved zero IP addresses for historical reasons. In such a case,
+			// let's pretend that also the control returned dns_no_answer.
+			if entry.Failure.Unwrap() == netxlite.FailureDNSNoAnswer &&
+				!entry.ControlDNSResolvedAddrs.IsNone() &&
+				entry.ControlDNSResolvedAddrs.Unwrap().Len() <= 0 {
+				tk.setWebsiteDown()
+				return
+			}
+
+			// 5.4. Handle the case where just the probe failed.
 			tk.setBlockingString("dns")
-			analysisClassicSetHTTPExperimentFailureDNS(tk, entry)
+			tk.setHTTPExperimentFailure(entry.Failure)
+			return
+		}
+
+		// 6. handle the case of DNS success with the probe only seeing loopback
+		// addrs while the TH sees real addresses, which is a case where in the
+		// classic analysis (which is what we're doing) the probe does not attempt
+		// to connect to loopback addresses because it doesn't make sense.
+		if entry.Type == minipipeline.WebObservationTypeDNSLookup &&
+			!entry.Failure.IsNone() && entry.Failure.Unwrap() == "" &&
+			!entry.ControlDNSLookupFailure.IsNone() &&
+			entry.ControlDNSLookupFailure.Unwrap() == "" &&
+			!entry.DNSResolvedAddrs.IsNone() && !entry.ControlDNSResolvedAddrs.IsNone() &&
+			analysisContainsOnlyLoopbackAddrs(entry.DNSResolvedAddrs.Unwrap()) &&
+			!analysisContainsOnlyLoopbackAddrs(entry.ControlDNSResolvedAddrs.Unwrap()) {
+			tk.setBlockingString("dns")
+			return
+		}
+
+		// 7. handle the case of DNS success with loopback addrs, which is the case
+		// where neither the probe nor the TH attempt to measure endpoints.
+		if entry.Type == minipipeline.WebObservationTypeDNSLookup &&
+			!entry.Failure.IsNone() && entry.Failure.Unwrap() == "" &&
+			!entry.ControlDNSLookupFailure.IsNone() &&
+			entry.ControlDNSLookupFailure.Unwrap() == "" &&
+			!entry.DNSResolvedAddrs.IsNone() && !entry.ControlDNSResolvedAddrs.IsNone() &&
+			analysisContainsOnlyLoopbackAddrs(entry.DNSResolvedAddrs.Unwrap()) &&
+			analysisContainsOnlyLoopbackAddrs(entry.ControlDNSResolvedAddrs.Unwrap()) {
+			tk.setWebsiteDown()
 			return
 		}
 	}
 }
 
-// analysisClassicSetHTTPExperimentFailureDNS sets the HTTPExperimentFailure if and
-// only if the entry's TagDepth is >= 1. We have a v0.4 bug where we do not properly
-// set this value for the first HTTP request <facepalm>.
-func analysisClassicSetHTTPExperimentFailureDNS(tk analysisClassicTestKeysProxy, entry *minipipeline.WebObservation) {
-	if entry.TagDepth.UnwrapOr(0) <= 0 {
-		return
+// analysisContainsOnlyLoopbackAddrs returns true iff the given set contains one or
+// more IP addresses and all these adresses are loopback addresses.
+func analysisContainsOnlyLoopbackAddrs(addrs minipipeline.Set[string]) bool {
+	var count int
+	for _, addr := range addrs.Keys() {
+		if net.ParseIP(addr) == nil {
+			continue
+		}
+		if !netxlite.IsLoopback(addr) {
+			return false
+		}
+		count++
 	}
-	tk.setHTTPExperimentFailure(entry.Failure)
+	return count > 0
 }

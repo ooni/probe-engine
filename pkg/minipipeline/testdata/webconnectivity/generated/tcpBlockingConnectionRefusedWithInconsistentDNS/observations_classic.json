@@ -5,9 +5,9 @@
       "TagDepth": 0,
       "Type": 0,
       "Failure": "",
-      "TransactionID": 1,
+      "TransactionID": 10001,
       "TagFetchBody": null,
-      "DNSTransactionID": 1,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.org",
       "DNSLookupFailure": "",
       "DNSQueryType": "ANY",
@@ -15,6 +15,7 @@
       "DNSResolvedAddrs": [
         "83.224.65.41"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "83.224.65.41",
       "IPAddressASN": 30722,
       "IPAddressBogon": false,
@@ -54,13 +55,13 @@
     }
   ],
   "KnownTCPEndpoints": {
-    "3": {
+    "40001": {
       "TagDepth": 0,
       "Type": 1,
       "Failure": "connection_refused",
-      "TransactionID": 3,
+      "TransactionID": 40001,
       "TagFetchBody": true,
-      "DNSTransactionID": 1,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.org",
       "DNSLookupFailure": "",
       "DNSQueryType": null,
@@ -68,10 +69,11 @@
       "DNSResolvedAddrs": [
         "83.224.65.41"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "83.224.65.41",
       "IPAddressASN": 30722,
       "IPAddressBogon": false,
-      "EndpointTransactionID": 3,
+      "EndpointTransactionID": 40001,
       "EndpointProto": "tcp",
       "EndpointPort": "80",
       "EndpointAddress": "83.224.65.41:80",
@@ -105,5 +107,11 @@
       },
       "ControlHTTPResponseTitle": "Default Web Page"
     }
+  },
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "93.184.216.34"
+    ],
+    "FinalResponseFailure": ""
   }
 }

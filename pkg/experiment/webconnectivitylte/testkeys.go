@@ -15,6 +15,7 @@ import (
 	"github.com/ooni/probe-engine/pkg/legacy/tracex"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/optional"
+	"github.com/ooni/probe-engine/pkg/webconnectivityalgo"
 )
 
 // TestKeys contains the results produced by web_connectivity.
@@ -99,16 +100,16 @@ type TestKeys struct {
 	BodyProportion float64 `json:"body_proportion"`
 
 	// BodyLength match tells us whether the body length matches.
-	BodyLengthMatch *bool `json:"body_length_match"`
+	BodyLengthMatch optional.Value[bool] `json:"body_length_match"`
 
 	// HeadersMatch tells us whether the headers match.
-	HeadersMatch *bool `json:"headers_match"`
+	HeadersMatch optional.Value[bool] `json:"headers_match"`
 
 	// StatusCodeMatch tells us whether the status code matches.
-	StatusCodeMatch *bool `json:"status_code_match"`
+	StatusCodeMatch optional.Value[bool] `json:"status_code_match"`
 
 	// TitleMatch tells us whether the title matches.
-	TitleMatch *bool `json:"title_match"`
+	TitleMatch optional.Value[bool] `json:"title_match"`
 
 	// Blocking indicates the reason for blocking. This is notoriously a bad
 	// type because it can be one of the following values:
@@ -127,7 +128,7 @@ type TestKeys struct {
 
 	// Accessible indicates whether the resource is accessible. Possible
 	// values for this field are: nil, true, and false.
-	Accessible any `json:"accessible"`
+	Accessible optional.Value[bool] `json:"accessible"`
 
 	// fundamentalFailure indicates that some fundamental error occurred
 	// in a background task. A fundamental error is something like a programmer
@@ -153,19 +154,13 @@ type ConnPriorityLogEntry struct {
 	T float64 `json:"t"`
 }
 
-// DNSWhoamiInfoEntry contains an entry for DNSWhoamiInfo.
-type DNSWhoamiInfoEntry struct {
-	// Address is the IP address
-	Address string `json:"address"`
-}
-
-// DNSWhoamiInfo contains info about DNS whoami.
+// DNSWhoamiInfo contains information about a DNS whoami lookup.
 type DNSWhoamiInfo struct {
 	// SystemV4 contains results related to the system resolver using IPv4.
-	SystemV4 []DNSWhoamiInfoEntry `json:"system_v4"`
+	SystemV4 []webconnectivityalgo.DNSWhoamiInfoEntry `json:"system_v4"`
 
 	// UDPv4 contains results related to an UDP resolver using IPv4.
-	UDPv4 map[string][]DNSWhoamiInfoEntry `json:"udp_v4"`
+	UDPv4 map[string][]webconnectivityalgo.DNSWhoamiInfoEntry `json:"udp_v4"`
 }
 
 // TestKeysDoH contains ancillary observations collected using DoH (e.g., the
@@ -296,13 +291,6 @@ func (tk *TestKeys) WithDNSWhoami(fun func(*DNSWhoamiInfo)) {
 	tk.mu.Unlock()
 }
 
-// SetClientResolver sets the ClientResolver field.
-func (tk *TestKeys) SetClientResolver(value string) {
-	tk.mu.Lock()
-	tk.ClientResolver = value
-	tk.mu.Unlock()
-}
-
 // AppendConnPriorityLogEntry appends an entry to ConnPriorityLog.
 func (tk *TestKeys) AppendConnPriorityLogEntry(entry *ConnPriorityLogEntry) {
 	tk.mu.Lock()
@@ -334,8 +322,8 @@ func NewTestKeys() *TestKeys {
 		SOCKSProxy:     nil,
 		NetworkEvents:  []*model.ArchivalNetworkEvent{},
 		DNSWoami: &DNSWhoamiInfo{
-			SystemV4: []DNSWhoamiInfoEntry{},
-			UDPv4:    map[string][]DNSWhoamiInfoEntry{},
+			SystemV4: []webconnectivityalgo.DNSWhoamiInfoEntry{},
+			UDPv4:    map[string][]webconnectivityalgo.DNSWhoamiInfoEntry{},
 		},
 		DoH: &TestKeysDoH{
 			NetworkEvents: []*model.ArchivalNetworkEvent{},
@@ -363,12 +351,12 @@ func NewTestKeys() *TestKeys {
 		BlockingFlags:         0,
 		NullNullFlags:         0,
 		BodyProportion:        0,
-		BodyLengthMatch:       nil,
-		HeadersMatch:          nil,
-		StatusCodeMatch:       nil,
-		TitleMatch:            nil,
+		BodyLengthMatch:       optional.None[bool](),
+		HeadersMatch:          optional.None[bool](),
+		StatusCodeMatch:       optional.None[bool](),
+		TitleMatch:            optional.None[bool](),
 		Blocking:              nil,
-		Accessible:            nil,
+		Accessible:            optional.None[bool](),
 		ControlRequest:        nil,
 		fundamentalFailure:    nil,
 		mu:                    &sync.Mutex{},

@@ -11,10 +11,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"strings"
 	"sync/atomic"
 	"time"
 
-	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/runtimex"
@@ -22,84 +22,116 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-// MaxAcceptableBodySize is the maximum acceptable body size for incoming
+// maxAcceptableBodySize is the maximum acceptable body size for incoming
 // API requests as well as when we're measuring webpages.
-const MaxAcceptableBodySize = 1 << 24
+const maxAcceptableBodySize = 1 << 24
 
 // Handler is an [http.Handler] implementing the Web
 // Connectivity test helper HTTP API.
+//
+// The zero value is invalid; construct using [NewHandler].
 type Handler struct {
-	// BaseLogger is the MANDATORY logger to use.
-	BaseLogger model.Logger
+	// baseLogger is the MANDATORY logger to use.
+	baseLogger model.Logger
 
-	// Indexer is the MANDATORY atomic integer used to assign an index to requests.
-	Indexer *atomic.Int64
+	// countRequests is the MANDATORY count of the number of
+	// requests that are currently in flight.
+	countRequests *atomic.Int64
 
-	// MaxAcceptableBody is the MANDATORY maximum acceptable response body.
-	MaxAcceptableBody int64
+	// indexer is the MANDATORY atomic integer used to assign an index to requests.
+	indexer *atomic.Int64
 
-	// Measure is the MANDATORY function that the handler should call
+	// maxAcceptableBody is the MANDATORY maximum acceptable response body.
+	maxAcceptableBody int64
+
+	// measure is the MANDATORY function that the handler should call
 	// for producing a response for a valid incoming request.
-	Measure func(ctx context.Context, config *Handler, creq *model.THRequest) (*model.THResponse, error)
+	measure func(ctx context.Context, config *Handler, creq *model.THRequest) (*model.THResponse, error)
 
-	// NewDialer is the MANDATORY factory to create a new Dialer.
-	NewDialer func(model.Logger) model.Dialer
+	// newDialer is the MANDATORY factory to create a new Dialer.
+	newDialer func(model.Logger) model.Dialer
 
-	// NewHTTPClient is the MANDATORY factory to create a new HTTPClient.
-	NewHTTPClient func(model.Logger) model.HTTPClient
+	// newHTTPClient is the MANDATORY factory to create a new HTTPClient.
+	newHTTPClient func(model.Logger) model.HTTPClient
 
-	// NewHTTP3Client is the MANDATORY factory to create a new HTTP3Client.
-	NewHTTP3Client func(model.Logger) model.HTTPClient
+	// newHTTP3Client is the MANDATORY factory to create a new HTTP3Client.
+	newHTTP3Client func(model.Logger) model.HTTPClient
 
-	// NewQUICDialer is the MANDATORY factory to create a new QUICDialer.
-	NewQUICDialer func(model.Logger) model.QUICDialer
+	// newQUICDialer is the MANDATORY factory to create a new QUICDialer.
+	newQUICDialer func(model.Logger) model.QUICDialer
 
-	// NewResolver is the MANDATORY factory for creating a new resolver.
-	NewResolver func(model.Logger) model.Resolver
+	// newResolver is the MANDATORY factory for creating a new resolver.
+	newResolver func(model.Logger) model.Resolver
 
-	// NewTLSHandshaker is the MANDATORY factory for creating a new TLS handshaker.
-	NewTLSHandshaker func(model.Logger) model.TLSHandshaker
+	// newTLSHandshaker is the MANDATORY factory for creating a new TLS handshaker.
+	newTLSHandshaker func(model.Logger) model.TLSHandshaker
 }
 
 var _ http.Handler = &Handler{}
 
 // NewHandler constructs the [handler].
-func NewHandler() *Handler {
+func NewHandler(logger model.Logger, netx *netxlite.Netx) *Handler {
 	return &Handler{
-		BaseLogger:        log.Log,
-		Indexer:           &atomic.Int64{},
-		MaxAcceptableBody: MaxAcceptableBodySize,
-		Measure:           measure,
+		baseLogger:        logger,
+		countRequests:     &atomic.Int64{},
+		indexer:           &atomic.Int64{},
+		maxAcceptableBody: maxAcceptableBodySize,
+		measure:           measure,
 
-		NewHTTPClient: func(logger model.Logger) model.HTTPClient {
+		newHTTPClient: func(logger model.Logger) model.HTTPClient {
 			// TODO(https://github.com/ooni/probe/issues/2534): the NewHTTPTransportWithResolver has QUIRKS and
 			// we should evaluate whether we can avoid using it here
 			return newHTTPClientWithTransportFactory(
-				logger,
+				netx, logger,
 				netxlite.NewHTTPTransportWithResolver,
 			)
 		},
 
-		NewHTTP3Client: func(logger model.Logger) model.HTTPClient {
+		newHTTP3Client: func(logger model.Logger) model.HTTPClient {
 			return newHTTPClientWithTransportFactory(
-				logger,
+				netx, logger,
 				netxlite.NewHTTP3TransportWithResolver,
 			)
 		},
 
-		NewDialer: func(logger model.Logger) model.Dialer {
-			return netxlite.NewDialerWithoutResolver(logger)
+		newDialer: func(logger model.Logger) model.Dialer {
+			return netx.NewDialerWithoutResolver(logger)
 		},
-		NewQUICDialer: func(logger model.Logger) model.QUICDialer {
-			return netxlite.NewQUICDialerWithoutResolver(
-				netxlite.NewUDPListener(),
+
+		newQUICDialer: func(logger model.Logger) model.QUICDialer {
+			return netx.NewQUICDialerWithoutResolver(
+				netx.NewUDPListener(),
 				logger,
 			)
 		},
-		NewResolver: newResolver,
-		NewTLSHandshaker: func(logger model.Logger) model.TLSHandshaker {
-			return netxlite.NewTLSHandshakerStdlib(logger)
+
+		newResolver: func(logger model.Logger) model.Resolver {
+			return newResolver(logger, netx)
 		},
+
+		newTLSHandshaker: func(logger model.Logger) model.TLSHandshaker {
+			return netx.NewTLSHandshakerStdlib(logger)
+		},
+	}
+}
+
+// handlerShouldThrottleClient returns true if the handler should throttle
+// the current client depending on the instantaneous load.
+//
+// See https://github.com/ooni/probe/issues/2649 for context.
+func handlerShouldThrottleClient(inflight int64, userAgent string) bool {
+	switch {
+	// With less than 25 inflight requests we allow all clients
+	case inflight < 25:
+		return false
+
+	// With less than 50 inflight requests we give priority to official clients
+	case inflight < 50 && strings.HasPrefix(userAgent, "ooniprobe-"):
+		return false
+
+	// Otherwise, we're very sorry
+	default:
+		return true
 	}
 }
 
@@ -123,8 +155,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// protect against too many requests in flight
+	if handlerShouldThrottleClient(h.countRequests.Load(), req.Header.Get("user-agent")) {
+		metricRequestsCount.WithLabelValues("503", "service_unavailable").Inc()
+		w.WriteHeader(503)
+		return
+	}
+	h.countRequests.Add(1)
+	defer h.countRequests.Add(-1)
+
 	// read and parse request body
-	reader := io.LimitReader(req.Body, h.MaxAcceptableBody)
+	reader := io.LimitReader(req.Body, h.maxAcceptableBody)
 	data, err := netxlite.ReadAllContext(req.Context(), reader)
 	if err != nil {
 		metricRequestsCount.WithLabelValues("400", "request_body_too_large").Inc()
@@ -140,11 +181,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// measure the given input
 	started := time.Now()
-	cresp, err := h.Measure(req.Context(), h, &creq)
+	cresp, err := h.measure(req.Context(), h, &creq)
 	elapsed := time.Since(started)
 
 	// track the time required to produce a response
-	metricWCTaskDurationSeconds.Observe(float64(elapsed.Seconds()))
+	metricWCTaskDurationSeconds.Observe(elapsed.Seconds())
 
 	// handle the case of fundamental failure
 	if err != nil {
@@ -166,11 +207,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // newResolver creates a new [model.Resolver] suitable for serving
 // requests coming from ooniprobe clients.
-func newResolver(logger model.Logger) model.Resolver {
+func newResolver(logger model.Logger, netx *netxlite.Netx) model.Resolver {
 	// Implementation note: pin to a specific resolver so we don't depend upon the
 	// default resolver configured by the box. Also, use an encrypted transport thus
 	// we're less vulnerable to any policy implemented by the box's provider.
-	resolver := netxlite.NewParallelDNSOverHTTPSResolver(logger, "https://dns.google/dns-query")
+	resolver := netx.NewParallelDNSOverHTTPSResolver(logger, "https://dns.google/dns-query")
 	return resolver
 }
 
@@ -183,10 +224,11 @@ func newCookieJar() *cookiejar.Jar {
 	}))
 }
 
-// newHTTPClientWithTransportFactory creates a new HTTP client.
+// newHTTPClientWithTransportFactory creates a new HTTP client
+// using the given [model.HTTPTransport] factory.
 func newHTTPClientWithTransportFactory(
-	logger model.Logger,
-	txpFactory func(model.DebugLogger, model.Resolver) model.HTTPTransport,
+	netx *netxlite.Netx, logger model.Logger,
+	txpFactory func(*netxlite.Netx, model.DebugLogger, model.Resolver) model.HTTPTransport,
 ) model.HTTPClient {
 	// If the DoH resolver we're using insists that a given domain maps to
 	// bogons, make sure we're going to fail the HTTP measurement.
@@ -204,14 +246,14 @@ func newHTTPClientWithTransportFactory(
 	// So, it's better to consider this as a possible corner case.
 	reso := netxlite.MaybeWrapWithBogonResolver(
 		true, // enabled
-		newResolver(logger),
+		newResolver(logger, netx),
 	)
 
 	// fix: We MUST set a cookie jar for measuring HTTP. See
 	// https://github.com/ooni/probe/issues/2488 for additional
 	// context and pointers to the relevant measurements.
 	client := &http.Client{
-		Transport:     txpFactory(logger, reso),
+		Transport:     txpFactory(netx, logger, reso),
 		CheckRedirect: nil,
 		Jar:           newCookieJar(),
 		Timeout:       0,

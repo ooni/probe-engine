@@ -15,6 +15,7 @@
       "DNSResolvedAddrs": [
         "130.192.16.171"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.16.171",
       "IPAddressASN": 137,
       "IPAddressBogon": false,
@@ -78,6 +79,7 @@
       "DNSResolvedAddrs": [
         "130.192.16.171"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.16.171",
       "IPAddressASN": 137,
       "IPAddressBogon": false,
@@ -140,5 +142,11 @@
       },
       "ControlHTTPResponseTitle": "Nexa Center for Internet \u0026 Society | Il centro Nexa è un centro di ricerca del Dipartimento di Automatica e Informatica del Politecnico di Torino"
     }
+  },
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "130.192.16.171"
+    ],
+    "FinalResponseFailure": ""
   }
 }

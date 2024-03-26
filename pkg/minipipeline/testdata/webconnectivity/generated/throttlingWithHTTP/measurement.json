@@ -1,0 +1,360 @@
+{
+  "data_format_version": "0.2.0",
+  "extensions": {
+    "dnst": 0,
+    "httpt": 0,
+    "netevents": 0,
+    "tcpconnect": 0,
+    "tlshandshake": 0,
+    "tunnel": 0
+  },
+  "input": "http://largefile.com/",
+  "measurement_start_time": "2024-02-12 20:33:47",
+  "probe_asn": "AS137",
+  "probe_cc": "IT",
+  "probe_ip": "127.0.0.1",
+  "probe_network_name": "Consortium GARR",
+  "report_id": "",
+  "resolver_asn": "AS137",
+  "resolver_ip": "130.192.3.21",
+  "resolver_network_name": "Consortium GARR",
+  "software_name": "ooniprobe",
+  "software_version": "3.21.0-alpha",
+  "test_helpers": {
+    "backend": {
+      "address": "https://0.th.ooni.org/",
+      "type": "https"
+    }
+  },
+  "test_keys": {
+    "agent": "redirect",
+    "client_resolver": "130.192.3.21",
+    "retries": null,
+    "socksproxy": null,
+    "network_events": null,
+    "x_dns_whoami": null,
+    "x_doh": null,
+    "x_do53": null,
+    "x_dns_duplicate_responses": null,
+    "queries": [
+      {
+        "answers": [
+          {
+            "asn": 16509,
+            "as_org_name": "Amazon.com, Inc.",
+            "answer_type": "A",
+            "ipv4": "52.35.36.75",
+            "ttl": null
+          }
+        ],
+        "engine": "doh",
+        "failure": null,
+        "hostname": "largefile.com",
+        "query_type": "A",
+        "resolver_hostname": null,
+        "resolver_port": null,
+        "resolver_address": "https://dns.google/dns-query",
+        "t": 0,
+        "tags": [
+          "depth=0"
+        ],
+        "transaction_id": 30001
+      },
+      {
+        "answers": null,
+        "engine": "doh",
+        "failure": "dns_no_answer",
+        "hostname": "largefile.com",
+        "query_type": "AAAA",
+        "resolver_hostname": null,
+        "resolver_port": null,
+        "resolver_address": "https://dns.google/dns-query",
+        "t": 0,
+        "tags": [
+          "depth=0"
+        ],
+        "transaction_id": 30001
+      },
+      {
+        "answers": [
+          {
+            "asn": 16509,
+            "as_org_name": "Amazon.com, Inc.",
+            "answer_type": "A",
+            "ipv4": "52.35.36.75",
+            "ttl": null
+          }
+        ],
+        "engine": "getaddrinfo",
+        "failure": null,
+        "hostname": "largefile.com",
+        "query_type": "ANY",
+        "resolver_hostname": null,
+        "resolver_port": null,
+        "resolver_address": "",
+        "t": 0,
+        "tags": [
+          "classic",
+          "depth=0"
+        ],
+        "transaction_id": 10001
+      },
+      {
+        "answers": [
+          {
+            "asn": 16509,
+            "as_org_name": "Amazon.com, Inc.",
+            "answer_type": "A",
+            "ipv4": "52.35.36.75",
+            "ttl": null
+          }
+        ],
+        "engine": "udp",
+        "failure": null,
+        "hostname": "largefile.com",
+        "query_type": "A",
+        "resolver_hostname": null,
+        "resolver_port": null,
+        "resolver_address": "1.1.1.1:53",
+        "t": 0,
+        "tags": [
+          "depth=0"
+        ],
+        "transaction_id": 20001
+      },
+      {
+        "answers": null,
+        "engine": "udp",
+        "failure": "dns_no_answer",
+        "hostname": "largefile.com",
+        "query_type": "AAAA",
+        "resolver_hostname": null,
+        "resolver_port": null,
+        "resolver_address": "1.1.1.1:53",
+        "t": 0,
+        "tags": [
+          "depth=0"
+        ],
+        "transaction_id": 20001
+      }
+    ],
+    "requests": [
+      {
+        "network": "tcp",
+        "address": "52.35.36.75:80",
+        "failure": "generic_timeout_error",
+        "request": {
+          "body": "",
+          "body_is_truncated": false,
+          "headers_list": [
+            [
+              "Accept",
+              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            ],
+            [
+              "Accept-Language",
+              "en-US,en;q=0.9"
+            ],
+            [
+              "Host",
+              "largefile.com"
+            ],
+            [
+              "Referer",
+              ""
+            ],
+            [
+              "User-Agent",
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/[scrubbed] Safari/537.3"
+            ]
+          ],
+          "headers": {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Host": "largefile.com",
+            "Referer": "",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/[scrubbed] Safari/537.3"
+          },
+          "method": "GET",
+          "tor": {
+            "exit_ip": null,
+            "exit_name": null,
+            "is_tor": false
+          },
+          "x_transport": "tcp",
+          "url": "http://largefile.com/"
+        },
+        "response": {
+          "body": "",
+          "body_is_truncated": true,
+          "code": 200,
+          "headers_list": [
+            [
+              "Alt-Svc",
+              "h3=\":443\""
+            ],
+            [
+              "Content-Type",
+              "application/octet-stream"
+            ],
+            [
+              "Date",
+              "Thu, 24 Aug 2023 14:35:29 GMT"
+            ]
+          ],
+          "headers": {
+            "Alt-Svc": "h3=\":443\"",
+            "Content-Type": "application/octet-stream",
+            "Date": "Thu, 24 Aug 2023 14:35:29 GMT"
+          }
+        },
+        "t": 0,
+        "tags": [
+          "classic",
+          "tcptls_experiment",
+          "depth=0",
+          "fetch_body=true"
+        ],
+        "transaction_id": 40001
+      }
+    ],
+    "tcp_connect": [
+      {
+        "ip": "52.35.36.75",
+        "port": 80,
+        "status": {
+          "failure": null,
+          "success": true
+        },
+        "t": 0,
+        "tags": [
+          "classic",
+          "tcptls_experiment",
+          "depth=0",
+          "fetch_body=true"
+        ],
+        "transaction_id": 40001
+      },
+      {
+        "ip": "52.35.36.75",
+        "port": 443,
+        "status": {
+          "failure": null,
+          "success": true
+        },
+        "t": 0,
+        "tags": [
+          "classic",
+          "tcptls_experiment",
+          "depth=0",
+          "fetch_body=false"
+        ],
+        "transaction_id": 50001
+      }
+    ],
+    "tls_handshakes": [
+      {
+        "network": "tcp",
+        "address": "52.35.36.75:443",
+        "cipher_suite": "TLS_AES_128_GCM_SHA256",
+        "failure": null,
+        "negotiated_protocol": "http/1.1",
+        "no_tls_verify": false,
+        "peer_certificates": null,
+        "server_name": "largefile.com",
+        "t": 0,
+        "tags": [
+          "classic",
+          "tcptls_experiment",
+          "depth=0",
+          "fetch_body=false"
+        ],
+        "tls_version": "TLSv1.3",
+        "transaction_id": 50001
+      }
+    ],
+    "x_control_request": {
+      "http_request": "http://largefile.com/",
+      "http_request_headers": {
+        "Accept": [
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        ],
+        "Accept-Language": [
+          "en-US,en;q=0.9"
+        ],
+        "User-Agent": [
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.3"
+        ]
+      },
+      "tcp_connect": [
+        "52.35.36.75:443",
+        "52.35.36.75:80"
+      ],
+      "x_quic_enabled": false
+    },
+    "control": {
+      "tcp_connect": {
+        "52.35.36.75:443": {
+          "status": true,
+          "failure": null
+        },
+        "52.35.36.75:80": {
+          "status": true,
+          "failure": null
+        }
+      },
+      "tls_handshake": {
+        "52.35.36.75:443": {
+          "server_name": "largefile.com",
+          "status": true,
+          "failure": null
+        }
+      },
+      "quic_handshake": {},
+      "http_request": {
+        "body_length": 16777216,
+        "discovered_h3_endpoint": "largefile.com:443",
+        "failure": null,
+        "title": "",
+        "headers": {
+          "Alt-Svc": "h3=\":443\"",
+          "Content-Type": "application/octet-stream",
+          "Date": "Thu, 24 Aug 2023 14:35:29 GMT"
+        },
+        "status_code": 200
+      },
+      "http3_request": null,
+      "dns": {
+        "failure": null,
+        "addrs": [
+          "52.35.36.75"
+        ]
+      },
+      "ip_info": {
+        "52.35.36.75": {
+          "asn": 16509,
+          "flags": 11
+        }
+      }
+    },
+    "x_conn_priority_log": null,
+    "control_failure": null,
+    "x_dns_flags": 0,
+    "dns_experiment_failure": null,
+    "dns_consistency": "consistent",
+    "http_experiment_failure": "generic_timeout_error",
+    "x_blocking_flags": 8,
+    "x_null_null_flags": 0,
+    "body_proportion": 0,
+    "body_length_match": null,
+    "headers_match": null,
+    "status_code_match": null,
+    "title_match": null,
+    "blocking": "http-failure",
+    "accessible": false
+  },
+  "test_name": "web_connectivity",
+  "test_runtime": 0,
+  "test_start_time": "2024-02-12 20:33:47",
+  "test_version": "0.5.28"
+}

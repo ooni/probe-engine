@@ -3,7 +3,7 @@ package webconnectivity
 import (
 	"testing"
 
-	"github.com/ooni/probe-engine/pkg/experiment/webconnectivityqa"
+	"github.com/ooni/probe-engine/pkg/webconnectivityqa"
 )
 
 func TestQA(t *testing.T) {

@@ -143,11 +143,11 @@ func TestNewTLSHandshakerStdlib(t *testing.T) {
 
 			t.Run("tls_handshake_start", func(t *testing.T) {
 				expect := &model.ArchivalNetworkEvent{
-					Address:   "",
+					Address:   "1.1.1.1:443",
 					Failure:   nil,
 					NumBytes:  0,
 					Operation: "tls_handshake_start",
-					Proto:     "",
+					Proto:     "tcp",
 					T:         0,
 					Tags:      []string{"antani"},
 				}
@@ -159,11 +159,11 @@ func TestNewTLSHandshakerStdlib(t *testing.T) {
 
 			t.Run("tls_handshake_done", func(t *testing.T) {
 				expect := &model.ArchivalNetworkEvent{
-					Address:   "",
+					Address:   "1.1.1.1:443",
 					Failure:   nil,
 					NumBytes:  0,
 					Operation: "tls_handshake_done",
-					Proto:     "",
+					Proto:     "tcp",
 					T0:        time.Second.Seconds(),
 					T:         time.Second.Seconds(),
 					Tags:      []string{"antani"},
@@ -236,7 +236,8 @@ func TestNewTLSHandshakerStdlib(t *testing.T) {
 		ca := netem.MustNewCA()
 		cert := ca.MustNewTLSCertificate("dns.google")
 		server := testingx.MustNewTLSServer(testingx.TLSHandlerHandshakeAndWriteText(cert, testingx.HTTPBlockpage451))
-		dialer := netxlite.NewDialerWithoutResolver(model.DiscardLogger)
+		netx := &netxlite.Netx{}
+		dialer := netx.NewDialerWithoutResolver(model.DiscardLogger)
 		ctx := context.Background()
 		conn, err := dialer.DialContext(ctx, "tcp", server.Endpoint())
 		if err != nil {
@@ -307,11 +308,11 @@ func TestNewTLSHandshakerStdlib(t *testing.T) {
 
 			t.Run("tls_handshake_start", func(t *testing.T) {
 				expect := &model.ArchivalNetworkEvent{
-					Address:   "",
+					Address:   server.Endpoint(),
 					Failure:   nil,
 					NumBytes:  0,
 					Operation: "tls_handshake_start",
-					Proto:     "",
+					Proto:     "tcp",
 					T:         0,
 					Tags:      []string{},
 				}
@@ -323,11 +324,11 @@ func TestNewTLSHandshakerStdlib(t *testing.T) {
 
 			t.Run("tls_handshake_done", func(t *testing.T) {
 				expect := &model.ArchivalNetworkEvent{
-					Address:   "",
+					Address:   server.Endpoint(),
 					Failure:   nil,
 					NumBytes:  0,
 					Operation: "tls_handshake_done",
-					Proto:     "",
+					Proto:     "tcp",
 					T0:        time.Second.Seconds(),
 					T:         time.Second.Seconds(),
 					Tags:      []string{},

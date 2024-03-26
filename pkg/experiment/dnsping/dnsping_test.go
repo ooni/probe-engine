@@ -3,10 +3,12 @@ package dnsping
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/ooni/netem"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
@@ -49,7 +51,7 @@ func TestMeasurer_run(t *testing.T) {
 		if m.ExperimentName() != "dnsping" {
 			t.Fatal("invalid experiment name")
 		}
-		if m.ExperimentVersion() != "0.3.0" {
+		if m.ExperimentVersion() != "0.4.0" {
 			t.Fatal("invalid experiment version")
 		}
 		ctx := context.Background()
@@ -110,7 +112,7 @@ func TestMeasurer_run(t *testing.T) {
 		)
 
 		env.Do(func() {
-			meas, m, err := runHelper("udp://8.8.8.8:53")
+			meas, _, err := runHelper("udp://8.8.8.8:53")
 			if err != nil {
 				t.Fatalf("Unexpected error: %s", err)
 			}
@@ -118,15 +120,6 @@ func TestMeasurer_run(t *testing.T) {
 			tk, _ := (meas.TestKeys).(*TestKeys)
 			if len(tk.Pings) != expectedPings*2 { // account for A & AAAA pings
 				t.Fatal("unexpected number of pings", len(tk.Pings))
-			}
-
-			ask, err := m.GetSummaryKeys(meas)
-			if err != nil {
-				t.Fatal("cannot obtain summary")
-			}
-			summary := ask.(SummaryKeys)
-			if summary.IsAnomaly {
-				t.Fatal("expected no anomaly")
 			}
 
 			for _, p := range tk.Pings {
@@ -168,7 +161,7 @@ func TestMeasurer_run(t *testing.T) {
 		})
 
 		env.Do(func() {
-			meas, m, err := runHelper("udp://8.8.8.8:53")
+			meas, _, err := runHelper("udp://8.8.8.8:53")
 			if err != nil {
 				t.Fatalf("Unexpected error: %s", err)
 			}
@@ -176,17 +169,6 @@ func TestMeasurer_run(t *testing.T) {
 			tk, _ := (meas.TestKeys).(*TestKeys)
 			if len(tk.Pings) != expectedPings*2 { // account for A & AAAA pings
 				t.Fatal("unexpected number of pings", len(tk.Pings))
-			}
-
-			// note: this experiment does not set anomaly but we still want
-			// to have a test here for when we possibly will
-			ask, err := m.GetSummaryKeys(meas)
-			if err != nil {
-				t.Fatal("cannot obtain summary")
-			}
-			summary := ask.(SummaryKeys)
-			if summary.IsAnomaly {
-				t.Fatal("expected no anomaly")
 			}
 
 			for _, p := range tk.Pings {
@@ -231,5 +213,34 @@ func TestMeasurer_run(t *testing.T) {
 				}
 			}
 		})
+	})
+}
+
+type mockableStoppableOperationLogger struct {
+	value any
+}
+
+func (ol *mockableStoppableOperationLogger) Stop(value any) {
+	ol.value = value
+}
+
+func TestStopOperationLogger(t *testing.T) {
+	t.Run("in case of success", func(t *testing.T) {
+		ol := &mockableStoppableOperationLogger{}
+		expect := []string{"8.8.8.8", "8.8.4.4"}
+		stopOperationLogger(ol, expect, nil)
+		if diff := cmp.Diff(strings.Join(expect, " "), ol.value); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("in case of failure", func(t *testing.T) {
+		ol := &mockableStoppableOperationLogger{}
+		addrs := []string{"8.8.8.8", "8.8.4.4"} // the error should prevail
+		expect := errors.New("antani")
+		stopOperationLogger(ol, addrs, expect)
+		if diff := cmp.Diff(expect, ol.value, cmpopts.EquateErrors()); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 }

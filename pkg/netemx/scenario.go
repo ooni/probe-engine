@@ -129,10 +129,29 @@ var InternetScenario = []*ScenarioDomainAddresses{{
 }, {
 	Domains: []string{"dns.quad9.net"},
 	Addresses: []string{
-		AddressDNSQuad9Net,
+		AddressDNSQuad9Net9999,
+		AddressDNSQuad9NetOther,
 	},
 	Role:             ScenarioRolePublicDNS,
 	ServerNameMain:   "dns.quad9.net",
+	ServerNameExtras: []string{},
+}, {
+	Domains: []string{"cloudflare-dns.com"},
+	Addresses: []string{
+		AddressCloudflareDNSCom1001,
+		AddressCloudflareDNSCom1111,
+	},
+	Role:             ScenarioRolePublicDNS,
+	ServerNameMain:   "cloudflare-dns.com",
+	ServerNameExtras: []string{},
+}, {
+	Domains: []string{"doh.opendns.com"},
+	Addresses: []string{
+		AddressOpenDNS220,
+		AddressOpenDNS222,
+	},
+	Role:             ScenarioRolePublicDNS,
+	ServerNameMain:   "doh.opendns.com",
 	ServerNameExtras: []string{},
 }, {
 	Domains: []string{"mozilla.cloudflare-dns.com"},
@@ -187,6 +206,66 @@ var InternetScenario = []*ScenarioDomainAddresses{{
 	},
 	Role:             ScenarioRoleBadSSL,
 	ServerNameMain:   "badssl.com",
+	ServerNameExtras: []string{},
+}, {
+	Addresses: []string{
+		AddressYandexCom1,
+	},
+	Domains: []string{
+		"yandex.com",
+		"ya.ru",
+		"xn--d1acpjx3f.xn--p1ai",
+	},
+	Role:           ScenarioRoleWebServer,
+	ServerNameMain: "ya.ru",
+	ServerNameExtras: []string{
+		"yandex.com",
+		"xn--d1acpjx3f.xn--p1ai",
+	},
+	WebServerFactory: YandexHandlerFactory(),
+}, {
+	Addresses: []string{
+		AddressLargeFileCom1,
+	},
+	Domains: []string{
+		"largefile.com",
+		"www.largefile.com",
+	},
+	Role:           ScenarioRoleWebServer,
+	ServerNameMain: "largefile.com",
+	ServerNameExtras: []string{
+		"www.largefile.com",
+	},
+	WebServerFactory: LargeFileHandlerFactory(),
+}, {
+	Addresses: []string{
+		AddressCloudflareCache1,
+	},
+	Domains: []string{
+		"www.cloudflare-cache.com",
+	},
+	Role:             ScenarioRoleWebServer,
+	ServerNameMain:   "www.cloudflare-cache.com",
+	ServerNameExtras: []string{},
+	WebServerFactory: CloudflareCAPTCHAHandlerFactory(),
+}, {
+	Addresses: []string{
+		AddressHTTPBinCom1,
+	},
+	Domains: []string{
+		"httpbin.com",
+	},
+	Role:             ScenarioRoleWebServer,
+	ServerNameMain:   "httpbin.com",
+	ServerNameExtras: []string{},
+	WebServerFactory: HTTPBinHandlerFactory(),
+}, {
+	Domains: []string{"dns.nextdns.io"},
+	Addresses: []string{
+		AddressNextDNSIo,
+	},
+	Role:             ScenarioRolePublicDNS,
+	ServerNameMain:   "dns.nextdns.io",
 	ServerNameExtras: []string{},
 }}
 

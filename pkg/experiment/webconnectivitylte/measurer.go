@@ -9,11 +9,11 @@ import (
 	"errors"
 	"net/http/cookiejar"
 	"sync"
-	"sync/atomic"
 
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
 	"github.com/ooni/probe-engine/pkg/inputparser"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/webconnectivityalgo"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -21,12 +21,22 @@ import (
 type Measurer struct {
 	// Contains the experiment's config.
 	Config *Config
+
+	// DNSOverHTTPSURLProvider is the MANDATORY provider of DNS-over-HTTPS
+	// URLs that arranges for periodic measurements.
+	DNSOverHTTPSURLProvider *webconnectivityalgo.OpportunisticDNSOverHTTPSURLProvider
 }
 
 // NewExperimentMeasurer creates a new model.ExperimentMeasurer.
 func NewExperimentMeasurer(config *Config) model.ExperimentMeasurer {
 	return &Measurer{
 		Config: config,
+		DNSOverHTTPSURLProvider: webconnectivityalgo.NewOpportunisticDNSOverHTTPSURLProvider(
+			"https://mozilla.cloudflare-dns.com/dns-query",
+			"https://dns.nextdns.io/dns-query",
+			"https://dns.google/dns-query",
+			"https://dns.quad9.net/dns-query",
+		),
 	}
 }
 
@@ -37,7 +47,7 @@ func (m *Measurer) ExperimentName() string {
 
 // ExperimentVersion implements model.ExperimentMeasurer.
 func (m *Measurer) ExperimentVersion() string {
-	return "0.5.27"
+	return "0.5.28"
 }
 
 // Run implements model.ExperimentMeasurer.
@@ -78,8 +88,12 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	tk := NewTestKeys()
 	measurement.TestKeys = tk
 
+	// make sure we add the ClientResolver field
+	//
+	// See https://github.com/ooni/probe/issues/2676
+	tk.ClientResolver = sess.ResolverIP()
+
 	// create variables required to run parallel tasks
-	idGenerator := &atomic.Int64{}
 	wg := &sync.WaitGroup{}
 
 	// create cookiejar
@@ -101,21 +115,22 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 
 	// start background tasks
 	resos := &DNSResolvers{
-		DNSCache:     NewDNSCache(),
-		Depth:        0,
-		Domain:       URL.Hostname(),
-		IDGenerator:  idGenerator,
-		Logger:       sess.Logger(),
-		NumRedirects: NewNumRedirects(5),
-		TestKeys:     tk,
-		URL:          URL,
-		ZeroTime:     measurement.MeasurementStartTimeSaved,
-		WaitGroup:    wg,
-		CookieJar:    jar,
-		Referer:      "",
-		Session:      sess,
-		TestHelpers:  testhelpers,
-		UDPAddress:   m.Config.DNSOverUDPResolver,
+		DNSCache:                NewDNSCache(),
+		DNSOverHTTPSURLProvider: m.DNSOverHTTPSURLProvider,
+		Depth:                   0,
+		Domain:                  URL.Hostname(),
+		IDGenerator:             NewIDGenerator(),
+		Logger:                  sess.Logger(),
+		NumRedirects:            NewNumRedirects(5),
+		TestKeys:                tk,
+		URL:                     URL,
+		ZeroTime:                measurement.MeasurementStartTimeSaved,
+		WaitGroup:               wg,
+		CookieJar:               jar,
+		Referer:                 "",
+		Session:                 sess,
+		TestHelpers:             testhelpers,
+		UDPAddress:              m.Config.DNSOverUDPResolver,
 	}
 	resos.Start(ctx)
 
@@ -132,9 +147,7 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	tk.Finalize(sess.Logger())
 
 	// set the test helper we used
-	// TODO(bassosimone): it may be more informative to know about all the
-	// test helpers we _tried_ to use, however the data format does not have
-	// support for that as far as I can tell...
+	// TODO(https://github.com/ooni/probe/issues/1857): record how we submitted
 	if th := tk.getTestHelper(); th != nil {
 		measurement.TestHelpers = map[string]interface{}{
 			"backend": th,

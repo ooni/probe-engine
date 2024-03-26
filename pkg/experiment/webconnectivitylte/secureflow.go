@@ -9,13 +9,11 @@ package webconnectivitylte
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/logx"
@@ -23,6 +21,7 @@ import (
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/throttling"
+	"github.com/ooni/probe-engine/pkg/webconnectivityalgo"
 )
 
 // Measures HTTPS endpoints.
@@ -33,14 +32,21 @@ type SecureFlow struct {
 	// Address is the MANDATORY address to connect to.
 	Address string
 
+	// Classic is true if this address was discovered using getaddrinfo.
+	Classic bool
+
 	// DNSCache is the MANDATORY DNS cache.
 	DNSCache *DNSCache
+
+	// DNSOverHTTPSURLProvider is the MANDATORY provider of DNS-over-HTTPS
+	// URLs that arranges for periodic measurements.
+	DNSOverHTTPSURLProvider *webconnectivityalgo.OpportunisticDNSOverHTTPSURLProvider
 
 	// Depth is the OPTIONAL current redirect depth.
 	Depth int64
 
 	// IDGenerator is the MANDATORY atomic int64 to generate task IDs.
-	IDGenerator *atomic.Int64
+	IDGenerator *IDGenerator
 
 	// Logger is the MANDATORY logger to use.
 	Logger model.Logger
@@ -94,7 +100,7 @@ type SecureFlow struct {
 // Start starts this task in a background goroutine.
 func (t *SecureFlow) Start(ctx context.Context) {
 	t.WaitGroup.Add(1)
-	index := t.IDGenerator.Add(1)
+	index := t.IDGenerator.NewIDForEndpointSecure()
 	go func() {
 		defer t.WaitGroup.Done() // synchronize with the parent
 		t.Run(ctx, index)
@@ -109,12 +115,7 @@ func (t *SecureFlow) Run(parentCtx context.Context, index int64) error {
 	}
 
 	// create trace
-	trace := measurexlite.NewTrace(index, t.ZeroTime, fmt.Sprintf("depth=%d", t.Depth),
-		fmt.Sprintf("fetch_body=%v", t.PrioSelector != nil))
-
-	// TODO(bassosimone): the DSL starts measuring for throttling when we start
-	// fetching the body while here we start immediately. We should come up with
-	// a consistent policy otherwise data won't be comparable.
+	trace := measurexlite.NewTrace(index, t.ZeroTime, generateTagsForEndpoints(t.Depth, t.PrioSelector, t.Classic)...)
 
 	// start measuring throttling
 	sampler := throttling.NewSampler(trace)
@@ -135,7 +136,14 @@ func (t *SecureFlow) Run(parentCtx context.Context, index int64) error {
 	tcpDialer := trace.NewDialerWithoutResolver(t.Logger)
 	tcpConn, err := tcpDialer.DialContext(tcpCtx, "tcp", t.Address)
 	t.TestKeys.AppendTCPConnectResults(trace.TCPConnects()...)
-	defer t.TestKeys.AppendNetworkEvents(trace.NetworkEvents()...) // here to include "connect" events
+	defer func() {
+		// BUGFIX: we must call trace.NetworkEvents()... inside the defer block otherwise
+		// we miss the read/write network events. See https://github.com/ooni/probe/issues/2674.
+		//
+		// Additionally, we must register this defer here because we want to include
+		// the "connect" event in case connect has failed.
+		t.TestKeys.AppendNetworkEvents(trace.NetworkEvents()...)
+	}()
 	if err != nil {
 		ol.Stop(err)
 		return err
@@ -179,10 +187,7 @@ func (t *SecureFlow) Run(parentCtx context.Context, index int64) error {
 	}
 
 	// create HTTP transport
-	// TODO(https://github.com/ooni/probe/issues/2534): here we're using the QUIRKY netxlite.NewHTTPTransport
-	// function, but we can probably avoid using it, given that this code is
-	// not using tracing and does not care about those quirks.
-	httpTransport := netxlite.NewHTTPTransport(
+	httpTransport := netxlite.NewHTTPTransportWithOptions(
 		t.Logger,
 		netxlite.NewNullDialer(),
 		netxlite.NewSingleUseTLSDialer(tlsConn),
@@ -223,7 +228,7 @@ func (t *SecureFlow) Run(parentCtx context.Context, index int64) error {
 	// if enabled, follow possible redirects
 	t.maybeFollowRedirects(parentCtx, httpResp)
 
-	// TODO: insert here additional code if needed
+	// ignore the response body
 	_ = httpRespBody
 
 	// completed successfully
@@ -305,15 +310,21 @@ func (t *SecureFlow) httpTransaction(ctx context.Context, network, address, alpn
 	txp model.HTTPTransport, req *http.Request, trace *measurexlite.Trace) (*http.Response, []byte, error) {
 	const maxbody = 1 << 19
 	started := trace.TimeSince(trace.ZeroTime())
-	// TODO(bassosimone): I am wondering whether we should have the HTTP transaction
-	// start at the beginning of the flow rather than here. If we start it at the
-	// beginning this is nicer, but, at the same time, starting it at the beginning
-	// of the flow means we're not collecting information about DNS. So, I am a
-	// bit torn about what is the best approach to follow here. Maybe it does not
-	// even matter to emit transaction_start/end events given that we have transaction ID.
-	t.TestKeys.AppendNetworkEvents(measurexlite.NewAnnotationArchivalNetworkEvent(
-		trace.Index(), started, "http_transaction_start", trace.Tags()...,
+
+	// Implementation note: we want to emit http_transaction_start when we actually start doing
+	// HTTP things such that it's possible to correctly classify network events
+	t.TestKeys.AppendNetworkEvents(measurexlite.NewArchivalNetworkEvent(
+		trace.Index(),
+		started,
+		"http_transaction_start",
+		network,
+		address,
+		0,
+		nil,
+		started,
+		trace.Tags()...,
 	))
+
 	resp, err := txp.RoundTrip(req)
 	var body []byte
 	if err == nil {
@@ -322,12 +333,25 @@ func (t *SecureFlow) httpTransaction(ctx context.Context, network, address, alpn
 			t.CookieJar.SetCookies(req.URL, cookies)
 		}
 		reader := io.LimitReader(resp.Body, maxbody)
-		body, err = StreamAllContext(ctx, reader)
+		body, err = netxlite.StreamAllContext(ctx, reader)
 	}
+	if err == nil && httpRedirectIsRedirect(resp) {
+		err = httpValidateRedirect(resp)
+	}
+
 	finished := trace.TimeSince(trace.ZeroTime())
-	t.TestKeys.AppendNetworkEvents(measurexlite.NewAnnotationArchivalNetworkEvent(
-		trace.Index(), finished, "http_transaction_done", trace.Tags()...,
+	t.TestKeys.AppendNetworkEvents(measurexlite.NewArchivalNetworkEvent(
+		trace.Index(),
+		finished,
+		"http_transaction_done",
+		network,
+		address,
+		0,
+		nil,
+		finished,
+		trace.Tags()...,
 	))
+
 	ev := measurexlite.NewArchivalHTTPRequestResult(
 		trace.Index(),
 		started,
@@ -343,6 +367,7 @@ func (t *SecureFlow) httpTransaction(ctx context.Context, network, address, alpn
 		finished,
 		trace.Tags()...,
 	)
+
 	t.TestKeys.PrependRequests(ev)
 	return resp, body, err
 }
@@ -352,34 +377,30 @@ func (t *SecureFlow) maybeFollowRedirects(ctx context.Context, resp *http.Respon
 	if !t.FollowRedirects || !t.NumRedirects.CanFollowOneMoreRedirect() {
 		return // not configured or too many redirects
 	}
-	switch resp.StatusCode {
-	case 301, 302, 307, 308:
+	if httpRedirectIsRedirect(resp) {
 		location, err := resp.Location()
 		if err != nil {
 			return // broken response from server
 		}
-		// TODO(https://github.com/ooni/probe/issues/2628): we need to handle
-		// the case where the redirect URL is incomplete
 		t.Logger.Infof("redirect to: %s", location.String())
 		resolvers := &DNSResolvers{
-			CookieJar:    t.CookieJar,
-			Depth:        t.Depth + 1,
-			DNSCache:     t.DNSCache,
-			Domain:       location.Hostname(),
-			IDGenerator:  t.IDGenerator,
-			Logger:       t.Logger,
-			NumRedirects: t.NumRedirects,
-			TestKeys:     t.TestKeys,
-			URL:          location,
-			ZeroTime:     t.ZeroTime,
-			WaitGroup:    t.WaitGroup,
-			Referer:      resp.Request.URL.String(),
-			Session:      nil, // no need to issue another control request
-			TestHelpers:  nil, // ditto
-			UDPAddress:   t.UDPAddress,
+			CookieJar:               t.CookieJar,
+			Depth:                   t.Depth + 1,
+			DNSOverHTTPSURLProvider: t.DNSOverHTTPSURLProvider,
+			DNSCache:                t.DNSCache,
+			Domain:                  location.Hostname(),
+			IDGenerator:             t.IDGenerator,
+			Logger:                  t.Logger,
+			NumRedirects:            t.NumRedirects,
+			TestKeys:                t.TestKeys,
+			URL:                     location,
+			ZeroTime:                t.ZeroTime,
+			WaitGroup:               t.WaitGroup,
+			Referer:                 resp.Request.URL.String(),
+			Session:                 nil, // no need to issue another control request
+			TestHelpers:             nil, // ditto
+			UDPAddress:              t.UDPAddress,
 		}
 		resolvers.Start(ctx)
-	default:
-		// no redirect to follow
 	}
 }

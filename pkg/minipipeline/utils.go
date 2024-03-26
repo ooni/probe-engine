@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ooni/probe-engine/pkg/geoipx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/optional"
@@ -17,8 +16,8 @@ func utilsStringPointerToString(failure *string) (out string) {
 	return
 }
 
-func utilsGeoipxLookupASN(ipAddress string) optional.Value[int64] {
-	if asn, _, err := geoipx.LookupASN(ipAddress); err == nil && asn > 0 {
+func utilsGeoipxLookupASN(lookupper model.GeoIPASNLookupper, ipAddress string) optional.Value[int64] {
+	if asn, _, err := lookupper.LookupASN(ipAddress); err == nil && asn > 0 {
 		return optional.Some(int64(asn))
 	}
 	return optional.None[int64]()
@@ -74,7 +73,8 @@ func utilsEngineIsGetaddrinfo(engine optional.Value[string]) bool {
 	}
 }
 
-func utilsExtractTagDepth(tags []string) optional.Value[int64] {
+func utilsExtractTagDepth(tags []string) (result optional.Value[int64]) {
+	result = optional.None[int64]()
 	for _, tag := range tags {
 		if !strings.HasPrefix(tag, "depth=") {
 			continue
@@ -84,20 +84,21 @@ func utilsExtractTagDepth(tags []string) optional.Value[int64] {
 		if err != nil {
 			continue
 		}
-		return optional.Some(value)
+		result = optional.Some(value)
 	}
-	return optional.None[int64]()
+	return
 }
 
-func utilsExtractTagFetchBody(tags []string) optional.Value[bool] {
+func utilsExtractTagFetchBody(tags []string) (result optional.Value[bool]) {
+	result = optional.None[bool]()
 	for _, tag := range tags {
 		if !strings.HasPrefix(tag, "fetch_body=") {
 			continue
 		}
 		tag = strings.TrimPrefix(tag, "fetch_body=")
-		return optional.Some(tag == "true")
+		result = optional.Some(tag == "true")
 	}
-	return optional.None[bool]()
+	return
 }
 
 func utilsDNSLookupFailureIsDNSNoAnswerForAAAA(obs *WebObservation) bool {
@@ -109,6 +110,10 @@ func utilsDNSEngineIsDNSOverHTTPS(obs *WebObservation) bool {
 	return obs.DNSEngine.UnwrapOr("") == "doh"
 }
 
+// utilsTCPConnectFailureSeemsMisconfiguredIPv6 returns whether IPv6 seems to be
+// misconfigured for this specific TCP connect attempt.
+//
+// See https://github.com/ooni/probe/issues/2284 for more info.
 func utilsTCPConnectFailureSeemsMisconfiguredIPv6(obs *WebObservation) bool {
 	switch obs.TCPConnectFailure.UnwrapOr("") {
 	case netxlite.FailureNetworkUnreachable, netxlite.FailureHostUnreachable:

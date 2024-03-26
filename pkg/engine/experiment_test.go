@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/ooni/probe-engine/pkg/enginelocate"
+	"github.com/ooni/probe-engine/pkg/experiment/example"
+	"github.com/ooni/probe-engine/pkg/experiment/signal"
 	"github.com/ooni/probe-engine/pkg/model"
 )
 
@@ -72,4 +74,34 @@ func TestExperimentHonoursSharingDefaults(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExperimentMeasurementSummaryKeysNotImplemented(t *testing.T) {
+	t.Run("the .Anomaly method returns false", func(t *testing.T) {
+		sk := &ExperimentMeasurementSummaryKeysNotImplemented{}
+		if sk.Anomaly() != false {
+			t.Fatal("expected false")
+		}
+	})
+}
+
+func TestExperimentMeasurementSummaryKeys(t *testing.T) {
+	t.Run("when the TestKeys implement MeasurementSummaryKeysProvider", func(t *testing.T) {
+		tk := &signal.TestKeys{}
+		meas := &model.Measurement{TestKeys: tk}
+		sk := MeasurementSummaryKeys(meas)
+		if _, good := sk.(*signal.SummaryKeys); !good {
+			t.Fatal("not the expected type")
+		}
+	})
+
+	t.Run("otherwise", func(t *testing.T) {
+		// note: example does not implement SummaryKeys
+		tk := &example.TestKeys{}
+		meas := &model.Measurement{TestKeys: tk}
+		sk := MeasurementSummaryKeys(meas)
+		if _, good := sk.(*ExperimentMeasurementSummaryKeysNotImplemented); !good {
+			t.Fatal("not the expected type")
+		}
+	})
 }

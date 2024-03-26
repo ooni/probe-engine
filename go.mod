@@ -4,10 +4,10 @@ go 1.20
 
 require (
 	filippo.io/age v1.1.1
-	github.com/Psiphon-Labs/psiphon-tunnel-core v1.0.11-0.20231206204740-a8e5fc0cf6c7
+	github.com/Psiphon-Labs/psiphon-tunnel-core v1.0.11-0.20240312131609-91e2a902d867
 	github.com/apex/log v1.9.0
 	github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5
-	github.com/cloudflare/circl v1.3.6
+	github.com/cloudflare/circl v1.3.7
 	github.com/cretz/bine v0.2.0
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
 	github.com/dop251/goja_nodejs v0.0.0-20231122114759-e84d9a924c5c
@@ -16,27 +16,27 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gorilla/websocket v1.5.1
 	github.com/hexops/gotextdiff v1.0.3
-	github.com/miekg/dns v1.1.57
+	github.com/miekg/dns v1.1.58
 	github.com/montanaflynn/stats v0.7.1
-	github.com/ooni/netem v0.0.0-20231213064826-3cc1ea5e942c
-	github.com/ooni/oocrypto v0.5.7
-	github.com/ooni/oohttp v0.6.7
-	github.com/ooni/probe-assets v0.21.0
+	github.com/ooni/netem v0.0.0-20240208095707-608dcbcd82b8
+	github.com/ooni/oocrypto v0.5.8
+	github.com/ooni/oohttp v0.6.8
+	github.com/ooni/probe-assets v0.22.0
 	github.com/pborman/getopt/v2 v2.1.0
 	github.com/pion/stun v0.6.1
 	github.com/pkg/errors v0.9.1
 	github.com/quic-go/quic-go v0.40.1
-	github.com/rogpeppe/go-internal v1.11.0
+	github.com/rogpeppe/go-internal v1.12.0
 	github.com/rubenv/sql-migrate v1.5.2
-	github.com/schollz/progressbar/v3 v3.14.1
+	github.com/schollz/progressbar/v3 v3.14.2
 	github.com/upper/db/v4 v4.7.0
 	gitlab.com/yawning/obfs4.git v0.0.0-20231012084234-c3e2d44b1033
 	gitlab.com/yawning/utls.git v0.0.12-1
 	gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/goptlib v1.5.0
 	gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/snowflake/v2 v2.6.1
-	golang.org/x/crypto v0.16.0
-	golang.org/x/net v0.19.0
-	golang.org/x/sys v0.15.0
+	golang.org/x/crypto v0.21.0
+	golang.org/x/net v0.22.0
+	golang.org/x/sys v0.18.0
 )
 
 require (
@@ -57,7 +57,7 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/pprof v0.0.0-20231212022811-ec68065c825e // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/refraction-networking/conjure v0.7.10 // indirect
 	github.com/refraction-networking/ed25519 v0.1.2 // indirect
 	github.com/refraction-networking/obfs4 v0.1.2 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
@@ -111,7 +111,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
 	github.com/klauspost/reedsolomon v1.11.8 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.18
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/oschwald/maxminddb-golang v1.12.0
 	github.com/pion/datachannel v1.5.5 // indirect
 	github.com/pion/dtls/v2 v2.2.8 // indirect
@@ -146,8 +146,8 @@ require (
 	github.com/xtaci/smux v1.5.24 // indirect
 	gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.16.1 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	golang.org/x/tools v0.17.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )

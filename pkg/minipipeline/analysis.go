@@ -3,6 +3,8 @@ package minipipeline
 import (
 	"sort"
 
+	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/netxlite"
 	"github.com/ooni/probe-engine/pkg/optional"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 )
@@ -49,7 +51,7 @@ func NewLinearWebAnalysis(input *WebObservationsContainer) (output []*WebObserva
 		output = append(output, entry)
 	}
 
-	// sort in descending order
+	// sort using complex sorting rule
 	sort.SliceStable(output, func(i, j int) bool {
 		left, right := output[i], output[j]
 
@@ -57,13 +59,15 @@ func NewLinearWebAnalysis(input *WebObservationsContainer) (output []*WebObserva
 		// TagDepth sort at the end of the generated list.
 		if left.TagDepth.UnwrapOr(-1) > right.TagDepth.UnwrapOr(-1) {
 			return true
-		} else if left.TagDepth.UnwrapOr(-1) < right.TagDepth.UnwrapOr(-1) {
+		}
+		if left.TagDepth.UnwrapOr(-1) < right.TagDepth.UnwrapOr(-1) {
 			return false
 		}
 
 		if left.Type > right.Type {
 			return true
-		} else if left.Type < right.Type {
+		}
+		if left.Type < right.Type {
 			return false
 		}
 
@@ -72,7 +76,8 @@ func NewLinearWebAnalysis(input *WebObservationsContainer) (output []*WebObserva
 		const defaultFailureValue = "unknown_failure"
 		if left.Failure.UnwrapOr(defaultFailureValue) < right.Failure.UnwrapOr(defaultFailureValue) {
 			return true
-		} else if left.Failure.UnwrapOr(defaultFailureValue) > right.Failure.UnwrapOr(defaultFailureValue) {
+		}
+		if left.Failure.UnwrapOr(defaultFailureValue) > right.Failure.UnwrapOr(defaultFailureValue) {
 			return false
 		}
 
@@ -92,12 +97,16 @@ func NewLinearWebAnalysis(input *WebObservationsContainer) (output []*WebObserva
 	return
 }
 
-// AnalyzeWebObservations generates a [*WebAnalysis] from a [*WebObservationsContainer].
-func AnalyzeWebObservations(container *WebObservationsContainer) *WebAnalysis {
-	analysis := &WebAnalysis{}
+// AnalyzeWebObservationsWithoutLinearAnalysis generates a [*WebAnalysis] from a [*WebObservationsContainer]
+// but avoids calling [NewLinearyAnalysis] to generate a linear analysis.
+func AnalyzeWebObservationsWithoutLinearAnalysis(
+	lookupper model.GeoIPASNLookupper, container *WebObservationsContainer) *WebAnalysis {
+	analysis := &WebAnalysis{
+		ControlExpectations: container.ControlExpectations,
+	}
 
-	analysis.dnsComputeSuccessMetrics(container)
-	analysis.dnsComputeSuccessMetricsClassic(container)
+	analysis.dnsComputeSuccessMetrics(lookupper, container)
+	analysis.dnsComputeSuccessMetricsClassic(lookupper, container)
 	analysis.dnsComputeFailureMetrics(container)
 
 	analysis.tcpComputeMetrics(container)
@@ -105,8 +114,15 @@ func AnalyzeWebObservations(container *WebObservationsContainer) *WebAnalysis {
 	analysis.httpComputeFailureMetrics(container)
 	analysis.httpComputeFinalResponseMetrics(container)
 
-	analysis.Linear = NewLinearWebAnalysis(container)
+	return analysis
+}
 
+// AnalyzeWebObservationsWithLinearAnalysis generates a [*WebAnalysis] from a [*WebObservationsContainer]
+// and ensures we also use [NewLinearyAnalysis] to generate a linear analysis.
+func AnalyzeWebObservationsWithLinearAnalysis(
+	lookupper model.GeoIPASNLookupper, container *WebObservationsContainer) *WebAnalysis {
+	analysis := AnalyzeWebObservationsWithoutLinearAnalysis(lookupper, container)
+	analysis.Linear = NewLinearWebAnalysis(container)
 	return analysis
 }
 
@@ -114,12 +130,24 @@ func AnalyzeWebObservations(container *WebObservationsContainer) *WebAnalysis {
 //
 // The zero value of this struct is ready to use.
 type WebAnalysis struct {
+	// ControlExpectations summarizes the expectations we have for the control. You should
+	// use this field to determine (a) whether unexplained failures are expected or unexpected
+	// and (b) whether we expect to see any resolved IP address and (c) possibly more flags.
+	ControlExpectations optional.Value[*WebObservationsControlExpectations]
+
+	// DNSLookupSuccess contains all DNS lookups that were successful and for which
+	// we potentially have control information (i.e., in the 0-th redirect).
+	DNSLookupSuccess Set[int64]
+
 	// DNSLookupSuccessWithInvalidAddresses contains DNS transactions with invalid IP addresses by
 	// taking into account control info, bogons, and TLS handshakes.
 	DNSLookupSuccessWithInvalidAddresses Set[int64]
 
 	// DNSLookupSuccessWithValidAddress contains DNS transactions with valid IP addresses.
 	DNSLookupSuccessWithValidAddress Set[int64]
+
+	// DNSLookupSuccessWithBogonAddresses contains DNS transactions with bogon IP addresses.
+	DNSLookupSuccessWithBogonAddresses Set[int64]
 
 	// DNSLookupSuccessWithInvalidAddressesClassic is like DNSLookupInvalid but the algorithm is more relaxed
 	// to be compatible with Web Connectivity v0.4's behavior.
@@ -131,15 +159,24 @@ type WebAnalysis struct {
 	// DNSLookupUnexpectedFailure contains DNS transactions with unexpected failures.
 	DNSLookupUnexpectedFailure Set[int64]
 
+	// DNSLookupUnexplainedFailure contains DNS transactions with unexplained failures (i.e.,
+	// failures for which there's no corresponding control information).
+	DNSLookupUnexplainedFailure Set[int64]
+
 	// DNSExperimentFailure is the first failure experienced by any resolver
 	// before hitting redirects (i.e., when TagDepth==0).
 	DNSExperimentFailure optional.Value[string]
 
-	// DNSLookupExpectedFailure contains DNS transactions with expected failures.
+	// DNSLookupExpectedFailure contains DNS transactions with expected failures, i.e.,
+	// failures that are consistent for the probe and the TH.
 	DNSLookupExpectedFailure Set[int64]
 
 	// DNSLookupExpectedSuccess contains DNS transactions with expected successes.
 	DNSLookupExpectedSuccess Set[int64]
+
+	// TCPConnectExpectedFailure contains TCP connect transactions that failed
+	// consistently for the probe and the test helper.
+	TCPConnectExpectedFailure Set[int64]
 
 	// TCPConnectUnexpectedFailure contains TCP endpoint transactions with unexpected failures.
 	TCPConnectUnexpectedFailure Set[int64]
@@ -152,7 +189,8 @@ type WebAnalysis struct {
 	// while checking for connectivity, as opposed to fetching a webpage.
 	TCPConnectUnexpectedFailureDuringConnectivityCheck Set[int64]
 
-	// TCPConnectUnexplainedFailure contains failures occurring during redirects.
+	// TCPConnectUnexplainedFailure contains failures occurring during redirects, i.e.,
+	// failures for which there's no corresponding control info.
 	TCPConnectUnexplainedFailure Set[int64]
 
 	// TCPConnectUnexplainedFailureDuringWebFetch contains failures occurring during redirects
@@ -162,6 +200,10 @@ type WebAnalysis struct {
 	// TCPConnectUnexplainedFailureDuringConnectivityCheck contains failures occurring during redirects
 	// while checking for connectivity, as opposed to fetching a webpage.
 	TCPConnectUnexplainedFailureDuringConnectivityCheck Set[int64]
+
+	// TLSHandshakeExpectedFailure contains TLS endpoint transactions that failed
+	// consistently for the probe and the test helper.
+	TLSHandshakeExpectedFailure Set[int64]
 
 	// TLSHandshakeUnexpectedFailure contains TLS endpoint transactions with unexpected failures.
 	TLSHandshakeUnexpectedFailure Set[int64]
@@ -174,7 +216,8 @@ type WebAnalysis struct {
 	// while checking for connectivity, as opposed to fetching a webpage.
 	TLSHandshakeUnexpectedFailureDuringConnectivityCheck Set[int64]
 
-	// TLSHandshakeUnexplainedFailure contains failures occurring during redirects.
+	// TLSHandshakeUnexplainedFailure contains failures occurring during redirects, i.e.,
+	// failures for which there's no corresponding control info.
 	TLSHandshakeUnexplainedFailure Set[int64]
 
 	// TLSHandshakeUnexplainedFailureDuringWebFetch  contains failures occurring during redirects
@@ -187,6 +230,10 @@ type WebAnalysis struct {
 
 	// HTTPRoundTripUnexpectedFailure contains HTTP endpoint transactions with unexpected failures.
 	HTTPRoundTripUnexpectedFailure Set[int64]
+
+	// HTTPRoundTripUnexplainedFailure contains failures occurring during redirects, i.e.,
+	// failures for which there's no corresponding control info.
+	HTTPRoundTripUnexplainedFailure Set[int64]
 
 	// HTTPFinalResponseSuccessTLSWithoutControl contains the ID of the final response
 	// transaction when the final response succeeded without control and with TLS.
@@ -217,11 +264,13 @@ type WebAnalysis struct {
 	// HTTPFinalResponseDiffUncommonHeadersIntersection contains the uncommon headers intersection.
 	HTTPFinalResponseDiffUncommonHeadersIntersection optional.Value[map[string]bool]
 
-	// Linear contains the linear analysis.
+	// Linear contains the linear analysis. We only fill this field when using
+	// the [AnalyzeWebObservationsWithLinearAnalysis] constructor.
 	Linear []*WebObservation
 }
 
-func (wa *WebAnalysis) dnsComputeSuccessMetrics(c *WebObservationsContainer) {
+func (wa *WebAnalysis) dnsComputeSuccessMetrics(
+	lookupper model.GeoIPASNLookupper, c *WebObservationsContainer) {
 	// fill the invalid set
 	var already Set[int64]
 	for _, obs := range c.DNSLookupSuccesses {
@@ -236,10 +285,15 @@ func (wa *WebAnalysis) dnsComputeSuccessMetrics(c *WebObservationsContainer) {
 			continue
 		}
 
-		// if there's a bogon, mark as invalid
+		// track all the 0-th redirect lookups that succeded which helps to
+		// determine whether the probe UNEXPECTEDLY resolved any address.
+		wa.DNSLookupSuccess.Add(obs.DNSTransactionID.Unwrap())
+
+		// if there's a bogon, register it and continue processing.
 		if !obs.IPAddressBogon.IsNone() && obs.IPAddressBogon.Unwrap() {
-			wa.DNSLookupSuccessWithInvalidAddresses.Add(obs.DNSTransactionID.Unwrap())
-			continue
+			wa.DNSLookupSuccessWithBogonAddresses.Add(obs.DNSTransactionID.Unwrap())
+			// fallthrough: bogons are legitimate if the website DNS is actually misconfigured
+			// so we determine bogons status and invalid addresses separately
 		}
 
 		// when there is no control info, we cannot say much
@@ -258,7 +312,7 @@ func (wa *WebAnalysis) dnsComputeSuccessMetrics(c *WebObservationsContainer) {
 		}
 
 		// this lookup is good if there is ASN intersection
-		if DNSDiffFindCommonASNsIntersection(measurement, control).Len() > 0 {
+		if DNSDiffFindCommonASNsIntersection(lookupper, measurement, control).Len() > 0 {
 			wa.DNSLookupSuccessWithValidAddress.Add(obs.DNSTransactionID.Unwrap())
 			continue
 		}
@@ -286,7 +340,8 @@ func (wa *WebAnalysis) dnsComputeSuccessMetrics(c *WebObservationsContainer) {
 	}
 }
 
-func (wa *WebAnalysis) dnsComputeSuccessMetricsClassic(c *WebObservationsContainer) {
+func (wa *WebAnalysis) dnsComputeSuccessMetricsClassic(
+	lookupper model.GeoIPASNLookupper, c *WebObservationsContainer) {
 	var already Set[int64]
 
 	for _, obs := range c.DNSLookupSuccesses {
@@ -317,7 +372,7 @@ func (wa *WebAnalysis) dnsComputeSuccessMetricsClassic(c *WebObservationsContain
 		}
 
 		// this lookup is good if there is ASN intersection
-		if DNSDiffFindCommonASNsIntersection(measurement, control).Len() > 0 {
+		if DNSDiffFindCommonASNsIntersection(lookupper, measurement, control).Len() > 0 {
 			wa.DNSLookupSuccessWithValidAddressClassic.Add(obs.DNSTransactionID.Unwrap())
 			continue
 		}
@@ -337,11 +392,6 @@ func (wa *WebAnalysis) dnsComputeFailureMetrics(c *WebObservationsContainer) {
 		}
 		already.Add(obs.DNSTransactionID.Unwrap())
 
-		// lookups once we started following redirects should not be considered
-		if obs.TagDepth.IsNone() || obs.TagDepth.Unwrap() != 0 {
-			continue
-		}
-
 		// Implementation note: a DoH failure is not information about the URL we're
 		// measuring but about the DoH service being blocked.
 		//
@@ -358,6 +408,16 @@ func (wa *WebAnalysis) dnsComputeFailureMetrics(c *WebObservationsContainer) {
 		// TODO(bassosimone): if we set an IPv6 address as the resolver address, we
 		// end up with false positive errors when there's no IPv6 support
 
+		// lookups once we started following redirects does not have corresponding
+		// control information, so failures end up being unexplained
+		if obs.TagDepth.IsNone() || obs.TagDepth.Unwrap() != 0 {
+			if obs.DNSLookupFailure.Unwrap() != "" {
+				wa.DNSLookupUnexplainedFailure.Add(obs.DNSTransactionID.Unwrap())
+				continue
+			}
+			continue
+		}
+
 		// honor the DNSExperimentFailure by assigning the first
 		// probe error that we see with depth==0
 		if obs.DNSLookupFailure.Unwrap() != "" && wa.DNSExperimentFailure.IsNone() {
@@ -370,7 +430,18 @@ func (wa *WebAnalysis) dnsComputeFailureMetrics(c *WebObservationsContainer) {
 			continue
 		}
 
-		// handle the case where both failed
+		// Handle the case where both failed.
+		//
+		// See https://github.com/ooni/probe/issues/2290 for further
+		// documentation about the issue we're solving here.
+		//
+		// It would be tempting to check specifically for NXDOMAIN here, but we
+		// know it is problematic do that. In fact, on Android the getaddrinfo
+		// resolver always returns EAI_NODATA on error, regardless of the actual
+		// error that may have occurred in the Android DNS backend.
+		//
+		// See https://github.com/ooni/probe/issues/2029 for more information
+		// on Android's getaddrinfo behavior.
 		if obs.DNSLookupFailure.Unwrap() != "" && obs.ControlDNSLookupFailure.Unwrap() != "" {
 			wa.DNSLookupExpectedFailure.Add(obs.DNSTransactionID.Unwrap())
 			continue
@@ -382,7 +453,17 @@ func (wa *WebAnalysis) dnsComputeFailureMetrics(c *WebObservationsContainer) {
 		}
 
 		// handle the case where only the probe failed
-		if obs.DNSLookupFailure.Unwrap() != "" {
+		if failure := obs.DNSLookupFailure.Unwrap(); failure != "" {
+			// When the probe says dns_no_answer the control would otherwise say that
+			// we have resolved zero IP addresses for historical reasons. In such a case,
+			// let's pretend that also the control returned dns_no_answer.
+			if failure == netxlite.FailureDNSNoAnswer {
+				if !obs.ControlDNSResolvedAddrs.IsNone() && obs.ControlDNSResolvedAddrs.Unwrap().Len() <= 0 {
+					wa.DNSLookupExpectedFailure.Add(obs.DNSTransactionID.Unwrap())
+					continue
+				}
+				// fallthrough
+			}
 			wa.DNSLookupUnexpectedFailure.Add(obs.DNSTransactionID.Unwrap())
 			continue
 		}
@@ -424,11 +505,17 @@ func (wa *WebAnalysis) tcpComputeMetrics(c *WebObservationsContainer) {
 		}
 
 		// handle the case where both the probe and the control fail
+		//
+		// See https://explorer.ooni.org/measurement/20220911T105037Z_webconnectivity_IT_30722_n1_ruzuQ219SmIO9SrT?input=https://doh.centraleu.pi-dns.com/dns-query?dns=q80BAAABAAAAAAAAA3d3dwdleGFtcGxlA2NvbQAAAQAB
+		// for an example measurement with this behavior.
+		//
+		// See also https://github.com/ooni/probe/issues/2299.
 		if obs.TCPConnectFailure.Unwrap() != "" && obs.ControlTCPConnectFailure.Unwrap() != "" {
+			wa.TCPConnectExpectedFailure.Add(obs.EndpointTransactionID.Unwrap())
 			continue
 		}
 
-		// handle the case where only the control fails
+		// handle the case where the control fails
 		if obs.ControlTCPConnectFailure.Unwrap() != "" {
 			continue
 		}
@@ -479,11 +566,14 @@ func (wa *WebAnalysis) tlsComputeMetrics(c *WebObservationsContainer) {
 		}
 
 		// handle the case where both the probe and the control fail
-		if obs.TLSHandshakeFailure.Unwrap() != "" && obs.ControlTCPConnectFailure.Unwrap() != "" {
+		//
+		// See https://github.com/ooni/probe/issues/2300.
+		if obs.TLSHandshakeFailure.Unwrap() != "" && obs.ControlTLSHandshakeFailure.Unwrap() != "" {
+			wa.TLSHandshakeExpectedFailure.Add(obs.EndpointTransactionID.Unwrap())
 			continue
 		}
 
-		// handle the case where only the control fails
+		// handle the case where the control fails
 		if obs.ControlTLSHandshakeFailure.Unwrap() != "" {
 			continue
 		}
@@ -514,6 +604,10 @@ func (wa *WebAnalysis) httpComputeFailureMetrics(c *WebObservationsContainer) {
 
 		// handle the case where there is no control information
 		if obs.ControlHTTPFailure.IsNone() {
+			if obs.HTTPFailure.Unwrap() != "" {
+				wa.HTTPRoundTripUnexplainedFailure.Add(obs.EndpointTransactionID.Unwrap())
+				continue
+			}
 			continue
 		}
 
@@ -575,59 +669,73 @@ func (wa *WebAnalysis) httpHandleFinalResponse(obs *WebObservation) {
 	wa.httpDiffTitleDifferentLongWords(obs)
 }
 
-func (wa *WebAnalysis) httpDiffBodyProportionFactor(obs *WebObservation) {
+// httpDiffBodyProportionFactor computes the body proportion factor.
+//
+// The return value--used for testing--is zero on success and negative in case of failure.
+func (wa *WebAnalysis) httpDiffBodyProportionFactor(obs *WebObservation) int64 {
 	// we should only perform the comparison for a final response
 	if !obs.HTTPResponseIsFinal.UnwrapOr(false) {
-		return
+		return -1
 	}
 
 	// we need a valid body length and the body must not be truncated
 	measurement := obs.HTTPResponseBodyLength.UnwrapOr(0)
-	if measurement <= 0 || obs.HTTPResponseBodyIsTruncated.UnwrapOr(true) {
-		return
+	if measurement <= 0 {
+		return -2
+	}
+	if obs.HTTPResponseBodyIsTruncated.UnwrapOr(true) {
+		return -3
 	}
 
 	// we also need a valid control body length
 	control := obs.ControlHTTPResponseBodyLength.UnwrapOr(0)
 	if control <= 0 {
-		return
+		return -4
 	}
 
 	// compute the body proportion factor and update the state
 	proportion := ComputeHTTPDiffBodyProportionFactor(measurement, control)
 	wa.HTTPFinalResponseDiffBodyProportionFactor = optional.Some(proportion)
+	return 0
 }
 
-func (wa *WebAnalysis) httpDiffStatusCodeMatch(obs *WebObservation) {
+// httpDiffStatusCodeMatch computes whether the status code matches.
+//
+// The return value--used for testing--is zero on success and negative in case of failure.
+func (wa *WebAnalysis) httpDiffStatusCodeMatch(obs *WebObservation) int64 {
 	// we should only perform the comparison for a final response
 	if !obs.HTTPResponseIsFinal.UnwrapOr(false) {
-		return
+		return -1
 	}
 
 	// we need a positive status code for both
 	measurement := obs.HTTPResponseStatusCode.UnwrapOr(0)
 	if measurement <= 0 {
-		return
+		return -2
 	}
 	control := obs.ControlHTTPResponseStatusCode.UnwrapOr(0)
 	if control <= 0 {
-		return
+		return -3
 	}
 
 	// update state
 	wa.HTTPFinalResponseDiffStatusCodeMatch = ComputeHTTPDiffStatusCodeMatch(measurement, control)
+	return 0
 }
 
-func (wa *WebAnalysis) httpDiffUncommonHeadersIntersection(obs *WebObservation) {
+// httpDiffUncommonHeadersIntersection computes the uncommon headers intersection.
+//
+// The return value--used for testing--is negative in case of failure and zero or positive otherwise.
+func (wa *WebAnalysis) httpDiffUncommonHeadersIntersection(obs *WebObservation) int64 {
 	// we should only perform the comparison for a final response
 	if !obs.HTTPResponseIsFinal.UnwrapOr(false) {
-		return
+		return -1
 	}
 
 	// We should only perform the comparison if we have valid control data. Because
 	// the headers could legitimately be empty, let's use the status code here.
 	if obs.ControlHTTPResponseStatusCode.UnwrapOr(0) <= 0 {
-		return
+		return -2
 	}
 
 	// Implementation note: here we need to continue running when either
@@ -639,18 +747,22 @@ func (wa *WebAnalysis) httpDiffUncommonHeadersIntersection(obs *WebObservation) 
 
 	state := ComputeHTTPDiffUncommonHeadersIntersection(measurement, control)
 	wa.HTTPFinalResponseDiffUncommonHeadersIntersection = optional.Some(state)
+	return int64(len(state))
 }
 
-func (wa *WebAnalysis) httpDiffTitleDifferentLongWords(obs *WebObservation) {
+// httpDiffTitleDifferentLongWords computes the different long words.
+//
+// The return value--used for testing--is negative in case of failure and zero or positive otherwise.
+func (wa *WebAnalysis) httpDiffTitleDifferentLongWords(obs *WebObservation) int64 {
 	// we should only perform the comparison for a final response
 	if !obs.HTTPResponseIsFinal.UnwrapOr(false) {
-		return
+		return -1
 	}
 
 	// We should only perform the comparison if we have valid control data. Because
 	// the title could legitimately be empty, let's use the status code here.
 	if obs.ControlHTTPResponseStatusCode.UnwrapOr(0) <= 0 {
-		return
+		return -2
 	}
 
 	measurement := obs.HTTPResponseTitle.UnwrapOr("")
@@ -659,4 +771,5 @@ func (wa *WebAnalysis) httpDiffTitleDifferentLongWords(obs *WebObservation) {
 	state := ComputeHTTPDiffTitleDifferentLongWords(measurement, control)
 
 	wa.HTTPFinalResponseDiffTitleDifferentLongWords = optional.Some(state)
+	return int64(len(state))
 }

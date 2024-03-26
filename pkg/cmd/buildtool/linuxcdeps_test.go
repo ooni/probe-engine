@@ -40,12 +40,12 @@ func TestLinuxCdepsBuildMain(t *testing.T) {
 		expect: []buildtooltest.ExecExpectations{{
 			Env: []string{},
 			Argv: []string{
-				"curl", "-fsSLO", "https://zlib.net/zlib-1.3.tar.gz",
+				"curl", "-fsSLO", "https://zlib.net/zlib-1.3.1.tar.gz",
 			},
 		}, {
 			Env: []string{},
 			Argv: []string{
-				"tar", "-xf", "zlib-1.3.tar.gz",
+				"tar", "-xf", "zlib-1.3.1.tar.gz",
 			},
 		}, {
 			Env: []string{},
@@ -92,12 +92,12 @@ func TestLinuxCdepsBuildMain(t *testing.T) {
 		expect: []buildtooltest.ExecExpectations{{
 			Env: []string{},
 			Argv: []string{
-				"curl", "-fsSLO", "https://www.openssl.org/source/openssl-3.2.0.tar.gz",
+				"curl", "-fsSLO", "https://www.openssl.org/source/openssl-3.2.1.tar.gz",
 			},
 		}, {
 			Env: []string{},
 			Argv: []string{
-				"tar", "-xf", "openssl-3.2.0.tar.gz",
+				"tar", "-xf", "openssl-3.2.1.tar.gz",
 			},
 		}, {
 			Env: []string{},
@@ -350,6 +350,16 @@ func TestLinuxCdepsBuildMain(t *testing.T) {
 				"git", "apply", faketopdir + "/CDEPS/tor/003.patch",
 			},
 		}, {
+			Env: []string{},
+			Argv: []string{
+				"git", "apply", faketopdir + "/CDEPS/tor/004.patch",
+			},
+		}, {
+			Env: []string{},
+			Argv: []string{
+				"autoreconf", "-vif",
+			},
+		}, {
 			Env: []string{
 				"CFLAGS=-D_FORTIFY_SOURCE=2 -fstack-protector-strong -fstack-clash-protection -fPIC -fsanitize=bounds -fsanitize-undefined-trap-on-error -O2",
 				"CXXFLAGS=-D_FORTIFY_SOURCE=2 -fstack-protector-strong -fstack-clash-protection -fPIC -fsanitize=bounds -fsanitize-undefined-trap-on-error -O2",
@@ -370,6 +380,8 @@ func TestLinuxCdepsBuildMain(t *testing.T) {
 				"--disable-systemd",
 				"--prefix=/",
 				"--disable-unittests",
+				"--disable-system-torrc",
+				"--disable-seccomp",
 			},
 		}, {
 			Env: []string{},

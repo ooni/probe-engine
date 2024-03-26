@@ -22,15 +22,15 @@ var ErrNoTestKeys = errors.New("minipipeline: no test keys")
 // XControlRequestFields: in such a case, this function will just avoid using the test helper
 // (aka control) information for generating flat [*WebObservation]. This function returns an
 // error if the [*WebMeasurement] TestKeys are empty or Input is not a valid URL.
-func IngestWebMeasurement(meas *WebMeasurement) (*WebObservationsContainer, error) {
+func IngestWebMeasurement(lookupper model.GeoIPASNLookupper, meas *WebMeasurement) (*WebObservationsContainer, error) {
 	tk := meas.TestKeys.UnwrapOr(nil)
 	if tk == nil {
 		return nil, ErrNoTestKeys
 	}
 
 	container := NewWebObservationsContainer()
-	container.IngestDNSLookupEvents(tk.Queries...)
-	container.IngestTCPConnectEvents(tk.TCPConnect...)
+	container.IngestDNSLookupEvents(lookupper, tk.Queries...)
+	container.IngestTCPConnectEvents(lookupper, tk.TCPConnect...)
 	container.IngestTLSHandshakeEvents(tk.TLSHandshakes...)
 	container.IngestHTTPRoundTripEvents(tk.Requests...)
 
@@ -63,6 +63,12 @@ const (
 
 	// The last operation is an HTTP round trip.
 	WebObservationTypeHTTPRoundTrip
+)
+
+// These are the possible origins for IP addresses.
+const (
+	IPAddressOriginDNS = "dns"
+	IPAddressOriginTH  = "th"
 )
 
 // WebObservation is an observation of the flow that starts with a DNS lookup that
@@ -144,6 +150,9 @@ type WebObservation struct {
 	// 2. when the experiment discovers IP addresses through the TH response;
 	//
 	// 3. when the input URL contains an IP address.
+
+	// IPAddressOrigin is the optional origin of the IP address.
+	IPAddressOrigin optional.Value[string]
 
 	// IPAddress is the optional IP address that this observation is about. We typically derive
 	// this value from a DNS lookup, but sometimes we know it from other means (e.g., from
@@ -253,6 +262,16 @@ type WebObservation struct {
 	ControlHTTPResponseTitle optional.Value[string]
 }
 
+// WebObservationsControlExpectations summarizes the expectations based on the control.
+type WebObservationsControlExpectations struct {
+	// DNSAddresses contains the addresses resolved by the control.
+	DNSAddresses Set[string]
+
+	// FinalResponseFailure is the failure observed by the control when attempting
+	// to fetch the final webpage associated with a URL.
+	FinalResponseFailure optional.Value[string]
+}
+
 // WebObservationsContainer contains [*WebObservations].
 //
 // The zero value of this struct is not ready to use, please use [NewWebObservationsContainer].
@@ -273,6 +292,9 @@ type WebObservationsContainer struct {
 	// KnownTCPEndpoints maps transaction IDs to TCP observations.
 	KnownTCPEndpoints map[int64]*WebObservation
 
+	// ControlExpectations summarizes the expectations we have based on the control results.
+	ControlExpectations optional.Value[*WebObservationsControlExpectations]
+
 	// knownIPAddresses is an internal field that maps an IP address to the
 	// corresponding DNS observation that discovered it.
 	knownIPAddresses map[string]*WebObservation
@@ -290,9 +312,10 @@ func NewWebObservationsContainer() *WebObservationsContainer {
 
 // IngestDNSLookupEvents ingests DNS lookup events from a OONI measurement. You MUST
 // ingest DNS lookup events before ingesting any other kind of event.
-func (c *WebObservationsContainer) IngestDNSLookupEvents(evs ...*model.ArchivalDNSLookupResult) {
+func (c *WebObservationsContainer) IngestDNSLookupEvents(
+	lookupper model.GeoIPASNLookupper, evs ...*model.ArchivalDNSLookupResult) {
 	c.ingestDNSLookupFailures(evs...)
-	c.ingestDNSLookupSuccesses(evs...)
+	c.ingestDNSLookupSuccesses(lookupper, evs...)
 }
 
 func (c *WebObservationsContainer) ingestDNSLookupFailures(evs ...*model.ArchivalDNSLookupResult) {
@@ -321,7 +344,8 @@ func (c *WebObservationsContainer) ingestDNSLookupFailures(evs ...*model.Archiva
 	}
 }
 
-func (c *WebObservationsContainer) ingestDNSLookupSuccesses(evs ...*model.ArchivalDNSLookupResult) {
+func (c *WebObservationsContainer) ingestDNSLookupSuccesses(
+	lookupper model.GeoIPASNLookupper, evs ...*model.ArchivalDNSLookupResult) {
 	for _, ev := range evs {
 		// skip all the failed queries
 		if ev.Failure != nil {
@@ -342,8 +366,9 @@ func (c *WebObservationsContainer) ingestDNSLookupSuccesses(evs ...*model.Archiv
 				DNSQueryType:     optional.Some(ev.QueryType),
 				DNSEngine:        optional.Some(ev.Engine),
 				DNSResolvedAddrs: optional.Some(addrs),
+				IPAddressOrigin:  optional.Some(IPAddressOriginDNS),
 				IPAddress:        optional.Some(ipAddr),
-				IPAddressASN:     utilsGeoipxLookupASN(ipAddr),
+				IPAddressASN:     utilsGeoipxLookupASN(lookupper, ipAddr),
 				IPAddressBogon:   optional.Some(netxlite.IsBogon(ipAddr)),
 				TagDepth:         utilsExtractTagDepth(ev.Tags),
 			}
@@ -361,15 +386,17 @@ func (c *WebObservationsContainer) ingestDNSLookupSuccesses(evs ...*model.Archiv
 
 // IngestTCPConnectEvents ingests TCP connect events from a OONI measurement. You MUST ingest
 // these events after DNS events and before any other kind of events.
-func (c *WebObservationsContainer) IngestTCPConnectEvents(evs ...*model.ArchivalTCPConnectResult) {
+func (c *WebObservationsContainer) IngestTCPConnectEvents(
+	lookupper model.GeoIPASNLookupper, evs ...*model.ArchivalTCPConnectResult) {
 	for _, ev := range evs {
 		// create or fetch a record
 		obs, found := c.knownIPAddresses[ev.IP]
 		if !found {
 			obs = &WebObservation{
-				IPAddress:      optional.Some(ev.IP),
-				IPAddressASN:   utilsGeoipxLookupASN(ev.IP),
-				IPAddressBogon: optional.Some(netxlite.IsBogon(ev.IP)),
+				IPAddressOrigin: optional.None[string](), // we don't know!
+				IPAddress:       optional.Some(ev.IP),
+				IPAddressASN:    utilsGeoipxLookupASN(lookupper, ev.IP),
+				IPAddressBogon:  optional.Some(netxlite.IsBogon(ev.IP)),
 			}
 		}
 
@@ -387,6 +414,7 @@ func (c *WebObservationsContainer) IngestTCPConnectEvents(evs ...*model.Archival
 			DNSDomain:             obs.DNSDomain,
 			DNSLookupFailure:      obs.DNSLookupFailure,
 			DNSResolvedAddrs:      obs.DNSResolvedAddrs,
+			IPAddressOrigin:       obs.IPAddressOrigin,
 			IPAddress:             obs.IPAddress,
 			IPAddressASN:          obs.IPAddressASN,
 			IPAddressBogon:        obs.IPAddressBogon,
@@ -444,7 +472,7 @@ func (c *WebObservationsContainer) IngestHTTPRoundTripEvents(evs ...*model.Archi
 		if ev.Failure == nil {
 			obs.HTTPResponseStatusCode = optional.Some(ev.Response.Code)
 			obs.HTTPResponseBodyLength = optional.Some(int64(len(ev.Response.Body)))
-			obs.HTTPResponseBodyIsTruncated = optional.Some(ev.Request.BodyIsTruncated)
+			obs.HTTPResponseBodyIsTruncated = optional.Some(ev.Response.BodyIsTruncated)
 			obs.HTTPResponseHeadersKeys = utilsExtractHTTPHeaderKeys(ev.Response.Headers)
 			obs.HTTPResponseTitle = optional.Some(measurexlite.WebGetTitle(string(ev.Response.Body)))
 			obs.HTTPResponseLocation = utilsExtractHTTPLocation(ev.Response.Headers)
@@ -515,6 +543,7 @@ func (c *WebObservationsContainer) controlMatchDNSLookupResults(inputDomain stri
 		// handle the case in which the IP address has been provided by the control, which
 		// is a case where the domain is empty and the IP address is in thAddrMap
 		if domain == "" && thAddrMap[addr] {
+			obs.IPAddressOrigin = optional.Some(IPAddressOriginTH)
 			obs.ControlDNSDomain = optional.Some(inputDomain)
 			obs.ControlDNSLookupFailure = optional.Some(utilsStringPointerToString(resp.DNS.Failure))
 			obs.ControlDNSResolvedAddrs = optional.Some(NewSet(resp.DNS.Addrs...))
@@ -584,7 +613,6 @@ func (c *WebObservationsContainer) controlXrefTLSFailures(resp *model.THResponse
 }
 
 func (c *WebObservationsContainer) controlSetHTTPFinalResponseExpectation(resp *model.THResponse) {
-
 	// We need to set expectations for each type of observation. For example, to detect
 	// NXDOMAIN blocking with redirects when there's the expectation of success, we need
 	// to have the expectation inside the DNS-lookup-failure observation.
@@ -594,6 +622,14 @@ func (c *WebObservationsContainer) controlSetHTTPFinalResponseExpectation(resp *
 	for _, obs := range c.KnownTCPEndpoints {
 		observations = append(observations, obs)
 	}
+
+	// make sure we have a final expectation based on what the control observed, which
+	// is in turn necessary to figure out whether unexplained probe failures during redirects
+	// are expected or unexpected.
+	c.ControlExpectations = optional.Some(&WebObservationsControlExpectations{
+		DNSAddresses:         NewSet(resp.DNS.Addrs...),
+		FinalResponseFailure: optional.Some(utilsStringPointerToString(resp.HTTPRequest.Failure)),
+	})
 
 	for _, obs := range observations {
 		obs.ControlHTTPFailure = optional.Some(utilsStringPointerToString(resp.HTTPRequest.Failure))

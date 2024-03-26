@@ -1,22 +1,43 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "2001:4860:4860::8844",
+      "2001:4860:4860::8888",
+      "8.8.4.4",
+      "8.8.8.8"
+    ],
+    "FinalResponseFailure": "generic_timeout_error"
+  },
+  "DNSLookupSuccess": [
+    1
+  ],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [
     1
   ],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [],
   "DNSLookupSuccessWithValidAddressClassic": [
     1
   ],
   "DNSLookupUnexpectedFailure": [],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": null,
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [
+    4,
+    5,
+    6,
+    7
+  ],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [],
   "TCPConnectUnexplainedFailureDuringWebFetch": [],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -24,6 +45,7 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
   "HTTPFinalResponseSuccessTLSWithControl": null,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
@@ -50,6 +72,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2001:4860:4860::8888",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -102,6 +125,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2001:4860:4860::8844",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -154,6 +178,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "8.8.8.8",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -206,6 +231,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "8.8.4.4",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -258,6 +284,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2001:4860:4860::8844",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -310,6 +337,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "2001:4860:4860::8888",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -362,6 +390,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "8.8.4.4",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,
@@ -414,6 +443,7 @@
         "8.8.4.4",
         "8.8.8.8"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "8.8.8.8",
       "IPAddressASN": 15169,
       "IPAddressBogon": false,

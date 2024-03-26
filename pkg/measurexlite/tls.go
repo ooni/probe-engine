@@ -16,7 +16,7 @@ import (
 	"github.com/ooni/probe-engine/pkg/netxlite"
 )
 
-// NewTLSHandshakerStdlib is equivalent to netxlite.NewTLSHandshakerStdlib
+// NewTLSHandshakerStdlib is equivalent to netxlite.Netx.NewTLSHandshakerStdlib
 // except that it returns a model.TLSHandshaker that uses this trace.
 func (tx *Trace) NewTLSHandshakerStdlib(dl model.DebugLogger) model.TLSHandshaker {
 	return &tlsHandshakerTrace{
@@ -43,8 +43,17 @@ func (thx *tlsHandshakerTrace) Handshake(
 func (tx *Trace) OnTLSHandshakeStart(now time.Time, remoteAddr string, config *tls.Config) {
 	t := now.Sub(tx.ZeroTime())
 	select {
-	case tx.networkEvent <- NewAnnotationArchivalNetworkEvent(
-		tx.Index(), t, "tls_handshake_start", tx.tags...):
+	case tx.networkEvent <- NewArchivalNetworkEvent(
+		tx.Index(),
+		t,
+		"tls_handshake_start",
+		"tcp",
+		remoteAddr,
+		0,
+		nil,
+		t,
+		tx.tags...,
+	):
 	default: // buffer is full
 	}
 }
@@ -70,8 +79,17 @@ func (tx *Trace) OnTLSHandshakeDone(started time.Time, remoteAddr string, config
 	}
 
 	select {
-	case tx.networkEvent <- NewAnnotationArchivalNetworkEvent(
-		tx.Index(), t, "tls_handshake_done", tx.tags...):
+	case tx.networkEvent <- NewArchivalNetworkEvent(
+		tx.Index(),
+		t,
+		"tls_handshake_done",
+		"tcp",
+		remoteAddr,
+		0,
+		nil,
+		t,
+		tx.tags...,
+	):
 	default: // buffer is full
 	}
 }

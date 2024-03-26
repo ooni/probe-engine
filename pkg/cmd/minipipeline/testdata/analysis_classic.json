@@ -1,23 +1,36 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "130.192.16.171"
+    ],
+    "FinalResponseFailure": ""
+  },
+  "DNSLookupSuccess": [
+    2
+  ],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [
     1,
     2
   ],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [],
   "DNSLookupSuccessWithValidAddressClassic": [
     2
   ],
   "DNSLookupUnexpectedFailure": [],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": null,
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [],
   "TCPConnectUnexplainedFailureDuringWebFetch": [],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -25,6 +38,7 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
   "HTTPFinalResponseSuccessTLSWithControl": 4,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
@@ -51,6 +65,7 @@
       "DNSResolvedAddrs": [
         "130.192.16.171"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.16.171",
       "IPAddressASN": 137,
       "IPAddressBogon": false,
@@ -127,6 +142,7 @@
       "DNSResolvedAddrs": [
         "130.192.16.171"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.16.171",
       "IPAddressASN": 137,
       "IPAddressBogon": false,

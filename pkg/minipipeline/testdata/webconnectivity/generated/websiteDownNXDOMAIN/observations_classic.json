@@ -4,14 +4,15 @@
       "TagDepth": 0,
       "Type": 0,
       "Failure": "dns_nxdomain_error",
-      "TransactionID": 2,
+      "TransactionID": 10001,
       "TagFetchBody": null,
-      "DNSTransactionID": 2,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.xyz",
       "DNSLookupFailure": "dns_nxdomain_error",
       "DNSQueryType": "ANY",
       "DNSEngine": "getaddrinfo",
       "DNSResolvedAddrs": null,
+      "IPAddressOrigin": null,
       "IPAddress": null,
       "IPAddressASN": null,
       "IPAddressBogon": null,
@@ -44,5 +45,9 @@
     }
   ],
   "DNSLookupSuccesses": [],
-  "KnownTCPEndpoints": {}
+  "KnownTCPEndpoints": {},
+  "ControlExpectations": {
+    "DNSAddresses": [],
+    "FinalResponseFailure": "dns_lookup_error"
+  }
 }

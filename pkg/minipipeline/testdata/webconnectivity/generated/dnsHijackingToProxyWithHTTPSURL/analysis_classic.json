@@ -1,22 +1,35 @@
 {
+  "ControlExpectations": {
+    "DNSAddresses": [
+      "93.184.216.34"
+    ],
+    "FinalResponseFailure": ""
+  },
+  "DNSLookupSuccess": [
+    10001
+  ],
   "DNSLookupSuccessWithInvalidAddresses": [],
   "DNSLookupSuccessWithValidAddress": [
-    2
+    10001
   ],
+  "DNSLookupSuccessWithBogonAddresses": [],
   "DNSLookupSuccessWithInvalidAddressesClassic": [
-    2
+    10001
   ],
   "DNSLookupSuccessWithValidAddressClassic": [],
   "DNSLookupUnexpectedFailure": [],
+  "DNSLookupUnexplainedFailure": [],
   "DNSExperimentFailure": null,
   "DNSLookupExpectedFailure": [],
   "DNSLookupExpectedSuccess": [],
+  "TCPConnectExpectedFailure": [],
   "TCPConnectUnexpectedFailure": [],
   "TCPConnectUnexpectedFailureDuringWebFetch": [],
   "TCPConnectUnexpectedFailureDuringConnectivityCheck": [],
   "TCPConnectUnexplainedFailure": [],
   "TCPConnectUnexplainedFailureDuringWebFetch": [],
   "TCPConnectUnexplainedFailureDuringConnectivityCheck": [],
+  "TLSHandshakeExpectedFailure": [],
   "TLSHandshakeUnexpectedFailure": [],
   "TLSHandshakeUnexpectedFailureDuringWebFetch": [],
   "TLSHandshakeUnexpectedFailureDuringConnectivityCheck": [],
@@ -24,8 +37,9 @@
   "TLSHandshakeUnexplainedFailureDuringWebFetch": [],
   "TLSHandshakeUnexplainedFailureDuringConnectivityCheck": [],
   "HTTPRoundTripUnexpectedFailure": [],
+  "HTTPRoundTripUnexplainedFailure": [],
   "HTTPFinalResponseSuccessTLSWithoutControl": null,
-  "HTTPFinalResponseSuccessTLSWithControl": 3,
+  "HTTPFinalResponseSuccessTLSWithControl": 50001,
   "HTTPFinalResponseSuccessTCPWithoutControl": null,
   "HTTPFinalResponseSuccessTCPWithControl": null,
   "HTTPFinalResponseDiffBodyProportionFactor": 1,
@@ -40,9 +54,9 @@
       "TagDepth": 0,
       "Type": 3,
       "Failure": "",
-      "TransactionID": 3,
+      "TransactionID": 50001,
       "TagFetchBody": true,
-      "DNSTransactionID": 2,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.com",
       "DNSLookupFailure": "",
       "DNSQueryType": null,
@@ -50,10 +64,11 @@
       "DNSResolvedAddrs": [
         "130.192.182.17"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.182.17",
       "IPAddressASN": 137,
       "IPAddressBogon": false,
-      "EndpointTransactionID": 3,
+      "EndpointTransactionID": 50001,
       "EndpointProto": "tcp",
       "EndpointPort": "443",
       "EndpointAddress": "130.192.182.17:443",
@@ -96,9 +111,9 @@
       "TagDepth": 0,
       "Type": 0,
       "Failure": "",
-      "TransactionID": 2,
+      "TransactionID": 10001,
       "TagFetchBody": null,
-      "DNSTransactionID": 2,
+      "DNSTransactionID": 10001,
       "DNSDomain": "www.example.com",
       "DNSLookupFailure": "",
       "DNSQueryType": "ANY",
@@ -106,6 +121,7 @@
       "DNSResolvedAddrs": [
         "130.192.182.17"
       ],
+      "IPAddressOrigin": "dns",
       "IPAddress": "130.192.182.17",
       "IPAddressASN": 137,
       "IPAddressBogon": false,

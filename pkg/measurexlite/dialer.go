@@ -12,11 +12,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ooni/probe-engine/pkg/bytecounter"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 )
 
-// NewDialerWithoutResolver is equivalent to netxlite.NewDialerWithoutResolver
+// NewDialerWithoutResolver is equivalent to [netxlite.Netx.NewDialerWithoutResolver]
 // except that it returns a model.Dialer that uses this trace.
 //
 // Caveat: the dialer wrappers are there to implement the [model.MeasuringNetwork]
@@ -38,7 +39,9 @@ var _ model.Dialer = &dialerTrace{}
 
 // DialContext implements model.Dialer.DialContext.
 func (d *dialerTrace) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
-	return d.d.DialContext(netxlite.ContextWithTrace(ctx, d.tx), network, address)
+	// Here we make sure that we're counting bytes sent and received.
+	dialer := bytecounter.WrapWithContextAwareDialer(d.d)
+	return dialer.DialContext(netxlite.ContextWithTrace(ctx, d.tx), network, address)
 }
 
 // CloseIdleConnections implements model.Dialer.CloseIdleConnections.

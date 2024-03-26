@@ -14,7 +14,7 @@ import (
 	"github.com/quic-go/quic-go"
 )
 
-// NewQUICDialerWithoutResolver is equivalent to netxlite.NewQUICDialerWithoutResolver
+// NewQUICDialerWithoutResolver is equivalent to netxlite.Netx.NewQUICDialerWithoutResolver
 // except that it returns a model.QUICDialer that uses this trace.
 //
 // Caveat: the dialer wrappers are there to implement the [model.MeasuringNetwork]
@@ -39,6 +39,7 @@ var _ model.QUICDialer = &quicDialerTrace{}
 func (qdx *quicDialerTrace) DialContext(ctx context.Context,
 	address string, tlsConfig *tls.Config, quicConfig *quic.Config) (
 	quic.EarlyConnection, error) {
+	// TODO(https://github.com/ooni/probe/issues/2665)
 	return qdx.qd.DialContext(netxlite.ContextWithTrace(ctx, qdx.tx), address, tlsConfig, quicConfig)
 }
 
