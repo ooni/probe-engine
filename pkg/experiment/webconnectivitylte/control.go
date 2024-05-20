@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/experiment/webconnectivity"
-	"github.com/ooni/probe-engine/pkg/httpapi"
 	"github.com/ooni/probe-engine/pkg/logx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/ooapi"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/ooni/probe-engine/pkg/webconnectivityalgo"
 )
 
 // EndpointMeasurementsStarter is used by Control to start extra
@@ -109,14 +108,8 @@ func (c *Control) Run(parentCtx context.Context) {
 		c.TestHelpers,
 	)
 
-	// create an httpapi sequence caller
-	seqCaller := httpapi.NewSequenceCaller(
-		ooapi.NewDescriptorTH(creq),
-		httpapi.NewEndpointList(c.Session.DefaultHTTPClient(), c.Logger, c.Session.UserAgent(), c.TestHelpers...)...,
-	)
-
 	// issue the control request and wait for the response
-	cresp, idx, err := seqCaller.Call(opCtx)
+	cresp, idx, err := webconnectivityalgo.CallWebConnectivityTestHelper(opCtx, creq, c.TestHelpers, c.Session)
 	if err != nil {
 		// make sure error is wrapped
 		err = netxlite.NewTopLevelGenericErrWrapper(err)

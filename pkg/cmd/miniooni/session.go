@@ -12,12 +12,6 @@ import (
 	"github.com/ooni/probe-engine/pkg/legacy/kvstore2dir"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/runtimex"
-	"github.com/ooni/probe-engine/pkg/version"
-)
-
-const (
-	softwareName    = "miniooni"
-	softwareVersion = version.Version
 )
 
 // newSessionOrPanic creates and starts a new session or panics on failure
@@ -44,8 +38,8 @@ func newSessionOrPanic(ctx context.Context, currentOptions *Options,
 		Logger:              logger,
 		ProxyURL:            proxyURL,
 		SnowflakeRendezvous: currentOptions.SnowflakeRendezvous,
-		SoftwareName:        softwareName,
-		SoftwareVersion:     softwareVersion,
+		SoftwareName:        currentOptions.SoftwareName,
+		SoftwareVersion:     currentOptions.SoftwareVersion,
 		TorArgs:             currentOptions.TorArgs,
 		TorBinary:           currentOptions.TorBinary,
 		TunnelDir:           tunnelDir,

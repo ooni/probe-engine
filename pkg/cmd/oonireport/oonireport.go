@@ -15,7 +15,6 @@ import (
 	"github.com/ooni/probe-engine/pkg/engine"
 	"github.com/ooni/probe-engine/pkg/fsx"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/probeservices"
 	"github.com/ooni/probe-engine/pkg/runtimex"
 	"github.com/ooni/probe-engine/pkg/version"
 	"github.com/pborman/getopt/v2"
@@ -43,8 +42,7 @@ const (
 )
 
 var (
-	path    string
-	control bool
+	path string
 )
 
 func fatalIfFalse(cond bool, msg string) {
@@ -55,7 +53,7 @@ func fatalIfFalse(cond bool, msg string) {
 
 func readLines(path string) []string {
 	// open measurement file
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 - this is working as intended
 	runtimex.PanicOnError(err, "Open file error.")
 	defer file.Close()
 
@@ -89,11 +87,8 @@ func newSession(ctx context.Context) *engine.Session {
 }
 
 // new Submitter creates a probe services client and submitter
-func newSubmitter(sess *engine.Session, ctx context.Context) *probeservices.Submitter {
-	psc, err := sess.NewProbeServicesClient(ctx)
-	runtimex.PanicOnError(err, "error occurred while creating client")
-	submitter := probeservices.NewSubmitter(psc, sess.Logger())
-	return submitter
+func newSubmitter(sess *engine.Session, ctx context.Context) model.Submitter {
+	return runtimex.Try1(sess.NewSubmitter(ctx))
 }
 
 // toMeasurement loads an input string as model.Measurement
@@ -106,7 +101,7 @@ func toMeasurement(s string) *model.Measurement {
 
 // submitAll submits the measurements in input. Returns the count of submitted measurements, both
 // on success and on error, and the error that occurred (nil on success).
-func submitAll(ctx context.Context, lines []string, subm *probeservices.Submitter) (int, error) {
+func submitAll(ctx context.Context, lines []string, subm model.Submitter) (int, error) {
 	submitted := 0
 	for _, line := range lines {
 		mm := toMeasurement(line)

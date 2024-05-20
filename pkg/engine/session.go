@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"sync"
@@ -155,7 +154,7 @@ func NewSession(ctx context.Context, config SessionConfig) (*Session, error) {
 	// use the temporary directory on the current system. This should
 	// work on Desktop. We tested that it did also work on iOS, but
 	// we have also seen on 2020-06-10 that it does not work on Android.
-	tempDir, err := ioutil.TempDir(config.TempDir, "ooniengine")
+	tempDir, err := os.MkdirTemp(config.TempDir, "ooniengine")
 	if err != nil {
 		return nil, err
 	}
@@ -265,9 +264,7 @@ func (s *Session) KibiBytesSent() float64 {
 //
 // The return value is either the check-in response or an error.
 func (s *Session) CheckIn(
-	ctx context.Context, config *model.OOAPICheckInConfig) (*model.OOAPICheckInResultNettests, error) {
-	// TODO(bassosimone): consider refactoring this function to return
-	// the whole check-in response to the caller.
+	ctx context.Context, config *model.OOAPICheckInConfig) (*model.OOAPICheckInResult, error) {
 	if err := s.maybeLookupLocationContext(ctx); err != nil {
 		return nil, err
 	}
@@ -300,7 +297,7 @@ func (s *Session) CheckIn(
 	if err != nil {
 		return nil, err
 	}
-	return &resp.Tests, nil
+	return resp, nil
 }
 
 // maybeLookupLocationContext is a wrapper for MaybeLookupLocationContext that calls
@@ -321,7 +318,7 @@ func (s *Session) newProbeServicesClientForCheckIn(
 	if s.testNewProbeServicesClientForCheckIn != nil {
 		return s.testNewProbeServicesClientForCheckIn(ctx)
 	}
-	client, err := s.NewProbeServicesClient(ctx)
+	client, err := s.newProbeServicesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +338,7 @@ func (s *Session) Close() error {
 // doClose implements Close. This function is called just once.
 func (s *Session) doClose() {
 	// make sure we close open connections and persist stats to the key-value store
-	s.network.Close()
+	_ = s.network.Close()
 
 	s.resolver.CloseIdleConnections()
 	if s.tunnel != nil {
@@ -367,7 +364,7 @@ func (s *Session) DefaultHTTPClient() model.HTTPClient {
 // FetchTorTargets fetches tor targets from the API.
 func (s *Session) FetchTorTargets(
 	ctx context.Context, cc string) (map[string]model.OOAPITorTarget, error) {
-	clnt, err := s.NewOrchestraClient(ctx)
+	clnt, err := s.newOrchestraClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -382,16 +379,6 @@ func (s *Session) KeyValueStore() model.KeyValueStore {
 // Logger returns the logger used by the session.
 func (s *Session) Logger() model.Logger {
 	return s.logger
-}
-
-// MaybeLookupLocation is a caching location lookup call.
-func (s *Session) MaybeLookupLocation() error {
-	return s.MaybeLookupLocationContext(context.Background())
-}
-
-// MaybeLookupBackends is a caching OONI backends lookup call.
-func (s *Session) MaybeLookupBackends() error {
-	return s.MaybeLookupBackendsContext(context.Background())
 }
 
 // ErrAlreadyUsingProxy indicates that we cannot create a tunnel with
@@ -411,12 +398,12 @@ func (s *Session) NewExperimentBuilder(name string) (model.ExperimentBuilder, er
 	return eb, nil
 }
 
-// NewProbeServicesClient creates a new client for talking with the
+// newProbeServicesClient creates a new client for talking with the
 // OONI probe services. This function will benchmark the available
 // probe services, and select the fastest. In case all probe services
 // seem to be down, we try again applying circumvention tactics.
 // This function will fail IMMEDIATELY if given a cancelled context.
-func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
+func (s *Session) newProbeServicesClient(ctx context.Context) (*probeservices.Client, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err() // helps with testing
 	}
@@ -433,21 +420,18 @@ func (s *Session) NewProbeServicesClient(ctx context.Context) (*probeservices.Cl
 }
 
 // NewSubmitter creates a new submitter instance.
-func (s *Session) NewSubmitter(ctx context.Context) (Submitter, error) {
-	psc, err := s.NewProbeServicesClient(ctx)
+func (s *Session) NewSubmitter(ctx context.Context) (model.Submitter, error) {
+	psc, err := s.newProbeServicesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return probeservices.NewSubmitter(psc, s.Logger()), nil
 }
 
-// NewOrchestraClient creates a new orchestra client. This client is registered
+// newOrchestraClient creates a new orchestra client. This client is registered
 // and logged in with the OONI orchestra. An error is returned on failure.
-//
-// This function is DEPRECATED. New code SHOULD NOT use it. It will eventually
-// be made private or entirely removed from the codebase.
-func (s *Session) NewOrchestraClient(ctx context.Context) (*probeservices.Client, error) {
-	clnt, err := s.NewProbeServicesClient(ctx)
+func (s *Session) newOrchestraClient(ctx context.Context) (*probeservices.Client, error) {
+	clnt, err := s.newProbeServicesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -665,9 +649,9 @@ func (s *Session) MaybeLookupBackendsContext(ctx context.Context) error {
 	return nil
 }
 
-// LookupLocationContext performs a location lookup. If you want memoisation
+// doLookupLocationContext performs a location lookup. If you want memoisation
 // of the results, you should use MaybeLookupLocationContext.
-func (s *Session) LookupLocationContext(ctx context.Context) (*enginelocate.Results, error) {
+func (s *Session) doLookupLocationContext(ctx context.Context) (*enginelocate.Results, error) {
 	task := enginelocate.NewTask(enginelocate.Config{
 		Logger:    s.Logger(),
 		Resolver:  s.resolver,
@@ -682,7 +666,7 @@ func (s *Session) lookupLocationContext(ctx context.Context) (*enginelocate.Resu
 	if s.testLookupLocationContext != nil {
 		return s.testLookupLocationContext(ctx)
 	}
-	return s.LookupLocationContext(ctx)
+	return s.doLookupLocationContext(ctx)
 }
 
 // MaybeLookupLocationContext is like MaybeLookupLocation but with a context

@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/ooni/probe-engine/pkg/geoipx"
-	"github.com/ooni/probe-engine/pkg/httpapi"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/netxlite"
-	"github.com/ooni/probe-engine/pkg/ooapi"
 	"github.com/ooni/probe-engine/pkg/runtimex"
+	"github.com/ooni/probe-engine/pkg/webconnectivityalgo"
 )
 
 // Redirect to types defined inside the model package
@@ -24,12 +23,8 @@ type (
 func Control(
 	ctx context.Context, sess model.ExperimentSession,
 	testhelpers []model.OOAPIService, creq ControlRequest) (ControlResponse, *model.OOAPIService, error) {
-	seqCaller := httpapi.NewSequenceCaller(
-		ooapi.NewDescriptorTH(&creq),
-		httpapi.NewEndpointList(sess.DefaultHTTPClient(), sess.Logger(), sess.UserAgent(), testhelpers...)...,
-	)
 	sess.Logger().Infof("control for %s...", creq.HTTPRequest)
-	out, idx, err := seqCaller.Call(ctx)
+	out, idx, err := webconnectivityalgo.CallWebConnectivityTestHelper(ctx, &creq, testhelpers, sess)
 	sess.Logger().Infof("control for %s... %+v", creq.HTTPRequest, model.ErrorToStringOrOK(err))
 	if err != nil {
 		// make sure error is wrapped

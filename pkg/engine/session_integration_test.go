@@ -146,7 +146,7 @@ func newSessionForTestingNoLookups(t *testing.T) *Session {
 
 func newSessionForTestingNoBackendsLookup(t *testing.T) *Session {
 	sess := newSessionForTestingNoLookups(t)
-	if err := sess.MaybeLookupLocation(); err != nil {
+	if err := sess.MaybeLookupLocationContext(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	log.Infof("Platform: %s", sess.Platform())
@@ -164,7 +164,7 @@ func newSessionForTestingNoBackendsLookup(t *testing.T) *Session {
 
 func newSessionForTesting(t *testing.T) *Session {
 	sess := newSessionForTestingNoBackendsLookup(t)
-	if err := sess.MaybeLookupBackends(); err != nil {
+	if err := sess.MaybeLookupBackendsContext(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	return sess
@@ -245,7 +245,7 @@ func TestBouncerError(t *testing.T) {
 	if sess.ProxyURL() == nil {
 		t.Fatal("expected to see explicit proxy here")
 	}
-	if err := sess.MaybeLookupBackends(); err == nil {
+	if err := sess.MaybeLookupBackendsContext(context.Background()); err == nil {
 		t.Fatal("expected an error here")
 	}
 }
@@ -260,7 +260,7 @@ func TestMaybeLookupBackendsNewClientError(t *testing.T) {
 		Address: "httpo://jehhrikjjqrlpufu.onion",
 	}}
 	defer sess.Close()
-	err := sess.MaybeLookupBackends()
+	err := sess.MaybeLookupBackendsContext(context.Background())
 	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("not the error we expected")
 	}
@@ -272,7 +272,7 @@ func TestSessionLocationLookup(t *testing.T) {
 	}
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
-	if err := sess.MaybeLookupLocation(); err != nil {
+	if err := sess.MaybeLookupLocationContext(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if sess.ProbeASNString() == model.DefaultProbeASNString {
@@ -419,7 +419,7 @@ func TestAllProbeServicesUnsupported(t *testing.T) {
 		Address: "mascetti",
 		Type:    "antani",
 	})
-	err = sess.MaybeLookupBackends()
+	err = sess.MaybeLookupBackendsContext(context.Background())
 	if !errors.Is(err, ErrAllProbeServicesFailed) {
 		t.Fatal("unexpected error")
 	}
@@ -447,7 +447,7 @@ func TestNewOrchestraClientMaybeLookupBackendsFailure(t *testing.T) {
 	sess.testMaybeLookupBackendsContext = func(ctx context.Context) error {
 		return errMocked
 	}
-	client, err := sess.NewOrchestraClient(context.Background())
+	client, err := sess.newOrchestraClient(context.Background())
 	if !errors.Is(err, errMocked) {
 		t.Fatal("not the error we expected", err)
 	}
@@ -465,7 +465,7 @@ func TestNewOrchestraClientMaybeLookupLocationFailure(t *testing.T) {
 	sess.testMaybeLookupLocationContext = func(ctx context.Context) error {
 		return errMocked
 	}
-	client, err := sess.NewOrchestraClient(context.Background())
+	client, err := sess.newOrchestraClient(context.Background())
 	if !errors.Is(err, errMocked) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -482,7 +482,7 @@ func TestNewOrchestraClientProbeServicesNewClientFailure(t *testing.T) {
 	sess.selectedProbeServiceHook = func(svc *model.OOAPIService) {
 		svc.Type = "antani" // should really not be supported for a long time
 	}
-	client, err := sess.NewOrchestraClient(context.Background())
+	client, err := sess.newOrchestraClient(context.Background())
 	if !errors.Is(err, probeservices.ErrUnsupportedEndpoint) {
 		t.Fatal("not the error we expected")
 	}

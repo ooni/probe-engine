@@ -7,7 +7,11 @@ package model
 
 import (
 	"context"
+	"errors"
 )
+
+// ErrNoAvailableTestHelpers is emitted when there are no available test helpers.
+var ErrNoAvailableTestHelpers = errors.New("no available helpers")
 
 // ExperimentSession is the experiment's view of a session.
 type ExperimentSession interface {
@@ -195,11 +199,6 @@ type Experiment interface {
 	// return a single measurement, it will only return the first measurement
 	// when used with an asynchronous experiment.
 	MeasureWithContext(ctx context.Context, input string) (measurement *Measurement, err error)
-
-	// SaveMeasurement saves a measurement on the specified file path.
-	//
-	// Deprecated: new code should use a Saver.
-	SaveMeasurement(measurement *Measurement, filePath string) error
 
 	// SubmitAndUpdateMeasurementContext submits a measurement and updates the
 	// fields whose value has changed as part of the submission.

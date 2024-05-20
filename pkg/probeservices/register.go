@@ -1,10 +1,16 @@
 package probeservices
 
+//
+// register.go - POST /api/v1/register
+//
+
 import (
 	"context"
 
+	"github.com/ooni/probe-engine/pkg/httpclientx"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/randx"
+	"github.com/ooni/probe-engine/pkg/urlx"
 )
 
 // MaybeRegister registers this client if not already registered
@@ -24,11 +30,27 @@ func (c Client) MaybeRegister(ctx context.Context, metadata model.OOAPIProbeMeta
 		OOAPIProbeMetadata: metadata,
 		Password:           pwd,
 	}
-	var resp model.OOAPIRegisterResponse
-	if err := c.APIClientTemplate.Build().PostJSON(
-		ctx, "/api/v1/register", req, &resp); err != nil {
+
+	// construct the URL to use
+	URL, err := urlx.ResolveReference(c.BaseURL, "/api/v1/register", "")
+	if err != nil {
 		return err
 	}
+
+	resp, err := httpclientx.PostJSON[*model.OOAPIRegisterRequest, *model.OOAPIRegisterResponse](
+		ctx,
+		httpclientx.NewEndpoint(URL).WithHostOverride(c.Host),
+		req,
+		&httpclientx.Config{
+			Client:    c.HTTPClient,
+			Logger:    model.DiscardLogger,
+			UserAgent: c.UserAgent,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	state.ClientID = resp.ClientID
 	state.Password = pwd
 	return c.StateFile.Set(state)

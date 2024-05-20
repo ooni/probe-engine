@@ -80,7 +80,7 @@ func TestMeasureWithCancelledContext(t *testing.T) {
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
 	if *tk.ControlFailure != netxlite.FailureInterrupted {
-		t.Fatal("unexpected control_failure")
+		t.Fatal("unexpected control_failure", *tk.ControlFailure)
 	}
 	if *tk.DNSExperimentFailure != netxlite.FailureInterrupted {
 		t.Fatal("unexpected dns_experiment_failure")
@@ -206,7 +206,7 @@ func TestMeasureWithNoAvailableTestHelpers(t *testing.T) {
 		Session:     sess,
 	}
 	err := measurer.Run(ctx, args)
-	if !errors.Is(err, webconnectivity.ErrNoAvailableTestHelpers) {
+	if !errors.Is(err, model.ErrNoAvailableTestHelpers) {
 		t.Fatal(err)
 	}
 	tk := measurement.TestKeys.(*webconnectivity.TestKeys)
@@ -236,11 +236,11 @@ func newsession(t *testing.T, lookupBackends bool) model.ExperimentSession {
 		t.Fatal(err)
 	}
 	if lookupBackends {
-		if err := sess.MaybeLookupBackends(); err != nil {
+		if err := sess.MaybeLookupBackendsContext(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := sess.MaybeLookupLocation(); err != nil {
+	if err := sess.MaybeLookupLocationContext(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	return sess

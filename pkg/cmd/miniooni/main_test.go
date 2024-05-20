@@ -1,12 +1,18 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ooni/probe-engine/pkg/version"
+)
 
 func TestSimple(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip test in short mode")
 	}
 	MainWithConfiguration("example", &Options{
-		Yes: true,
+		SoftwareName:    "miniooni",
+		SoftwareVersion: version.Version,
+		Yes:             true,
 	})
 }

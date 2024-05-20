@@ -100,12 +100,20 @@ func TestHandlerWorkingAsIntended(t *testing.T) {
 
 	expectations := []expectationSpec{{
 		name:            "check for invalid method",
-		reqMethod:       "GET",
+		reqMethod:       "PUT",
 		reqContentType:  "",
 		reqBody:         strings.NewReader(""),
 		respStatusCode:  400,
 		respContentType: "",
 		parseBody:       false,
+	}, {
+		name:            "check for health message",
+		reqMethod:       "GET",
+		reqContentType:  "",
+		reqBody:         strings.NewReader(""),
+		respStatusCode:  200,
+		respContentType: "application/json",
+		parseBody:       true,
 	}, {
 		name:           "check for error reading request body",
 		reqMethod:      "POST",
@@ -252,5 +260,12 @@ func TestHandlerWorkingAsIntended(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestNewHandlerEnableQUIC(t *testing.T) {
+	handler := NewHandler(log.Log, &netxlite.Netx{Underlying: nil})
+	if handler.EnableQUIC != false {
+		t.Fatal("expected to see false here (is the the environment variable OOHELPERD_ENABLE_QUIC set?!)")
 	}
 }

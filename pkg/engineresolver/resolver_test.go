@@ -14,9 +14,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ooni/probe-engine/pkg/bytecounter"
 	"github.com/ooni/probe-engine/pkg/kvstore"
+	"github.com/ooni/probe-engine/pkg/legacy/multierror"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/multierror"
 	"github.com/ooni/probe-engine/pkg/netxlite"
 )
 

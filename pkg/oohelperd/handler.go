@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -31,6 +32,9 @@ const maxAcceptableBodySize = 1 << 24
 //
 // The zero value is invalid; construct using [NewHandler].
 type Handler struct {
+	// EnableQUIC OPTIONALLY enables QUIC.
+	EnableQUIC bool
+
 	// baseLogger is the MANDATORY logger to use.
 	baseLogger model.Logger
 
@@ -69,9 +73,13 @@ type Handler struct {
 
 var _ http.Handler = &Handler{}
 
+// enableQUIC allows to control whether to enable QUIC by using environment variables.
+var enableQUIC = (os.Getenv("OOHELPERD_ENABLE_QUIC") == "1")
+
 // NewHandler constructs the [handler].
 func NewHandler(logger model.Logger, netx *netxlite.Netx) *Handler {
 	return &Handler{
+		EnableQUIC:        enableQUIC,
 		baseLogger:        logger,
 		countRequests:     &atomic.Int64{},
 		indexer:           &atomic.Int64{},
@@ -148,7 +156,20 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		version.Version,
 	))
 
-	// we only handle the POST method
+	// handle GET method for health check
+	if req.Method == "GET" {
+		metricRequestsCount.WithLabelValues("200", "ok").Inc()
+		resp := map[string]string{
+			"message": "Hello OONItarian!",
+		}
+		data, err := json.Marshal(resp)
+		runtimex.PanicOnError(err, "json.Marshal failed")
+		w.Header().Add("Content-Type", "application/json")
+		_, _ = w.Write(data)
+		return
+	}
+
+	// we only handle the POST method for response generation
 	if req.Method != "POST" {
 		metricRequestsCount.WithLabelValues("400", "bad_request_method").Inc()
 		w.WriteHeader(400)
@@ -202,7 +223,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	data, err = json.Marshal(cresp)
 	runtimex.PanicOnError(err, "json.Marshal failed")
 	w.Header().Add("Content-Type", "application/json")
-	w.Write(data)
+	_, _ = w.Write(data)
 }
 
 // newResolver creates a new [model.Resolver] suitable for serving
