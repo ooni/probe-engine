@@ -8,14 +8,14 @@ import (
 
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/experiment/example"
-	"github.com/ooni/probe-engine/pkg/legacy/mockable"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
 )
 
 func TestSuccess(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
 		SleepTime: int64(2 * time.Millisecond),
-	}, "example")
+	})
 	if m.ExperimentName() != "example" {
 		t.Fatal("invalid ExperimentName")
 	}
@@ -23,7 +23,11 @@ func TestSuccess(t *testing.T) {
 		t.Fatal("invalid ExperimentVersion")
 	}
 	ctx := context.Background()
-	sess := &mockable.Session{MockableLogger: log.Log}
+	sess := &mocks.Session{
+		MockLogger: func() model.Logger {
+			return log.Log
+		},
+	}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
 	measurement := new(model.Measurement)
 	args := &model.ExperimentArgs{
@@ -41,9 +45,13 @@ func TestFailure(t *testing.T) {
 	m := example.NewExperimentMeasurer(example.Config{
 		SleepTime:   int64(2 * time.Millisecond),
 		ReturnError: true,
-	}, "example")
+	})
 	ctx := context.Background()
-	sess := &mockable.Session{MockableLogger: log.Log}
+	sess := &mocks.Session{
+		MockLogger: func() model.Logger {
+			return log.Log
+		},
+	}
 	callbacks := model.NewPrinterCallbacks(sess.Logger())
 	args := &model.ExperimentArgs{
 		Callbacks:   callbacks,

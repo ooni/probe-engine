@@ -10,14 +10,14 @@ package oonirun
 //
 
 import (
-	"github.com/ooni/probe-engine/pkg/engine"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/targetloading"
 )
 
 // Session is the definition of Session used by this package.
 type Session interface {
-	// A Session is also an InputLoaderSession.
-	engine.InputLoaderSession
+	// A Session is also an [targetloading.Session].
+	targetloading.Session
 
 	// A Session is also a SubmitterSession.
 	SubmitterSession

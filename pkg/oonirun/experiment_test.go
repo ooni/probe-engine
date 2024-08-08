@@ -2,12 +2,13 @@ package oonirun
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"reflect"
-	"sort"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/ooni/probe-engine/pkg/engine"
 	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
 	"github.com/ooni/probe-engine/pkg/testingx"
@@ -16,6 +17,7 @@ import (
 func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 	shuffledInputsPrev := experimentShuffledInputs.Load()
 	var calledSetOptionsAny int
+	var calledSetOptionsJSON int
 	var failedToSubmit int
 	var calledKibiBytesReceived int
 	var calledKibiBytesSent int
@@ -26,9 +28,6 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 		},
 		ExtraOptions: map[string]any{
 			"SleepTime": int64(10 * time.Millisecond),
-		},
-		Inputs: []string{
-			"a", "b", "c",
 		},
 		InputFilePaths: []string{},
 		MaxRuntime:     0,
@@ -43,22 +42,22 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 					MockInputPolicy: func() model.InputPolicy {
 						return model.InputOptional
 					},
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						calledSetOptionsJSON++
+						return nil
+					},
 					MockSetOptionsAny: func(options map[string]any) error {
 						calledSetOptionsAny++
 						return nil
 					},
 					MockNewExperiment: func() model.Experiment {
 						exp := &mocks.Experiment{
-							MockMeasureAsync: func(ctx context.Context, input string) (<-chan *model.Measurement, error) {
-								out := make(chan *model.Measurement)
-								go func() {
-									defer close(out)
-									ff := &testingx.FakeFiller{}
-									var meas model.Measurement
-									ff.Fill(&meas)
-									out <- &meas
-								}()
-								return out, nil
+							MockMeasureWithContext: func(
+								ctx context.Context, target model.ExperimentTarget) (*model.Measurement, error) {
+								ff := &testingx.FakeFiller{}
+								var meas model.Measurement
+								ff.Fill(&meas)
+								return &meas, nil
 							},
 							MockKibiBytesReceived: func() float64 {
 								calledKibiBytesReceived++
@@ -71,6 +70,18 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 						}
 						return exp
 					},
+					MockNewTargetLoader: func(config *model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader {
+						return &mocks.ExperimentTargetLoader{
+							MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+								results := []model.ExperimentTarget{
+									model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("a"),
+									model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("b"),
+									model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("c"),
+								}
+								return results, nil
+							},
+						}
+					},
 				}
 				return eb, nil
 			},
@@ -79,7 +90,7 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 			},
 		},
 		newExperimentBuilderFn: nil,
-		newInputLoaderFn:       nil,
+		newTargetLoaderFn:      nil,
 		newSubmitterFn: func(ctx context.Context) (model.Submitter, error) {
 			subm := &mocks.Submitter{
 				MockSubmit: func(ctx context.Context, m *model.Measurement) error {
@@ -104,6 +115,9 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 	if calledSetOptionsAny < 1 {
 		t.Fatal("should have called SetOptionsAny")
 	}
+	if calledSetOptionsJSON < 1 {
+		t.Fatal("should have called SetOptionsJSON")
+	}
 	if calledKibiBytesReceived < 1 {
 		t.Fatal("did not call KibiBytesReceived")
 	}
@@ -112,45 +126,64 @@ func TestExperimentRunWithFailureToSubmitAndShuffle(t *testing.T) {
 	}
 }
 
-func Test_experimentOptionsToStringList(t *testing.T) {
-	type args struct {
-		options map[string]any
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantOut []string
-	}{
-		{
-			name: "happy path: a map with three entries returns three items",
-			args: args{
-				map[string]any{
-					"foo":  1,
-					"bar":  2,
-					"baaz": 3,
-				},
-			},
-			wantOut: []string{"baaz=3", "bar=2", "foo=1"},
+// This test ensures that we honour InitialOptions then ExtraOptions.
+func TestExperimentSetOptions(t *testing.T) {
+
+	// create the Experiment we're using for this test
+	exp := &Experiment{
+		ExtraOptions: map[string]any{
+			"Message": "jarjarbinks",
 		},
-		{
-			name: "an option beginning with `Safe` is skipped from the output",
-			args: args{
-				map[string]any{
-					"foo":     1,
-					"Safefoo": 42,
-				},
-			},
-			wantOut: []string{"foo=1"},
+		InitialOptions: []byte(`{"Message": "foobar", "ReturnError": true}`),
+		Name:           "example",
+
+		// TODO(bassosimone): A zero-value session works here. The proper change
+		// however would be to write a engine.NewExperimentBuilder factory that takes
+		// as input an interface for the session. This would help testing.
+		Session: &engine.Session{},
+	}
+
+	// create the experiment builder manually
+	builder, err := exp.newExperimentBuilder(exp.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// invoke the method we're testing
+	if err := exp.setOptions(builder); err != nil {
+		t.Fatal(err)
+	}
+
+	// obtain the options
+	options, err := builder.Options()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// describe what we expect to happen
+	//
+	// we basically want ExtraOptions to override InitialOptions
+	expect := map[string]model.ExperimentOptionInfo{
+		"Message": {
+			Doc:   "Message to emit at test completion",
+			Type:  "string",
+			Value: string("jarjarbinks"), // set by ExtraOptions
+		},
+		"ReturnError": {
+			Doc:   "Toogle to return a mocked error",
+			Type:  "bool",
+			Value: bool(true), // set by InitialOptions
+		},
+		"SleepTime": {
+			Doc:   "Amount of time to sleep for in nanosecond",
+			Type:  "int64",
+			Value: int64(1000000000), // still the default nonzero value
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotOut := experimentOptionsToStringList(tt.args.options)
-			sort.Strings(gotOut)
-			if !reflect.DeepEqual(gotOut, tt.wantOut) {
-				t.Errorf("experimentOptionsToStringList() = %v, want %v", gotOut, tt.wantOut)
-			}
-		})
+
+	// make sure the result equals expectation
+	if diff := cmp.Diff(expect, options); diff != "" {
+		t.Fatal(diff)
 	}
 }
 
@@ -169,10 +202,11 @@ func TestExperimentRun(t *testing.T) {
 		ReportFile             string
 		Session                Session
 		newExperimentBuilderFn func(experimentName string) (model.ExperimentBuilder, error)
-		newInputLoaderFn       func(inputPolicy model.InputPolicy) inputLoader
+		newTargetLoaderFn      func(builder model.ExperimentBuilder) targetLoader
 		newSubmitterFn         func(ctx context.Context) (model.Submitter, error)
-		newSaverFn             func(experiment model.Experiment) (model.Saver, error)
-		newInputProcessorFn    func(experiment model.Experiment, inputList []model.OOAPIURLInfo, saver model.Saver, submitter model.Submitter) inputProcessor
+		newSaverFn             func() (model.Saver, error)
+		newInputProcessorFn    func(experiment model.Experiment,
+			inputList []model.ExperimentTarget, saver model.Saver, submitter model.Submitter) inputProcessor
 	}
 	type args struct {
 		ctx context.Context
@@ -192,20 +226,20 @@ func TestExperimentRun(t *testing.T) {
 		args:      args{},
 		expectErr: errMocked,
 	}, {
-		name: "cannot load input",
+		name: "cannot set InitialOptions",
 		fields: fields{
 			newExperimentBuilderFn: func(experimentName string) (model.ExperimentBuilder, error) {
 				eb := &mocks.ExperimentBuilder{
-					MockInputPolicy: func() model.InputPolicy {
-						return model.InputOptional
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return errMocked
 					},
 				}
 				return eb, nil
 			},
-			newInputLoaderFn: func(inputPolicy model.InputPolicy) inputLoader {
-				return &mocks.ExperimentInputLoader{
-					MockLoad: func(ctx context.Context) ([]model.OOAPIURLInfo, error) {
-						return nil, errMocked
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return []model.ExperimentTarget{}, nil
 					},
 				}
 			},
@@ -213,12 +247,12 @@ func TestExperimentRun(t *testing.T) {
 		args:      args{},
 		expectErr: errMocked,
 	}, {
-		name: "cannot set options",
+		name: "cannot set ExtraOptions",
 		fields: fields{
 			newExperimentBuilderFn: func(experimentName string) (model.ExperimentBuilder, error) {
 				eb := &mocks.ExperimentBuilder{
-					MockInputPolicy: func() model.InputPolicy {
-						return model.InputOptional
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return nil
 					},
 					MockSetOptionsAny: func(options map[string]any) error {
 						return errMocked
@@ -226,10 +260,37 @@ func TestExperimentRun(t *testing.T) {
 				}
 				return eb, nil
 			},
-			newInputLoaderFn: func(inputPolicy model.InputPolicy) inputLoader {
-				return &mocks.ExperimentInputLoader{
-					MockLoad: func(ctx context.Context) ([]model.OOAPIURLInfo, error) {
-						return []model.OOAPIURLInfo{}, nil
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return []model.ExperimentTarget{}, nil
+					},
+				}
+			},
+		},
+		args:      args{},
+		expectErr: errMocked,
+	}, {
+		name: "cannot load input",
+		fields: fields{
+			newExperimentBuilderFn: func(experimentName string) (model.ExperimentBuilder, error) {
+				eb := &mocks.ExperimentBuilder{
+					MockInputPolicy: func() model.InputPolicy {
+						return model.InputOptional
+					},
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return nil
+					},
+					MockSetOptionsAny: func(options map[string]any) error {
+						return nil
+					},
+				}
+				return eb, nil
+			},
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return nil, errMocked
 					},
 				}
 			},
@@ -249,6 +310,9 @@ func TestExperimentRun(t *testing.T) {
 					MockInputPolicy: func() model.InputPolicy {
 						return model.InputOptional
 					},
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return nil
+					},
 					MockSetOptionsAny: func(options map[string]any) error {
 						return nil
 					},
@@ -266,10 +330,10 @@ func TestExperimentRun(t *testing.T) {
 				}
 				return eb, nil
 			},
-			newInputLoaderFn: func(inputPolicy model.InputPolicy) inputLoader {
-				return &mocks.ExperimentInputLoader{
-					MockLoad: func(ctx context.Context) ([]model.OOAPIURLInfo, error) {
-						return []model.OOAPIURLInfo{}, nil
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return []model.ExperimentTarget{}, nil
 					},
 				}
 			},
@@ -292,6 +356,9 @@ func TestExperimentRun(t *testing.T) {
 					MockInputPolicy: func() model.InputPolicy {
 						return model.InputOptional
 					},
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return nil
+					},
 					MockSetOptionsAny: func(options map[string]any) error {
 						return nil
 					},
@@ -309,17 +376,17 @@ func TestExperimentRun(t *testing.T) {
 				}
 				return eb, nil
 			},
-			newInputLoaderFn: func(inputPolicy model.InputPolicy) inputLoader {
-				return &mocks.ExperimentInputLoader{
-					MockLoad: func(ctx context.Context) ([]model.OOAPIURLInfo, error) {
-						return []model.OOAPIURLInfo{}, nil
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return []model.ExperimentTarget{}, nil
 					},
 				}
 			},
 			newSubmitterFn: func(ctx context.Context) (model.Submitter, error) {
 				return &mocks.Submitter{}, nil
 			},
-			newSaverFn: func(experiment model.Experiment) (model.Saver, error) {
+			newSaverFn: func() (model.Saver, error) {
 				return nil, errMocked
 			},
 		},
@@ -338,6 +405,9 @@ func TestExperimentRun(t *testing.T) {
 					MockInputPolicy: func() model.InputPolicy {
 						return model.InputOptional
 					},
+					MockSetOptionsJSON: func(value json.RawMessage) error {
+						return nil
+					},
 					MockSetOptionsAny: func(options map[string]any) error {
 						return nil
 					},
@@ -355,20 +425,20 @@ func TestExperimentRun(t *testing.T) {
 				}
 				return eb, nil
 			},
-			newInputLoaderFn: func(inputPolicy model.InputPolicy) inputLoader {
-				return &mocks.ExperimentInputLoader{
-					MockLoad: func(ctx context.Context) ([]model.OOAPIURLInfo, error) {
-						return []model.OOAPIURLInfo{}, nil
+			newTargetLoaderFn: func(builder model.ExperimentBuilder) targetLoader {
+				return &mocks.ExperimentTargetLoader{
+					MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+						return []model.ExperimentTarget{}, nil
 					},
 				}
 			},
 			newSubmitterFn: func(ctx context.Context) (model.Submitter, error) {
 				return &mocks.Submitter{}, nil
 			},
-			newSaverFn: func(experiment model.Experiment) (model.Saver, error) {
+			newSaverFn: func() (model.Saver, error) {
 				return &mocks.Saver{}, nil
 			},
-			newInputProcessorFn: func(experiment model.Experiment, inputList []model.OOAPIURLInfo,
+			newInputProcessorFn: func(experiment model.Experiment, inputList []model.ExperimentTarget,
 				saver model.Saver, submitter model.Submitter) inputProcessor {
 				return &mocks.ExperimentInputProcessor{
 					MockRun: func(ctx context.Context) error {
@@ -395,7 +465,7 @@ func TestExperimentRun(t *testing.T) {
 				ReportFile:             tt.fields.ReportFile,
 				Session:                tt.fields.Session,
 				newExperimentBuilderFn: tt.fields.newExperimentBuilderFn,
-				newInputLoaderFn:       tt.fields.newInputLoaderFn,
+				newTargetLoaderFn:      tt.fields.newTargetLoaderFn,
 				newSubmitterFn:         tt.fields.newSubmitterFn,
 				newSaverFn:             tt.fields.newSaverFn,
 				newInputProcessorFn:    tt.fields.newInputProcessorFn,

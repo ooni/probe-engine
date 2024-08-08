@@ -368,7 +368,42 @@ func (s *Session) FetchTorTargets(
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO(bassosimone,DecFox): here we could also lock the mutex
+	// or we should consider using the same strategy we used for the
+	// experiments, where we separated mutable state into dedicated types.
 	return clnt.FetchTorTargets(ctx, cc)
+}
+
+// FetchOpenVPNConfig fetches openvpn config from the API if it's not found in the
+// internal cache. We do this to avoid hitting the API for every input.
+func (s *Session) FetchOpenVPNConfig(
+	ctx context.Context, provider, cc string) (*model.OOAPIVPNProviderConfig, error) {
+	clnt, err := s.newOrchestraClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// ensure that we have fetched the location before fetching openvpn configuration.
+	if err := s.MaybeLookupLocationContext(ctx); err != nil {
+		return nil, err
+	}
+
+	// IMPORTANT!
+	//
+	// We cannot lock earlier because newOrchestraClient and
+	// MaybeLookupLocation both lock the mutex.
+	//
+	// TODO(bassosimone,DecFox): we should consider using the same strategy we used for the
+	// experiments, where we separated mutable state into dedicated types.
+	defer s.mu.Unlock()
+	s.mu.Lock()
+
+	config, err := clnt.FetchOpenVPNConfig(ctx, provider, cc)
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
 }
 
 // KeyValueStore returns the configured key-value store.
@@ -643,8 +678,8 @@ func (s *Session) MaybeLookupBackendsContext(ctx context.Context) error {
 	if selected == nil {
 		return ErrAllProbeServicesFailed
 	}
-	s.logger.Infof("session: using probe services: %+v", selected.Endpoint)
-	s.selectedProbeService = &selected.Endpoint
+	s.logger.Infof("session: using probe services: %+v", selected.Service)
+	s.selectedProbeService = &selected.Service
 	s.availableTestHelpers = selected.TestHelpers
 	return nil
 }

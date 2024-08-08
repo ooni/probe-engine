@@ -26,6 +26,7 @@ import (
 // Options contains the options you can set from the CLI.
 type Options struct {
 	Annotations         []string
+	AuthFile            string
 	Emoji               bool
 	ExtraOptions        []string
 	HomeDir             string
@@ -228,11 +229,18 @@ func registerOONIRun(rootCmd *cobra.Command, globalOptions *Options) {
 		[]string{},
 		"Path to the OONI Run v2 descriptor to run (may be specified multiple times)",
 	)
+	flags.StringVarP(
+		&globalOptions.AuthFile,
+		"bearer-token-file",
+		"",
+		"",
+		"Path to a file containing a bearer token for fetching a remote OONI Run v2 descriptor",
+	)
 }
 
 // registerAllExperiments registers a subcommand for each experiment
 func registerAllExperiments(rootCmd *cobra.Command, globalOptions *Options) {
-	for name, factory := range registry.AllExperiments {
+	for name, ff := range registry.AllExperiments {
 		subCmd := &cobra.Command{
 			Use:   name,
 			Short: fmt.Sprintf("Runs the %s experiment", name),
@@ -243,6 +251,7 @@ func registerAllExperiments(rootCmd *cobra.Command, globalOptions *Options) {
 		}
 		rootCmd.AddCommand(subCmd)
 		flags := subCmd.Flags()
+		factory := ff()
 
 		switch factory.InputPolicy() {
 		case model.InputOrQueryBackend,
