@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -72,6 +73,19 @@ func TestExperimentBuilder(t *testing.T) {
 		}
 	})
 
+	t.Run("SetOptionsJSON", func(t *testing.T) {
+		expected := errors.New("mocked error")
+		eb := &ExperimentBuilder{
+			MockSetOptionsJSON: func(value json.RawMessage) error {
+				return expected
+			},
+		}
+		err := eb.SetOptionsJSON([]byte(`{}`))
+		if !errors.Is(err, expected) {
+			t.Fatal("unexpected value")
+		}
+	})
+
 	t.Run("SetCallbacks", func(t *testing.T) {
 		var called bool
 		eb := &ExperimentBuilder{
@@ -93,6 +107,18 @@ func TestExperimentBuilder(t *testing.T) {
 			},
 		}
 		if out := eb.NewExperiment(); out != exp {
+			t.Fatal("invalid result")
+		}
+	})
+
+	t.Run("NewTargetLoader", func(t *testing.T) {
+		tloader := &ExperimentTargetLoader{}
+		eb := &ExperimentBuilder{
+			MockNewTargetLoader: func(*model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader {
+				return tloader
+			},
+		}
+		if out := eb.NewTargetLoader(&model.ExperimentTargetLoaderConfig{}); out != tloader {
 			t.Fatal("invalid result")
 		}
 	})

@@ -5,6 +5,7 @@ package registry
 //
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -13,14 +14,18 @@ import (
 	"strconv"
 
 	"github.com/ooni/probe-engine/pkg/checkincache"
+	"github.com/ooni/probe-engine/pkg/experimentname"
 	"github.com/ooni/probe-engine/pkg/model"
-	"github.com/ooni/probe-engine/pkg/strcasex"
+	"github.com/ooni/probe-engine/pkg/targetloading"
 )
 
 // Factory allows to construct an experiment measurer.
 type Factory struct {
 	// build is the constructor that build an experiment with the given config.
 	build func(config interface{}) model.ExperimentMeasurer
+
+	// canonicalName is the canonical name of the experiment.
+	canonicalName string
 
 	// config contains the experiment's config.
 	config any
@@ -33,6 +38,35 @@ type Factory struct {
 
 	// interruptible indicates whether the experiment is interruptible.
 	interruptible bool
+
+	// newLoader is the OPTIONAL function to create a new loader.
+	newLoader func(config *targetloading.Loader, options any) model.ExperimentTargetLoader
+}
+
+// Session is the session definition according to this package.
+type Session = model.ExperimentTargetLoaderSession
+
+// NewTargetLoader creates a new [model.ExperimentTargetLoader] instance.
+func (b *Factory) NewTargetLoader(config *model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader {
+	// Construct the default loader used in the non-richer input case.
+	loader := &targetloading.Loader{
+		CheckInConfig:  config.CheckInConfig, // OPTIONAL
+		ExperimentName: b.canonicalName,
+		InputPolicy:    b.inputPolicy,
+		Logger:         config.Session.Logger(),
+		Session:        config.Session,
+		StaticInputs:   config.StaticInputs,
+		SourceFiles:    config.SourceFiles,
+	}
+
+	// If an experiment implements richer input, it will use its custom loader
+	// that will use experiment specific policy for loading targets.
+	if b.newLoader != nil {
+		return b.newLoader(loader, b.config)
+	}
+
+	// Otherwise just return the default loader.
+	return loader
 }
 
 // Interruptible returns whether the experiment is interruptible.
@@ -72,22 +106,47 @@ var (
 
 // Options returns the options exposed by this experiment.
 func (b *Factory) Options() (map[string]model.ExperimentOptionInfo, error) {
+	// create the result value
 	result := make(map[string]model.ExperimentOptionInfo)
+
+	// make sure we're dealing with a pointer
 	ptrinfo := reflect.ValueOf(b.config)
 	if ptrinfo.Kind() != reflect.Ptr {
 		return nil, ErrConfigIsNotAStructPointer
 	}
-	structinfo := ptrinfo.Elem().Type()
-	if structinfo.Kind() != reflect.Struct {
+
+	// obtain information about the value and its type
+	valueinfo := ptrinfo.Elem()
+	typeinfo := valueinfo.Type()
+
+	// make sure we're dealing with a struct
+	if typeinfo.Kind() != reflect.Struct {
 		return nil, ErrConfigIsNotAStructPointer
 	}
-	for i := 0; i < structinfo.NumField(); i++ {
-		field := structinfo.Field(i)
-		result[field.Name] = model.ExperimentOptionInfo{
-			Doc:  field.Tag.Get("ooni"),
-			Type: field.Type.String(),
+
+	// cycle through the fields
+	for i := 0; i < typeinfo.NumField(); i++ {
+		fieldType, fieldValue := typeinfo.Field(i), valueinfo.Field(i)
+
+		// do not include private fields into our list of fields
+		if !fieldType.IsExported() {
+			continue
+		}
+
+		// skip fields that are missing an `ooni` tag
+		docs := fieldType.Tag.Get("ooni")
+		if docs == "" {
+			continue
+		}
+
+		// create a description of this field
+		result[fieldType.Name] = model.ExperimentOptionInfo{
+			Doc:   docs,
+			Type:  fieldType.Type.String(),
+			Value: fieldValue.Interface(),
 		}
 	}
+
 	return result, nil
 }
 
@@ -195,6 +254,19 @@ func (b *Factory) SetOptionsAny(options map[string]any) error {
 	return nil
 }
 
+// SetOptionsJSON unmarshals the given [json.RawMessage] inside
+// the experiment specific configuration.
+func (b *Factory) SetOptionsJSON(value json.RawMessage) error {
+	// handle the case where the options are empty
+	if len(value) <= 0 {
+		return nil
+	}
+
+	// otherwise unmarshal into the configuration, which we assume
+	// to be a pointer to a structure.
+	return json.Unmarshal(value, b.config)
+}
+
 // fieldbyname return v's field whose name is equal to the given key.
 func (b *Factory) fieldbyname(v interface{}, key string) (reflect.Value, error) {
 	// See https://stackoverflow.com/a/6396678/4354461
@@ -213,30 +285,9 @@ func (b *Factory) fieldbyname(v interface{}, key string) (reflect.Value, error) 
 	return field, nil
 }
 
-// NewExperimentMeasurer creates the experiment
+// NewExperimentMeasurer creates a new [model.ExperimentMeasurer] instance.
 func (b *Factory) NewExperimentMeasurer() model.ExperimentMeasurer {
 	return b.build(b.config)
-}
-
-// CanonicalizeExperimentName allows code to provide experiment names
-// in a more flexible way, where we have aliases.
-//
-// Because we allow for uppercase experiment names for backwards
-// compatibility with MK, we need to add some exceptions here when
-// mapping (e.g., DNSCheck => dnscheck).
-func CanonicalizeExperimentName(name string) string {
-	switch name = strcasex.ToSnake(name); name {
-	case "ndt_7":
-		name = "ndt" // since 2020-03-18, we use ndt7 to implement ndt by default
-	case "dns_check":
-		name = "dnscheck"
-	case "stun_reachability":
-		name = "stunreachability"
-	case "web_connectivity@v_0_5":
-		name = "web_connectivity@v0.5"
-	default:
-	}
-	return name
 }
 
 // ErrNoSuchExperiment indicates a given experiment does not exist.
@@ -285,7 +336,7 @@ const OONI_FORCE_ENABLE_EXPERIMENT = "OONI_FORCE_ENABLE_EXPERIMENT"
 func NewFactory(name string, kvStore model.KeyValueStore, logger model.Logger) (*Factory, error) {
 	// Make sure we are deadling with the canonical experiment name. Historically MK used
 	// names such as WebConnectivity and we want to continue supporting this use case.
-	name = CanonicalizeExperimentName(name)
+	name = experimentname.Canonicalize(name)
 
 	// Handle A/B testing where we dynamically choose LTE for some users. The current policy
 	// only relates to a few users to collect data.
@@ -305,10 +356,11 @@ func NewFactory(name string, kvStore model.KeyValueStore, logger model.Logger) (
 	}
 
 	// Obtain the factory for the canonical name.
-	factory := AllExperiments[name]
-	if factory == nil {
+	ff := AllExperiments[name]
+	if ff == nil {
 		return nil, fmt.Errorf("%w: %s", ErrNoSuchExperiment, name)
 	}
+	factory := ff()
 
 	// Some experiments are not enabled by default. To enable them we use
 	// the cached check-in response or an environment variable.

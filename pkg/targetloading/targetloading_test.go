@@ -1,4 +1,4 @@
-package engine
+package targetloading
 
 import (
 	"context"
@@ -12,12 +12,13 @@ import (
 
 	"github.com/apex/log"
 	"github.com/google/go-cmp/cmp"
-	"github.com/ooni/probe-engine/pkg/kvstore"
+	"github.com/ooni/probe-engine/pkg/mocks"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/runtimex"
 )
 
-func TestInputLoaderInputNoneWithStaticInputs(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputNoneWithStaticInputs(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		InputPolicy:  model.InputNone,
 	}
@@ -31,11 +32,11 @@ func TestInputLoaderInputNoneWithStaticInputs(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputNoneWithFilesInputs(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputNoneWithFilesInputs(t *testing.T) {
+	il := &Loader{
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputNone,
 	}
@@ -49,12 +50,12 @@ func TestInputLoaderInputNoneWithFilesInputs(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputNoneWithBothInputs(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputNoneWithBothInputs(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputNone,
 	}
@@ -68,8 +69,8 @@ func TestInputLoaderInputNoneWithBothInputs(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputNoneWithNoInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputNoneWithNoInput(t *testing.T) {
+	il := &Loader{
 		InputPolicy: model.InputNone,
 	}
 	ctx := context.Background()
@@ -77,13 +78,13 @@ func TestInputLoaderInputNoneWithNoInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(out) != 1 || out[0].URL != "" {
+	if len(out) != 1 || out[0].Input() != "" {
 		t.Fatal("not the output we expected")
 	}
 }
 
-func TestInputLoaderInputOptionalWithNoInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOptionalWithNoInput(t *testing.T) {
+	il := &Loader{
 		InputPolicy: model.InputOptional,
 	}
 	ctx := context.Background()
@@ -91,17 +92,17 @@ func TestInputLoaderInputOptionalWithNoInput(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(out) != 1 || out[0].URL != "" {
+	if len(out) != 1 || out[0].Input() != "" {
 		t.Fatal("not the output we expected")
 	}
 }
 
-func TestInputLoaderInputOptionalWithInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOptionalWithInput(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputOptional,
 	}
@@ -113,25 +114,45 @@ func TestInputLoaderInputOptionalWithInput(t *testing.T) {
 	if len(out) != 5 {
 		t.Fatal("not the output length we expected")
 	}
-	expect := []model.OOAPIURLInfo{
-		{URL: "https://www.google.com/"},
-		{URL: "https://www.x.org/"},
-		{URL: "https://www.slashdot.org/"},
-		{URL: "https://abc.xyz/"},
-		{URL: "https://run.ooni.io/"},
+	expect := []model.ExperimentTarget{
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.google.com/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.x.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.slashdot.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://abc.xyz/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://run.ooni.io/",
+		},
 	}
 	if diff := cmp.Diff(out, expect); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-func TestInputLoaderInputOptionalNonexistentFile(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOptionalNonexistentFile(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
+			"testdata/loader1.txt",
 			"/nonexistent",
-			"testdata/inputloader2.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputOptional,
 	}
@@ -145,12 +166,12 @@ func TestInputLoaderInputOptionalNonexistentFile(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputStrictlyRequiredWithInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputStrictlyRequiredWithInput(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputStrictlyRequired,
 	}
@@ -162,20 +183,40 @@ func TestInputLoaderInputStrictlyRequiredWithInput(t *testing.T) {
 	if len(out) != 5 {
 		t.Fatal("not the output length we expected")
 	}
-	expect := []model.OOAPIURLInfo{
-		{URL: "https://www.google.com/"},
-		{URL: "https://www.x.org/"},
-		{URL: "https://www.slashdot.org/"},
-		{URL: "https://abc.xyz/"},
-		{URL: "https://run.ooni.io/"},
+	expect := []model.ExperimentTarget{
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.google.com/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.x.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.slashdot.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://abc.xyz/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://run.ooni.io/",
+		},
 	}
 	if diff := cmp.Diff(out, expect); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-func TestInputLoaderInputStrictlyRequiredWithoutInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputStrictlyRequiredWithoutInput(t *testing.T) {
+	il := &Loader{
 		InputPolicy: model.InputStrictlyRequired,
 	}
 	ctx := context.Background()
@@ -188,13 +229,13 @@ func TestInputLoaderInputStrictlyRequiredWithoutInput(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputStrictlyRequiredWithEmptyFile(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputStrictlyRequiredWithEmptyFile(t *testing.T) {
+	il := &Loader{
 		InputPolicy: model.InputStrictlyRequired,
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader3.txt", // we want it before inputloader2.txt
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader3.txt", // we want it before loader2.txt
+			"testdata/loader2.txt",
 		},
 	}
 	ctx := context.Background()
@@ -207,13 +248,13 @@ func TestInputLoaderInputStrictlyRequiredWithEmptyFile(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputOrStaticDefaultWithInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrStaticDefaultWithInput(t *testing.T) {
+	il := &Loader{
 		ExperimentName: "dnscheck",
 		StaticInputs:   []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputOrStaticDefault,
 	}
@@ -225,26 +266,46 @@ func TestInputLoaderInputOrStaticDefaultWithInput(t *testing.T) {
 	if len(out) != 5 {
 		t.Fatal("not the output length we expected")
 	}
-	expect := []model.OOAPIURLInfo{
-		{URL: "https://www.google.com/"},
-		{URL: "https://www.x.org/"},
-		{URL: "https://www.slashdot.org/"},
-		{URL: "https://abc.xyz/"},
-		{URL: "https://run.ooni.io/"},
+	expect := []model.ExperimentTarget{
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.google.com/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.x.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.slashdot.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://abc.xyz/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://run.ooni.io/",
+		},
 	}
 	if diff := cmp.Diff(out, expect); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-func TestInputLoaderInputOrStaticDefaultWithEmptyFile(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrStaticDefaultWithEmptyFile(t *testing.T) {
+	il := &Loader{
 		ExperimentName: "dnscheck",
 		InputPolicy:    model.InputOrStaticDefault,
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader3.txt", // we want it before inputloader2.txt
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader3.txt", // we want it before loader2.txt
+			"testdata/loader2.txt",
 		},
 	}
 	ctx := context.Background()
@@ -257,8 +318,8 @@ func TestInputLoaderInputOrStaticDefaultWithEmptyFile(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputOrStaticDefaultWithoutInputDNSCheck(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrStaticDefaultWithoutInputDNSCheck(t *testing.T) {
+	il := &Loader{
 		ExperimentName: "dnscheck",
 		InputPolicy:    model.InputOrStaticDefault,
 	}
@@ -272,20 +333,20 @@ func TestInputLoaderInputOrStaticDefaultWithoutInputDNSCheck(t *testing.T) {
 	}
 	for idx := 0; idx < len(dnsCheckDefaultInput); idx++ {
 		e := out[idx]
-		if e.CategoryCode != "MISC" {
+		if e.Category() != model.DefaultCategoryCode {
 			t.Fatal("invalid category code")
 		}
-		if e.CountryCode != "XX" {
+		if e.Country() != model.DefaultCountryCode {
 			t.Fatal("invalid country code")
 		}
-		if e.URL != dnsCheckDefaultInput[idx] {
+		if e.Input() != dnsCheckDefaultInput[idx] {
 			t.Fatal("invalid URL")
 		}
 	}
 }
 
-func TestInputLoaderInputOrStaticDefaultWithoutInputStunReachability(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrStaticDefaultWithoutInputStunReachability(t *testing.T) {
+	il := &Loader{
 		ExperimentName: "stunreachability",
 		InputPolicy:    model.InputOrStaticDefault,
 	}
@@ -299,13 +360,13 @@ func TestInputLoaderInputOrStaticDefaultWithoutInputStunReachability(t *testing.
 	}
 	for idx := 0; idx < len(stunReachabilityDefaultInput); idx++ {
 		e := out[idx]
-		if e.CategoryCode != "MISC" {
+		if e.Category() != model.DefaultCategoryCode {
 			t.Fatal("invalid category code")
 		}
-		if e.CountryCode != "XX" {
+		if e.Country() != model.DefaultCountryCode {
 			t.Fatal("invalid country code")
 		}
-		if e.URL != stunReachabilityDefaultInput[idx] {
+		if e.Input() != stunReachabilityDefaultInput[idx] {
 			t.Fatal("invalid URL")
 		}
 	}
@@ -320,8 +381,8 @@ func TestStaticBareInputForExperimentWorksWithNonCanonicalNames(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputOrStaticDefaultWithoutInputOtherName(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrStaticDefaultWithoutInputOtherName(t *testing.T) {
+	il := &Loader{
 		ExperimentName: "xx",
 		InputPolicy:    model.InputOrStaticDefault,
 	}
@@ -335,12 +396,12 @@ func TestInputLoaderInputOrStaticDefaultWithoutInputOtherName(t *testing.T) {
 	}
 }
 
-func TestInputLoaderInputOrQueryBackendWithInput(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrQueryBackendWithInput(t *testing.T) {
+	il := &Loader{
 		StaticInputs: []string{"https://www.google.com/"},
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader2.txt",
 		},
 		InputPolicy: model.InputOrQueryBackend,
 	}
@@ -352,31 +413,48 @@ func TestInputLoaderInputOrQueryBackendWithInput(t *testing.T) {
 	if len(out) != 5 {
 		t.Fatal("not the output length we expected")
 	}
-	expect := []model.OOAPIURLInfo{
-		{URL: "https://www.google.com/"},
-		{URL: "https://www.x.org/"},
-		{URL: "https://www.slashdot.org/"},
-		{URL: "https://abc.xyz/"},
-		{URL: "https://run.ooni.io/"},
+	expect := []model.ExperimentTarget{
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.google.com/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.x.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://www.slashdot.org/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://abc.xyz/",
+		},
+		&model.OOAPIURLInfo{
+			CountryCode:  model.DefaultCountryCode,
+			CategoryCode: model.DefaultCategoryCode,
+			URL:          "https://run.ooni.io/",
+		},
 	}
 	if diff := cmp.Diff(out, expect); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-func TestInputLoaderInputOrQueryBackendWithNoInputAndCancelledContext(t *testing.T) {
-	sess, err := NewSession(context.Background(), SessionConfig{
-		KVStore:         &kvstore.Memory{},
-		Logger:          log.Log,
-		SoftwareName:    "miniooni",
-		SoftwareVersion: "0.1.0-dev",
-		TempDir:         "testdata",
-	})
-	if err != nil {
-		t.Fatal(err)
+func TestTargetLoaderInputOrQueryBackendWithNoInputAndCancelledContext(t *testing.T) {
+	sess := &mocks.Session{
+		MockCheckIn: func(ctx context.Context, config *model.OOAPICheckInConfig) (*model.OOAPICheckInResult, error) {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			panic("should not arrive here")
+		},
 	}
-	defer sess.Close()
-	il := &InputLoader{
+	il := &Loader{
 		InputPolicy: model.InputOrQueryBackend,
 		Session:     sess,
 	}
@@ -391,13 +469,13 @@ func TestInputLoaderInputOrQueryBackendWithNoInputAndCancelledContext(t *testing
 	}
 }
 
-func TestInputLoaderInputOrQueryBackendWithEmptyFile(t *testing.T) {
-	il := &InputLoader{
+func TestTargetLoaderInputOrQueryBackendWithEmptyFile(t *testing.T) {
+	il := &Loader{
 		InputPolicy: model.InputOrQueryBackend,
 		SourceFiles: []string{
-			"testdata/inputloader1.txt",
-			"testdata/inputloader3.txt", // we want it before inputloader2.txt
-			"testdata/inputloader2.txt",
+			"testdata/loader1.txt",
+			"testdata/loader3.txt", // we want it before loader2.txt
+			"testdata/loader2.txt",
 		},
 	}
 	ctx := context.Background()
@@ -410,29 +488,28 @@ func TestInputLoaderInputOrQueryBackendWithEmptyFile(t *testing.T) {
 	}
 }
 
-type InputLoaderBrokenFS struct{}
+type TargetLoaderBrokenFS struct{}
 
-func (InputLoaderBrokenFS) Open(filepath string) (fs.File, error) {
-	return InputLoaderBrokenFile{}, nil
+func (TargetLoaderBrokenFS) Open(filepath string) (fs.File, error) {
+	return TargetLoaderBrokenFile{}, nil
 }
 
-type InputLoaderBrokenFile struct{}
+type TargetLoaderBrokenFile struct{}
 
-func (InputLoaderBrokenFile) Stat() (os.FileInfo, error) {
+func (TargetLoaderBrokenFile) Stat() (os.FileInfo, error) {
 	return nil, nil
 }
 
-func (InputLoaderBrokenFile) Read([]byte) (int, error) {
+func (TargetLoaderBrokenFile) Read([]byte) (int, error) {
 	return 0, syscall.EFAULT
 }
 
-func (InputLoaderBrokenFile) Close() error {
+func (TargetLoaderBrokenFile) Close() error {
 	return nil
 }
 
-func TestInputLoaderReadfileScannerFailure(t *testing.T) {
-	il := &InputLoader{}
-	out, err := il.readfile("", InputLoaderBrokenFS{}.Open)
+func TestReadfileScannerFailure(t *testing.T) {
+	out, err := readfile("", TargetLoaderBrokenFS{}.Open)
 	if !errors.Is(err, syscall.EFAULT) {
 		t.Fatal("not the error we expected")
 	}
@@ -441,20 +518,27 @@ func TestInputLoaderReadfileScannerFailure(t *testing.T) {
 	}
 }
 
-// InputLoaderMockableSession is a mockable session
-// used by InputLoader tests.
-type InputLoaderMockableSession struct {
+// TargetLoaderMockableSession is a mockable session
+// used by TargetLoader tests.
+type TargetLoaderMockableSession struct {
 	// Output contains the output of CheckIn. It should
 	// be nil when Error is not-nil.
 	Output *model.OOAPICheckInResult
+
+	// FetchOpenVPNConfigOutput contains the output of FetchOpenVPNConfig.
+	// It should be nil when Error is non-nil.
+	FetchOpenVPNConfigOutput *model.OOAPIVPNProviderConfig
+
+	// ProbeCountryCode is the probe country code
+	ProbeCountryCode string
 
 	// Error is the error to be returned by CheckIn. It
 	// should be nil when Output is not-nil.
 	Error error
 }
 
-// CheckIn implements InputLoaderSession.CheckIn.
-func (sess *InputLoaderMockableSession) CheckIn(
+// CheckIn implements [Session].
+func (sess *TargetLoaderMockableSession) CheckIn(
 	ctx context.Context, config *model.OOAPICheckInConfig) (*model.OOAPICheckInResult, error) {
 	if sess.Output == nil && sess.Error == nil {
 		return nil, errors.New("both Output and Error are nil")
@@ -462,13 +546,30 @@ func (sess *InputLoaderMockableSession) CheckIn(
 	return sess.Output, sess.Error
 }
 
-func TestInputLoaderCheckInFailure(t *testing.T) {
-	il := &InputLoader{
-		Session: &InputLoaderMockableSession{
+// FetchOpenVPNConfig implements [Session].
+func (sess *TargetLoaderMockableSession) FetchOpenVPNConfig(
+	ctx context.Context, provider, cc string) (*model.OOAPIVPNProviderConfig, error) {
+	runtimex.Assert(!(sess.Error == nil && sess.FetchOpenVPNConfigOutput == nil), "both FetchOpenVPNConfig and Error are nil")
+	return sess.FetchOpenVPNConfigOutput, sess.Error
+}
+
+func (sess *TargetLoaderMockableSession) ProbeCC() string {
+	return sess.ProbeCountryCode
+}
+
+// Logger implements [Session].
+func (sess *TargetLoaderMockableSession) Logger() model.Logger {
+	// Such that we see some logs when running tests
+	return log.Log
+}
+
+func TestTargetLoaderCheckInFailure(t *testing.T) {
+	il := &Loader{
+		Session: &TargetLoaderMockableSession{
 			Error: io.EOF,
 		},
 	}
-	out, err := il.loadRemote(context.Background())
+	out, err := il.loadRemoteWebConnectivity(context.Background())
 	if !errors.Is(err, io.EOF) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -477,15 +578,15 @@ func TestInputLoaderCheckInFailure(t *testing.T) {
 	}
 }
 
-func TestInputLoaderCheckInSuccessWithNilWebConnectivity(t *testing.T) {
-	il := &InputLoader{
-		Session: &InputLoaderMockableSession{
+func TestTargetLoaderCheckInSuccessWithNilWebConnectivity(t *testing.T) {
+	il := &Loader{
+		Session: &TargetLoaderMockableSession{
 			Output: &model.OOAPICheckInResult{
 				Tests: model.OOAPICheckInResultNettests{},
 			},
 		},
 	}
-	out, err := il.loadRemote(context.Background())
+	out, err := il.loadRemoteWebConnectivity(context.Background())
 	if !errors.Is(err, ErrNoURLsReturned) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -494,9 +595,9 @@ func TestInputLoaderCheckInSuccessWithNilWebConnectivity(t *testing.T) {
 	}
 }
 
-func TestInputLoaderCheckInSuccessWithNoURLs(t *testing.T) {
-	il := &InputLoader{
-		Session: &InputLoaderMockableSession{
+func TestTargetLoaderCheckInSuccessWithNoURLs(t *testing.T) {
+	il := &Loader{
+		Session: &TargetLoaderMockableSession{
 			Output: &model.OOAPICheckInResult{
 				Tests: model.OOAPICheckInResultNettests{
 					WebConnectivity: &model.OOAPICheckInInfoWebConnectivity{},
@@ -504,7 +605,7 @@ func TestInputLoaderCheckInSuccessWithNoURLs(t *testing.T) {
 			},
 		},
 	}
-	out, err := il.loadRemote(context.Background())
+	out, err := il.loadRemoteWebConnectivity(context.Background())
 	if !errors.Is(err, ErrNoURLsReturned) {
 		t.Fatalf("not the error we expected: %+v", err)
 	}
@@ -513,28 +614,31 @@ func TestInputLoaderCheckInSuccessWithNoURLs(t *testing.T) {
 	}
 }
 
-func TestInputLoaderCheckInSuccessWithSomeURLs(t *testing.T) {
-	expect := []model.OOAPIURLInfo{{
+func TestTargetLoaderCheckInSuccessWithSomeURLs(t *testing.T) {
+	inputs0 := model.OOAPIURLInfo{
 		CategoryCode: "NEWS",
 		CountryCode:  "IT",
 		URL:          "https://repubblica.it",
-	}, {
+	}
+	inputs1 := model.OOAPIURLInfo{
 		CategoryCode: "NEWS",
 		CountryCode:  "IT",
 		URL:          "https://corriere.it",
-	}}
-	il := &InputLoader{
-		Session: &InputLoaderMockableSession{
+	}
+	inputs := []model.OOAPIURLInfo{inputs0, inputs1}
+	expect := []model.ExperimentTarget{&inputs0, &inputs1}
+	il := &Loader{
+		Session: &TargetLoaderMockableSession{
 			Output: &model.OOAPICheckInResult{
 				Tests: model.OOAPICheckInResultNettests{
 					WebConnectivity: &model.OOAPICheckInInfoWebConnectivity{
-						URLs: expect,
+						URLs: inputs,
 					},
 				},
 			},
 		},
 	}
-	out, err := il.loadRemote(context.Background())
+	out, err := il.loadRemoteWebConnectivity(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -566,7 +670,7 @@ func TestPreventMistakesWithCategories(t *testing.T) {
 		URL:          "https://addons.mozilla.org/",
 		CountryCode:  "XX",
 	}}
-	il := &InputLoader{}
+	il := &Loader{}
 	output := il.preventMistakes(input, []string{"NEWS", "FILE"})
 	if diff := cmp.Diff(desired, output); diff != "" {
 		t.Fatal(diff)
@@ -587,7 +691,7 @@ func TestPreventMistakesWithoutCategoriesAndNil(t *testing.T) {
 		URL:          "https://addons.mozilla.org/",
 		CountryCode:  "XX",
 	}}
-	il := &InputLoader{}
+	il := &Loader{}
 	output := il.preventMistakes(input, nil)
 	if diff := cmp.Diff(input, output); diff != "" {
 		t.Fatal(diff)
@@ -608,23 +712,23 @@ func TestPreventMistakesWithoutCategoriesAndEmpty(t *testing.T) {
 		URL:          "https://addons.mozilla.org/",
 		CountryCode:  "XX",
 	}}
-	il := &InputLoader{}
+	il := &Loader{}
 	output := il.preventMistakes(input, []string{})
 	if diff := cmp.Diff(input, output); diff != "" {
 		t.Fatal(diff)
 	}
 }
 
-// InputLoaderFakeLogger is a fake InputLoaderLogger.
-type InputLoaderFakeLogger struct{}
+// TargetLoaderFakeLogger is a fake TargetLoaderLogger.
+type TargetLoaderFakeLogger struct{}
 
-// Warnf implements InputLoaderLogger.Warnf
-func (ilfl *InputLoaderFakeLogger) Warnf(format string, v ...interface{}) {}
+// Warnf implements TargetLoaderLogger.Warnf
+func (ilfl *TargetLoaderFakeLogger) Warnf(format string, v ...interface{}) {}
 
-func TestInputLoaderLoggerWorksAsIntended(t *testing.T) {
-	logger := &InputLoaderFakeLogger{}
-	inputLoader := &InputLoader{Logger: logger}
-	out := inputLoader.logger()
+func TestTargetLoaderLoggerWorksAsIntended(t *testing.T) {
+	logger := &TargetLoaderFakeLogger{}
+	targetLoader := &Loader{Logger: logger}
+	out := targetLoader.logger()
 	if out != logger {
 		t.Fatal("logger not working as intended")
 	}
@@ -635,7 +739,7 @@ func TestStringListToModelURLInfoWithValidInput(t *testing.T) {
 		"stun://stun.voip.blackberry.com:3478",
 		"stun://stun.altar.com.pl:3478",
 	}
-	output, err := stringListToModelURLInfo(input, nil)
+	output, err := stringListToModelExperimentTarget(input, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,13 +747,13 @@ func TestStringListToModelURLInfoWithValidInput(t *testing.T) {
 		t.Fatal("unexpected output length")
 	}
 	for idx := 0; idx < len(input); idx++ {
-		if input[idx] != output[idx].URL {
+		if input[idx] != output[idx].Input() {
 			t.Fatal("unexpected entry")
 		}
-		if output[idx].CategoryCode != "MISC" {
+		if output[idx].Category() != model.DefaultCategoryCode {
 			t.Fatal("unexpected category")
 		}
-		if output[idx].CountryCode != "XX" {
+		if output[idx].Country() != model.DefaultCountryCode {
 			t.Fatal("unexpected country")
 		}
 	}
@@ -661,7 +765,7 @@ func TestStringListToModelURLInfoWithInvalidInput(t *testing.T) {
 		"\t", // <- not a valid URL
 		"stun://stun.altar.com.pl:3478",
 	}
-	output, err := stringListToModelURLInfo(input, nil)
+	output, err := stringListToModelExperimentTarget(input, nil)
 	if err == nil || !strings.HasSuffix(err.Error(), "invalid control character in URL") {
 		t.Fatal("no the error we expected", err)
 	}
@@ -677,9 +781,9 @@ func TestStringListToModelURLInfoWithError(t *testing.T) {
 		"stun://stun.altar.com.pl:3478",
 	}
 	expected := errors.New("mocked error")
-	output, err := stringListToModelURLInfo(input, expected)
+	output, err := stringListToModelExperimentTarget(input, expected)
 	if !errors.Is(err, expected) {
-		t.Fatal("no the error we expected", err)
+		t.Fatal("not the error we expected", err)
 	}
 	if output != nil {
 		t.Fatal("unexpected nil output")

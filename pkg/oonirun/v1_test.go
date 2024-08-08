@@ -2,6 +2,7 @@ package oonirun
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -23,21 +24,20 @@ func newMinimalFakeSession() *mocks.Session {
 				MockInputPolicy: func() model.InputPolicy {
 					return model.InputNone
 				},
+				MockSetOptionsJSON: func(value json.RawMessage) error {
+					return nil
+				},
 				MockSetOptionsAny: func(options map[string]any) error {
 					return nil
 				},
 				MockNewExperiment: func() model.Experiment {
 					exp := &mocks.Experiment{
-						MockMeasureAsync: func(ctx context.Context, input string) (<-chan *model.Measurement, error) {
-							out := make(chan *model.Measurement)
-							go func() {
-								defer close(out)
-								ff := &testingx.FakeFiller{}
-								var meas model.Measurement
-								ff.Fill(&meas)
-								out <- &meas
-							}()
-							return out, nil
+						MockMeasureWithContext: func(
+							ctx context.Context, target model.ExperimentTarget) (*model.Measurement, error) {
+							ff := &testingx.FakeFiller{}
+							var meas model.Measurement
+							ff.Fill(&meas)
+							return &meas, nil
 						},
 						MockKibiBytesReceived: func() float64 {
 							return 1.1
@@ -47,6 +47,16 @@ func newMinimalFakeSession() *mocks.Session {
 						},
 					}
 					return exp
+				},
+				MockNewTargetLoader: func(config *model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader {
+					return &mocks.ExperimentTargetLoader{
+						MockLoad: func(ctx context.Context) ([]model.ExperimentTarget, error) {
+							// Implementation note: the convention for input-less experiments is that
+							// they require a single entry containing an empty input.
+							entry := model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("")
+							return []model.ExperimentTarget{entry}, nil
+						},
+					}
 				},
 			}
 			return eb, nil
