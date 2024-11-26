@@ -94,7 +94,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 	}
 	sess, err := NewSession(context.Background(), SessionConfig{
 		AvailableProbeServices: []model.OOAPIService{{
-			Address: "https://ams-pg-test.ooni.org",
+			Address: "https://backend-hel.ooni.org",
 			Type:    "https",
 		}},
 		Logger:          model.DiscardLogger,
@@ -126,7 +126,7 @@ func TestSessionTorArgsTorBinary(t *testing.T) {
 func newSessionForTestingNoLookupsWithProxyURL(t *testing.T, URL *url.URL) *Session {
 	sess, err := NewSession(context.Background(), SessionConfig{
 		AvailableProbeServices: []model.OOAPIService{{
-			Address: "https://ams-pg-test.ooni.org",
+			Address: "https://backend-hel.ooni.org",
 			Type:    "https",
 		}},
 		Logger:          model.DiscardLogger,
@@ -179,7 +179,7 @@ func TestInitOrchestraClientMaybeRegisterError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.OOAPIService{
-		Address: "https://ams-pg-test.ooni.org/",
+		Address: "https://backend-hel.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -204,7 +204,7 @@ func TestInitOrchestraClientMaybeLoginError(t *testing.T) {
 	sess := newSessionForTestingNoLookups(t)
 	defer sess.Close()
 	clnt, err := probeservices.NewClient(sess, model.OOAPIService{
-		Address: "https://ams-pg-test.ooni.org/",
+		Address: "https://backend-hel.ooni.org/",
 		Type:    "https",
 	})
 	if err != nil {
@@ -483,7 +483,7 @@ func TestNewOrchestraClientProbeServicesNewClientFailure(t *testing.T) {
 		svc.Type = "antani" // should really not be supported for a long time
 	}
 	client, err := sess.newOrchestraClient(context.Background())
-	if !errors.Is(err, probeservices.ErrUnsupportedEndpoint) {
+	if !errors.Is(err, probeservices.ErrUnsupportedServiceType) {
 		t.Fatal("not the error we expected")
 	}
 	if client != nil {

@@ -248,6 +248,8 @@ type ArchivalTLSOrQUICHandshakeResult struct {
 	NoTLSVerify        bool                 `json:"no_tls_verify"`
 	PeerCertificates   []ArchivalBinaryData `json:"peer_certificates"`
 	ServerName         string               `json:"server_name"`
+	OuterServerName    string               `json:"outer_server_name,omitempty"`
+	ECHConfig          string               `json:"echconfig,omitempty"`
 	T0                 float64              `json:"t0,omitempty"`
 	T                  float64              `json:"t"`
 	Tags               []string             `json:"tags"`
@@ -391,4 +393,32 @@ type ArchivalNetworkEvent struct {
 	T             float64  `json:"t"`
 	TransactionID int64    `json:"transaction_id,omitempty"`
 	Tags          []string `json:"tags,omitempty"`
+}
+
+//
+// OpenVPN
+//
+
+// ArchivalOpenVPNHandshakeResult contains the result of a OpenVPN handshake.
+type ArchivalOpenVPNHandshakeResult struct {
+	Endpoint       string                 `json:"endpoint"`
+	Failure        *string                `json:"failure"`
+	HandshakeTime  float64                `json:"handshake_time,omitempty"`
+	IP             string                 `json:"ip"`
+	Port           int                    `json:"port"`
+	Transport      string                 `json:"transport"`
+	Provider       string                 `json:"provider"`
+	OpenVPNOptions ArchivalOpenVPNOptions `json:"openvpn_options"`
+	T0             float64                `json:"t0,omitempty"`
+	T              float64                `json:"t"`
+	Tags           []string               `json:"tags"`
+	TransactionID  int64                  `json:"transaction_id,omitempty"`
+}
+
+// ArchivalOpenVPNOptions is a subset of [vpnconfig.OpenVPNOptions] that we want to include
+// in the archived result.
+type ArchivalOpenVPNOptions struct {
+	Auth        string `json:"auth,omitempty"`
+	Cipher      string `json:"cipher,omitempty"`
+	Compression string `json:"compression,omitempty"`
 }

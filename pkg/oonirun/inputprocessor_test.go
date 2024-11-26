@@ -15,8 +15,8 @@ type FakeInputProcessorExperiment struct {
 	M         []*model.Measurement
 }
 
-func (fipe *FakeInputProcessorExperiment) MeasureAsync(
-	ctx context.Context, input string) (<-chan *model.Measurement, error) {
+func (fipe *FakeInputProcessorExperiment) MeasureWithContext(
+	ctx context.Context, target model.ExperimentTarget) (*model.Measurement, error) {
 	if fipe.Err != nil {
 		return nil, fipe.Err
 	}
@@ -28,14 +28,9 @@ func (fipe *FakeInputProcessorExperiment) MeasureAsync(
 	// is MERGING annotations as opposed to overwriting them.
 	m.AddAnnotation("antani", "antani")
 	m.AddAnnotation("foo", "baz") // would be bar below
-	m.Input = model.MeasurementTarget(input)
+	m.Input = model.MeasurementInput(target.Input())
 	fipe.M = append(fipe.M, m)
-	out := make(chan *model.Measurement)
-	go func() {
-		defer close(out)
-		out <- m
-	}()
-	return out, nil
+	return m, nil
 }
 
 func TestInputProcessorMeasurementFailed(t *testing.T) {
@@ -44,9 +39,9 @@ func TestInputProcessorMeasurementFailed(t *testing.T) {
 		Experiment: NewInputProcessorExperimentWrapper(
 			&FakeInputProcessorExperiment{Err: expected},
 		),
-		Inputs: []model.OOAPIURLInfo{{
-			URL: "https://www.kernel.org/",
-		}},
+		Inputs: []model.ExperimentTarget{
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.kernel.org/"),
+		},
 	}
 	ctx := context.Background()
 	if err := ip.Run(ctx); !errors.Is(err, expected) {
@@ -73,10 +68,9 @@ func TestInputProcessorSubmissionFailed(t *testing.T) {
 			"foo": "bar",
 		},
 		Experiment: NewInputProcessorExperimentWrapper(fipe),
-		Inputs: []model.OOAPIURLInfo{{
-			URL: "https://www.kernel.org/",
-		}},
-		Options: []string{"fake=true"},
+		Inputs: []model.ExperimentTarget{
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.kernel.org/"),
+		},
 		Submitter: NewInputProcessorSubmitterWrapper(
 			&FakeInputProcessorSubmitter{Err: expected},
 		),
@@ -101,9 +95,6 @@ func TestInputProcessorSubmissionFailed(t *testing.T) {
 	if m.Annotations["antani"] != "antani" {
 		t.Fatal("invalid annotation: antani")
 	}
-	if len(m.Options) != 1 || m.Options[0] != "fake=true" {
-		t.Fatal("options not set")
-	}
 }
 
 type FakeInputProcessorSaver struct {
@@ -122,10 +113,9 @@ func TestInputProcessorSaveOnDiskFailed(t *testing.T) {
 		Experiment: NewInputProcessorExperimentWrapper(
 			&FakeInputProcessorExperiment{},
 		),
-		Inputs: []model.OOAPIURLInfo{{
-			URL: "https://www.kernel.org/",
-		}},
-		Options: []string{"fake=true"},
+		Inputs: []model.ExperimentTarget{
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.kernel.org/"),
+		},
 		Saver: NewInputProcessorSaverWrapper(
 			&FakeInputProcessorSaver{Err: expected},
 		),
@@ -145,12 +135,10 @@ func TestInputProcessorGood(t *testing.T) {
 	submitter := &FakeInputProcessorSubmitter{Err: nil}
 	ip := &InputProcessor{
 		Experiment: NewInputProcessorExperimentWrapper(fipe),
-		Inputs: []model.OOAPIURLInfo{{
-			URL: "https://www.kernel.org/",
-		}, {
-			URL: "https://www.slashdot.org/",
-		}},
-		Options:   []string{"fake=true"},
+		Inputs: []model.ExperimentTarget{
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.kernel.org/"),
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.slashdot.org/"),
+		},
 		Saver:     NewInputProcessorSaverWrapper(saver),
 		Submitter: NewInputProcessorSubmitterWrapper(submitter),
 	}
@@ -187,13 +175,11 @@ func TestInputProcessorMaxRuntime(t *testing.T) {
 	submitter := &FakeInputProcessorSubmitter{Err: nil}
 	ip := &InputProcessor{
 		Experiment: NewInputProcessorExperimentWrapper(fipe),
-		Inputs: []model.OOAPIURLInfo{{
-			URL: "https://www.kernel.org/",
-		}, {
-			URL: "https://www.slashdot.org/",
-		}},
+		Inputs: []model.ExperimentTarget{
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.kernel.org/"),
+			model.NewOOAPIURLInfoWithDefaultCategoryAndCountry("https://www.slashdot.org/"),
+		},
 		MaxRuntime: 1 * time.Nanosecond,
-		Options:    []string{"fake=true"},
 		Saver:      NewInputProcessorSaverWrapper(saver),
 		Submitter:  NewInputProcessorSubmitterWrapper(submitter),
 	}

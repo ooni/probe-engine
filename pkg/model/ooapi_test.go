@@ -108,3 +108,31 @@ func TestOOAPIProbeMetadataValid(t *testing.T) {
 		}
 	})
 }
+
+func TestOOAPIURLInfo(t *testing.T) {
+	info := &OOAPIURLInfo{
+		CategoryCode: "SOCIAL",
+		CountryCode:  "IT",
+		URL:          "https://www.facebook.com/",
+	}
+
+	if info.Category() != "SOCIAL" {
+		t.Fatal("invalid Category")
+	}
+
+	if info.Country() != "IT" {
+		t.Fatal("invalid Country")
+	}
+
+	if info.Input() != "https://www.facebook.com/" {
+		t.Fatal("invalid Input")
+	}
+
+	if info.Options() != nil {
+		t.Fatal("invalid Options")
+	}
+
+	if info.String() != "https://www.facebook.com/" {
+		t.Fatal("invalid String")
+	}
+}

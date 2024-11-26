@@ -1,6 +1,10 @@
 package mocks
 
-import "github.com/ooni/probe-engine/pkg/model"
+import (
+	"encoding/json"
+
+	"github.com/ooni/probe-engine/pkg/model"
+)
 
 // ExperimentBuilder mocks model.ExperimentBuilder.
 type ExperimentBuilder struct {
@@ -14,10 +18,16 @@ type ExperimentBuilder struct {
 
 	MockSetOptionsAny func(options map[string]any) error
 
+	MockSetOptionsJSON func(value json.RawMessage) error
+
 	MockSetCallbacks func(callbacks model.ExperimentCallbacks)
 
 	MockNewExperiment func() model.Experiment
+
+	MockNewTargetLoader func(config *model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader
 }
+
+var _ model.ExperimentBuilder = &ExperimentBuilder{}
 
 func (eb *ExperimentBuilder) Interruptible() bool {
 	return eb.MockInterruptible()
@@ -39,10 +49,18 @@ func (eb *ExperimentBuilder) SetOptionsAny(options map[string]any) error {
 	return eb.MockSetOptionsAny(options)
 }
 
+func (eb *ExperimentBuilder) SetOptionsJSON(value json.RawMessage) error {
+	return eb.MockSetOptionsJSON(value)
+}
+
 func (eb *ExperimentBuilder) SetCallbacks(callbacks model.ExperimentCallbacks) {
 	eb.MockSetCallbacks(callbacks)
 }
 
 func (eb *ExperimentBuilder) NewExperiment() model.Experiment {
 	return eb.MockNewExperiment()
+}
+
+func (eb *ExperimentBuilder) NewTargetLoader(config *model.ExperimentTargetLoaderConfig) model.ExperimentTargetLoader {
+	return eb.MockNewTargetLoader(config)
 }
