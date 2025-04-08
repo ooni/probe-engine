@@ -593,10 +593,8 @@ func TestNewFactory(t *testing.T) {
 			inputPolicy:      model.InputOrStaticDefault,
 		},
 		"echcheck": {
-			// Note: echcheck is not enabled by default because we just introduced it
-			// into 3.19.0-alpha, which makes it a relatively new experiment.
-			//enabledByDefault: false,
-			inputPolicy: model.InputOptional,
+			enabledByDefault: true,
+			inputPolicy:      model.InputOptional,
 		},
 		"example": {
 			enabledByDefault: true,
