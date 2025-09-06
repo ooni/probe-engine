@@ -27,13 +27,13 @@ func cdepsOpenSSLBuildMain(globalEnv *cBuildEnv, deps buildtoolmodel.Dependencie
 	defer restore()
 
 	// See https://github.com/Homebrew/homebrew-core/blob/master/Formula/o/openssl@3.rb
-	cdepsMustFetch("https://www.openssl.org/source/openssl-3.4.0.tar.gz")
+	cdepsMustFetch("https://www.openssl.org/source/openssl-3.5.2.tar.gz")
 	deps.VerifySHA256( // must be mockable
-		"e15dda82fe2fe8139dc2ac21a36d4ca01d5313c75f99f46c4e8a27709b7294bf",
-		"openssl-3.4.0.tar.gz",
+		"c53a47e5e441c930c3928cf7bf6fb00e5d129b630e0aa873b08258656e7345ec",
+		"openssl-3.5.2.tar.gz",
 	)
-	must.Run(log.Log, "tar", "-xf", "openssl-3.4.0.tar.gz")
-	_ = deps.MustChdir("openssl-3.4.0") // must be mockable
+	must.Run(log.Log, "tar", "-xf", "openssl-3.5.2.tar.gz")
+	_ = deps.MustChdir("openssl-3.5.2") // must be mockable
 
 	mydir := filepath.Join(topdir, "CDEPS", "openssl")
 	for _, patch := range cdepsMustListPatches(mydir) {
