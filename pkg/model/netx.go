@@ -28,9 +28,13 @@ type DNSResponse interface {
 	// Rcode returns the response's Rcode.
 	Rcode() int
 
-	// DecodeHTTPS returns information gathered from all the HTTPS
+	// DecodeHTTPS returns information gathered from all the HTTPS/SVCB
 	// records found inside of this response.
 	DecodeHTTPS() (*HTTPSSvc, error)
+
+	// DecodeSVCB returns information gathered from all the SVCB records
+	// found inside of this response.
+	DecodeSVCB() ([]*SVCB, error)
 
 	// DecodeLookupHost returns the addresses in the response matching
 	// the original query type (one of A and AAAA).
@@ -189,6 +193,45 @@ type HTTPSSvc struct {
 	Ech []byte
 }
 
+// SVCB is the reply to an SVCB DNS query.
+type SVCB struct {
+	// Priority is the priority of the SVCB record.
+	Priority uint16
+
+	// TargetName is the target name of the SVCB record.
+	TargetName string
+
+	// Mandatory contains the mnemonics of the mandatory SvcParam keys.
+	Mandatory []string
+
+	// ALPN contains the ALPNs inside the SVCB reply.
+	ALPN []string
+
+	// NoDefaultALPN denotes whether the no-default-alpn SvcParam is present.
+	NoDefaultALPN bool
+
+	// IPv4 contains the IPv4 hint (which may be empty).
+	IPv4 []string
+
+	// IPv6 contains the IPv6 hint (which may be empty).
+	IPv6 []string
+
+	// Port is the port to use for the connection.
+	Port uint16
+
+	// DoHPath is the path to use for DNS-over-HTTPS.
+	DoHPath string
+
+	// OHttp denotes whether oblivious DNS over HTTPS is supported.
+	OHttp bool
+
+	// Ech contains the ECHConfig (Encrypted ClientHello) parameter, if present.
+	Ech []byte
+
+	// Raw contains the raw wire bytes of the SVCB resource record.
+	Raw []byte
+}
+
 // MeasuringNetwork defines the constructors required for implementing OONI experiments. All
 // these constructors MUST guarantee proper error wrapping to map Go errors to OONI errors
 // as documented by the [netxlite] package. The [*netxlite.Netx] type is currently the default
@@ -246,6 +289,33 @@ type QUICDialerWrapper interface {
 	WrapQUICDialer(qd QUICDialer) QUICDialer
 }
 
+// QUICConn is the interface representing a *quic.Conn compatible QUIC
+// connection.
+type QUICConn interface {
+	// CloseWithError closes the connection using the given application
+	// error code and reason string.
+	CloseWithError(code quic.ApplicationErrorCode, reason string) error
+
+	// HandshakeComplete returns a channel that is closed when the QUIC
+	// handshake completes.
+	HandshakeComplete() <-chan struct{}
+
+	// ConnectionState returns the state of the QUIC connection.
+	ConnectionState() quic.ConnectionState
+
+	// LocalAddr returns the local address.
+	LocalAddr() net.Addr
+
+	// RemoteAddr returns the address of the peer.
+	RemoteAddr() net.Addr
+
+	// Context returns a context that is cancelled when the connection is closed.
+	Context() context.Context
+}
+
+// Ensures that a [*quic.Conn] implements the [QUICConn] interface.
+var _ QUICConn = &quic.Conn{}
+
 // QUICDialer dials QUIC sessions.
 type QUICDialer interface {
 	// DialContext establishes a new QUIC session using the given
@@ -262,7 +332,7 @@ type QUICDialer interface {
 	//
 	// Typically, you want to pass `&quic.Config{}` as quicConfig.
 	DialContext(ctx context.Context, address string,
-		tlsConfig *tls.Config, quicConfig *quic.Config) (quic.EarlyConnection, error)
+		tlsConfig *tls.Config, quicConfig *quic.Config) (QUICConn, error)
 
 	// CloseIdleConnections closes idle connections, if any.
 	CloseIdleConnections()
@@ -310,6 +380,9 @@ type Resolver interface {
 
 	// LookupNS issues a NS query for a domain.
 	LookupNS(ctx context.Context, domain string) ([]*net.NS, error)
+
+	// LookupSVCB issues a SVCB query for a domain.
+	LookupSVCB(ctx context.Context, domain string) ([]*SVCB, error)
 }
 
 // TLSConn is the interface representing a *tls.Conn compatible
@@ -522,7 +595,7 @@ type Trace interface {
 	// consist of an IP address and a port (e.g., 8.8.8.8:443, [::1]:5421);
 	//
 	// - qconn is the QUIC connection we receive after the handshake: either
-	// a valid quic.EarlyConnection or nil;
+	// a valid QUICConn or nil;
 	//
 	// - config is the non-nil TLS config we are using;
 	//
@@ -532,7 +605,7 @@ type Trace interface {
 	//
 	// The error passed to this function will always be wrapped such that the
 	// string returned by Error is an OONI error.
-	OnQUICHandshakeDone(started time.Time, remoteAddr string, qconn quic.EarlyConnection,
+	OnQUICHandshakeDone(started time.Time, remoteAddr string, qconn QUICConn,
 		config *tls.Config, err error, finished time.Time)
 }
 
@@ -592,6 +665,10 @@ type UnderlyingNetwork interface {
 
 	// GetaddrinfoResolverNetwork returns the resolver network.
 	GetaddrinfoResolverNetwork() string
+
+	// GetSystemResolverAddress returns the "host:port" address of a resolver
+	// configured on the system.
+	GetSystemResolverAddress() (address string, ok bool)
 
 	// ListenTCP is equivalent to net.ListenTCP.
 	ListenTCP(network string, addr *net.TCPAddr) (net.Listener, error)

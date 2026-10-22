@@ -6,16 +6,27 @@ package psiphon
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
+	"github.com/ooni/probe-engine/pkg/feature/psiphonfeat"
 	"github.com/ooni/probe-engine/pkg/model"
+	"github.com/ooni/probe-engine/pkg/targetloading"
 )
 
 const (
 	testName    = "psiphon"
-	testVersion = "0.6.0"
+	testVersion = "0.6.1"
+)
+
+var (
+	// ErrInputRequired indicates that no richer-input target was provided.
+	ErrInputRequired = targetloading.ErrInputRequired
+
+	// ErrInvalidInputType indicates that the richer-input target has the wrong type.
+	ErrInvalidInputType = targetloading.ErrInvalidInputType
 )
 
 // Config contains the experiment's configuration.
@@ -30,7 +41,6 @@ type TestKeys struct {
 // Measurer is the psiphon measurer.
 type Measurer struct {
 	BeforeGetHook func(g urlgetter.Getter)
-	Config        Config
 }
 
 // ExperimentName returns the experiment name
@@ -70,6 +80,15 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	measurement := args.Measurement
 	sess := args.Session
 	const maxruntime = 300
+	// obtain the richer-input target
+	if args.Target == nil {
+		return ErrInputRequired
+	}
+	target, ok := args.Target.(*Target)
+	if !ok {
+		return ErrInvalidInputType
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, maxruntime*time.Second)
 	var (
 		wg     sync.WaitGroup
@@ -79,21 +98,27 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 	go m.printprogress(ctx, &wg, maxruntime, callbacks)
 	config.Tunnel = "psiphon" // force to use psiphon tunnel
 	urlgetter.RegisterExtensions(measurement)
-	target := "https://www.google.com/humans.txt"
-	if measurement.Input != "" {
-		target = string(measurement.Input)
+	targetURL := "https://www.google.com/humans.txt"
+	if target.URL != "" {
+		targetURL = target.URL
 	}
 	g := urlgetter.Getter{
 		Config:  config,
 		Session: sess,
-		Target:  target,
+		Target:  targetURL,
 	}
 	if m.BeforeGetHook != nil {
 		m.BeforeGetHook(g)
 	}
-	tk, _ := g.Get(ctx) // ignore error since we have the testkeys and want to submit them
+	tk, err := g.Get(ctx)
 	cancel()
 	wg.Wait()
+	// When the psiphon feature is not compiled into this build, the tunnel can
+	// never start, so the resulting measurement is not meaningful.
+	if errors.Is(err, psiphonfeat.ErrFeatureNotEnabled) {
+		sess.Logger().Warnf("psiphon: this build was compiled without psiphon support (%s)", psiphonfeat.ErrFeatureNotEnabled)
+		return err
+	}
 	measurement.TestKeys = &TestKeys{
 		TestKeys:   tk,
 		MaxRuntime: maxruntime,
@@ -102,8 +127,8 @@ func (m *Measurer) Run(ctx context.Context, args *model.ExperimentArgs) error {
 }
 
 // NewExperimentMeasurer creates a new ExperimentMeasurer.
-func NewExperimentMeasurer(config Config) model.ExperimentMeasurer {
-	return &Measurer{Config: config}
+func NewExperimentMeasurer() model.ExperimentMeasurer {
+	return &Measurer{}
 }
 
 var _ model.MeasurementSummaryKeysProvider = &TestKeys{}

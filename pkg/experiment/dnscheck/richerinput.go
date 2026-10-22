@@ -87,9 +87,9 @@ func (tl *targetLoader) Load(ctx context.Context) ([]model.ExperimentTarget, err
 
 	// Build the list of targets that we should measure.
 	var targets []model.ExperimentTarget
-	for _, input := range inputs {
+	for i, input := range inputs {
 		targets = append(targets, &Target{
-			Config: tl.options,
+			Config: targetloading.PerInputConfig(tl.loader, tl.options, i),
 			URL:    input,
 		})
 	}
@@ -97,6 +97,20 @@ func (tl *targetLoader) Load(ctx context.Context) ([]model.ExperimentTarget, err
 }
 
 var defaultInput = []model.ExperimentTarget{
+	&Target{
+		URL: "system:///",
+		Config: &Config{
+			SVCBEnabled: true,
+		},
+	},
+	&Target{
+		URL: "udp://one.one.one.one/dns-query",
+		Config: &Config{
+			HTTP3Enabled: true,
+			DefaultAddrs: "1.1.1.1",
+			SVCBEnabled:  true,
+		},
+	},
 	//
 	// https://dns.google/dns-query
 	//
@@ -404,5 +418,5 @@ var extendedInput = []model.ExperimentTarget{
 func (tl *targetLoader) loadFromBackend(_ context.Context) ([]model.ExperimentTarget, error) {
 	// TODO(https://github.com/ooni/probe/issues/1390): serve DNSCheck
 	// inputs using richer input (aka check-in v2).
-	return defaultInput, nil
+	return tl.defaultInput, nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/apex/log"
 	"github.com/ooni/probe-engine/pkg/experiment/psiphon"
 	"github.com/ooni/probe-engine/pkg/experiment/urlgetter"
+	"github.com/ooni/probe-engine/pkg/feature/psiphonfeat"
 	"github.com/ooni/probe-engine/pkg/legacy/mockable"
 	"github.com/ooni/probe-engine/pkg/model"
 )
@@ -18,18 +19,45 @@ import (
 // Implementation note: integration test performed by
 // the $topdir/experiment_test.go file
 
+func TestMeasurerRunWithInvalidTarget(t *testing.T) {
+	measurer := psiphon.NewExperimentMeasurer()
+
+	t.Run("with nil target we get ErrInputRequired", func(t *testing.T) {
+		err := measurer.Run(context.Background(), &model.ExperimentArgs{
+			Callbacks:   model.NewPrinterCallbacks(model.DiscardLogger),
+			Measurement: &model.Measurement{},
+			Session:     &mockable.Session{},
+		})
+		if !errors.Is(err, psiphon.ErrInputRequired) {
+			t.Fatal("unexpected error", err)
+		}
+	})
+
+	t.Run("with the wrong target type we get ErrInvalidInputType", func(t *testing.T) {
+		err := measurer.Run(context.Background(), &model.ExperimentArgs{
+			Callbacks:   model.NewPrinterCallbacks(model.DiscardLogger),
+			Measurement: &model.Measurement{},
+			Session:     &mockable.Session{},
+			Target:      &model.OOAPIURLInfo{},
+		})
+		if !errors.Is(err, psiphon.ErrInvalidInputType) {
+			t.Fatal("unexpected error", err)
+		}
+	})
+}
+
 func TestNewExperimentMeasurer(t *testing.T) {
-	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	measurer := psiphon.NewExperimentMeasurer()
 	if measurer.ExperimentName() != "psiphon" {
 		t.Fatal("unexpected name")
 	}
-	if measurer.ExperimentVersion() != "0.6.0" {
+	if measurer.ExperimentVersion() != "0.6.1" {
 		t.Fatal("unexpected version")
 	}
 }
 
 func TestRunWithCancelledContext(t *testing.T) {
-	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	measurer := psiphon.NewExperimentMeasurer()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // fail immediately
 	measurement := new(model.Measurement)
@@ -37,6 +65,7 @@ func TestRunWithCancelledContext(t *testing.T) {
 		Callbacks:   model.NewPrinterCallbacks(log.Log),
 		Measurement: measurement,
 		Session:     newfakesession(),
+		Target:      &psiphon.Target{Config: &psiphon.Config{}, URL: ""},
 	}
 	err := measurer.Run(ctx, args)
 	if !errors.Is(err, nil) { // nil because we want to submit the measurement
@@ -50,10 +79,8 @@ func TestRunWithCancelledContext(t *testing.T) {
 
 func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
 	expected := "http://x.org"
-	measurement := &model.Measurement{
-		Input: model.MeasurementInput(expected),
-	}
-	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	measurement := new(model.Measurement)
+	measurer := psiphon.NewExperimentMeasurer()
 	measurer.(*psiphon.Measurer).BeforeGetHook = func(g urlgetter.Getter) {
 		if g.Target != expected {
 			t.Fatal("target was not correctly set")
@@ -65,6 +92,7 @@ func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
 		Callbacks:   model.NewPrinterCallbacks(log.Log),
 		Measurement: measurement,
 		Session:     newfakesession(),
+		Target:      &psiphon.Target{Config: &psiphon.Config{}, URL: expected},
 	}
 	err := measurer.Run(ctx, args)
 	if !errors.Is(err, nil) { // nil because we want to submit the measurement
@@ -78,7 +106,7 @@ func TestRunWithCustomInputAndCancelledContext(t *testing.T) {
 
 func TestRunWillPrintSomethingWithCancelledContext(t *testing.T) {
 	measurement := new(model.Measurement)
-	measurer := psiphon.NewExperimentMeasurer(psiphon.Config{})
+	measurer := psiphon.NewExperimentMeasurer()
 	ctx, cancel := context.WithCancel(context.Background())
 	measurer.(*psiphon.Measurer).BeforeGetHook = func(g urlgetter.Getter) {
 		time.Sleep(2 * time.Second)
@@ -89,6 +117,7 @@ func TestRunWillPrintSomethingWithCancelledContext(t *testing.T) {
 		Callbacks:   observer,
 		Measurement: measurement,
 		Session:     newfakesession(),
+		Target:      &psiphon.Target{Config: &psiphon.Config{}, URL: ""},
 	}
 	err := measurer.Run(ctx, args)
 	if !errors.Is(err, nil) { // nil because we want to submit the measurement
@@ -100,6 +129,27 @@ func TestRunWillPrintSomethingWithCancelledContext(t *testing.T) {
 	}
 	if observer.progress.Load() < 2 {
 		t.Fatal("not enough progress emitted?!")
+	}
+}
+
+func TestRunDoesNotSubmitWhenFeatureDisabled(t *testing.T) {
+	if psiphonfeat.Enabled {
+		t.Skip("psiphon is enabled in this build; cannot exercise the disabled path")
+	}
+	measurement := new(model.Measurement)
+	measurer := psiphon.NewExperimentMeasurer()
+	args := &model.ExperimentArgs{
+		Callbacks:   model.NewPrinterCallbacks(model.DiscardLogger),
+		Measurement: measurement,
+		Session:     newfakesession(),
+		Target:      &psiphon.Target{Config: &psiphon.Config{}, URL: ""},
+	}
+	err := measurer.Run(context.Background(), args)
+	if !errors.Is(err, psiphonfeat.ErrFeatureNotEnabled) {
+		t.Fatal("expected ErrFeatureNotEnabled, got", err)
+	}
+	if measurement.TestKeys != nil {
+		t.Fatal("expected no test keys when the feature is disabled")
 	}
 }
 
